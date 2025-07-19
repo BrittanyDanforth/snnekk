@@ -121,16 +121,16 @@ function OrbUtils.attachOrbTouched(orb)
                     end
                 end
             else
-                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 10
+                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1  -- REDUCED from 10
                 if player and player.Character then
                     if not player.Character:FindFirstChild("__SnakeInstance") then
                         if _G.PlayerSnakes and _G.PlayerSnakes[player] and _G.PlayerSnakes[player].grow then
-                            _G.PlayerSnakes[player].grow(orbValue or 10)
+                            _G.PlayerSnakes[player].grow(orbValue or 1)  -- REDUCED from 10
                         end
                     else
                         local snake = player.Character:FindFirstChild("__SnakeInstance").Value
                         if snake and snake.grow then
-                            snake.grow(orbValue or 10)
+                            snake.grow(orbValue or 1)  -- REDUCED from 10
                         end
                     end
                 end
@@ -155,13 +155,13 @@ function OrbUtils.attachOrbTouched(orb)
                     end
                 end
             else
-                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 10
+                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1  -- REDUCED from 10
                 local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
                 if AISnakeModule._activeSnakes then
                     for _, snake in AISnakeModule._activeSnakes do
                         if snake.HeadParts and snake.HeadParts.head == hit then
                             if snake.grow then
-                                snake:grow(orbValue or 10)
+                                snake:grow(orbValue or 1)  -- REDUCED from 10
                             end
                         end
                     end
@@ -230,7 +230,7 @@ function OrbUtils.checkAISnakeHeadPickup(head)
             if not orbDebounce[orb] then
                 orbDebounce[orb] = true
                 playOrbCollectVFX(orb.Position)
-                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 10
+                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1  -- REDUCED from 10
                 local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
                 if AISnakeModule._activeSnakes then
                     for _, snake in AISnakeModule._activeSnakes do
@@ -239,7 +239,7 @@ function OrbUtils.checkAISnakeHeadPickup(head)
                                 require(ReplicatedStorage:WaitForChild("SnakeUpgrades")).GiveUpgrade(snake)
                             else
                                 if snake.grow then
-                                    snake:grow(orbValue or 10)
+                                    snake:grow(orbValue or 1)  -- REDUCED from 10
                                 end
                             end
                         end

@@ -593,21 +593,21 @@ task.spawn(function()
 
 							-- Dynamic value calculation based on snake length
 							local baseValue = 1
-							if totalLength <= 50 then
-								-- Small snakes: give back 60% of length
-								local totalValue = math.floor(totalLength * 0.6)
+							if totalLength <= 100 then
+								-- Small snakes: give back 30% of length
+								local totalValue = math.floor(totalLength * 0.30)
 								baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 							elseif totalLength <= 200 then
-								-- Medium snakes: give back 45% of length
-								local totalValue = math.floor(totalLength * 0.45)
+								-- Medium snakes: give back 25% of length
+								local totalValue = math.floor(totalLength * 0.25)
 								baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 							elseif totalLength <= 500 then
-								-- Large snakes: give back 35% of length
-								local totalValue = math.floor(totalLength * 0.35)
+								-- Large snakes: give back 20% of length
+								local totalValue = math.floor(totalLength * 0.20)
 								baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 							else
-								-- Very large snakes: give back 25% of length with cap
-								local totalValue = math.min(math.floor(totalLength * 0.25), 200)
+								-- Very large snakes: give back 15% of length with cap
+								local totalValue = math.min(math.floor(totalLength * 0.15), 150)
 								baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 							end
 
@@ -680,21 +680,21 @@ task.spawn(function()
 
 								-- Dynamic value calculation based on snake length
 								local baseValue = 1
-								if totalLength <= 50 then
-									-- Small snakes: give back 60% of length
-									local totalValue = math.floor(totalLength * 0.6)
+								if totalLength <= 100 then
+									-- Small snakes: give back 30% of length
+									local totalValue = math.floor(totalLength * 0.30)
 									baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 								elseif totalLength <= 200 then
-									-- Medium snakes: give back 45% of length
-									local totalValue = math.floor(totalLength * 0.45)
+									-- Medium snakes: give back 25% of length
+									local totalValue = math.floor(totalLength * 0.25)
 									baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 								elseif totalLength <= 500 then
-									-- Large snakes: give back 35% of length
-									local totalValue = math.floor(totalLength * 0.35)
+									-- Large snakes: give back 20% of length
+									local totalValue = math.floor(totalLength * 0.20)
 									baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 								else
-									-- Very large snakes: give back 25% of length with cap
-									local totalValue = math.min(math.floor(totalLength * 0.25), 200)
+									-- Very large snakes: give back 15% of length with cap
+									local totalValue = math.min(math.floor(totalLength * 0.15), 150)
 									baseValue = math.max(1, math.floor(totalValue / totalOrbs))
 								end
 

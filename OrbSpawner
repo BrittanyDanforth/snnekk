@@ -363,7 +363,7 @@ local function createSafeOrb(position, value, name, color, material)
 
 	local val = Instance.new("NumberValue")
 	val.Name = "Value"
-	val.Value = value or 10
+	val.Value = value or 1  -- REDUCED from 10 to 1
 	val.Parent = orb
 
 	local light = Instance.new("PointLight")
@@ -388,7 +388,7 @@ local function spawnDeathOrbs(pos, count)
 	for i = 1, count do
 		local angle, dist = math.random() * math.pi * 2, math.random(3, 8)
 		local off = Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
-		local orb = createSafeOrb(pos + off, 10, "DeathOrb", Color3.fromRGB(255, 100, 100))
+		local orb = createSafeOrb(pos + off, 2, "DeathOrb", Color3.fromRGB(255, 100, 100))  -- REDUCED from 10 to 2
 		table.insert(orbs, orb)
 		table.insert(spawned, orb)
 		attachOrbTouched(orb)
