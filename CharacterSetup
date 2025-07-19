@@ -782,6 +782,13 @@ local function createUltraSmoothSnake(character)
 		if not isActive or not rootPart.Parent then return end
 
 		updateCounter = updateCounter + 1
+		
+		-- Calculate uniform size ONCE per frame for ALL segments
+		local currentGrowthFactor = 1
+		if currentLength > 200 then
+			currentGrowthFactor = 1 + ((currentLength - 200) / 2300) * 1.2
+		end
+		local uniformTargetSize = activeConfig.SegmentSize * mathMin(currentGrowthFactor, 2.2)
 
 		-- Remove selection box every frame to ensure it stays gone
 		if rootPart:FindFirstChild("SelectionBox") then
@@ -966,27 +973,10 @@ local function createUltraSmoothSnake(character)
 					end
 				end
 				
-				-- SEPARATE SIZE UPDATES: Less frequent, doesn't affect movement
-				if i <= 300 and updateCounter % 90 == (i % 15) then
-					-- Only update size for visible segments
-					local growthFactor = 1
-					if currentLength > 200 then
-						growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2
-					end
-					
-					local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.2)
-					local sizeDiff = (targetSize - segment.Size).Magnitude
-					local lerpSpeed = sizeDiff > 5 and 0.3 or 0.1
-					segment.Size = segment.Size:Lerp(targetSize, lerpSpeed)
-				elseif i > 300 and segment.Size.X < activeConfig.SegmentSize.X * 1.5 then
-					-- Ensure far segments have at least some growth
-					local growthFactor = 1
-					if currentLength > 200 then
-						growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2
-					end
-					
-					local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.2)
-					segment.Size = targetSize  -- Instant size for far segments
+				-- UNIFORM SIZE: All segments MUST be the same size
+				local sizeDiff = (uniformTargetSize - segment.Size).Magnitude
+				if sizeDiff > 0.01 then  -- Very small threshold
+					segment.Size = uniformTargetSize  -- Instant update for ALL
 				end
 			end
 		end
