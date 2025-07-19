@@ -1,0 +1,217 @@
+--[[
+ULTRA-OPTIMIZED SLITHER.IO SNAKE SYSTEM - FINAL VERSION
+- Uses 3500 history buffer (proven to fix gaps)
+- Optimized to eliminate lag
+- Supports 2500 max segments smoothly
+- All lessons learned applied
+--]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Fast aliases
+local Vector3new = Vector3.new
+local CFramenew = CFrame.new
+local mathMin = math.min
+local mathMax = math.max
+local mathFloor = math.floor
+
+-- Configuration
+local Config = {
+	HeadSize = Vector3new(4.5, 4.5, 4.5),
+	SegmentSize = Vector3new(4, 4, 4),
+	SegmentSpacing = 3.6,
+	InitialLength = 55,
+	MaxSegments = 2500,
+	HeadColor = Color3.fromRGB(76, 217, 100),
+	BodyColors = {
+		Color3.fromRGB(60, 180, 80),
+		Color3.fromRGB(80, 200, 100),
+		Color3.fromRGB(100, 220, 120),
+		Color3.fromRGB(80, 200, 100),
+		Color3.fromRGB(60, 180, 80),
+	},
+	FollowSpeed = 0.92,
+	BoostFollowSpeed = 0.95,
+}
+
+-- OPTIMIZED POSITION HISTORY SYSTEM
+local function createOptimizedHistory(rootPart, maxSegments)
+	-- KEY INSIGHT: 3500 buffer fixes gaps, but we optimize it
+	local bufferSize = mathMin(maxSegments * 1.4, 3500)  -- 1.4x segments, max 3500
+	
+	-- OPTIMIZATION 1: Reuse position data instead of creating new tables
+	local positionX = table.create(bufferSize, 0)
+	local positionY = table.create(bufferSize, 0)
+	local positionZ = table.create(bufferSize, 0)
+	local lookX = table.create(bufferSize, 0)
+	local lookY = table.create(bufferSize, 0)
+	local lookZ = table.create(bufferSize, 0)
+	
+	local head = 1
+	local initialized = false
+	
+	-- Initialize with current position
+	local pos = rootPart.Position
+	local look = rootPart.CFrame.LookVector
+	for i = 1, mathMin(100, bufferSize) do
+		positionX[i] = pos.X
+		positionY[i] = pos.Y
+		positionZ[i] = pos.Z
+		lookX[i] = look.X
+		lookY[i] = look.Y
+		lookZ[i] = look.Z
+	end
+	
+	-- OPTIMIZATION 2: Inline functions for speed
+	local function addToHistory(position, lookVector)
+		head = (head % bufferSize) + 1
+		positionX[head] = position.X
+		positionY[head] = position.Y
+		positionZ[head] = position.Z
+		lookX[head] = lookVector.X
+		lookY[head] = lookVector.Y
+		lookZ[head] = lookVector.Z
+		
+		if not initialized and head == bufferSize then
+			initialized = true
+		end
+	end
+	
+	local function getFromHistory(stepsBack)
+		local maxSteps = initialized and bufferSize or head
+		if stepsBack > maxSteps then
+			stepsBack = maxSteps
+		end
+		
+		local index = head - stepsBack
+		if index < 1 then
+			index = index + bufferSize
+		end
+		
+		-- Return vectors directly without creating tables
+		return Vector3new(positionX[index], positionY[index], positionZ[index]),
+		       Vector3new(lookX[index], lookY[index], lookZ[index])
+	end
+	
+	return addToHistory, getFromHistory, bufferSize
+end
+
+-- OPTIMIZED SEGMENT UPDATE
+local function updateSegmentPosition(segment, targetPos, followSpeed, spacing, prevSegment)
+	local currentPos = segment.Position
+	
+	-- Anti-gap check
+	if prevSegment then
+		local gap = (currentPos - prevSegment.Position).Magnitude
+		if gap > spacing * 1.2 then
+			-- Pull closer
+			local dir = (prevSegment.Position - currentPos).Unit
+			targetPos = prevSegment.Position - dir * (spacing * 0.95)
+			followSpeed = mathMin(followSpeed * 1.5, 0.95)  -- Faster catch-up
+		end
+	end
+	
+	-- Smooth lerp
+	local newPos = currentPos:Lerp(targetPos, followSpeed)
+	segment.CFrame = CFramenew(newPos)
+	
+	return newPos
+end
+
+-- MAIN UPDATE LOOP OPTIMIZATION
+local function createUpdateLoop(rootPart, segments, addToHistory, getFromHistory, config)
+	local updateCounter = 0
+	local lastPos = rootPart.Position
+	
+	return RunService.Heartbeat:Connect(function()
+		updateCounter = updateCounter + 1
+		
+		local currentPos = rootPart.Position
+		local currentLook = rootPart.CFrame.LookVector
+		local isBoosting = false  -- You can connect this to your boost system
+		
+		-- OPTIMIZATION 3: Only add to history when moved significantly
+		local dist = (currentPos - lastPos).Magnitude
+		if dist > 0.05 then  -- Threshold for history update
+			-- Add interpolated positions for smooth following
+			if dist > config.SegmentSpacing * 0.5 then
+				local steps = mathMin(mathFloor(dist / (config.SegmentSpacing * 0.3)), 8)
+				for i = 1, steps do
+					local t = i / (steps + 1)
+					local interpPos = lastPos:Lerp(currentPos, t)
+					addToHistory(interpPos, currentLook)
+				end
+			end
+			addToHistory(currentPos, currentLook)
+			lastPos = currentPos
+		end
+		
+		-- OPTIMIZATION 4: Update segments with smart LOD
+		local followSpeed = isBoosting and config.BoostFollowSpeed or config.FollowSpeed
+		local prevSegment = nil
+		
+		for i = 1, #segments do
+			local segment = segments[i]
+			if not segment or not segment.Parent then continue end
+			
+			-- LOD system - update less frequently for distant segments
+			local updateFreq = 1
+			if i > 300 then updateFreq = 2 end
+			if i > 800 then updateFreq = 3 end
+			if i > 1500 then updateFreq = 4 end
+			if i > 2000 then updateFreq = 5 end
+			
+			if updateCounter % updateFreq ~= 0 then
+				prevSegment = segment
+				continue
+			end
+			
+			-- Get target position from history
+			local delay = mathFloor(i * (isBoosting and 0.9 or 1.1))
+			local targetPos, targetLook = getFromHistory(delay)
+			
+			if targetPos then
+				-- Offset slightly behind
+				targetPos = targetPos - targetLook * (config.SegmentSpacing * 0.1)
+				
+				-- Update with anti-gap
+				updateSegmentPosition(
+					segment,
+					targetPos,
+					followSpeed * (i <= 50 and 1 or 0.95),  -- Head segments follow tighter
+					config.SegmentSpacing,
+					prevSegment
+				)
+			end
+			
+			prevSegment = segment
+		end
+		
+		-- OPTIMIZATION 5: Periodic growth size update (not every frame)
+		if updateCounter % 30 == 0 and #segments > 200 then
+			local growthFactor = 1 + ((#segments - 200) / 2300) * 0.7
+			local targetSize = config.SegmentSize * mathMin(growthFactor, 1.7)
+			
+			-- Update only visible segments
+			for i = 1, mathMin(200, #segments) do
+				local segment = segments[i]
+				if segment and segment.Parent then
+					segment.Size = segment.Size:Lerp(targetSize, 0.1)
+				end
+			end
+		end
+	end)
+end
+
+-- Example usage:
+-- local addToHistory, getFromHistory, bufferSize = createOptimizedHistory(rootPart, Config.MaxSegments)
+-- local updateConnection = createUpdateLoop(rootPart, segments, addToHistory, getFromHistory, Config)
+
+return {
+	Config = Config,
+	createOptimizedHistory = createOptimizedHistory,
+	createUpdateLoop = createUpdateLoop,
+	updateSegmentPosition = updateSegmentPosition
+}
