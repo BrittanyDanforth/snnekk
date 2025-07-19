@@ -1,0 +1,628 @@
+--[[
+BEAUTIFUL SLITHER.IO MENU V3.0 - DARK & RELIABLE
+- Dark, sleek design
+- Fixed UI disappearing issue
+- Enhanced spawn reliability
+--]]
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Hide the default Roblox leaderboard
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+
+-- Helper to set graphics mode (attribute + remote event)
+local function setGraphicsMode(mode)
+	LocalPlayer:SetAttribute("GraphicsMode", mode)
+	local event = ReplicatedStorage:FindFirstChild("SetGraphicsMode")
+	if event then
+		event:FireServer(mode)
+	end
+end
+
+-- Enhanced respawn system with UI persistence
+local function requestRespawn()
+	local respawnEvent = ReplicatedStorage:WaitForChild("RespawnSnake")
+	respawnEvent:FireServer()
+end
+
+-- Function to create the menu UI
+local function createMenu(onPlay)
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "SlitherIOMenu"
+	screenGui.ResetOnSpawn = false
+	screenGui.IgnoreGuiInset = true
+	screenGui.DisplayOrder = 10
+
+	-- Dark background with gradient
+	local bgFrame = Instance.new("Frame")
+	bgFrame.Size = UDim2.new(1, 0, 1, 0)
+	bgFrame.Position = UDim2.new(0, 0, 0, 0)
+	bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30) -- Dark blue-gray
+	bgFrame.BackgroundTransparency = 0
+	bgFrame.BorderSizePixel = 0
+	bgFrame.Parent = screenGui
+
+	-- Dark gradient overlay
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 30)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 25)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 20))
+	}
+	gradient.Rotation = 45
+	gradient.Parent = bgFrame
+
+	-- Create dark animated particles
+	for i = 1, 25 do
+		local particle = Instance.new("Frame")
+		local size = math.random(6, 12)
+		particle.Size = UDim2.new(0, size, 0, size)
+		particle.Position = UDim2.new(math.random(), 0, math.random(), 0)
+		particle.BackgroundColor3 = Color3.fromHSV(math.random() * 0.3 + 0.6, 0.7, 0.8)
+		particle.BackgroundTransparency = 0.8
+		particle.BorderSizePixel = 0
+		particle.Parent = bgFrame
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(1, 0)
+		corner.Parent = particle
+
+		-- Floating animation
+		spawn(function()
+			while screenGui.Parent do
+				local targetX = math.random()
+				local targetY = math.random()
+				local duration = math.random(25, 45)
+
+				TweenService:Create(particle, 
+					TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), 
+					{Position = UDim2.new(targetX, 0, targetY, 0)}
+				):Play()
+
+				task.wait(duration)
+			end
+		end)
+	end
+
+	-- Main container
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0.5, 0, 0.6, 0)
+	frame.Position = UDim2.new(0.25, 0, 0.2, 0)
+	frame.BackgroundTransparency = 1
+	frame.BorderSizePixel = 0
+	frame.Parent = bgFrame
+
+	-- Dark logo with glow effect
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(0.7, 0, 0.15, 0)
+	title.Position = UDim2.new(0.15, 0, 0.1, 0)
+	title.BackgroundTransparency = 1
+	title.Text = "sliv.io"
+	title.Font = Enum.Font.SourceSansBold
+	title.TextScaled = true
+	title.TextColor3 = Color3.fromRGB(76, 217, 100) -- Slither green
+	title.TextStrokeTransparency = 0.7
+	title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	title.Parent = frame
+
+	-- Dark play button with enhanced design
+	local playButton = Instance.new("TextButton")
+	playButton.Size = UDim2.new(0.4, 0, 0.12, 0)
+	playButton.Position = UDim2.new(0.3, 0, 0.4, 0)
+	playButton.BackgroundColor3 = Color3.fromRGB(76, 217, 100)  -- Slither green
+	playButton.Text = "Play"
+	playButton.Font = Enum.Font.SourceSansBold
+	playButton.TextScaled = true
+	playButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	playButton.AutoButtonColor = false
+	playButton.Parent = frame
+
+	local playCorner = Instance.new("UICorner")
+	playCorner.CornerRadius = UDim.new(0.1, 0)
+	playCorner.Parent = playButton
+
+	-- Dark gradient on play button
+	local playGradient = Instance.new("UIGradient")
+	playGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 230, 230))
+	}
+	playGradient.Rotation = 90
+	playGradient.Transparency = NumberSequence.new(0.9)
+	playGradient.Parent = playButton
+
+	-- Dark shadow
+	local playShadow = Instance.new("Frame")
+	playShadow.Size = UDim2.new(1, 0, 1, 0)
+	playShadow.Position = UDim2.new(0, 0, 0, 3)
+	playShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	playShadow.BackgroundTransparency = 0.8
+	playShadow.ZIndex = playButton.ZIndex - 1
+	playShadow.Parent = playButton
+
+	local shadowCorner = Instance.new("UICorner")
+	shadowCorner.CornerRadius = UDim.new(0.1, 0)
+	shadowCorner.Parent = playShadow
+
+	-- Dark settings button
+	local settingsButton = Instance.new("TextButton")
+	settingsButton.Size = UDim2.new(0.08, 0, 0.08, 0)
+	settingsButton.Position = UDim2.new(0.9, 0, 0.05, 0)
+	settingsButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	settingsButton.Text = "⚙"
+	settingsButton.Font = Enum.Font.SourceSans
+	settingsButton.TextScaled = true
+	settingsButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+	settingsButton.AutoButtonColor = false
+	settingsButton.Parent = bgFrame
+
+	local settingsCorner = Instance.new("UICorner")
+	settingsCorner.CornerRadius = UDim.new(0.15, 0)
+	settingsCorner.Parent = settingsButton
+
+	-- Dark share button
+	local shareButton = Instance.new("TextButton")
+	shareButton.Size = UDim2.new(0.08, 0, 0.08, 0)
+	shareButton.Position = UDim2.new(0.72, 0, 0.05, 0)
+	shareButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	shareButton.Text = "🔗"
+	shareButton.Font = Enum.Font.SourceSans
+	shareButton.TextScaled = true
+	shareButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+	shareButton.AutoButtonColor = false
+	shareButton.Parent = bgFrame
+
+	local shareCorner = Instance.new("UICorner")
+	shareCorner.CornerRadius = UDim.new(0.15, 0)
+	shareCorner.Parent = shareButton
+
+	-- Shop button
+	local shopButton = Instance.new("TextButton")
+	shopButton.Size = UDim2.new(0.08, 0, 0.08, 0)
+	shopButton.Position = UDim2.new(0.81, 0, 0.05, 0)
+	shopButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	shopButton.Text = "🛒"
+	shopButton.Font = Enum.Font.SourceSans
+	shopButton.TextScaled = true
+	shopButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+	shopButton.AutoButtonColor = false
+	shopButton.Parent = bgFrame
+
+	local shopCorner = Instance.new("UICorner")
+	shopCorner.CornerRadius = UDim.new(0.15, 0)
+	shopCorner.Parent = shopButton
+
+	-- Dark graphics button with visual styling
+	local graphicsButton = Instance.new("TextButton")
+	graphicsButton.Size = UDim2.new(0.25, 0, 0.06, 0)
+	graphicsButton.Position = UDim2.new(0.375, 0, 0.85, 0)
+	graphicsButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	graphicsButton.BackgroundTransparency = 0.7
+	graphicsButton.Text = "Graphics: High"
+	graphicsButton.Font = Enum.Font.SourceSans
+	graphicsButton.TextScaled = true
+	graphicsButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+	graphicsButton.Parent = bgFrame
+
+	local graphicsCorner = Instance.new("UICorner")
+	graphicsCorner.CornerRadius = UDim.new(0.15, 0)
+	graphicsCorner.Parent = graphicsButton
+
+	-- Graphics button hover effect
+	graphicsButton.MouseEnter:Connect(function()
+		TweenService:Create(graphicsButton, TweenInfo.new(0.1), {
+			BackgroundTransparency = 0.5,
+			TextColor3 = Color3.fromRGB(200, 200, 200)
+		}):Play()
+	end)
+
+	graphicsButton.MouseLeave:Connect(function()
+		TweenService:Create(graphicsButton, TweenInfo.new(0.1), {
+			BackgroundTransparency = 0.7,
+			TextColor3 = Color3.fromRGB(150, 150, 150)
+		}):Play()
+	end)
+
+	-- Dark leaderboard
+	local leaderboard = Instance.new("Frame")
+	leaderboard.Size = UDim2.new(0.15, 0, 0.3, 0)
+	leaderboard.Position = UDim2.new(0.82, 0, 0.35, 0)
+	leaderboard.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	leaderboard.BackgroundTransparency = 0.1
+	leaderboard.BorderSizePixel = 0
+	leaderboard.Parent = bgFrame
+
+	local leaderCorner = Instance.new("UICorner")
+	leaderCorner.CornerRadius = UDim.new(0.05, 0)
+	leaderCorner.Parent = leaderboard
+
+	local leaderTitle = Instance.new("TextLabel")
+	leaderTitle.Size = UDim2.new(0.9, 0, 0.15, 0)
+	leaderTitle.Position = UDim2.new(0.05, 0, 0.05, 0)
+	leaderTitle.BackgroundTransparency = 1
+	leaderTitle.Text = "Leaderboard"
+	leaderTitle.Font = Enum.Font.SourceSans
+	leaderTitle.TextScaled = true
+	leaderTitle.TextColor3 = Color3.fromRGB(76, 217, 100)
+	leaderTitle.Parent = leaderboard
+
+	-- Dark server info
+	local serverInfo = Instance.new("TextLabel")
+	serverInfo.Size = UDim2.new(0.2, 0, 0.04, 0)
+	serverInfo.Position = UDim2.new(0.07, 0, 0.92, 2)
+	serverInfo.BackgroundTransparency = 1
+	serverInfo.Text = "Server: US-West"
+	serverInfo.Font = Enum.Font.SourceSans
+	serverInfo.TextScaled = true
+	serverInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+	serverInfo.TextXAlignment = Enum.TextXAlignment.Left
+	serverInfo.Parent = bgFrame
+
+	-- DARK SETTINGS PANEL
+	local function openSettingsPanel()
+		if screenGui:FindFirstChild("SettingsPanel") then return end
+		local panel = Instance.new("Frame")
+		panel.Name = "SettingsPanel"
+		panel.Size = UDim2.new(0.32, 0, 0.28, 0)
+		panel.Position = UDim2.new(0.34, 0, 0.34, 0)
+		panel.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+		panel.BackgroundTransparency = 0.05
+		panel.BorderSizePixel = 0
+		panel.ZIndex = 20
+		panel.Parent = screenGui
+
+		local panelCorner = Instance.new("UICorner")
+		panelCorner.CornerRadius = UDim.new(0.08, 0)
+		panelCorner.Parent = panel
+
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, 0, 0.18, 0)
+		title.Position = UDim2.new(0, 0, 0, 0)
+		title.BackgroundTransparency = 1
+		title.Text = "Settings"
+		title.Font = Enum.Font.SourceSansBold
+		title.TextScaled = true
+		title.TextColor3 = Color3.fromRGB(76, 217, 100)
+		title.ZIndex = 21
+		title.Parent = panel
+
+		local soundToggle = Instance.new("TextButton")
+		soundToggle.Size = UDim2.new(0.8, 0, 0.22, 0)
+		soundToggle.Position = UDim2.new(0.1, 0, 0.28, 0)
+		soundToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+		soundToggle.Text = "Sound: On"
+		soundToggle.Font = Enum.Font.SourceSans
+		soundToggle.TextScaled = true
+		soundToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+		soundToggle.ZIndex = 21
+		soundToggle.Parent = panel
+
+		local soundCorner = Instance.new("UICorner")
+		soundCorner.CornerRadius = UDim.new(0.05, 0)
+		soundCorner.Parent = soundToggle
+
+		local soundOn = true
+		soundToggle.MouseButton1Click:Connect(function()
+			soundOn = not soundOn
+			soundToggle.Text = "Sound: " .. (soundOn and "On" or "Off")
+			LocalPlayer:SetAttribute("SoundOn", soundOn)
+		end)
+
+		local controlsLabel = Instance.new("TextLabel")
+		controlsLabel.Size = UDim2.new(0.8, 0, 0.22, 0)
+		controlsLabel.Position = UDim2.new(0.1, 0, 0.54, 0)
+		controlsLabel.BackgroundTransparency = 1
+		controlsLabel.Text = "Controls: Mouse/Touch"
+		controlsLabel.Font = Enum.Font.SourceSans
+		controlsLabel.TextScaled = true
+		controlsLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+		controlsLabel.ZIndex = 21
+		controlsLabel.Parent = panel
+
+		local closeBtn = Instance.new("TextButton")
+		closeBtn.Size = UDim2.new(0.25, 0, 0.18, 0)
+		closeBtn.Position = UDim2.new(0.375, 0, 0.8, 0)
+		closeBtn.BackgroundColor3 = Color3.fromRGB(76, 217, 100)
+		closeBtn.Text = "Close"
+		closeBtn.Font = Enum.Font.SourceSansBold
+		closeBtn.TextScaled = true
+		closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		closeBtn.ZIndex = 21
+		closeBtn.Parent = panel
+
+		local closeCorner = Instance.new("UICorner")
+		closeCorner.CornerRadius = UDim.new(0.1, 0)
+		closeCorner.Parent = closeBtn
+
+		closeBtn.MouseButton1Click:Connect(function()
+			panel:Destroy()
+		end)
+	end
+
+	-- DARK SHARE PANEL
+	local function openSharePanel()
+		if screenGui:FindFirstChild("SharePanel") then return end
+		local panel = Instance.new("Frame")
+		panel.Name = "SharePanel"
+		panel.Size = UDim2.new(0.32, 0, 0.26, 0)
+		panel.Position = UDim2.new(0.34, 0, 0.36, 0)
+		panel.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+		panel.BackgroundTransparency = 0.05
+		panel.BorderSizePixel = 0
+		panel.ZIndex = 20
+		panel.Parent = screenGui
+
+		local panelCorner = Instance.new("UICorner")
+		panelCorner.CornerRadius = UDim.new(0.08, 0)
+		panelCorner.Parent = panel
+
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, 0, 0.25, 0)
+		title.Position = UDim2.new(0, 0, 0, 0)
+		title.BackgroundTransparency = 1
+		title.Text = "Share Game"
+		title.Font = Enum.Font.SourceSansBold
+		title.TextScaled = true
+		title.TextColor3 = Color3.fromRGB(76, 217, 100)
+		title.ZIndex = 21
+		title.Parent = panel
+
+		local linkBox = Instance.new("TextBox")
+		linkBox.Size = UDim2.new(0.8, 0, 0.25, 0)
+		linkBox.Position = UDim2.new(0.1, 0, 0.32, 0)
+		linkBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+		linkBox.Text = "https://www.roblox.com/games/90555347135974/sliv-io-EARLY-BETA"
+		linkBox.Font = Enum.Font.SourceSans
+		linkBox.TextScaled = true
+		linkBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+		linkBox.ClearTextOnFocus = false
+		linkBox.ZIndex = 21
+		linkBox.Parent = panel
+
+		local linkCorner = Instance.new("UICorner")
+		linkCorner.CornerRadius = UDim.new(0.05, 0)
+		linkCorner.Parent = linkBox
+
+		local copyBtn = Instance.new("TextButton")
+		copyBtn.Size = UDim2.new(0.35, 0, 0.18, 0)
+		copyBtn.Position = UDim2.new(0.325, 0, 0.62, 0)
+		copyBtn.BackgroundColor3 = Color3.fromRGB(76, 217, 100)
+		copyBtn.Text = "Copy Link"
+		copyBtn.Font = Enum.Font.SourceSansBold
+		copyBtn.TextScaled = true
+		copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		copyBtn.ZIndex = 21
+		copyBtn.Parent = panel
+
+		local copyCorner = Instance.new("UICorner")
+		copyCorner.CornerRadius = UDim.new(0.1, 0)
+		copyCorner.Parent = copyBtn
+
+		local copiedLabel = Instance.new("TextLabel")
+		copiedLabel.Size = UDim2.new(1, 0, 0.18, 0)
+		copiedLabel.Position = UDim2.new(0, 0, 0.82, 0)
+		copiedLabel.BackgroundTransparency = 1
+		copiedLabel.Text = ""
+		copiedLabel.Font = Enum.Font.SourceSans
+		copiedLabel.TextScaled = true
+		copiedLabel.TextColor3 = Color3.fromRGB(76, 217, 100)
+		copiedLabel.ZIndex = 21
+		copiedLabel.Parent = panel
+
+		copyBtn.MouseButton1Click:Connect(function()
+			local clipboardAvailable = typeof(setclipboard) == "function"
+			local success = false
+			if clipboardAvailable then
+				success = pcall(function()
+					setclipboard(linkBox.Text)
+				end)
+			end
+			if clipboardAvailable and success then
+				copiedLabel.Text = "Copied!"
+			elseif not clipboardAvailable then
+				copiedLabel.Text = "Clipboard not available"
+			else
+				copiedLabel.Text = "Copy failed"
+			end
+			task.wait(1.2)
+			copiedLabel.Text = ""
+		end)
+
+		local closeBtn = Instance.new("TextButton")
+		closeBtn.Size = UDim2.new(0.25, 0, 0.16, 0)
+		closeBtn.Position = UDim2.new(0.375, 0, 1.01, 0)
+		closeBtn.BackgroundColor3 = Color3.fromRGB(76, 217, 100)
+		closeBtn.Text = "Close"
+		closeBtn.Font = Enum.Font.SourceSansBold
+		closeBtn.TextScaled = true
+		closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		closeBtn.ZIndex = 21
+		closeBtn.Parent = panel
+
+		local closeCorner = Instance.new("UICorner")
+		closeCorner.CornerRadius = UDim.new(0.1, 0)
+		closeCorner.Parent = closeBtn
+
+		closeBtn.MouseButton1Click:Connect(function()
+			panel:Destroy()
+		end)
+	end
+
+	-- Graphics toggle with Low/Medium/High support
+	local graphicsMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	local graphicsModes = {"Low", "Medium", "High"}
+	local currentModeIndex = table.find(graphicsModes, graphicsMode) or 3
+
+	graphicsButton.Text = "Graphics: " .. graphicsMode
+	graphicsButton.MouseButton1Click:Connect(function()
+		-- Cycle through Low -> Medium -> High -> Low
+		currentModeIndex = currentModeIndex % 3 + 1
+		graphicsMode = graphicsModes[currentModeIndex]
+
+		graphicsButton.Text = "Graphics: " .. graphicsMode
+		setGraphicsMode(graphicsMode)
+
+		-- Visual feedback
+		local originalColor = graphicsButton.TextColor3
+		graphicsButton.TextColor3 = Color3.fromRGB(76, 217, 100)
+		TweenService:Create(graphicsButton, TweenInfo.new(0.3), {
+			TextColor3 = originalColor
+		}):Play()
+	end)
+
+	-- Update graphics button when attribute changes
+	LocalPlayer.AttributeChanged:Connect(function(attr)
+		if attr == "GraphicsMode" then
+			local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+			graphicsButton.Text = "Graphics: " .. mode
+			currentModeIndex = table.find(graphicsModes, mode) or 3
+		end
+	end)
+
+	-- Set initial graphics mode on menu open
+	setGraphicsMode(graphicsMode)
+
+	-- Enhanced play button animations
+	playButton.MouseEnter:Connect(function()
+		TweenService:Create(playButton, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(90, 230, 120)}):Play()
+		TweenService:Create(playShadow, TweenInfo.new(0.1), {BackgroundTransparency = 0.7}):Play()
+	end)
+
+	playButton.MouseLeave:Connect(function()
+		TweenService:Create(playButton, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(76, 217, 100)}):Play()
+		TweenService:Create(playShadow, TweenInfo.new(0.1), {BackgroundTransparency = 0.8}):Play()
+	end)
+
+	playButton.MouseButton1Click:Connect(function()
+		-- Enhanced press animation
+		TweenService:Create(playButton, TweenInfo.new(0.05), {Size = UDim2.new(0.38, 0, 0.11, 0)}):Play()
+		TweenService:Create(playShadow, TweenInfo.new(0.05), {Size = UDim2.new(0.38, 0, 0.11, 0)}):Play()
+
+		task.wait(0.05)
+		TweenService:Create(playButton, TweenInfo.new(0.05), {Size = UDim2.new(0.4, 0, 0.12, 0)}):Play()
+		TweenService:Create(playShadow, TweenInfo.new(0.05), {Size = UDim2.new(0.4, 0, 0.12, 0)}):Play()
+
+		task.wait(0.1)
+		if onPlay then
+			onPlay()
+		end
+
+		-- FADE OUT MENU INSTEAD OF IMMEDIATE DESTROY
+		-- FIX: Tween the bgFrame's BackgroundTransparency instead of the ScreenGui
+		local fadeTween = TweenService:Create(bgFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 1})
+		fadeTween:Play()
+
+		-- Wait for character to spawn before hiding completely
+		local maxWaitTime = 10 -- Maximum 10 seconds
+		local startTime = tick()
+
+		local function waitForCharacter()
+			-- Check if character exists and has humanoid
+			if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+				-- Character spawned, now hide menu completely
+				screenGui:Destroy()
+				-- Restore CoreGui after play
+				StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+				-- Keep the default leaderboard hidden after play
+				StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+			elseif tick() - startTime > maxWaitTime then
+				-- Timeout reached, hide menu anyway
+				print("Menu timeout - hiding anyway")
+				screenGui:Destroy()
+				StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+				StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+			else
+				-- Check again in a moment
+				task.wait(0.1)
+				waitForCharacter()
+			end
+		end
+
+		-- Start waiting for character spawn
+		spawn(waitForCharacter)
+	end)
+
+	-- Enhanced icon button hover effects
+	for _, btn in {settingsButton, shareButton, shopButton} do
+		btn.MouseEnter:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
+		end)
+
+		btn.MouseLeave:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
+		end)
+	end
+
+	-- Settings button opens settings panel
+	settingsButton.MouseButton1Click:Connect(function()
+		openSettingsPanel()
+	end)
+
+	-- Shop button opens shop UI
+	shopButton.MouseButton1Click:Connect(function()
+		-- Wait for the shop to be loaded
+		task.wait(0.1)
+		if _G.ShowShop then
+			_G.ShowShop()
+			-- Hide the menu when shop opens
+			screenGui.Enabled = false
+		else
+			warn("Shop system not loaded yet. Please try again.")
+		end
+	end)
+
+	-- Share button opens share panel
+	shareButton.MouseButton1Click:Connect(function()
+		openSharePanel()
+	end)
+
+	-- Parent the menu to the player's PlayerGui
+	screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	-- Block controls and CoreGui until play is pressed
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+end
+
+-- Show menu on join
+createMenu(function()
+	requestRespawn()
+end)
+
+-- Enhanced death handling with better menu timing
+local function onCharacterAdded(character)
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.Died:Connect(function()
+			-- Wait a moment before showing the menu
+			task.wait(1.5)
+			-- Show the menu again for respawn
+			createMenu(function()
+				requestRespawn()
+			end)
+		end)
+	end
+end
+
+if LocalPlayer.Character then
+	onCharacterAdded(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+-- Enhanced performance monitoring
+task.spawn(function()
+	while true do
+		task.wait(30)
+		-- Clean up any orphaned GUI elements
+		for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+			if gui.Name == "SlitherIOMenu" and not gui.Parent then
+				gui:Destroy()
+			end
+		end
+	end
+end)
+
+print("🎮 Dark Slither.IO Menu V3.0 Loaded - Sleek & Reliable!")
