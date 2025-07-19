@@ -759,6 +759,19 @@ local function createUltraSmoothSnake(character)
 		rootPart.Size = Vector3.new(0.05, 0.05, 0.05)  -- Make it tiny
 		rootPart.CastShadow = false
 		
+		-- DISABLE ROOT OUTLINE!
+		pcall(function()
+			rootPart.RootPriority = 0  -- Disable root outline
+			humanoid.RootPart = nil    -- Try removing humanoid root reference
+		end)
+		
+		-- Try to disable any outline-related properties
+		pcall(function()
+			rootPart.OutlineTransparency = 1
+			rootPart.SelectionBoxEnabled = false
+			rootPart.SelectionOutlineEnabled = false
+		end)
+
 		-- Remove ALL visual children from rootPart
 		for _, child in rootPart:GetChildren() do
 			if child:IsA("Decal") or child:IsA("Texture") or child:IsA("SurfaceGui") or 
