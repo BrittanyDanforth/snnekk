@@ -411,17 +411,28 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- POSITION EYES DIRECTLY ON HEAD SIDES
+	-- POSITION EYES FLUSH ON HEAD
 	local headRadius = headPart.Size.X / 2
 	local eyeRadius = leftEye.Size.X / 2
 	
-	-- Calculate exact surface position
-	-- Eyes should be at head radius minus half eye size to sit ON surface
-	local surfaceDistance = headRadius - eyeRadius * 0.7
+	-- Eyes embedded into head surface
+	local embedDepth = eyeRadius * 0.6  -- Embed 60% of eye into head
+	local surfaceDistance = headRadius - embedDepth
 	
-	-- Position directly on the sides (90 degrees)
-	leftEye.CFrame = headPart.CFrame * CFramenew(-surfaceDistance, 0, 0)
-	rightEye.CFrame = headPart.CFrame * CFramenew(surfaceDistance, 0, 0)
+	-- Slight forward angle for slither.io look
+	local angleForward = math.rad(30)  -- 30 degrees forward
+	local angleSide = math.rad(45)     -- 45 degrees to side
+	
+	-- Position with forward-side angle
+	leftEye.CFrame = headPart.CFrame * 
+		CFrame.Angles(0, -angleSide, 0) * 
+		CFrame.Angles(-angleForward, 0, 0) * 
+		CFramenew(0, 0, -surfaceDistance)
+		
+	rightEye.CFrame = headPart.CFrame * 
+		CFrame.Angles(0, angleSide, 0) * 
+		CFrame.Angles(-angleForward, 0, 0) * 
+		CFramenew(0, 0, -surfaceDistance)
 	
 	-- Position pupils on eyes
 	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.5)
@@ -894,10 +905,25 @@ local function createUltraSmoothSnake(character)
 		local headOffset = lookVector * 1.5
 		local headPos = currentPos + headOffset
 
-		-- Create head after 3 frames to prevent flash
-		if not headParts and framesSinceSpawn == 3 then
-			headParts = createVisualHead(rootPart, activeConfig, snakeModel)
+			-- Create head after 3 frames to prevent flash
+	if not headParts and framesSinceSpawn == 3 then
+		-- Clean up any duplicate heads first
+		for _, child in pairs(snakeModel:GetChildren()) do
+			if child.Name == "SnakeHead" and child ~= rootPart then
+				child:Destroy()
+			end
 		end
+		
+		-- Clean up any stray eyes
+		for _, child in pairs(workspace:GetDescendants()) do
+			if (child.Name == "Eye1" or child.Name == "Eye2" or child.Name == "Pupil1" or child.Name == "Pupil2") and
+			   not child:IsDescendantOf(snakeModel) then
+				child:Destroy()
+			end
+		end
+		
+		headParts = createVisualHead(rootPart, activeConfig, snakeModel)
+	end
 
 		-- Remove RootOutline if it exists (Roblox creates this automatically)
 		if rootPart:FindFirstChild("RootOutline") then
