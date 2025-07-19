@@ -333,6 +333,7 @@
 				humanoid.JumpPower = 0
 				humanoid.JumpHeight = 0
 				humanoid.AutoRotate = false
+				humanoid.PlatformStand = true -- Prevent physics interference
 
 				-- Keep rootPart invisible but functional for orb collection
 				rootPart.Transparency = 1
@@ -539,7 +540,8 @@
 			local updateCounter = 0
 			local networkUpdateInterval = 1 -- Update EVERY frame for butter smooth movement
 
-			heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
+			-- Use RenderStepped for SMOOTH visual movement
+			heartbeatConnection = RunService.RenderStepped:Connect(function(dt)
 				if not rootPart or not rootPart.Parent then
 					cleanupSnake()
 					return
@@ -580,11 +582,15 @@
 				local speedRate = 15 * dt -- Consistent smooth acceleration
 				State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
-				-- Apply movement
+				-- Apply movement with INTERPOLATION for smoothness
 				local moveDistance = State.smoothSpeed * dt
-				local newPosition = rootPart.Position + State.currentDirection * moveDistance
+				local targetPosition = rootPart.Position + State.currentDirection * moveDistance
+				
+				-- Smooth interpolation to prevent choppy movement
+				local smoothFactor = math.min(dt * 60, 1) -- 60 FPS as baseline
+				local newPosition = rootPart.Position:Lerp(targetPosition, smoothFactor)
 
-				-- Update position and rotation
+				-- Update position and rotation smoothly
 				rootPart.CFrame = CFrame.lookAt(newPosition, newPosition + State.currentDirection)
 
 				-- Record path point (throttled)
