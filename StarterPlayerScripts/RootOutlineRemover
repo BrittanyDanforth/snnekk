@@ -2,10 +2,9 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local processedObjects = {} -- Cache to avoid re-checking same objects
+local processedObjects = {}
 
 local function removeRootOutline()
-    -- Only check player's own character (most important)
     local character = player.Character
     if character then
         local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -14,7 +13,7 @@ local function removeRootOutline()
             local rootOutline = rootPart:FindFirstChild("RootOutline")
             if rootOutline then
                 rootOutline:Destroy()
-                return -- Found and removed, no need to continue
+                return true -- Found and removed
             end
             
             -- Check only direct children of rootPart
@@ -27,44 +26,59 @@ local function removeRootOutline()
             end
         end
     end
+    return false
 end
 
--- Initial aggressive removal (only for 2 seconds)
-local startTime = tick()
-local initialConnection
-initialConnection = RunService.Heartbeat:Connect(function()
-    if tick() - startTime > 2 then
-        initialConnection:Disconnect()
-        initialConnection = nil
-    else
-        removeRootOutline()
+-- INSTANT removal on character spawn (before it's even visible)
+player.CharacterAdded:Connect(function(character)
+    -- Don't wait at all - check immediately
+    local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+    if rootPart then
+        -- Connect to ChildAdded to catch RootOutline AS SOON as it's created
+        local childConnection
+        childConnection = rootPart.ChildAdded:Connect(function(child)
+            if child.Name == "RootOutline" or child:IsA("SelectionBox") or child:IsA("Highlight") then
+                child:Destroy()
+            end
+        end)
+        
+        -- Aggressive checking for first 0.5 seconds (10 checks)
+        for i = 1, 10 do
+            removeRootOutline()
+            if i < 10 then
+                RunService.Heartbeat:Wait() -- Wait just one frame
+            end
+        end
+        
+        -- Disconnect the ChildAdded after initial spawn
+        wait(0.5)
+        if childConnection then
+            childConnection:Disconnect()
+        end
     end
 end)
 
--- Then check less frequently (every 0.5 seconds)
+-- Initial aggressive removal for existing character
+if player.Character then
+    for i = 1, 5 do
+        removeRootOutline()
+        RunService.Heartbeat:Wait()
+    end
+end
+
+-- Regular cleanup (less frequent)
 task.spawn(function()
-    wait(2.1) -- Wait for initial phase to end
+    wait(1) -- Wait for initial checks
     while true do
         removeRootOutline()
         wait(0.5) -- Check twice per second
     end
 end)
 
--- Clean cache periodically to prevent memory buildup
+-- Clean cache periodically
 task.spawn(function()
     while true do
-        wait(30) -- Every 30 seconds
+        wait(30)
         processedObjects = {}
-    end
-end)
-
--- Check when character spawns
-player.CharacterAdded:Connect(function(character)
-    wait(0.1)
-    removeRootOutline()
-    -- Extra checks for spawn
-    for i = 1, 5 do
-        wait(0.1)
-        removeRootOutline()
     end
 end)
