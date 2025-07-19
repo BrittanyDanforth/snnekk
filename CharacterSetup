@@ -355,23 +355,16 @@ local function createVisualHead(rootPart, config, parentModel)
 		eye.Massless = true  -- Make eyes massless
 		eye.CastShadow = false  -- No shadows for performance
 		eye.Parent = parent
+				-- Position FIRST, then weld
 		eye.CFrame = parent.CFrame * CFramenew(position)
-
-		-- USE WELDS to keep eyes attached
+		
+		-- Create weld AFTER positioning
 		local weld = Instance.new("WeldConstraint")
 		weld.Part0 = parent
 		weld.Part1 = eye
 		weld.Parent = parent
 		
-		-- Also create a rigid attachment for extra stability
-		local attachment0 = Instance.new("Attachment", parent)
-		local attachment1 = Instance.new("Attachment", eye)
-		attachment1.Position = Vector3.new(0, 0, 0)
-		
-		local rigidConstraint = Instance.new("RigidConstraint")
-		rigidConstraint.Attachment0 = attachment0
-		rigidConstraint.Attachment1 = attachment1
-		rigidConstraint.Parent = parent
+		-- No rigid constraint - it was causing conflicts!
 
 		return eye, weld
 	end
@@ -400,8 +393,8 @@ local function createVisualHead(rootPart, config, parentModel)
 		return pupil, weld
 	end
 
-	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.6, 0.55, 0.8), headPart)
-	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.6, 0.55, 0.8), headPart)
+	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.8, 0.3, 0.8), headPart)
+	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.8, 0.3, 0.8), headPart)
 	local leftPupil, leftPupilWeld = createPupil("LeftPupil", Vector3new(0, 0, -0.2), leftEye)
 	local rightPupil, rightPupilWeld = createPupil("RightPupil", Vector3new(0, 0, -0.2), rightEye)
 
