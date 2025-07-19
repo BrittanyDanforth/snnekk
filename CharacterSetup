@@ -393,8 +393,8 @@ local function createVisualHead(rootPart, config, parentModel)
 		return pupil, weld
 	end
 
-	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.8, 0.3, 0.8), headPart)
-	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.8, 0.3, 0.8), headPart)
+	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.5, 0.3, 0.8), headPart)
+	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.5, 0.3, 0.8), headPart)
 	local leftPupil, leftPupilWeld = createPupil("LeftPupil", Vector3new(0, 0, -0.2), leftEye)
 	local rightPupil, rightPupilWeld = createPupil("RightPupil", Vector3new(0, 0, -0.2), rightEye)
 
@@ -848,13 +848,13 @@ local function createUltraSmoothSnake(character)
 				-- Only update eye positions every 15 frames for stability (ignore boost state)
 				if updateCounter % 15 == 0 or currentLength < 500 then
 					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-					-- Fixed spacing - constant base + scale growth
-					local eyeSpacing = 0.8  -- Base spacing that doesn't shrink
+					-- Dynamic spacing - starts tight, spreads with growth
+					local eyeSpacing = 0.5 + (scaleFactor - 1) * 0.3  -- Starts at 0.5, grows to ~0.8
 					local eyeForward = 0.8 * scaleFactor  -- Near front of head
 					local eyeUp = 0.3 * scaleFactor  -- Good height
 					
-					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing * scaleFactor, eyeUp, eyeForward)
-					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing * scaleFactor, eyeUp, eyeForward)
+					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
+					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
 				end
 				
 				-- LOD: Hide pupils for massive snakes
