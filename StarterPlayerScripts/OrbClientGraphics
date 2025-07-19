@@ -124,18 +124,36 @@ local function adjustSnakeGlows(mode)
 			local parent = obj.Parent
 			-- Check if parent is a snake segment
 			if parent and parent:IsA("BasePart") then
-				-- Simple checks
-				local isSnakeSegment = parent:GetAttribute("IsSnakeSegment")
-				local isAIHead = parent.Name == "AISnakeHead"
+				local isSnakePart = false
 				
-				-- Check if part of SnakeModel (player snakes)
-				local snakeModel = parent.Parent
-				local isInSnakeModel = snakeModel and snakeModel:GetAttribute("IsSnakeModel")
+				-- Check 1: Has IsSnakeSegment attribute
+				if parent:GetAttribute("IsSnakeSegment") then
+					isSnakePart = true
+				end
 				
-				-- Check if part of AISnake model
-				local isInAISnake = snakeModel and snakeModel.Name == "AISnake"
+				-- Check 2: Is AISnakeHead
+				if parent.Name == "AISnakeHead" then
+					isSnakePart = true
+				end
 				
-				if isSnakeSegment or isAIHead or isInSnakeModel or isInAISnake then
+				-- Check 3: Parent model check
+				local model = parent.Parent
+				if model and model:IsA("Model") then
+					-- Player snake models: SnakeModel_[UserId]
+					if model.Name:match("^SnakeModel_") then
+						isSnakePart = true
+					end
+					-- AI snake models: AISnakeModel_[id]
+					if model.Name:match("^AISnakeModel_") then
+						isSnakePart = true
+					end
+					-- Also check if model has IsSnakeModel attribute
+					if model:GetAttribute("IsSnakeModel") then
+						isSnakePart = true
+					end
+				end
+				
+				if isSnakePart then
 					glowsFound = glowsFound + 1
 					
 					-- Store original values
