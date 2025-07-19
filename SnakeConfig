@@ -1,0 +1,34 @@
+-- Global SnakeConfig for both Player and AI snakes This is a ModuleScript inside ReplicatedStorage
+
+return {
+    -- SNAKE DIMENSIONS
+    HeadSize = Vector3.new(3, 3, 3),
+    SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+    SegmentSpacing = 2.2, -- Adjusted for perfect connection
+
+    -- BODY SETTINGS
+    InitialLength = 35,
+    MaxSegments = 2000,
+
+    -- ENHANCED COLORS
+    HeadColor = Color3.fromRGB(57, 255, 20),
+    BodyColors = {
+        Color3.fromRGB(57, 255, 20),
+        Color3.fromRGB(45, 220, 15),
+        Color3.fromRGB(70, 255, 35),
+    },
+
+    -- MOVEMENT
+    FollowSpeed = 0.95,
+    UpdateRate = 1,
+    MinDistance = 0.02,
+
+    -- MATERIALS
+    HeadMaterial = Enum.Material.ForceField,
+    BodyMaterial = Enum.Material.Neon,
+
+    -- VISUAL ENHANCEMENTS
+    GlowIntensity = 2,
+    GlowRange = 5,
+}
+

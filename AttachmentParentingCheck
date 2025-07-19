@@ -1,0 +1,25 @@
+-- Utility to check and fix Attachment parenting
+-- modulescript inside replicatedstorage
+local function safeParentAttachment(attachment, parent)
+    if parent:IsA("BasePart") or parent:IsA("Attachment") then
+        attachment.Parent = parent
+    else
+        warn("Attempted to parent Attachment to invalid instance:", parent:GetFullName())
+        -- Optionally, find a valid BasePart ancestor
+        local ancestor = parent
+        while ancestor and not ancestor:IsA("BasePart") do
+            ancestor = ancestor.Parent
+        end
+        if ancestor then
+            attachment.Parent = ancestor
+            warn("Attachment parented to nearest BasePart ancestor:", ancestor:GetFullName())
+        else
+            warn("No valid BasePart ancestor found for Attachment.")
+        end
+    end
+end
+
+return {
+    safeParentAttachment = safeParentAttachment
+}
+
