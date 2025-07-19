@@ -341,7 +341,23 @@ local function createVisualHead(rootPart, config, parentModel)
 	headOutline.Transparency = 1
 	headOutline.Parent = headPart
 
-		-- Use GoogleyEyes from ReplicatedStorage
+	-- Check if eyes already exist (prevent duplicates)
+	local existingLeftEye = headPart:FindFirstChild("Eye1")
+	local existingRightEye = headPart:FindFirstChild("Eye2")
+	if existingLeftEye and existingRightEye then
+		-- Eyes already exist, just return references
+		return {
+			head = headPart,
+			headLight = headLight,
+			headOutline = headOutline,
+			leftEye = existingLeftEye,
+			rightEye = existingRightEye,
+			leftPupil = headPart:FindFirstChild("Pupil1"),
+			rightPupil = headPart:FindFirstChild("Pupil2"),
+		}
+	end
+
+	-- Use GoogleyEyes from ReplicatedStorage
 	local GoogleyEyes = ReplicatedStorage:WaitForChild("GoogleyEyes")
 	
 	-- Clone the GoogleyEyes model
@@ -395,21 +411,17 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- POSITION EYES ON HEAD SURFACE
+	-- POSITION EYES DIRECTLY ON HEAD SIDES
 	local headRadius = headPart.Size.X / 2
-	local angleOffset = math.rad(40)  -- Slightly more to the sides
+	local eyeRadius = leftEye.Size.X / 2
 	
-	-- Position at head surface
-	local eyeRadius = leftEye.Size.X / 2  
-	local surfaceRadius = headRadius * 0.8  -- 80% out from center
+	-- Calculate exact surface position
+	-- Eyes should be at head radius minus half eye size to sit ON surface
+	local surfaceDistance = headRadius - eyeRadius * 0.7
 	
-	-- Calculate positions on the curved surface
-	local leftPos = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
-	local rightPos = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
-	
-	-- CRITICAL: Set CFrame relative to head
-	leftEye.CFrame = headPart.CFrame * leftPos
-	rightEye.CFrame = headPart.CFrame * rightPos
+	-- Position directly on the sides (90 degrees)
+	leftEye.CFrame = headPart.CFrame * CFramenew(-surfaceDistance, 0, 0)
+	rightEye.CFrame = headPart.CFrame * CFramenew(surfaceDistance, 0, 0)
 	
 	-- Position pupils on eyes
 	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.5)
@@ -442,6 +454,16 @@ local function createVisualHead(rootPart, config, parentModel)
 	
 	-- Clean up the GoogleyEyes model
 	eyesModel:Destroy()
+	
+	-- FINAL CHECK: Make sure eyes are actually on the head
+	if (leftEye.Position - headPart.Position).Magnitude > headPart.Size.X then
+		warn("Eyes too far from head, repositioning...")
+		-- Force eyes to head surface
+		local angle = math.rad(40)
+		local radius = headPart.Size.X / 2 * 0.9
+		leftEye.CFrame = headPart.CFrame * CFrame.Angles(0, -angle, 0) * CFramenew(0, 0, -radius)
+		rightEye.CFrame = headPart.CFrame * CFrame.Angles(0, angle, 0) * CFramenew(0, 0, -radius)
+	end
 
 	return {
 		head = headPart,
