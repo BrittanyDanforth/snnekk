@@ -590,42 +590,18 @@ local function createUltraSmoothSnake(character)
 				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
 				local color = activeConfig.BodyColors[colorIndex]
 				
-				-- Spawn new segment at the END of the tail using history
-				local newPos
-				if currentLength > 1 then
-					-- Calculate where the new segment should be based on the tail's history position
-					local tailDelay = mathFloor((currentLength - 1) * 0.9)
-					-- Use the same adaptive multiplier as in movement
-					local delayMultiplier = 0.9
-					if currentLength > 1000 then
-						delayMultiplier = 0.7
-					elseif currentLength > 500 then
-						delayMultiplier = 0.8
-					end
-					tailDelay = mathMin(mathFloor((currentLength - 1) * delayMultiplier), 800)
-					
-					local tailHistoryData = getFromHistory(tailDelay + 5) -- Add extra delay for new segment
-					if tailHistoryData then
-						newPos = tailHistoryData.position
-					else
-						-- Fallback: place behind last segment
-						local lastSegment = segments[currentLength - 1]
-						if lastSegment and lastSegment.Parent then
-							local dir = lastSegment.CFrame.LookVector
-							newPos = lastSegment.Position - dir * activeConfig.SegmentSpacing
-						else
-							newPos = rootPart.Position
-						end
-					end
-				else
-					newPos = rootPart.Position
-				end
+				-- Get the last segment position for new segment
+				local lastSegment = segments[currentLength - 1]
+				local newPos = lastSegment and lastSegment.Position or rootPart.Position
 				
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 
+				-- Start invisible and small
 				segment.Transparency = 1
 				segment.Size = Vector3new(0.05, 0.05, 0.05)
+				
+				-- Smooth growth animation
 				taskSpawn(function()
 					local growTime = 0.15
 					local t = 0
@@ -779,9 +755,10 @@ local function createUltraSmoothSnake(character)
 				currentLength = currentLength + 1
 				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
 				local color = activeConfig.BodyColors[colorIndex]
-				-- Create segment spread out behind the head
-				local segmentPos = headPos - lookVector * (currentLength * activeConfig.SegmentSpacing * 0.8)
-				local segment = createSegment(currentLength, segmentPos, color, activeConfig, snakeModel)
+				
+				-- Like reference: create segment behind based on count
+				local pos = rootPart.Position - rootPart.CFrame.LookVector * (currentLength * activeConfig.SegmentSpacing)
+				local segment = createSegment(currentLength, pos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 			end
 
@@ -811,19 +788,14 @@ local function createUltraSmoothSnake(character)
 					-- Special handling for first segment to prevent detachment
 
 					-- POSITION CALCULATION
-					-- Adaptive delay based on snake length to prevent tail lag
-					local delayMultiplier = 0.9
-					if currentLength > 1000 then
-						delayMultiplier = 0.7 -- Tighter following for very long snakes
-					elseif currentLength > 500 then
-						delayMultiplier = 0.8
-					end
-					local delay = (i == 1) and 1 or mathFloor(i * delayMultiplier)
-					-- CAP THE DELAY to prevent tail from lagging too far behind
-					delay = mathMin(delay, 800) -- Maximum 800 frames of delay
+					-- Use fixed delay multiplier for stable tail behavior
+					local delay = mathFloor(i * 1.15)  -- Like reference code
+					-- Still cap it to prevent issues
+					delay = mathMin(delay, maxHistorySize - 10)
+					
 					local targetData = getFromHistory(delay)
 					if targetData then
-						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.05)
+						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08) -- Changed from 0.05 to 0.08
 						local currentSegmentPos = segment.Position
 
 						-- HARD LIMIT ON STRETCHING WHEN BOOSTING OR EATING
