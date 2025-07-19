@@ -589,8 +589,38 @@ local function createUltraSmoothSnake(character)
 				currentLength = currentLength + 1
 				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
 				local color = activeConfig.BodyColors[colorIndex]
-				local lastSegment = segments[#segments]
-				local newPos = lastSegment and lastSegment.Position or rootPart.Position
+				
+				-- Spawn new segment at the END of the tail using history
+				local newPos
+				if currentLength > 1 then
+					-- Calculate where the new segment should be based on the tail's history position
+					local tailDelay = mathFloor((currentLength - 1) * 0.9)
+					-- Use the same adaptive multiplier as in movement
+					local delayMultiplier = 0.9
+					if currentLength > 1000 then
+						delayMultiplier = 0.7
+					elseif currentLength > 500 then
+						delayMultiplier = 0.8
+					end
+					tailDelay = mathMin(mathFloor((currentLength - 1) * delayMultiplier), 800)
+					
+					local tailHistoryData = getFromHistory(tailDelay + 5) -- Add extra delay for new segment
+					if tailHistoryData then
+						newPos = tailHistoryData.position
+					else
+						-- Fallback: place behind last segment
+						local lastSegment = segments[currentLength - 1]
+						if lastSegment and lastSegment.Parent then
+							local dir = lastSegment.CFrame.LookVector
+							newPos = lastSegment.Position - dir * activeConfig.SegmentSpacing
+						else
+							newPos = rootPart.Position
+						end
+					end
+				else
+					newPos = rootPart.Position
+				end
+				
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 
@@ -749,8 +779,9 @@ local function createUltraSmoothSnake(character)
 				currentLength = currentLength + 1
 				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
 				local color = activeConfig.BodyColors[colorIndex]
-				-- Create segment at head position
-				local segment = createSegment(currentLength, headPos, color, activeConfig, snakeModel)
+				-- Create segment spread out behind the head
+				local segmentPos = headPos - lookVector * (currentLength * activeConfig.SegmentSpacing * 0.8)
+				local segment = createSegment(currentLength, segmentPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 			end
 
