@@ -528,16 +528,10 @@ local function createUltraSmoothSnake(character)
 		if part:IsA("BasePart") then
 			part.Transparency = 1
 			part.CanCollide = false
-			-- Also remove any effects that might be visible
-			for _, effect in part:GetChildren() do
-				if effect:IsA("ParticleEmitter") or effect:IsA("Fire") or effect:IsA("Smoke") or 
-				   effect:IsA("Sparkles") or effect:IsA("PointLight") or effect:IsA("SpotLight") or
-				   effect:IsA("SurfaceLight") then
-					effect.Enabled = false
-					effect:Destroy()
-				end
-			end
 		elseif part:IsA("Accessory") or part:IsA("Tool") then
+			part:Destroy()
+		elseif part:IsA("Highlight") then
+			-- Remove any highlight effects that might show outlines
 			part:Destroy()
 		end
 	end
@@ -732,8 +726,17 @@ local function createUltraSmoothSnake(character)
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
 		local lookVector = currentCFrame.LookVector
-		local headOffset = lookVector * 1.5
+		local headOffset = lookVector * 0.8  -- Reduced from 1.5 to bring head closer
 		local headPos = currentPos + headOffset
+		
+		-- Ensure rootPart stays invisible every frame
+		rootPart.Transparency = 1
+		-- Remove any selection box that might be on it
+		for _, child in rootPart:GetChildren() do
+			if child:IsA("SelectionBox") or child:IsA("SelectionSphere") or child:IsA("Highlight") then
+				child:Destroy()
+			end
+		end
 
 		-- Create head after 3 frames to prevent flash
 		if not headParts and framesSinceSpawn == 3 then
