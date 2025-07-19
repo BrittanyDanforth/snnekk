@@ -1,0 +1,70 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local processedObjects = {} -- Cache to avoid re-checking same objects
+
+local function removeRootOutline()
+    -- Only check player's own character (most important)
+    local character = player.Character
+    if character then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            -- Direct check on rootPart children (fastest)
+            local rootOutline = rootPart:FindFirstChild("RootOutline")
+            if rootOutline then
+                rootOutline:Destroy()
+                return -- Found and removed, no need to continue
+            end
+            
+            -- Check only direct children of rootPart
+            for _, child in ipairs(rootPart:GetChildren()) do
+                if (child:IsA("SelectionBox") or child:IsA("Highlight")) and 
+                   not processedObjects[child] then
+                    processedObjects[child] = true
+                    child:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- Initial aggressive removal (only for 2 seconds)
+local startTime = tick()
+local initialConnection
+initialConnection = RunService.Heartbeat:Connect(function()
+    if tick() - startTime > 2 then
+        initialConnection:Disconnect()
+        initialConnection = nil
+    else
+        removeRootOutline()
+    end
+end)
+
+-- Then check less frequently (every 0.5 seconds)
+task.spawn(function()
+    wait(2.1) -- Wait for initial phase to end
+    while true do
+        removeRootOutline()
+        wait(0.5) -- Check twice per second
+    end
+end)
+
+-- Clean cache periodically to prevent memory buildup
+task.spawn(function()
+    while true do
+        wait(30) -- Every 30 seconds
+        processedObjects = {}
+    end
+end)
+
+-- Check when character spawns
+player.CharacterAdded:Connect(function(character)
+    wait(0.1)
+    removeRootOutline()
+    -- Extra checks for spawn
+    for i = 1, 5 do
+        wait(0.1)
+        removeRootOutline()
+    end
+end)
