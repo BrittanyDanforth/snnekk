@@ -41,7 +41,13 @@ local attachOrbTouched
 ---------------------------------------------------------------------
 -- Config
 ---------------------------------------------------------------------
+-- Create OrbCollected RemoteEvent if it doesn't exist
 local OrbCollectedEvent = ReplicatedStorage:FindFirstChild("OrbCollected")
+if not OrbCollectedEvent then
+	OrbCollectedEvent = Instance.new("RemoteEvent")
+	OrbCollectedEvent.Name = "OrbCollected"
+	OrbCollectedEvent.Parent = ReplicatedStorage
+end
 
 local ORB_SPAWN_INTERVAL  = 0.5
 local ORB_MAX             = 850
