@@ -642,9 +642,9 @@ local function createUltraSmoothSnake(character)
 				local growthFactor = 1
 				if currentLength > 200 then
 					-- Same uniform growth as all other segments
-					growthFactor = 1 + ((currentLength - 200) / 2800) * 1.5
+					growthFactor = 1 + ((currentLength - 200) / 2800) * 0.6
 				end
-				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
+				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.6)
 				
 				segment.Transparency = 1
 				segment.Size = Vector3new(0.05, 0.05, 0.05)
@@ -797,14 +797,14 @@ local function createUltraSmoothSnake(character)
 			
 			-- Dynamic head sizing - same growth as body segments
 			if updateCounter % 20 == 0 and currentLength > 200 then
-				local headGrowth = 1 + ((currentLength - 200) / 2800) * 1.5  -- Match body growth
-				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.5)
+				local headGrowth = 1 + ((currentLength - 200) / 2800) * 0.6  -- Match body growth
+				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 1.6)
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 				
 				-- Scale eyes proportionally to prevent them getting "sucked in"
 				if headParts.leftEye and headParts.rightEye then
 					local eyeScale = headGrowth  -- Eyes grow same as head now
-					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 2.5)
+					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 1.6)
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 					
@@ -815,7 +815,7 @@ local function createUltraSmoothSnake(character)
 					
 					-- Scale pupils too
 					if headParts.leftPupil and headParts.rightPupil then
-						local targetPupilSize = Vector3new(0.25, 0.25, 0.25) * mathMin(eyeScale, 2.5)
+						local targetPupilSize = Vector3new(0.25, 0.25, 0.25) * mathMin(eyeScale, 1.6)
 						headParts.leftPupil.Size = headParts.leftPupil.Size:Lerp(targetPupilSize, 0.15)
 						headParts.rightPupil.Size = headParts.rightPupil.Size:Lerp(targetPupilSize, 0.15)
 					end
@@ -926,11 +926,11 @@ local function createUltraSmoothSnake(character)
 							-- ALL segments grow UNIFORMLY like real slither.io
 							if currentLength > 200 then
 								-- Uniform growth for ALL segments based on total length
-								-- More aggressive growth curve for 3000 max
-								growthFactor = 1 + ((currentLength - 200) / 2800) * 1.5  -- Up to 150% at 3000
+								-- Balanced growth curve - not too thick
+								growthFactor = 1 + ((currentLength - 200) / 2800) * 0.6  -- Up to 60% at 3000
 							end
 							
-							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
+							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.6)
 							-- Smooth size transition
 							segment.Size = segment.Size:Lerp(targetSize, 0.15)
 						end
