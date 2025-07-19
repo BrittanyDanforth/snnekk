@@ -813,22 +813,20 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- LOD OPTIMIZATION: More aggressive for LONG snakes
+				-- SLITHER.IO OPTIMIZATION: Update key segments more often
+				local isKeySegment = (i % 5 == 1) or (i <= 30) -- Every 5th OR first 30
 				local updateFrequency = 1
-				if i > 100 then
-					updateFrequency = 2
-				end
-				if i > 300 then
-					updateFrequency = 3
-				end
-				if i > 600 then
-					updateFrequency = 4
-				end
-				if i > 1000 then
-					updateFrequency = 6 -- Much less frequent for tail
-				end
-				if i > 1500 then
-					updateFrequency = 8 -- Very rare updates for far tail
+				
+				if not isKeySegment then
+					-- Non-key segments update less
+					if i > 100 then updateFrequency = 3 end
+					if i > 500 then updateFrequency = 5 end
+					if i > 1000 then updateFrequency = 8 end
+				else
+					-- Key segments still have LOD
+					if i > 500 then updateFrequency = 2 end
+					if i > 1000 then updateFrequency = 3 end
+					if i > 1500 then updateFrequency = 4 end
 				end
 
 				if updateCounter % updateFrequency == 0 then
