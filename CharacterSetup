@@ -509,11 +509,12 @@ local function createUltraSmoothSnake(character)
 		activeConfig.HeadColor = Config.HeadColor -- Fallback to default
 	end
 
+	-- Find leaderstats for length tracking
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
 		local lengthValue = leaderstats:FindFirstChild("Length")
 		if lengthValue then
-			lengthValue.Value = activeConfig.InitialLength
+			lengthValue.Value = 0  -- Start at 0, will update as segments spawn
 		end
 	end
 
@@ -545,7 +546,7 @@ local function createUltraSmoothSnake(character)
 	-- Don't create visual parts yet
 	local headParts = nil
 	local segments = {}
-	local currentLength = activeConfig.InitialLength
+	local currentLength = 0  -- Start at 0 so segments are created during spawn
 	local targetLength = activeConfig.InitialLength
 
 	-- OPTIMIZATION: Limited size position history with circular buffer
@@ -576,6 +577,11 @@ local function createUltraSmoothSnake(character)
 		end
 		
 		return positionHistory[idx] or { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
+	end
+	
+	-- Initialize position history with spawn position
+	for i = 1, 50 do
+		addToHistory({ position = rootPart.Position, lookVector = rootPart.CFrame.LookVector })
 	end
 
 	local connections = {}
@@ -780,9 +786,9 @@ local function createUltraSmoothSnake(character)
 		local currentTime = tick()
 
 		-- GRADUAL SEGMENT CREATION TO PREVENT FLASH AND LAG
-		if currentLength < targetLength and framesSinceSpawn > 5 then
-			-- Add 3 segments per frame until we reach target
-			local segmentsToAdd = math.min(3, targetLength - currentLength)
+		if currentLength < targetLength and framesSinceSpawn > 1 then
+			-- Add 5 segments per frame until we reach target (faster spawn)
+			local segmentsToAdd = math.min(5, targetLength - currentLength)
 			for j = 1, segmentsToAdd do
 				currentLength = currentLength + 1
 				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
@@ -790,6 +796,11 @@ local function createUltraSmoothSnake(character)
 				-- Create segment at head position
 				local segment = createSegment(currentLength, headPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
+			end
+			
+			-- Debug: Print spawn progress
+			if currentLength % 10 == 0 or currentLength == targetLength then
+				print(string.format("🐍 Spawn progress: %d/%d segments", currentLength, targetLength))
 			end
 
 			-- Update length display
