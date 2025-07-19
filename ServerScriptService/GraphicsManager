@@ -1,0 +1,37 @@
+--[[
+GRAPHICS MANAGER SERVER SCRIPT
+Handles graphics mode changes from clients
+--]]
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Create RemoteEvent for graphics mode changes
+local setGraphicsModeEvent = Instance.new("RemoteEvent")
+setGraphicsModeEvent.Name = "SetGraphicsMode"
+setGraphicsModeEvent.Parent = ReplicatedStorage
+
+-- Handle graphics mode changes
+setGraphicsModeEvent.OnServerEvent:Connect(function(player, mode)
+	-- Validate the mode
+	local validModes = {"Low", "Medium", "High"}
+	if not table.find(validModes, mode) then
+		warn("Invalid graphics mode:", mode)
+		return
+	end
+	
+	-- Set the attribute on the player
+	player:SetAttribute("GraphicsMode", mode)
+	
+	-- You can add additional server-side logic here
+	-- For example, adjusting render distance or effects based on mode
+	
+	print(player.Name .. " changed graphics mode to: " .. mode)
+end)
+
+-- Set default graphics mode for new players
+Players.PlayerAdded:Connect(function(player)
+	if not player:GetAttribute("GraphicsMode") then
+		player:SetAttribute("GraphicsMode", "High")
+	end
+end)
