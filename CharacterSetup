@@ -382,12 +382,14 @@ local function createVisualHead(rootPart, config, parentModel)
 	
 	-- CURVED WRAP POSITIONING - Eyes wrap around the spherical head
 	local headRadius = headPart.Size.X / 2
-	local radius = headRadius * 0.85  -- CLOSER to head surface (was 1.15)
+	-- Account for eye thickness - eyes need to be INSIDE the head radius to touch
+	local eyeThickness = leftEye.Size.Z / 2  -- Half the eye thickness
+	local radius = headRadius + eyeThickness * 0.3  -- Just slightly outside to touch surface
 	local angleOffset = math.rad(35)  -- 35 degree wrap around sides
 	
-	-- Calculate curved positions - move closer to eliminate gap
-	local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0.1, -radius)
-	local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0.1, -radius)
+	-- Calculate curved positions - FLUSH against head
+	local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -radius)
+	local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -radius)
 	
 	leftEye.CFrame = headPart.CFrame * leftEyeOffset
 	rightEye.CFrame = headPart.CFrame * rightEyeOffset
@@ -871,16 +873,18 @@ local function createUltraSmoothSnake(character)
 				
 				-- CURVED WRAP POSITIONING - Eyes wrap around the spherical head
 				local headRadius = headParts.head.Size.X / 2
-				local radius = headRadius * 0.85  -- CLOSER to head surface to eliminate gap
+				-- Account for eye thickness to eliminate gap
+				local eyeThickness = headParts.leftEye.Size.Z / 2
+				local radius = headRadius + eyeThickness * 0.3  -- Touch surface perfectly
 				
 				-- Dynamic angle for bigger heads (slightly more wrap)
 				local baseAngle = 35
 				local extraAngle = (scaleFactor - 1) * 5  -- Add up to 5 degrees for large heads
 				local angleOffset = math.rad(baseAngle + extraAngle)
 				
-				-- Calculate curved positions - reduced Y offset for tighter fit
-				local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0.1 * scaleFactor, -radius)
-				local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0.1 * scaleFactor, -radius)
+				-- Calculate curved positions - FLUSH against head
+				local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -radius)
+				local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -radius)
 				
 				-- Update positions with curve wrap
 				headParts.leftEye.CFrame = headParts.head.CFrame * leftEyeOffset
