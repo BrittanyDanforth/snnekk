@@ -380,15 +380,22 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- Set initial positions - PROPERLY ON THE SIDES
-	-- Head radius is about 2.25 (4.5/2), so position at that distance
+	-- CURVED WRAP POSITIONING - Eyes wrap around the spherical head
 	local headRadius = headPart.Size.X / 2
-	leftEye.CFrame = headPart.CFrame * CFramenew(-headRadius * 0.9, 0, 0) * CFrame.Angles(0, math.rad(90), 0)
-	rightEye.CFrame = headPart.CFrame * CFramenew(headRadius * 0.9, 0, 0) * CFrame.Angles(0, math.rad(-90), 0)
+	local radius = headRadius * 1.15  -- Slightly outside for GoogleyEyes thickness
+	local angleOffset = math.rad(35)  -- 35 degree wrap around sides
 	
-	-- Position pupils relative to eyes (adjust for GoogleyEyes orientation)
-	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.1)
-	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.1)
+	-- Calculate curved positions
+	local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0.2, -radius)
+	local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0.2, -radius)
+	
+	leftEye.CFrame = headPart.CFrame * leftEyeOffset
+	rightEye.CFrame = headPart.CFrame * rightEyeOffset
+	
+	-- Pupils slightly inset for realism
+	local pupilDepth = 0.65
+	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -pupilDepth)
+	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -pupilDepth)
 	
 	-- Create welds for eyes
 	local leftEyeWeld = Instance.new("WeldConstraint")
@@ -862,20 +869,28 @@ local function createUltraSmoothSnake(character)
 			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
 				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
 				
-				-- PROPER SIDE POSITIONING - ON THE ACTUAL SIDES OF THE HEAD
+				-- CURVED WRAP POSITIONING - Eyes wrap around the spherical head
 				local headRadius = headParts.head.Size.X / 2
+				local radius = headRadius * 1.15  -- Slightly outside for GoogleyEyes
 				
-				-- Position eyes at 90% of head radius to ensure they're ON the surface
-				local eyeDistance = headRadius * 0.9
+				-- Dynamic angle for bigger heads (slightly more wrap)
+				local baseAngle = 35
+				local extraAngle = (scaleFactor - 1) * 5  -- Add up to 5 degrees for large heads
+				local angleOffset = math.rad(baseAngle + extraAngle)
 				
-				-- Update positions - TRUE SIDE POSITIONING
-				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeDistance, 0, 0) * CFrame.Angles(0, math.rad(90), 0)
-				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeDistance, 0, 0) * CFrame.Angles(0, math.rad(-90), 0)
+				-- Calculate curved positions
+				local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0.2 * scaleFactor, -radius)
+				local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0.2 * scaleFactor, -radius)
 				
-				-- Update pupil positions
+				-- Update positions with curve wrap
+				headParts.leftEye.CFrame = headParts.head.CFrame * leftEyeOffset
+				headParts.rightEye.CFrame = headParts.head.CFrame * rightEyeOffset
+				
+				-- Update pupil positions with proper depth
 				if headParts.leftPupil and headParts.rightPupil then
-					headParts.leftPupil.CFrame = headParts.leftEye.CFrame * CFramenew(0, 0, -0.1)
-					headParts.rightPupil.CFrame = headParts.rightEye.CFrame * CFramenew(0, 0, -0.1)
+					local pupilDepth = 0.65
+					headParts.leftPupil.CFrame = headParts.leftEye.CFrame * CFramenew(0, 0, -pupilDepth)
+					headParts.rightPupil.CFrame = headParts.rightEye.CFrame * CFramenew(0, 0, -pupilDepth)
 				end
 			end
 			
