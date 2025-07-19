@@ -27,7 +27,7 @@ local SnakeSkinsData = {
 		Description = "The original slither.io look!"
 	},
 
-	-- CLASSIC TIER (100-200 coins)
+	-- CLASSIC TIER (Matching ShopUI prices)
 	["Crimson"] = {
 		HeadColor = Color3.fromRGB(255, 20, 20),
 		BodyColors = {
@@ -45,6 +45,7 @@ local SnakeSkinsData = {
 		GlowIntensity = 2.0,
 		GlowRange = 6,
 		Price = 100,
+		RobuxPrice = nil,
 		tag = "Popular",
 		Description = "Blood red serpent of power!"
 	},
@@ -265,7 +266,9 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 2.0,
 		GlowRange = 6,
-		Price = 750,
+		Price = 150,  -- ShopUI says 150, not 750
+		RobuxPrice = nil,
+		tag = nil,
 		Description = "Ice cold and frosty!",
 		VFX = {
 			Type = "Frost",
@@ -290,7 +293,9 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 2.2,
 		GlowRange = 7,
-		Price = 1000,
+		Price = 200,  -- ShopUI price
+		RobuxPrice = nil,
+		tag = "New",
 		Description = "Precious green gemstone!"
 	},
 
@@ -310,7 +315,9 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 1.0,
 		GlowRange = 3,
-		Price = 1250,
+		Price = 1000,  -- ShopUI price
+		RobuxPrice = 25,
+		tag = "Hot",
 		Description = "Darkness incarnate!"
 	},
 
@@ -331,7 +338,9 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 1.5,
 		GlowRange = 5,
-		Price = 800,
+		Price = 2000,  -- ShopUI price
+		RobuxPrice = 45,
+		tag = "Mysterious",
 		Description = "Lurk in the shadows!"
 	},
 
@@ -352,7 +361,9 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 3.0,
 		GlowRange = 10,
-		Price = 10000,
+		Price = 200,  -- ShopUI price
+		RobuxPrice = nil,
+		tag = "Shiny",
 		Description = "Pure gold luxury!",
 		Special = true
 	},
@@ -374,7 +385,9 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 3.0,
 		GlowRange = 10,
-		Price = nil, -- Gamepass only
+		Price = 4500,  -- ShopUI price
+		RobuxPrice = 85,
+		tag = "Electric",
 		GamepassId = 123456789, -- Replace with actual gamepass ID
 		Description = "Strike with lightning speed!",
 		VFX = {
@@ -402,7 +415,7 @@ local SnakeSkinsData = {
 		GlowRange = 12,
 		Price = 8000,
 		RobuxPrice = 150,
-		Tag = "Legendary",
+		tag = "Legendary",
 		Description = "Rise from the ashes like a phoenix!",
 		VFX = {
 			Type = "Fire",
