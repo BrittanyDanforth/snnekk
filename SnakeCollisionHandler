@@ -21,15 +21,13 @@ local ADAPTIVE_LOD_THRESHOLD = 100
 local EXTREME_LENGTH_THRESHOLD = 500
 local CACHE_EXPIRY = 1.0 -- 10x longer cache life
 local YIELD_INTERVAL = 100 -- 4x less yielding
-local NETWORK_COMPENSATION = 0.1 -- 100ms latency buffer
+-- === COLLISION SETTINGS ===
 local COLLISION_FRAME_SKIP = 4 -- Process every 4 frames to reduce lag
-
--- === FIXED COLLISION CONSTANTS ===
-local HEAD_COLLISION_DISTANCE = 3.5 -- Proper head collision distance
-local BODY_COLLISION_DISTANCE = 2.8 -- Proper body collision distance
+local BODY_COLLISION_DISTANCE = 2.8 -- Slightly reduced for accuracy
+local HEAD_COLLISION_DISTANCE = 3.2 -- Reduced from 3.5 for better accuracy
 local MIN_COLLISION_DISTANCE = 2.0 -- Minimum collision distance
 local COLLISION_BUFFER = 0.5 -- Additional buffer for network compensation
-
+local NETWORK_COMPENSATION = 0.3 -- Reduced from higher value
 
 
 -- === DEBUG SYSTEM ===
@@ -1094,29 +1092,45 @@ RunService.Stepped:Connect(function()
 				local dotA = velA:Dot(dirAB)
 				local dotB = velB:Dot(dirBA)
 
-				-- True slither.io head-to-head logic: body-hit detection
-				if dotA > 2 and not (dotB > 2) then
-					-- Player A's head hit Player B's body first
+				-- True slither.io head-to-head logic: size-based winner
+				local lengthA = 0
+				local lengthB = 0
+				
+				-- Get snake lengths
+				if player2SegmentMap[playerA] then
+					local segData = getPlayerSegments(playerA)
+					lengthA = segData and segData.length or 35
+				end
+				if player2SegmentMap[playerB] then
+					local segData = getPlayerSegments(playerB)
+					lengthB = segData and segData.length or 35
+				end
+				
+				-- Size difference determines winner (like real slither.io)
+				local sizeDiff = math.abs(lengthA - lengthB)
+				
+				if sizeDiff < 10 then
+					-- Similar size: both die
 					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Player A dies: %s (dotA: %.2f, dotB: %.2f)", playerA.Name, dotA, dotB))
+						print(string.format("[DEATH] Both die (similar size): %s (%d) and %s (%d)", 
+							playerA.Name, lengthA, playerB.Name, lengthB))
 					end
 					queuePlayerDeath(playerA)
-				elseif dotB > 2 and not (dotA > 2) then
-					-- Player B's head hit Player A's body first
+					queuePlayerDeath(playerB)
+				elseif lengthA > lengthB then
+					-- Player A is bigger, B dies
 					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Player B dies: %s (dotA: %.2f, dotB: %.2f)", playerB.Name, dotA, dotB))
+						print(string.format("[DEATH] Smaller snake dies: %s (%d) < %s (%d)", 
+							playerB.Name, lengthB, playerA.Name, lengthA))
 					end
 					queuePlayerDeath(playerB)
-				elseif dotA > 2 and dotB > 2 then
-					-- Rare simultaneous case: both die
+				else
+					-- Player B is bigger, A dies
 					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Both die simultaneously: %s and %s (dotA: %.2f, dotB: %.2f)", playerA.Name, playerB.Name, dotA, dotB))
+						print(string.format("[DEATH] Smaller snake dies: %s (%d) < %s (%d)", 
+							playerA.Name, lengthA, playerB.Name, lengthB))
 					end
 					queuePlayerDeath(playerA)
-					task.spawn(function()
-						task.wait(0.05)
-						queuePlayerDeath(playerB)
-					end)
 				end
 			end
 		end
@@ -1144,6 +1158,21 @@ RunService.Stepped:Connect(function()
 				if deadAISnakes[aiHead] then
 					continue
 				end
+				
+				-- Check AI invincibility
+				local aiSnake = nil
+				if AISnakeModule and AISnakeModule._activeSnakes then
+					for _, snake in AISnakeModule._activeSnakes do
+						if snake.HeadParts and snake.HeadParts.head == aiHead then
+							aiSnake = snake
+							break
+						end
+					end
+				end
+				
+				if aiSnake and aiSnake.IsInvincible then
+					continue -- Skip if AI is invincible
+				end
 
 				-- Additional safety checks
 				if not head or not head.Parent then
@@ -1152,28 +1181,33 @@ RunService.Stepped:Connect(function()
 
 				local dist = (head.Position - aiHead.Position).Magnitude
 				if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
-					local velPlayer = head.AssemblyLinearVelocity or head.Velocity
-					local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity
-					local dirPlayerToAI = (aiHead.Position - head.Position).Unit
-					local dirAIToPlayer = -dirPlayerToAI
-
-					local dotPlayer = velPlayer:Dot(dirPlayerToAI)
-					local dotAI = velAI:Dot(dirAIToPlayer)
-
-					-- True slither.io head-to-head logic: body-hit detection
-					if dotPlayer > 2 and not (dotAI > 2) then
-						-- Player's head hit AI's body first
+					-- Size-based collision (like player vs player)
+					local playerLength = 35
+					local aiLength = 35
+					
+					-- Get player length
+					if player2SegmentMap[player] then
+						local segData = getPlayerSegments(player)
+						playerLength = segData and segData.length or 35
+					end
+					
+					-- Get AI length
+					if aiSnake then
+						aiLength = aiSnake.CurrentLength or 35
+					end
+					
+					local sizeDiff = math.abs(playerLength - aiLength)
+					
+					if sizeDiff < 10 then
+						-- Similar size: both die
 						queuePlayerDeath(player)
-					elseif dotAI > 2 and not (dotPlayer > 2) then
-						-- AI's head hit Player's body first
 						queueAIDeath(aiHead)
-					elseif dotPlayer > 2 and dotAI > 2 then
-						-- Rare simultaneous case: both die
+					elseif playerLength > aiLength then
+						-- Player is bigger, AI dies
+						queueAIDeath(aiHead)
+					else
+						-- AI is bigger, player dies
 						queuePlayerDeath(player)
-						task.spawn(function()
-							task.wait(0.05)
-							queueAIDeath(aiHead)
-						end)
 					end
 				end
 			end

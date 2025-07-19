@@ -1078,6 +1078,18 @@ function AISnake.new(startPosition)
 	self._personalityType = pType
 
 	self.Model = getOrCreateSnakeModel(tostring(self) .. "_" .. mathRandom(100000,999999))
+	
+	-- SPAWN PROTECTION
+	self.SpawnTime = tick()
+	self.SpawnProtectionDuration = 3 -- 3 seconds of invincibility
+	self.IsInvincible = true
+	
+	-- Set invincibility timer
+	task.spawn(function()
+		task.wait(self.SpawnProtectionDuration)
+		self.IsInvincible = false
+	end)
+
 	for _, obj in self.Model:GetChildren() do
 		obj:Destroy()
 	end
