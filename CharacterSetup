@@ -750,6 +750,25 @@ local function createUltraSmoothSnake(character)
 			end
 		end
 		
+		-- COMPREHENSIVE rootPart hiding
+		rootPart.Transparency = 1
+		rootPart.CanCollide = false
+		rootPart.CanQuery = false
+		rootPart.CanTouch = false
+		rootPart.Material = Enum.Material.Air  -- Most invisible material
+		rootPart.Size = Vector3.new(0.05, 0.05, 0.05)  -- Make it tiny
+		rootPart.CastShadow = false
+		
+		-- Remove ALL visual children from rootPart
+		for _, child in rootPart:GetChildren() do
+			if child:IsA("Decal") or child:IsA("Texture") or child:IsA("SurfaceGui") or 
+			   child:IsA("BillboardGui") or child:IsA("PointLight") or child:IsA("SpotLight") or
+			   child:IsA("SurfaceLight") or child:IsA("ParticleEmitter") or child:IsA("Fire") or
+			   child:IsA("Smoke") or child:IsA("Sparkles") then
+				child:Destroy()
+			end
+		end
+
 		-- Also check workspace for any selection boxes targeting this rootPart
 		if updateCounter % 10 == 0 then  -- Check every 10 frames
 			for _, obj in workspace:GetDescendants() do
@@ -758,6 +777,18 @@ local function createUltraSmoothSnake(character)
 				elseif obj:IsA("Highlight") and obj.Adornee == rootPart then
 					obj:Destroy()
 				end
+			end
+			
+			-- Hide any mesh or special mesh in rootPart
+			local mesh = rootPart:FindFirstChildOfClass("SpecialMesh") or rootPart:FindFirstChildOfClass("Mesh")
+			if mesh then
+				mesh.Scale = Vector3.new(0.01, 0.01, 0.01)
+				mesh.VertexColor = Vector3.new(0, 0, 0)
+			end
+			
+			-- Force shape to Block to avoid any ball outline
+			if rootPart.Shape ~= Enum.PartType.Block then
+				rootPart.Shape = Enum.PartType.Block
 			end
 		end
 
