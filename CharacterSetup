@@ -638,14 +638,11 @@ local function createUltraSmoothSnake(character)
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 
-				-- Dynamic sizing: new segments match the growth pattern
+				-- Dynamic sizing: new segments match uniform growth
 				local growthFactor = 1
 				if currentLength > 200 then
-					-- Base growth for all segments
-					local baseGrowth = (currentLength - 200) / 1000 * 0.4
-					-- Position-based growth for this new segment (tail gets 60% total)
-					local positionGrowth = 0.2 + ((currentLength - 50) / currentLength) * 0.4
-					growthFactor = 1 + baseGrowth + positionGrowth
+					-- Same uniform growth as all other segments
+					growthFactor = 1 + ((currentLength - 200) / 1000) * 0.8
 				end
 				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
 				
@@ -798,10 +795,10 @@ local function createUltraSmoothSnake(character)
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
 			
-			-- Dynamic head sizing based on snake length
+			-- Dynamic head sizing - same growth as body segments
 			if updateCounter % 20 == 0 and currentLength > 200 then
-				local headGrowth = 1 + (currentLength - 200) / 1000 * 0.5  -- Up to 50% larger
-				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 1.5)
+				local headGrowth = 1 + ((currentLength - 200) / 1000) * 0.8  -- Same 80% as body
+				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 1.8)
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 			end
 
@@ -893,22 +890,10 @@ local function createUltraSmoothSnake(character)
 						if updateCounter % 20 == 0 then  -- Update size every 20 frames
 							local growthFactor = 1
 							
-							-- ALL segments grow based on total length, but more growth toward tail
+							-- ALL segments grow UNIFORMLY like real slither.io
 							if currentLength > 200 then
-								-- Base growth for all segments when snake is long
-								local baseGrowth = (currentLength - 200) / 1000 * 0.4  -- Up to 40% for all
-								
-								-- Additional growth based on segment position
-								local positionGrowth = 0
-								-- Head segments (1-50) get 0-20% additional growth
-								if i <= 50 then
-									positionGrowth = (i / 50) * 0.2
-								else
-									-- Body/tail segments get 20-40% additional growth
-									positionGrowth = 0.2 + ((i - 50) / currentLength) * 0.4
-								end
-								
-								growthFactor = 1 + baseGrowth + positionGrowth
+								-- Uniform growth for ALL segments based on total length
+								growthFactor = 1 + ((currentLength - 200) / 1000) * 0.8  -- Up to 80% for ALL
 							end
 							
 							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
