@@ -716,7 +716,7 @@ local function createUltraSmoothSnake(character)
 			headParts.head.CFrame = CFramelookAt(headPos, headPos + lookVector)
 		end
 
-		-- ADD TO HISTORY
+		-- Position history buffer with improved tracking for anti-gap
 		local lastHistoryPoint = getFromHistory(1)
 		local dist = (currentPos - lastHistoryPoint.position).Magnitude
 		if dist > 0.015 then
