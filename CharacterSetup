@@ -740,6 +740,18 @@ local function createUltraSmoothSnake(character)
 		for _, child in rootPart:GetChildren() do
 			if child:IsA("SelectionBox") then
 				child:Destroy()
+			elseif child:IsA("Trail") then
+				-- Remove trail that SnakeMovement adds
+				child:Destroy()
+			elseif child:IsA("Attachment") then
+				-- Remove attachments that SnakeMovement adds
+				child:Destroy()
+			elseif child:IsA("PointLight") then
+				-- Remove light that SnakeMovement adds
+				child:Destroy()
+			elseif child.Name == "HeadGlow" then
+				-- Remove glow part that SnakeMovement adds
+				child:Destroy()
 			end
 		end
 		
@@ -767,12 +779,21 @@ local function createUltraSmoothSnake(character)
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
 			
+			-- Ensure head is visible
+			headParts.head.Transparency = 0
+			
 			-- Ensure eyes stay visible
 			if headParts.leftEye then
 				headParts.leftEye.Transparency = 0
 			end
 			if headParts.rightEye then  
 				headParts.rightEye.Transparency = 0
+			end
+			if headParts.leftPupil then
+				headParts.leftPupil.Transparency = 0
+			end
+			if headParts.rightPupil then
+				headParts.rightPupil.Transparency = 0
 			end
 		end
 
