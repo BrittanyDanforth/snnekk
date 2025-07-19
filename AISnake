@@ -855,13 +855,13 @@ function AISnake:_determineAction()
 	-- Priority 3: Target acquisition (LESS aggressive)
 	local nearestSnake, nearestDist = self:findNearestSnakeHead()
 
-	if nearestSnake and nearestDist < (p.CombatRadius or 60) then
+	if nearestSnake and nearestDist < (p.TargetingRange or 60) then
 		self.TargetSnake = nearestSnake
 	else
 		self.TargetSnake = nil
 	end
 
-	-- Priority 4: Combat decisions (MUCH simpler)
+	-- Priority 4: Combat decisions using behavior weights
 	if self.TargetSnake then
 		local opponentLength
 		if self.TargetSnake.isPlayer then
@@ -874,50 +874,33 @@ function AISnake:_determineAction()
 
 		local targetPos = self.TargetSnake.part.Position
 		local decision = "WANDER"
-
-		-- SIMPLIFIED personality decisions
-		if p.Type == "Aggressor" then
-			if lengthAdvantage > 10 then
-				decision = nearestDist < 30 and "CIRCLE" or "HUNT"
-			elseif lengthAdvantage > -10 then
+		
+		-- Use behavior weights for decisions
+		local weights = p.BehaviorWeights or {}
+		local huntWeight = weights.huntSmaller or 0.5
+		local avoidWeight = weights.avoidThreats or 0.5
+		
+		-- Decision based on weights and length advantage
+		if lengthAdvantage > 20 then
+			-- We're much bigger - hunt aggressively
+			decision = nearestDist < 30 and "CIRCLE" or "HUNT"
+		elseif lengthAdvantage > 0 then
+			-- We're bigger - use hunt weight
+			if mathRandom() < huntWeight then
 				decision = "HUNT"
 			else
+				decision = "WANDER"
+			end
+		elseif lengthAdvantage > -20 then
+			-- Similar size - use avoid weight
+			if mathRandom() < avoidWeight then
 				decision = "FLEE"
-			end
-
-		elseif p.Type == "Hunter" then
-			if lengthAdvantage > 15 then
-				decision = "CIRCLE"
-			elseif lengthAdvantage > 0 then
-				decision = "HUNT"
 			else
-				decision = "FLEE"
+				decision = "WANDER"
 			end
-
-		elseif p.Type == "Scavenger" then
-			if lengthAdvantage > 40 then
-				decision = "HUNT"
-			else
-				decision = "SCAVENGE_WANDER"
-				self.scavengerWanderTime = (self.scavengerWanderTime or 0) + 0.016
-			end
-
-		elseif p.Type == "Coward" then
-			local braveryBonus = self.killCount * 10
-			if lengthAdvantage + braveryBonus > 30 then
-				decision = "CIRCLE"
-			else
-				decision = "FLEE"
-			end
-
-		else -- Trickster, Trapper, Assassin
-			if lengthAdvantage > 5 then
-				decision = nearestDist < 25 and "CIRCLE" or "HUNT"
-			elseif lengthAdvantage > -15 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
+		else
+			-- We're much smaller - flee
+			decision = "FLEE"
 		end
 
 		-- Execute decisions (SIMPLIFIED)
@@ -977,7 +960,7 @@ function AISnake:_determineAction()
 		local distFromCenter = toCenter.Magnitude
 
 		-- SMOOTHER random turning
-		if (now - (self.LastTurn or 0) > p.RandomTurnInterval) then
+		if (now - (self.LastTurn or 0) > (self.RandomTurnInterval or 3.0)) then
 			-- MUCH gentler turns
 			local maxTurn = 30 -- REDUCED from 60
 			self.TargetYaw = self.TargetYaw + mathRad(mathRandom(-maxTurn, maxTurn))
@@ -1431,10 +1414,9 @@ function AISnake:updateMovement(dt)
 		if self.isConfident then statusText = "CONFIDENT" end
 
 		label.Text = string.format("%s\n%s\nL:%d", 
-			p.Type, 
+			self._personalityType or "Unknown", 
 			statusText,
-			self.CurrentLength
-		)
+			self.CurrentLength)
 
 		-- Color coding
 		if state == "FLEE" then
