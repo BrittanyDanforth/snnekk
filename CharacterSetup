@@ -414,10 +414,10 @@ local function createVisualHead(rootPart, config, parentModel)
 	-- SIMPLE DIRECT POSITIONING - NO COMPLEX MATH
 	local headRadius = headPart.Size.X / 2
 	
-	-- Just put the eyes where they should be - on the sides, slightly up and forward
+	-- Just put the eyes where they should be - on the sides, MUCH HIGHER up and forward
 	-- X = side offset, Y = up/down, Z = forward/back
 	local eyeOffset = headRadius * 0.7  -- 70% of head radius
-	local upOffset = headRadius * 0.3   -- 30% up from center
+	local upOffset = headRadius * 0.7   -- 70% UP FROM CENTER - MUCH HIGHER!
 	local forwardOffset = -headRadius * 0.3  -- 30% forward
 	
 	-- LEFT EYE - negative X is left
