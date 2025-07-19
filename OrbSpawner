@@ -435,9 +435,38 @@ end
 -- Head identification helpers (players / AI)
 ---------------------------------------------------------------------
 local function getPlayerFromTouchedPart(part)
+	-- Direct check for HumanoidRootPart
 	for _, h in getPlayerHeads() do
 		if h.part == part then return h.player end
 	end
+	
+	-- Check if part belongs to a player's character
+	local character = part.Parent
+	if character then
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			local player = Players:GetPlayerFromCharacter(character)
+			if player then return player end
+		end
+	end
+	
+	-- Check if it's a snake head or segment
+	if part.Name == "SnakeHead" or part:GetAttribute("IsSnakeSegment") then
+		-- Find the owner player
+		local model = part.Parent
+		while model and model.Parent do
+			local userId = model:GetAttribute("OwnerUserId")
+			if userId then
+				for _, player in Players:GetPlayers() do
+					if player.UserId == userId then
+						return player
+					end
+				end
+			end
+			model = model.Parent
+		end
+	end
+	
 	return nil
 end
 
