@@ -352,13 +352,15 @@ local function createVisualHead(rootPart, config, parentModel)
 		eye.CanQuery = false
 		eye.CanTouch = false
 		eye.Anchored = false
+		eye.Massless = true  -- Make eyes massless
 		eye.Parent = parent
 		eye.CFrame = parent.CFrame * CFramenew(position)
 
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = parent
-		weld.Part1 = eye
-		weld.Parent = parent
+		-- Don't use welds since we're updating position manually
+		-- local weld = Instance.new("WeldConstraint")
+		-- weld.Part0 = parent
+		-- weld.Part1 = eye
+		-- weld.Parent = parent
 
 		return eye, weld
 	end
@@ -833,6 +835,18 @@ local function createUltraSmoothSnake(character)
 		if headParts and headParts.head and headParts.head.Parent then
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
+			
+			-- ALWAYS update eye positions to prevent lag
+			if headParts.leftEye and headParts.rightEye then
+				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
+				local eyeSpacing = 0.6 + (scaleFactor - 1) * 0.15
+				local eyeForward = 0.85 * scaleFactor
+				local eyeUp = 0.55 * scaleFactor
+				
+				-- Update eye positions EVERY FRAME
+				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
+				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
+			end
 
 			-- Dynamic head sizing - same growth as body segments
 			if updateCounter % 20 == 0 and currentLength > 200 then
@@ -840,21 +854,12 @@ local function createUltraSmoothSnake(character)
 				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.2)  -- Match max
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
-				-- Scale eyes proportionally and reposition them
+				-- Scale eyes proportionally
 				if headParts.leftEye and headParts.rightEye then
 					local eyeScale = headGrowth * 0.8  -- Eyes grow slightly less than head
 					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 1.5)
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
-					
-					-- FIX: Better eye positioning with dynamic spacing
-					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-					local eyeSpacing = 0.6 + (scaleFactor - 1) * 0.15  -- Eyes spread apart more as head grows
-					local eyeForward = 0.85 * scaleFactor  -- Keep eyes on surface
-					local eyeUp = 0.55 * scaleFactor
-					
-					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
-					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
 
 					-- Scale pupils too
 					if headParts.leftPupil and headParts.rightPupil then
