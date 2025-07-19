@@ -242,7 +242,7 @@ local function createSimpleSnake(character)
 	
 	-- Position history (simple circular buffer)
 	local positionHistory = {}
-	local historySize = 1000
+	local historySize = 5000  -- Increased for very long snakes
 	local historyIndex = 1
 	
 	-- Initialize history
@@ -407,7 +407,7 @@ local function createSimpleSnake(character)
 		
 		-- Add to history
 		local lastPoint = getFromHistory(1)
-		if (currentPos - lastPoint.position).Magnitude > 0.1 then
+		if (currentPos - lastPoint.position).Magnitude > 0.05 then  -- Record more frequently
 			addToHistory({
 				position = currentPos,
 				lookVector = lookVector
@@ -434,39 +434,32 @@ local function createSimpleSnake(character)
 			end
 		end
 		
-		-- Update segments
+		-- Update segments - SIMPLE VERSION FOR STABILITY
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- Adaptive delay based on snake length
-				local baseDelay = 1.5
-				local lengthFactor = math.min(currentLength / 500, 2) -- Scale up to 2x for very long snakes
-				local delay = math.floor(i * (baseDelay - lengthFactor * 0.3)) -- Reduce spacing as snake gets longer
-				
+				-- Fixed delay based on position
+				local delay = math.floor(i * 1.2)  -- Reduced from 2 for tighter following
 				local targetData = getFromHistory(delay)
 				
 				if targetData then
-					local targetPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.1)
+					-- Just follow the history position
+					local targetPos = targetData.position
 					
-					-- Anti-gap logic for long snakes
-					if i > 1 then
-						local prevSegment = segments[i - 1]
-						if prevSegment and prevSegment.Parent then
-							local gap = (targetPos - prevSegment.Position).Magnitude
-							local maxGap = activeConfig.SegmentSpacing * 1.3
-							
-							-- If gap is too large, pull segment closer
-							if gap > maxGap then
-								local dir = (prevSegment.Position - targetPos).Unit
-								targetPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
-							end
+					-- Only apply anti-stretch to prevent breaking
+					if i > 1 and segments[i-1] and segments[i-1].Parent then
+						local prevPos = segments[i-1].Position
+						local dist = (targetPos - prevPos).Magnitude
+						
+						-- If too far, clamp it
+						if dist > activeConfig.SegmentSpacing * 1.8 then
+							local dir = (targetPos - prevPos).Unit
+							targetPos = prevPos + dir * activeConfig.SegmentSpacing
 						end
 					end
 					
-					-- Simple smooth follow
-					local currentSegPos = segment.Position
-					local newPos = currentSegPos:Lerp(targetPos, activeConfig.FollowSpeed)
-					segment.CFrame = CFramenew(newPos)
+					-- Simple lerp for smoothness
+					segment.CFrame = CFramenew(segment.Position:Lerp(targetPos, 0.88))  -- Reduced for stability
 				end
 			end
 		end
