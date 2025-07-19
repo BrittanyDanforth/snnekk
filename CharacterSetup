@@ -739,6 +739,27 @@ local function createUltraSmoothSnake(character)
 		if not isActive or not rootPart.Parent then return end
 
 		updateCounter = updateCounter + 1
+		
+		-- Remove selection box every frame to ensure it stays gone
+		if rootPart:FindFirstChild("SelectionBox") then
+			rootPart.SelectionBox:Destroy()
+		end
+		for _, child in rootPart:GetChildren() do
+			if child:IsA("SelectionBox") then
+				child:Destroy()
+			end
+		end
+		
+		-- Also check workspace for any selection boxes targeting this rootPart
+		if updateCounter % 10 == 0 then  -- Check every 10 frames
+			for _, obj in workspace:GetDescendants() do
+				if obj:IsA("SelectionBox") and obj.Adornee == rootPart then
+					obj:Destroy()
+				elseif obj:IsA("Highlight") and obj.Adornee == rootPart then
+					obj:Destroy()
+				end
+			end
+		end
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
 		local followSpeed = isBoosting and activeConfig.BoostFollowSpeed or activeConfig.FollowSpeed
