@@ -393,9 +393,9 @@ local function createVisualHead(rootPart, config, parentModel)
 		return pupil, weld
 	end
 
-	-- Move eyes WAY BACK since head is invisible: X=0.6, Y=0.55, Z=-1.5 (negative = back!)
-	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.6, 0.55, -1.5), headPart)
-	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.6, 0.55, -1.5), headPart)
+	-- PERFECT positioning for baby snake: X=0.6, Y=0.55, Z=1.1
+	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.6, 0.55, 1.1), headPart)
+	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.6, 0.55, 1.1), headPart)
 	local leftPupil, leftPupilWeld = createPupil("LeftPupil", Vector3new(0, 0, -0.2), leftEye)
 	local rightPupil, rightPupilWeld = createPupil("RightPupil", Vector3new(0, 0, -0.2), rightEye)
 
@@ -851,7 +851,7 @@ local function createUltraSmoothSnake(character)
 				-- Eyes need to spread out as head grows
 				local eyeSpacing = 0.6 * scaleFactor  -- Scale spacing with head
 				local eyeUp = 0.55 * scaleFactor
-				local eyeForward = -1.5 * scaleFactor  -- NEGATIVE = behind invisible head!
+				local eyeForward = 1.1 * scaleFactor  -- PERFECT position that works!
 
 				-- Update positions relative to head
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
