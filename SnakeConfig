@@ -23,17 +23,13 @@ return {
     SegmentColor = Color3.fromRGB(80, 200, 100), -- For SnakeMovement
 
     -- MOVEMENT SETTINGS
-    FollowSpeed = 0.95,     -- Reverted from 0.96
+    FollowSpeed = 0.95,
     BoostFollowSpeed = 0.99,
-    UpdateRate = 1,         -- Reverted from 30
+    UpdateRate = 1,
     MinDistance = 0.02,
     PathSmoothness = 0.9,   -- Increased for smoother movement
     
-    -- SPEED SETTINGS (Reverted to reasonable speeds)
-    BaseSpeed = 16,   -- Reverted from 35
-    BoostSpeed = 32,  -- Reverted from 70
-    TurnSpeed = 1.2,  -- Reverted from 5.0
-    
+    -- REMOVED SPEED SETTINGS - AISnake handles its own speeds
     -- Special speed modes for SnakeMovement
     CrawlSpeed = 15,
     SlowSpeed = 25,
