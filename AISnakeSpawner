@@ -1,3 +1,4 @@
+-- This goes into Workspace and is a script
 -- Spawns and manages multiple AI snakes in the Workspace
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace         = game:GetService("Workspace")
