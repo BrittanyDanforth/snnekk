@@ -344,7 +344,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local function createEye(name, position, parent)
 		local eye = Instance.new("Part")
 		eye.Name = name
-		eye.Size = Vector3new(1.2, 1.2, 1.2)  -- BIG GOOGLY base eye size
+		eye.Size = Vector3new(1.0, 1.0, 1.0)  -- Good base eye size
 		eye.Material = Enum.Material.Neon
 		eye.Color = Color3.fromRGB(255, 255, 255)
 		eye.Shape = Enum.PartType.Ball
@@ -368,7 +368,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local function createPupil(name, position, parent)
 		local pupil = Instance.new("Part")
 		pupil.Name = name
-		pupil.Size = Vector3new(0.25, 0.25, 0.25)
+		pupil.Size = Vector3new(0.4, 0.4, 0.4)  -- Bigger pupils for visibility
 		pupil.Material = Enum.Material.Neon
 		pupil.Color = Color3.fromRGB(0, 0, 0)
 		pupil.Shape = Enum.PartType.Ball
@@ -840,9 +840,9 @@ local function createUltraSmoothSnake(character)
 			-- ALWAYS update eye positions to prevent lag
 			if headParts.leftEye and headParts.rightEye then
 				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-				local eyeSpacing = 0.6 + (scaleFactor - 1) * 0.25  -- More spacing for bigger eyes
-				local eyeForward = 0.9 * scaleFactor  -- Keep eyes on surface
-				local eyeUp = 0.6 * scaleFactor
+				local eyeSpacing = 0.7 + (scaleFactor - 1) * 0.2  -- Good spacing
+				local eyeForward = 0.7 * scaleFactor  -- Less bulgy, more embedded
+				local eyeUp = 0.5 * scaleFactor
 				
 				-- Update eye positions EVERY FRAME
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
@@ -855,10 +855,10 @@ local function createUltraSmoothSnake(character)
 				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.0)  -- Match max
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
-				-- Scale eyes proportionally - MUCH BIGGER GROWTH
+				-- Scale eyes proportionally with proper look
 				if headParts.leftEye and headParts.rightEye then
-					local eyeScale = headGrowth * 1.5  -- Eyes grow MORE than head for googly look
-					local targetEyeSize = Vector3new(1.2, 1.2, 1.2) * mathMin(eyeScale, 3.0)  -- Can grow to 3x!
+					local eyeScale = headGrowth * 0.9  -- Eyes grow slightly less than head
+					local targetEyeSize = Vector3new(1.0, 1.0, 1.0) * mathMin(eyeScale, 1.8)  -- Reasonable max
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 
