@@ -460,7 +460,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.08, -- REDUCED from 0.15
 		CombatRadius = 70, -- REDUCED from 80
 		RandomTurnInterval = 3.0, -- INCREASED from 1.5
-		OrbSeekRadius = 100, -- DOUBLED for better death orb collection
+		OrbSeekRadius = 80, -- Balanced for performance and collection
 		Description = "Aggressive but controlled hunter",
 		Erratic = false,
 		PackHunter = false,
@@ -1337,11 +1337,17 @@ function AISnake:updateMovement(dt)
 	-- Set velocity for collision detection
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
 	
-	-- CHECK FOR ORB PICKUP - OPTIMIZED FOR FPS
-	-- Only check every 3 frames to reduce lag
+	-- CHECK FOR ORB PICKUP - ULTRA OPTIMIZED FOR FPS
+	-- Dynamic frame skip based on orb count and distance
 	self._orbCheckFrame = (self._orbCheckFrame or 0) + 1
-	if self._orbCheckFrame % 3 == 0 and self.HeadParts and self.HeadParts.head then
-		OrbUtils.checkAISnakeHeadPickup(self.HeadParts.head)
+	local orbCount = OrbUtils.orbs and #OrbUtils.orbs or 0
+	
+	-- Skip more frames when there are many orbs (performance)
+	local frameSkip = orbCount > 50 and 5 or (orbCount > 20 and 4 or 3)
+	
+	if self._orbCheckFrame % frameSkip == 0 and self.HeadParts and self.HeadParts.head then
+		-- Pass self for direct growth (avoid lookup)
+		OrbUtils.checkAISnakeHeadPickupOptimized(self.HeadParts.head, self)
 	end
 
 	-- History management

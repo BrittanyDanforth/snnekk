@@ -221,6 +221,70 @@ function OrbUtils.spawnOrbAt(position, value)
     return orb
 end
 
+-- OPTIMIZED VERSION - Direct snake reference for better performance
+function OrbUtils.checkAISnakeHeadPickupOptimized(head, aiSnake)
+    local PICKUP_RADIUS = 12
+    local PICKUP_RADIUS_SQ = PICKUP_RADIUS * PICKUP_RADIUS
+    local headPos = head.Position
+    
+    -- Early exit if no orbs
+    local orbCount = #OrbUtils.orbs
+    if orbCount == 0 then return end
+    
+    -- Limit checks per frame based on orb count
+    local maxChecks = math.min(orbCount, math.max(3, orbCount * 0.2))  -- Check 20% of orbs max
+    local checksPerformed = 0
+    local orbsCollected = 0
+    
+    -- Start from a random index to ensure all orbs get checked over time
+    local startIdx = math.random(1, orbCount)
+    
+    for offset = 0, orbCount - 1 do
+        if checksPerformed >= maxChecks or orbsCollected > 0 then break end
+        
+        local i = ((startIdx + offset - 1) % orbCount) + 1
+        local orb = OrbUtils.orbs[i]
+        
+        if orb and orb.Parent then
+            checksPerformed = checksPerformed + 1
+            
+            -- Quick bounds check first
+            local delta = headPos - orb.Position
+            local absDX, absDY, absDZ = math.abs(delta.X), math.abs(delta.Y), math.abs(delta.Z)
+            
+            if absDX < PICKUP_RADIUS and absDY < PICKUP_RADIUS and absDZ < PICKUP_RADIUS then
+                -- Precise squared distance check
+                if delta.X * delta.X + delta.Y * delta.Y + delta.Z * delta.Z < PICKUP_RADIUS_SQ then
+                    if not orbDebounce[orb] then
+                        orbDebounce[orb] = true
+                        orbsCollected = orbsCollected + 1
+                        
+                        -- Direct growth - no lookup needed
+                        local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1
+                        if orb.Name == "UpgradeOrb" then
+                            require(ReplicatedStorage:WaitForChild("SnakeUpgrades")).GiveUpgrade(aiSnake)
+                        else
+                            if aiSnake and aiSnake.grow then
+                                aiSnake:grow(orbValue)
+                            end
+                        end
+                        
+                        -- VFX and cleanup
+                        playOrbCollectVFX(orb.Position)
+                        OrbUtils.removeOrb(orb)
+                        if orb and orb.Parent then
+                            orb:Destroy()
+                        end
+                        
+                        -- Exit after collecting one orb per frame
+                        return
+                    end
+                end
+            end
+        end
+    end
+end
+
 -- Backup: AI head proximity check for orb pickup (call this in AISnake update loop)
 function OrbUtils.checkAISnakeHeadPickup(head)
     local PICKUP_RADIUS = 12  -- INCREASED from 7 to match player pickup better
