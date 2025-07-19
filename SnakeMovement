@@ -279,11 +279,7 @@ local function cleanupSnake()
 	_G.GetSnakePointRaw = nil
 	_G.SnakePathSystem = nil
 	
-	-- Clean up velocity
-	if rootPart then
-		local bodyVel = rootPart:FindFirstChild("SmoothVelocity")
-		if bodyVel then bodyVel:Destroy() end
-	end
+
 	_G.SnakeSpeed = nil
 	_G.SnakeState = nil
 end
@@ -585,26 +581,12 @@ local function initializeForCharacter(character)
 		local speedRate = 15 * dt -- Consistent smooth acceleration
 		State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
-		-- Apply movement with velocity for TRUE smoothness
+		-- Apply movement DIRECTLY for proper speed
 		local moveDistance = State.smoothSpeed * dt
-		local velocity = State.currentDirection * State.smoothSpeed
-		
-		-- Use BodyVelocity for physics-based smooth movement
-		if not rootPart:FindFirstChild("SmoothVelocity") then
-			local bodyVel = Instance.new("BodyVelocity")
-			bodyVel.Name = "SmoothVelocity"
-			bodyVel.MaxForce = Vector3.new(4000, 0, 4000)
-			bodyVel.Parent = rootPart
-		end
-		
-		local bodyVel = rootPart:FindFirstChild("SmoothVelocity")
-		if bodyVel then
-			bodyVel.Velocity = Vector3.new(velocity.X, 0, velocity.Z)
-		end
-		
-		-- Update rotation smoothly
-		local lookPos = rootPart.Position + State.currentDirection
-		rootPart.CFrame = rootPart.CFrame:Lerp(CFrame.lookAt(rootPart.Position, lookPos), math.min(dt * 10, 1))
+		local newPosition = rootPart.Position + State.currentDirection * moveDistance
+
+		-- Update position and rotation
+		rootPart.CFrame = CFrame.lookAt(newPosition, newPosition + State.currentDirection)
 
 		-- Record path point (throttled)
 		if updateCounter % networkUpdateInterval == 0 then
