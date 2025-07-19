@@ -566,8 +566,8 @@
 					end
 				end
 
-				-- Smooth direction changes
-				local turnRate = Config.TurnSpeed * dt
+				-- Responsive direction changes - less smoothing when boosting
+				local turnRate = State.boosting and (Config.TurnSpeed * 1.5 * dt) or (Config.TurnSpeed * dt)
 				local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
 				-- CRITICAL FIX: Normalize the direction vector after lerping.
 				-- Without this, the vector's length shrinks during turns, causing the snake
@@ -576,8 +576,8 @@
 					State.currentDirection = newDirection.Unit
 				end
 
-				-- Smooth speed changes
-				local speedRate = 6 * dt -- Reduced from 8
+				-- INSTANT speed changes for no drag feeling
+				local speedRate = State.boosting and 20 * dt or 10 * dt -- Much faster speed changes
 				State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
 				-- Apply movement

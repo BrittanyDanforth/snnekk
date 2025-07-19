@@ -826,13 +826,13 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- CONTROLLED STRETCH when boosting - no gaps!
-					local delayMultiplier = isBoosting and 1.4 or 1.15  -- Reduced from 1.8
+					-- NO GAPS - tight following!
+					local delayMultiplier = isBoosting and 1.2 or 1.15  -- Even less delay
 					local delay = mathFloor(i * delayMultiplier)
 					local targetData = getFromHistory(delay)
 					if targetData then
-						-- CONTROLLED stretch when boosting - no gaps!
-						local spacingMultiplier = isBoosting and 0.15 or 0.08  -- Reduced from 0.3 to prevent gaps
+						-- NO GAPS - keep segments close
+						local spacingMultiplier = 0.08  -- Same spacing always, no stretch
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
 						local currentSegmentPos = segment.Position
 
