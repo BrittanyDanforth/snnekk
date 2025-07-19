@@ -578,50 +578,27 @@ local function createUltraSmoothSnake(character)
 	local updateCounter = 0
 	local networkUpdateInterval = 2
 	local lastNetworkUpdate = 0
+	
+	-- GROWTH QUEUE SYSTEM - Like real slither.io
+	local growthQueue = 0
+	local tailFrozen = false
+	local frozenTailPosition = nil
+	local frozenTailIndex = 0
+	local growthTimer = 0
+	local GROWTH_RATE = 0.03 -- Add segment every 0.03 seconds (33 segments/second)
 
 	local function growSnake(amount)
 		amount = amount or 5
-		local grew = false
-		for i = 1, amount do
-			if currentLength < activeConfig.MaxSegments then
-				grew = true
-				currentLength = currentLength + 1
-				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
-				local color = activeConfig.BodyColors[colorIndex]
-				local lastSegment = segments[#segments]
-				local newPos = lastSegment and lastSegment.Position or rootPart.Position
-				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
-				segments[currentLength] = segment
-
-				segment.Transparency = 1
-				segment.Size = Vector3new(0.05, 0.05, 0.05)
-				taskSpawn(function()
-					local growTime = 0.15
-					local t = 0
-					local startSize = Vector3new(0.05, 0.05, 0.05)
-					local endSize = activeConfig.SegmentSize
-					local heartbeat = RunService.Heartbeat
-
-					while t < growTime and segment.Parent do
-						t = t + heartbeat:Wait()
-						if segment.Parent then
-							local alpha = mathMin(t / growTime, 1)
-							segment.Size = startSize:Lerp(endSize, alpha)
-							segment.Transparency = 1 - alpha
-						end
-					end
-					if segment.Parent then
-						segment.Size = endSize
-						segment.Transparency = 0
-					end
-				end)
-			end
-		end
+		-- Add to growth queue instead of growing immediately
+		growthQueue = growthQueue + amount
 		
-		if grew and leaderstats and updateCounter % 5 == 0 then
-			local lengthValue = leaderstats:FindFirstChild("Length")
-			if lengthValue then
-				lengthValue.Value = currentLength
+		-- Freeze the tail when starting to grow
+		if not tailFrozen and growthQueue > 0 then
+			tailFrozen = true
+			frozenTailIndex = currentLength
+			-- Store the current tail position
+			if segments[currentLength] then
+				frozenTailPosition = segments[currentLength].Position
 			end
 		end
 	end
@@ -735,6 +712,52 @@ local function createUltraSmoothSnake(character)
 		end
 
 		local currentTime = tick()
+		
+		-- PROCESS GROWTH QUEUE - Add segments while tail is frozen
+		if growthQueue > 0 and framesSinceSpawn > 10 then
+			growthTimer = growthTimer + dt
+			
+			-- Add segments at controlled rate
+			while growthTimer >= GROWTH_RATE and growthQueue > 0 do
+				growthTimer = growthTimer - GROWTH_RATE
+				
+				if currentLength < activeConfig.MaxSegments then
+					currentLength = currentLength + 1
+					growthQueue = growthQueue - 1
+					
+					local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
+					local color = activeConfig.BodyColors[colorIndex]
+					
+					-- New segments appear at the frozen tail position
+					local newPos = frozenTailPosition or (segments[#segments] and segments[#segments].Position) or rootPart.Position
+					local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
+					segments[currentLength] = segment
+					
+					-- Instant appearance - no grow animation during rapid growth
+					segment.Transparency = 0
+					segment.Size = activeConfig.SegmentSize
+				else
+					growthQueue = 0 -- Can't grow anymore
+					break
+				end
+			end
+			
+			-- Unfreeze tail when growth queue is empty
+			if growthQueue == 0 then
+				tailFrozen = false
+				frozenTailPosition = nil
+				frozenTailIndex = 0
+				growthTimer = 0
+			end
+			
+			-- Update length display
+			if leaderstats then
+				local lengthValue = leaderstats:FindFirstChild("Length")
+				if lengthValue then
+					lengthValue.Value = currentLength
+				end
+			end
+		end
 
 		-- POSITION HISTORY BASED MOVEMENT WITH ANTI-GAP FOR BOOSTING
 		framesSinceSpawn = framesSinceSpawn + 1
@@ -742,6 +765,12 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
+				-- FROZEN TAIL: Don't update segments at or beyond the frozen tail
+				if tailFrozen and i >= frozenTailIndex then
+					-- Keep these segments at their current position
+					continue
+				end
+				
 				-- LOD OPTIMIZATION: Update distant segments less frequently
 				local updateFrequency = 1
 				if i > 100 then
