@@ -113,107 +113,69 @@ local function adjustParticleEffects(mode)
 	end
 end
 
--- Function to adjust snake glows
-local function adjustSnakeGlows(mode)
-	local preset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
-	local glowsFound = 0
+-- COMPLETELY NEW SIMPLE SNAKE GLOW HANDLER
+local function handleSnakeGlows(mode)
+	local glowCount = 0
 	
-	-- Find all snake segments and adjust their glow
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj:IsA("PointLight") and obj.Name == "Glow" then
-			local parent = obj.Parent
-			-- Check if parent is a snake segment
+	-- Just find ALL PointLights named "Glow" and handle them
+	for _, light in ipairs(workspace:GetDescendants()) do
+		if light:IsA("PointLight") and light.Name == "Glow" then
+			local parent = light.Parent
 			if parent and parent:IsA("BasePart") then
-				local isSnakePart = false
-				
-				-- Check 1: Has IsSnakeSegment attribute
-				if parent:GetAttribute("IsSnakeSegment") then
-					isSnakePart = true
+				-- Skip if it's an orb
+				if parent.Name == "Orb" or parent.Name == "UpgradeOrb" or parent.Name == "DeathOrb" then
+					continue
 				end
 				
-				-- Check 2: Is AISnakeHead
-				if parent.Name == "AISnakeHead" then
-					isSnakePart = true
+				-- It's probably a snake segment if it has a Glow light and isn't an orb
+				glowCount = glowCount + 1
+				
+				-- Store original values
+				if not light:GetAttribute("OriginalBrightness") then
+					light:SetAttribute("OriginalBrightness", light.Brightness)
+					light:SetAttribute("OriginalRange", light.Range)
 				end
 				
-				-- Check 3: Parent model check
-				local model = parent.Parent
-				if model and model:IsA("Model") then
-					-- Player snake models: SnakeModel_[UserId]
-					if model.Name:find("SnakeModel_") then
-						isSnakePart = true
-					end
-					-- AI snake models: AISnakeModel_table:[id]
-					if model.Name:find("AISnakeModel_") then
-						isSnakePart = true
-					end
-					-- Also check if model has IsSnakeModel attribute
-					if model:GetAttribute("IsSnakeModel") then
-						isSnakePart = true
-					end
+				-- Store original material
+				if not parent:GetAttribute("OriginalMaterial") then
+					parent:SetAttribute("OriginalMaterial", parent.Material.Name)
 				end
 				
-				if isSnakePart then
-					glowsFound = glowsFound + 1
-					
-					-- Store original values
-					if not obj:GetAttribute("OriginalBrightness") then
-						obj:SetAttribute("OriginalBrightness", obj.Brightness)
-						obj:SetAttribute("OriginalRange", obj.Range)
-					end
-					
-					if mode == "Low" then
-						-- Disable glow for low graphics - MORE AGGRESSIVE
-						obj.Enabled = false
-						obj.Brightness = 0
-						obj.Range = 0
-						-- Also hide the parent part's glow effect
-						if parent.Material == Enum.Material.Neon then
-							parent.Material = Enum.Material.SmoothPlastic
-						end
-					elseif mode == "Medium" then
-						-- Reduce glow for medium graphics
-						obj.Enabled = true
-						obj.Brightness = obj:GetAttribute("OriginalBrightness") * 0.5
-						obj.Range = obj:GetAttribute("OriginalRange") * 0.5
-						-- Keep neon material for medium
-						if parent.Material == Enum.Material.SmoothPlastic then
-							parent.Material = Enum.Material.Neon
-						end
+				local originalBrightness = light:GetAttribute("OriginalBrightness")
+				local originalRange = light:GetAttribute("OriginalRange")
+				
+				if mode == "Low" then
+					-- COMPLETELY DISABLE GLOW
+					light.Enabled = false
+					light.Brightness = 0
+					light.Range = 0
+					-- Change material to remove glow
+					parent.Material = Enum.Material.SmoothPlastic
+				elseif mode == "Medium" then
+					-- HALF GLOW
+					light.Enabled = true
+					light.Brightness = originalBrightness * 0.5
+					light.Range = originalRange * 0.5
+					-- Keep some glow with neon
+					parent.Material = Enum.Material.Neon
+				else -- High
+					-- FULL GLOW
+					light.Enabled = true
+					light.Brightness = originalBrightness
+					light.Range = originalRange
+					-- Restore original material
+					local originalMat = parent:GetAttribute("OriginalMaterial")
+					if originalMat then
+						parent.Material = Enum.Material[originalMat]
 					else
-						-- Full glow for high graphics
-						obj.Enabled = true
-						obj.Brightness = obj:GetAttribute("OriginalBrightness")
-						obj.Range = obj:GetAttribute("OriginalRange")
-						-- Ensure neon material for high
-						if parent.Material == Enum.Material.SmoothPlastic then
-							parent.Material = Enum.Material.Neon
-						end
+						parent.Material = Enum.Material.Neon
 					end
 				end
 			end
 		end
 	end
 	
-	-- Debug - print what we found
-	if glowsFound > 0 then
-		print("Snake glows adjusted:", glowsFound, "Mode:", mode)
-	else
-		-- More detailed debug when no glows found
-		local lightsFound = 0
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("PointLight") and obj.Name == "Glow" then
-				lightsFound = lightsFound + 1
-				if obj.Parent and obj.Parent:IsA("BasePart") then
-					local model = obj.Parent.Parent
-					if model and model:IsA("Model") then
-						print("Found glow in:", obj.Parent.Name, "Model:", model.Name)
-					end
-				end
-			end
-		end
-		print("Total Glow lights found:", lightsFound, "but none in snake models")
-	end
+	print("Handled", glowCount, "snake glows for mode:", mode)
 end
 
 -- Main update loop
@@ -242,7 +204,7 @@ RunService.Heartbeat:Connect(function()
 	-- Update snake glows every 0.5 seconds
 	if now - lastGlowUpdate > 0.5 then
 		lastGlowUpdate = now
-		adjustSnakeGlows(mode)
+		handleSnakeGlows(mode)
 	end
 	
 	-- Clean up cache for destroyed orbs
@@ -273,23 +235,14 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		-- Adjust particle effects
 		adjustParticleEffects(mode)
 		
-		-- Adjust snake glows
-		adjustSnakeGlows(mode)
-		
-		-- Apply general graphics settings
-		if mode == "Low" then
-			-- settings().Rendering.QualityLevel = Enum.QualityLevel.Level01  -- Can't use in LocalScript
-		elseif mode == "Medium" then
-			-- settings().Rendering.QualityLevel = Enum.QualityLevel.Level10  -- Can't use in LocalScript
-		else
-			-- settings().Rendering.QualityLevel = Enum.QualityLevel.Level21  -- Can't use in LocalScript
-		end
+		-- Immediately handle snake glows
+		handleSnakeGlows(mode)
 	end
 end)
 
 -- Initial setup
 local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
 adjustParticleEffects(initialMode)
-adjustSnakeGlows(initialMode)
+handleSnakeGlows(initialMode)
 
 print("Orb Client Graphics Handler initialized for:", LocalPlayer.Name)
