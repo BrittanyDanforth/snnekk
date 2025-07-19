@@ -552,7 +552,8 @@ local function createUltraSmoothSnake(character)
 	end
 	
 	-- Position history setup (like reference)
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 1.1) + 10, 2000)
+	-- PERFORMANCE FIX: Cap history size to prevent memory leaks with long snakes
+	local maxHistorySize = mathMin(currentLength * 2 + 100, 500) -- Much smaller cap!
 	local positionHistory = table.create(maxHistorySize)
 	local historyHead = 1
 	local initialHistoryPoint = { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
@@ -570,7 +571,34 @@ local function createUltraSmoothSnake(character)
 		if index < 1 then
 			index = index + maxHistorySize
 		end
-		return positionHistory[index]
+		return positionHistory[index] or initialHistoryPoint
+	end
+	
+	-- PERFORMANCE: Dynamically resize history buffer as snake grows
+	local function resizeHistoryIfNeeded()
+		local neededSize = mathMin(currentLength * 2 + 100, 500)
+		if neededSize > maxHistorySize then
+			-- Create new buffer
+			local newHistory = table.create(neededSize)
+			local oldSize = maxHistorySize
+			
+			-- Copy existing data
+			for i = 1, oldSize do
+				local oldIndex = (historyHead - oldSize + i - 1) % oldSize + 1
+				newHistory[i] = positionHistory[oldIndex]
+			end
+			
+			-- Fill remaining with last point
+			local lastPoint = positionHistory[(historyHead - 1) % maxHistorySize + 1]
+			for i = oldSize + 1, neededSize do
+				newHistory[i] = lastPoint
+			end
+			
+			-- Update references
+			positionHistory = newHistory
+			maxHistorySize = neededSize
+			historyHead = oldSize + 1
+		end
 	end
 
 	local connections = {}
@@ -616,6 +644,11 @@ local function createUltraSmoothSnake(character)
 					end
 				end)
 			end
+		end
+		
+		-- PERFORMANCE: Resize history buffer if needed
+		if grew then
+			resizeHistoryIfNeeded()
 		end
 
 		if grew and leaderstats and updateCounter % 5 == 0 then
@@ -742,30 +775,44 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- Tighter following when boosting
-				local delayMultiplier = isBoosting and 0.9 or 1.15
-				local delay = mathFloor(i * delayMultiplier)
-				local targetData = getFromHistory(delay)
-				if targetData then
-					local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
-					local currentSegmentPos = segment.Position
-					
-					-- Simple anti-gap check when boosting
-					if isBoosting and i > 1 then
-						local prevSegment = segments[i - 1]
-						if prevSegment and prevSegment.Parent then
-							local gap = (currentSegmentPos - prevSegment.Position).Magnitude
-							if gap > activeConfig.SegmentSpacing * 1.5 then
-								-- Too far, pull it closer
-								local dir = (prevSegment.Position - currentSegmentPos).Unit
-								segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
+				-- LOD OPTIMIZATION: Update distant segments less frequently
+				local updateFrequency = 1
+				if i > 100 then
+					updateFrequency = 2 -- Every 2 frames
+				end
+				if i > 200 then
+					updateFrequency = 3 -- Every 3 frames
+				end
+				if i > 300 then
+					updateFrequency = 4 -- Every 4 frames
+				end
+				
+				if updateCounter % updateFrequency == 0 then
+					-- Tighter following when boosting
+					local delayMultiplier = isBoosting and 0.9 or 1.15
+					local delay = mathFloor(i * delayMultiplier)
+					local targetData = getFromHistory(delay)
+					if targetData then
+						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
+						local currentSegmentPos = segment.Position
+						
+						-- Simple anti-gap check when boosting
+						if isBoosting and i > 1 then
+							local prevSegment = segments[i - 1]
+							if prevSegment and prevSegment.Parent then
+								local gap = (currentSegmentPos - prevSegment.Position).Magnitude
+								if gap > activeConfig.SegmentSpacing * 1.5 then
+									-- Too far, pull it closer
+									local dir = (prevSegment.Position - currentSegmentPos).Unit
+									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
+								end
 							end
 						end
-					end
-					
-					local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
+						
+						local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 
-					segment.CFrame = CFramenew(newPos)
+						segment.CFrame = CFramenew(newPos)
+					end
 				end
 			end
 		end
