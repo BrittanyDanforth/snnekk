@@ -780,7 +780,16 @@ local function createUltraSmoothSnake(character)
 					-- Special handling for first segment to prevent detachment
 
 					-- POSITION CALCULATION
-					local delay = (i == 1) and 1 or mathFloor(i * 0.9)
+					-- Adaptive delay based on snake length to prevent tail lag
+					local delayMultiplier = 0.9
+					if currentLength > 1000 then
+						delayMultiplier = 0.7 -- Tighter following for very long snakes
+					elseif currentLength > 500 then
+						delayMultiplier = 0.8
+					end
+					local delay = (i == 1) and 1 or mathFloor(i * delayMultiplier)
+					-- CAP THE DELAY to prevent tail from lagging too far behind
+					delay = mathMin(delay, 800) -- Maximum 800 frames of delay
 					local targetData = getFromHistory(delay)
 					if targetData then
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.05)
