@@ -83,7 +83,7 @@ local taskWait = task.wait
 
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
-	HeadSize = Vector3new(3.8, 3.8, 3.8),  -- Head only slightly bigger than segments
+	HeadSize = Vector3new(3.6, 3.6, 3.6),  -- Head BARELY bigger than segments
 	SegmentSize = Vector3new(3.5, 3.5, 3.5),  -- Uniform segment size
 	SegmentSpacing = 3.2,  -- Tighter for more segments visible
 	InitialLength = 55,  -- Starting length
