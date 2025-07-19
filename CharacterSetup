@@ -753,8 +753,8 @@ local function createUltraSmoothSnake(character)
 		-- REMOVED expensive workspace:GetDescendants() check - causes lag!
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
-		-- SUPER ELASTIC follow speed - much slower = visible stretch
-		local followSpeed = isBoosting and 0.25 or activeConfig.FollowSpeed  -- Very slow follow when boosting!
+		-- Balanced follow speed - visible stretch without gaps
+		local followSpeed = isBoosting and 0.35 or activeConfig.FollowSpeed  -- Increased from 0.25
 
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
@@ -826,13 +826,13 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- VISIBLE STRETCH when boosting like real slither.io!
-					local delayMultiplier = isBoosting and 1.8 or 1.15  -- Much more visible stretch
+					-- CONTROLLED STRETCH when boosting - no gaps!
+					local delayMultiplier = isBoosting and 1.4 or 1.15  -- Reduced from 1.8
 					local delay = mathFloor(i * delayMultiplier)
 					local targetData = getFromHistory(delay)
 					if targetData then
-						-- STRETCH segments apart when boosting!
-						local spacingMultiplier = isBoosting and 0.3 or 0.08  -- Much bigger spacing when boosting
+						-- CONTROLLED stretch when boosting - no gaps!
+						local spacingMultiplier = isBoosting and 0.15 or 0.08  -- Reduced from 0.3 to prevent gaps
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
 						local currentSegmentPos = segment.Position
 
@@ -841,11 +841,11 @@ local function createUltraSmoothSnake(character)
 							local prevSegment = segments[i - 1]
 							if prevSegment and prevSegment.Parent then
 								local gap = (segmentPos - prevSegment.Position).Magnitude
-								local maxGap = activeConfig.SegmentSpacing * (isBoosting and 2.5 or 1.4) -- Allow 2.5x stretch for elasticity
+								local maxGap = activeConfig.SegmentSpacing * (isBoosting and 1.6 or 1.4) -- Reduced to prevent gaps
 								if gap > maxGap then
-									-- Only prevent extreme gaps
+									-- Aggressive gap prevention
 									local dir = (prevSegment.Position - segmentPos).Unit
-									segmentPos = prevSegment.Position - dir * (activeConfig.SegmentSpacing * 1.8)
+									segmentPos = prevSegment.Position - dir * (activeConfig.SegmentSpacing * 1.1)
 								end
 							end
 						end
