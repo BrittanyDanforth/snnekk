@@ -1,5 +1,6 @@
 
 		-- 🚀 NETWORK-OPTIMIZED SLITHER.IO MOVEMENT - ZERO PING SPIKES V2.0
+		-- this goes INTO StarterPlayerScripts as Localscript
 		-- ✅ RESPAWN-PROOF CLEANUP SYSTEM
 		local Players = game:GetService("Players")
 		local RunService = game:GetService("RunService")
