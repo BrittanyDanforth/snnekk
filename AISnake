@@ -1,4 +1,3 @@
--- THIS GOES INTO ReplicatedStorage As a ModuleScript
 -- AISnake Module: SMOOTH AI MOVEMENT V4.0 - FIXED ERRATIC BEHAVIOR
 -- Completely redesigned AI brain for smooth, intelligent movement
 local RunService = game:GetService("RunService")
@@ -446,124 +445,135 @@ local function isPartsColliding(partA, partB)
 end
 
 -- === FIXED AI PERSONALITIES - MUCH SMOOTHER ===
-AISnake.PersonalityTypes = {"Aggressive", "Cautious", "Opportunist", "Territorial", "Predator", "Survivor", "Berserker"}
+AISnake.PersonalityTypes = {
+	"Aggressor", "Scavenger", "Trickster", "Coward", "Hunter", "Trapper", "Assassin"
+}
+
 AISnake.PersonalityDefinitions = {
-	Aggressive = {
-		OrbSeekRange = 150,
-		OrbPriority = 0.6,
-		ThreatAvoidance = 0.4,
-		TargetingRange = 100,
-		SpeedMultiplier = 1.0,  -- No speed advantage
-		BoostAggressiveness = 0.8,
-		PreferredLength = 300,
-		BehaviorWeights = {
-			seekOrbs = 0.5,
-			avoidThreats = 0.3,
-			huntSmaller = 0.7,
-			wander = 0.3
-		}
+	Aggressor = {
+		Type = "Aggressor",
+		TargetPlayers = true,
+		TargetOrbs = true,
+		AvoidOthers = false,
+		SpeedMultiplier = 1.2,
+		TurnBias = 0.05, -- REDUCED from 0.1
+		BoostChance = 0.08, -- REDUCED from 0.15
+		CombatRadius = 70, -- REDUCED from 80
+		RandomTurnInterval = 3.0, -- INCREASED from 1.5
+		OrbSeekRadius = 50, -- INCREASED from 40
+		Description = "Aggressive but controlled hunter",
+		Erratic = false,
+		PackHunter = false,
+		PredictionTime = 0.8,
+		TrapStyle = "circle",
 	},
-
-	Cautious = {
-		OrbSeekRange = 100,
-		OrbPriority = 0.7,
-		ThreatAvoidance = 0.8,
-		TargetingRange = 60,
-		SpeedMultiplier = 0.95,  -- Slightly slower
-		BoostAggressiveness = 0.3,
-		PreferredLength = 200,
-		BehaviorWeights = {
-			seekOrbs = 0.7,
-			avoidThreats = 0.8,
-			huntSmaller = 0.2,
-			wander = 0.5
-		}
+	Scavenger = {
+		Type = "Scavenger",
+		TargetPlayers = false,
+		TargetOrbs = true,
+		AvoidOthers = true,
+		SpeedMultiplier = 1.1, -- INCREASED from 1.0
+		TurnBias = 0.1, -- REDUCED from 0.2
+		BoostChance = 0.05, -- REDUCED from 0.1
+		CombatRadius = 50, -- REDUCED from 60
+		RandomTurnInterval = 4.0, -- INCREASED from 2.0
+		OrbSeekRadius = 100, -- INCREASED from 80
+		Description = "Orb-focused with smooth movement",
+		Erratic = false,
+		PackHunter = false,
+		PredictionTime = 0,
+		TrapStyle = "none",
 	},
-
-	Opportunist = {
-		OrbSeekRange = 120,
-		OrbPriority = 0.8,
-		ThreatAvoidance = 0.5,
-		TargetingRange = 80,
-		SpeedMultiplier = 1.0,  -- Same speed
-		BoostAggressiveness = 0.6,
-		PreferredLength = 250,
-		BehaviorWeights = {
-			seekOrbs = 0.8,
-			avoidThreats = 0.5,
-			huntSmaller = 0.4,
-			wander = 0.4
-		}
+	Trickster = {
+		Type = "Trickster",
+		TargetPlayers = true,
+		TargetOrbs = true,
+		AvoidOthers = false,
+		SpeedMultiplier = 1.15, -- REDUCED from 1.2
+		TurnBias = 0.1, -- REDUCED from 0.3
+		BoostChance = 0.1, -- REDUCED from 0.2
+		CombatRadius = 60,
+		RandomTurnInterval = 2.0, -- INCREASED from 0.6
+		OrbSeekRadius = 40, -- INCREASED from 30
+		Description = "Unpredictable but smoother",
+		Erratic = false, -- CHANGED from true
+		PackHunter = false,
+		PredictionTime = 0.5,
+		TrapStyle = "zigzag",
 	},
-
-	Territorial = {
-		OrbSeekRange = 80,
-		OrbPriority = 0.5,
-		ThreatAvoidance = 0.3,
-		TargetingRange = 120,
-		SpeedMultiplier = 0.95,  -- Slightly slower
-		BoostAggressiveness = 0.7,
-		PreferredLength = 400,
-		BehaviorWeights = {
-			seekOrbs = 0.4,
-			avoidThreats = 0.3,
-			huntSmaller = 0.6,
-			wander = 0.2
-		}
+	Coward = {
+		Type = "Coward",
+		TargetPlayers = false,
+		TargetOrbs = true,
+		AvoidOthers = true,
+		SpeedMultiplier = 1.0, -- INCREASED from 0.9
+		TurnBias = 0.1, -- REDUCED from 0.25
+		BoostChance = 0.15, -- REDUCED from 0.3
+		CombatRadius = 80, -- INCREASED from 70
+		RandomTurnInterval = 3.0, -- INCREASED from 1.8
+		OrbSeekRadius = 80, -- INCREASED from 60
+		Description = "Cautious but efficient",
+		Erratic = false,
+		PackHunter = false,
+		PredictionTime = 0,
+		TrapStyle = "none",
 	},
-
-	Predator = {
-		OrbSeekRange = 100,
-		OrbPriority = 0.4,
-		ThreatAvoidance = 0.2,
-		TargetingRange = 150,
-		SpeedMultiplier = 1.0,  -- Same speed
-		BoostAggressiveness = 0.9,
-		PreferredLength = 500,
-		BehaviorWeights = {
-			seekOrbs = 0.3,
-			avoidThreats = 0.2,
-			huntSmaller = 0.9,
-			wander = 0.2
-		}
+	Hunter = {
+		Type = "Hunter",
+		TargetPlayers = true,
+		TargetOrbs = true,
+		AvoidOthers = false,
+		SpeedMultiplier = 1.2, -- REDUCED from 1.25
+		TurnBias = 0.02, -- REDUCED from 0.05
+		BoostChance = 0.08, -- REDUCED from 0.12
+		CombatRadius = 80, -- REDUCED from 90
+		RandomTurnInterval = 4.0, -- INCREASED from 3.0
+		OrbSeekRadius = 35, -- INCREASED from 25
+		Description = "Strategic and smooth",
+		Erratic = false,
+		PackHunter = true,
+		PredictionTime = 1.0, -- REDUCED from 1.2
+		TrapStyle = "cutoff",
 	},
-
-	Survivor = {
-		OrbSeekRange = 140,
-		OrbPriority = 0.9,
-		ThreatAvoidance = 0.9,
-		TargetingRange = 50,
-		SpeedMultiplier = 1.0,  -- Same speed
-		BoostAggressiveness = 0.2,
-		PreferredLength = 150,
-		BehaviorWeights = {
-			seekOrbs = 0.9,
-			avoidThreats = 0.9,
-			huntSmaller = 0.1,
-			wander = 0.6
-		}
+	Trapper = {
+		Type = "Trapper",
+		TargetPlayers = true,
+		TargetOrbs = true,
+		AvoidOthers = false,
+		SpeedMultiplier = 1.1, -- REDUCED from 1.15
+		TurnBias = 0.01, -- REDUCED from 0.02
+		BoostChance = 0.05, -- REDUCED from 0.08
+		CombatRadius = 70,
+		RandomTurnInterval = 5.0, -- INCREASED from 4.0
+		OrbSeekRadius = 40, -- INCREASED from 30
+		Description = "Patient spiral trapper",
+		Erratic = false,
+		PackHunter = false,
+		PredictionTime = 1.0, -- INCREASED from 0.8
+		TrapStyle = "spiral",
 	},
-
-	Berserker = {
-		OrbSeekRange = 90,
-		OrbPriority = 0.3,
-		ThreatAvoidance = 0.1,
-		TargetingRange = 180,
-		SpeedMultiplier = 1.05,  -- Only 5% faster
-		BoostAggressiveness = 1.0,
-		PreferredLength = 600,
-		BehaviorWeights = {
-			seekOrbs = 0.2,
-			avoidThreats = 0.1,
-			huntSmaller = 1.0,
-			wander = 0.1
-		}
-	}
+	Assassin = {
+		Type = "Assassin",
+		TargetPlayers = true,
+		TargetOrbs = true,
+		AvoidOthers = false,
+		SpeedMultiplier = 1.25, -- REDUCED from 1.3
+		TurnBias = 0.0,
+		BoostChance = 0.03, -- REDUCED from 0.05
+		CombatRadius = 90, -- REDUCED from 100
+		RandomTurnInterval = 6.0, -- INCREASED from 5.0
+		OrbSeekRadius = 30, -- INCREASED from 20
+		Description = "Patient stalker",
+		Erratic = false,
+		PackHunter = false,
+		PredictionTime = 1.2, -- INCREASED from 1.0
+		TrapStyle = "stalk",
+	},
 }
 
 -- === AI METHODS ===
 function AISnake:findBestOrb()
-	local minDist = self.Personality.OrbSeekRange or 50
+	local minDist = self.Personality.OrbSeekRadius or 50
 	local nearest = nil
 	local headPos = self.HeadParts and self.HeadParts.head and self.HeadParts.head.Position or self.Position
 
@@ -611,7 +621,7 @@ function AISnake:findNearestSnakeHead()
 	local minDist = math.huge
 	local nearest = nil
 
-	local nearbyEntities = SpatialGrid.QueryRadius(myPos, self.Personality.TargetingRange or 60)
+	local nearbyEntities = SpatialGrid.QueryRadius(myPos, self.Personality.CombatRadius or 60)
 
 	for _, entity in nearbyEntities do
 		if entity.owner ~= self and (entity.type == "AI_HEAD" or entity.type == "PLAYER_HEAD") then
@@ -652,29 +662,19 @@ function AISnake:findNearbyThreats()
 			local lengthDiff = enemyLength - self.CurrentLength
 			local isThreat = false
 
-			-- MORE SENSITIVE threat detection
-			if lengthDiff > 10 then
-				isThreat = true -- Any snake 10+ segments bigger is a threat
-			elseif dist < 20 and lengthDiff > -10 then
-				isThreat = true -- Close snakes even if smaller can be threats
-			elseif dist < 30 and lengthDiff > 5 then
-				isThreat = true -- Medium range if they're bigger
+			-- MORE SELECTIVE threat detection
+			if lengthDiff > 30 or (dist < 15 and lengthDiff > 10) then
+				isThreat = true
 			end
 
-			-- Check if enemy is moving towards us
-			if not isThreat and dist < 40 then
+			if not isThreat and dist < 25 and lengthDiff > 20 then
 				local enemyVel = Vector3new(0, 0, 0)
 				if entity.type == "PLAYER_HEAD" then
-					local humanoid = entity.owner.Character and entity.owner.Character:FindFirstChild("Humanoid")
-					if humanoid then
-						enemyVel = humanoid.RootPart.AssemblyLinearVelocity
-					end
-				elseif entity.owner.Direction then
-					enemyVel = entity.owner.Direction * (entity.owner.Speed or 10)
+					enemyVel = getPlayerVelocity(entity.owner)
 				end
 				local toUs = (myPos - entity.part.Position).Unit
-				local facingUs = enemyVel.Magnitude > 0.1 and enemyVel.Unit:Dot(toUs) > 0.5
-				if facingUs and lengthDiff > -20 then
+				local facingUs = enemyVel.Magnitude > 0.1 and enemyVel.Unit:Dot(toUs) > 0.8
+				if facingUs then
 					isThreat = true
 				end
 			end
@@ -822,38 +822,32 @@ function AISnake:_determineAction()
 		return "AVOID_WALL", wallVec.Unit
 	end
 
-	-- Priority 2: Threat assessment with personality-based fleeing
+	-- Priority 2: Threat assessment (MUCH more selective)
 	local threats = self:findNearbyThreats()
 	local shouldFlee = false
 	local fleeReason = ""
 
 	if #threats > 0 then
 		local closestThreat = threats[1]
-		local avoidWeight = (p.ThreatAvoidance or 0.5)
 
-		-- Base flee conditions
-		if closestThreat.distance < 15 and closestThreat.lengthDiff > 10 then
+		-- MUCH more selective fleeing
+		if closestThreat.distance < 12 and closestThreat.lengthDiff > 15 then
 			shouldFlee = true
 			fleeReason = "immediate_danger"
-		elseif closestThreat.lengthDiff > 30 and closestThreat.distance < 35 then
+		elseif closestThreat.lengthDiff > 40 and closestThreat.distance < 25 then
 			shouldFlee = true
 			fleeReason = "giant_enemy"
-		elseif #threats >= 3 and closestThreat.distance < 25 then
+		elseif #threats >= 4 and closestThreat.distance < 15 then
 			shouldFlee = true
 			fleeReason = "surrounded"
-		elseif closestThreat.distance < 40 and closestThreat.lengthDiff > 0 then
-			-- Use personality avoid weight for close threats
-			if mathRandom() < avoidWeight then
-				shouldFlee = true
-				fleeReason = "personality_avoid"
-			end
+		elseif p.Type == "Coward" and closestThreat.lengthDiff > 20 and closestThreat.distance < 30 then
+			shouldFlee = true
+			fleeReason = "coward_instinct"
 		end
 
-		-- Berserker and Aggressive personalities are braver
-		if shouldFlee and self._personalityType == "Berserker" and closestThreat.lengthDiff < 50 then
-			shouldFlee = mathRandom() < 0.3 -- 70% chance to ignore flee
-		elseif shouldFlee and self._personalityType == "Aggressive" and closestThreat.lengthDiff < 30 then
-			shouldFlee = mathRandom() < 0.5 -- 50% chance to ignore flee
+		-- Aggressive types are braver
+		if shouldFlee and (p.Type == "Aggressor" or p.Type == "Hunter") and closestThreat.lengthDiff < 25 then
+			shouldFlee = false
 		end
 	end
 
@@ -871,13 +865,13 @@ function AISnake:_determineAction()
 	-- Priority 3: Target acquisition (LESS aggressive)
 	local nearestSnake, nearestDist = self:findNearestSnakeHead()
 
-	if nearestSnake and nearestDist < (p.TargetingRange or 60) then
+	if nearestSnake and nearestDist < (p.CombatRadius or 60) then
 		self.TargetSnake = nearestSnake
 	else
 		self.TargetSnake = nil
 	end
 
-	-- Priority 4: Combat decisions using behavior weights
+	-- Priority 4: Combat decisions (MUCH simpler)
 	if self.TargetSnake then
 		local opponentLength
 		if self.TargetSnake.isPlayer then
@@ -890,33 +884,50 @@ function AISnake:_determineAction()
 
 		local targetPos = self.TargetSnake.part.Position
 		local decision = "WANDER"
-		
-		-- Use behavior weights for decisions
-		local weights = p.BehaviorWeights or {}
-		local huntWeight = weights.huntSmaller or 0.5
-		local avoidWeight = weights.avoidThreats or 0.5
-		
-		-- Decision based on weights and length advantage
-		if lengthAdvantage > 20 then
-			-- We're much bigger - hunt aggressively
-			decision = nearestDist < 30 and "CIRCLE" or "HUNT"
-		elseif lengthAdvantage > 0 then
-			-- We're bigger - use hunt weight
-			if mathRandom() < huntWeight then
+
+		-- SIMPLIFIED personality decisions
+		if p.Type == "Aggressor" then
+			if lengthAdvantage > 10 then
+				decision = nearestDist < 30 and "CIRCLE" or "HUNT"
+			elseif lengthAdvantage > -10 then
 				decision = "HUNT"
 			else
-				decision = "WANDER"
-			end
-		elseif lengthAdvantage > -20 then
-			-- Similar size - use avoid weight
-			if mathRandom() < avoidWeight then
 				decision = "FLEE"
-			else
-				decision = "WANDER"
 			end
-		else
-			-- We're much smaller - flee
-			decision = "FLEE"
+
+		elseif p.Type == "Hunter" then
+			if lengthAdvantage > 15 then
+				decision = "CIRCLE"
+			elseif lengthAdvantage > 0 then
+				decision = "HUNT"
+			else
+				decision = "FLEE"
+			end
+
+		elseif p.Type == "Scavenger" then
+			if lengthAdvantage > 40 then
+				decision = "HUNT"
+			else
+				decision = "SCAVENGE_WANDER"
+				self.scavengerWanderTime = (self.scavengerWanderTime or 0) + 0.016
+			end
+
+		elseif p.Type == "Coward" then
+			local braveryBonus = self.killCount * 10
+			if lengthAdvantage + braveryBonus > 30 then
+				decision = "CIRCLE"
+			else
+				decision = "FLEE"
+			end
+
+		else -- Trickster, Trapper, Assassin
+			if lengthAdvantage > 5 then
+				decision = nearestDist < 25 and "CIRCLE" or "HUNT"
+			elseif lengthAdvantage > -15 then
+				decision = "HUNT"
+			else
+				decision = "FLEE"
+			end
 		end
 
 		-- Execute decisions (SIMPLIFIED)
@@ -976,7 +987,7 @@ function AISnake:_determineAction()
 		local distFromCenter = toCenter.Magnitude
 
 		-- SMOOTHER random turning
-		if (now - (self.LastTurn or 0) > (self.RandomTurnInterval or 3.0)) then
+		if (now - (self.LastTurn or 0) > p.RandomTurnInterval) then
 			-- MUCH gentler turns
 			local maxTurn = 30 -- REDUCED from 60
 			self.TargetYaw = self.TargetYaw + mathRad(mathRandom(-maxTurn, maxTurn))
@@ -1028,21 +1039,14 @@ function AISnake.new(startPosition)
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
-	
-	-- Use same speeds as players from SnakeConfig
-	self.Speed = self.Config.BaseSpeed or 16
-	self.NormalSpeed = self.Config.BaseSpeed or 16
-	self.BoostSpeed = self.Config.BoostSpeed or 32
-	self.TurnSpeed = 0.8  -- Keep smooth turning
-	
-	self.RandomTurnInterval = 3.0  -- Keep less erratic movement
+	self.Speed = self.Config.BaseSpeed or 10
+	self.NormalSpeed = self.Config.BaseSpeed or 10
+	self.BoostSpeed = self.Config.BoostSpeed or 24
+	self.TurnSpeed = self.Config.TurnSpeed or 1.2 -- REDUCED for smoother turning
+	self.RandomTurnInterval = 1.5
 	self.LastTurn = tick()
 	self.TargetYaw = 0
 	self.CurrentYaw = 0
-	
-	-- Smoothing parameters
-	self.TurnSmoothing = 0.1  -- How quickly to interpolate turns
-	self.LastSteerDirection = self.Direction
 
 	self.FollowSpeed = self.Config.FollowSpeed or 0.95
 	self.BoostFollowSpeed = self.Config.BoostFollowSpeed or 0.98
@@ -1269,17 +1273,8 @@ function AISnake:updateMovement(dt)
 		turnSpeed = turnSpeed * 0.7 -- INCREASED from 0.5
 	end
 
-	-- Smooth steering interpolation
-	if self.SteerDirection then
-		-- Lerp between last and current steering direction
-		self.LastSteerDirection = self.LastSteerDirection:Lerp(self.SteerDirection, self.TurnSmoothing)
-		local steerYaw = mathAtan2(self.LastSteerDirection.X, self.LastSteerDirection.Z)
-		self.TargetYaw = steerYaw
-	end
-
 	local yawDiff = self.TargetYaw - self.CurrentYaw
-	-- Smooth yaw interpolation with reduced turn speed
-	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.5) -- Reduced cap from 0.8
+	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.8) -- CAPPED at 0.8
 
 	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
 	self.Direction = cf.LookVector
@@ -1430,9 +1425,10 @@ function AISnake:updateMovement(dt)
 		if self.isConfident then statusText = "CONFIDENT" end
 
 		label.Text = string.format("%s\n%s\nL:%d", 
-			self._personalityType or "Unknown", 
+			p.Type, 
 			statusText,
-			self.CurrentLength)
+			self.CurrentLength
+		)
 
 		-- Color coding
 		if state == "FLEE" then
