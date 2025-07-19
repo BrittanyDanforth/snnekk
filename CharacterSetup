@@ -362,6 +362,16 @@ local function createVisualHead(rootPart, config, parentModel)
 		weld.Part0 = parent
 		weld.Part1 = eye
 		weld.Parent = parent
+		
+		-- Also create a rigid attachment for extra stability
+		local attachment0 = Instance.new("Attachment", parent)
+		local attachment1 = Instance.new("Attachment", eye)
+		attachment1.Position = Vector3.new(0, 0, 0)
+		
+		local rigidConstraint = Instance.new("RigidConstraint")
+		rigidConstraint.Attachment0 = attachment0
+		rigidConstraint.Attachment1 = attachment1
+		rigidConstraint.Parent = parent
 
 		return eye, weld
 	end
@@ -842,12 +852,12 @@ local function createUltraSmoothSnake(character)
 			
 			-- OPTIMIZED: Update eye positions less frequently for huge snakes
 			if headParts.leftEye and headParts.rightEye then
-				-- Only update eye positions every 10 frames for performance
-				if updateCounter % 10 == 0 or currentLength < 500 then
+				-- Only update eye positions every 15 frames for stability (ignore boost state)
+				if updateCounter % 15 == 0 or currentLength < 500 then
 					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-					local eyeSpacing = 0.7 + (scaleFactor - 1) * 0.2  -- Good spacing
-					local eyeForward = 0.7 * scaleFactor  -- Less bulgy, more embedded
-					local eyeUp = 0.5 * scaleFactor
+					local eyeSpacing = 0.85 + (scaleFactor - 1) * 0.3  -- More separated
+					local eyeForward = 0.5 * scaleFactor  -- More embedded in head
+					local eyeUp = 0.45 * scaleFactor  -- Slightly lower
 					
 					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
 					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
