@@ -753,8 +753,8 @@ local function createUltraSmoothSnake(character)
 		-- REMOVED expensive workspace:GetDescendants() check - causes lag!
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
-		-- Balanced follow speed - visible stretch without gaps
-		local followSpeed = isBoosting and 0.35 or activeConfig.FollowSpeed  -- Increased from 0.25
+		-- TIGHT follow speed when boosting - no drag!
+		local followSpeed = isBoosting and 0.6 or activeConfig.FollowSpeed  -- Much tighter following
 
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
