@@ -1033,8 +1033,8 @@ function AISnake.new(startPosition)
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
 	self.Speed = self.Config.BaseSpeed  -- No fallback, must use SnakeConfig value
-	self.NormalSpeed = self.Config.BaseSpeed  -- Will be 16 from SnakeConfig
-	self.BoostSpeed = self.Config.BoostSpeed  -- Will be 32 from SnakeConfig
+	self.NormalSpeed = self.Config.BaseSpeed  -- Will be 35 from SnakeConfig
+	self.BoostSpeed = self.Config.BoostSpeed  -- Will be 70 from SnakeConfig
 	self.TurnSpeed = self.Config.TurnSpeed or 1.2 -- REDUCED for smoother turning
 	self.RandomTurnInterval = 1.5
 	self.LastTurn = tick()
