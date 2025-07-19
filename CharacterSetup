@@ -314,7 +314,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local headPart = Instance.new("Part")
 	headPart.Name = "SnakeHead"
 	headPart.Size = config.HeadSize
-	headPart.Material = config.HeadMaterial
+	headPart.Material = Enum.Material.Neon  -- VISIBLE HEAD! Not ForceField
 	headPart.Color = config.HeadColor
 	headPart.Shape = Enum.PartType.Ball
 	headPart.CanCollide = false
