@@ -83,11 +83,11 @@ local taskWait = task.wait
 
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
-	HeadSize = Vector3new(3, 3, 3),
-	SegmentSize = Vector3new(2.5, 2.5, 2.5),
-	SegmentSpacing = 2.2,
-	InitialLength = 1500,
-	MaxSegments = 2450,
+	HeadSize = Vector3new(4.5, 4.5, 4.5),  -- Bigger head
+	SegmentSize = Vector3new(4, 4, 4),  -- Larger segments = fewer needed
+	SegmentSpacing = 3.6,  -- Slightly tighter spacing for smooth appearance
+	InitialLength = 55,  -- Much fewer segments but still good length
+	MaxSegments = 600,  -- Cap at 600 for performance
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
 	BodyColors = {
 		Color3.fromRGB(60, 180, 80),
@@ -275,16 +275,19 @@ local function createSegment(index, position, color, config, parentModel)
 	segment:SetAttribute("IsSnakeSegment", true)
 	segment:SetAttribute("SegmentIndex", index)
 
-	local light = segment:FindFirstChild("Glow")
-	if not light then
-		light = Instance.new("PointLight")
-		light.Name = "Glow"
-		light.Parent = segment
+	-- Only add glow to first few segments for performance
+	if index <= 20 then
+		local light = segment:FindFirstChild("Glow")
+		if not light then
+			light = Instance.new("PointLight")
+			light.Name = "Glow"
+			light.Parent = segment
+		end
+		light.Color = color
+		light.Brightness = config.GlowIntensity
+		light.Range = config.GlowRange
+		light.Enabled = true
 	end
-	light.Color = color
-	light.Brightness = config.GlowIntensity
-	light.Range = config.GlowRange
-	light.Enabled = true
 
 	local outline = segment:FindFirstChild("Outline")
 	if not outline then
@@ -635,13 +638,17 @@ local function createUltraSmoothSnake(character)
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 
+				-- Dynamic sizing: segments get larger as snake grows to reduce total count
+				local growthFactor = 1 + (currentLength / 200) * 0.5  -- Up to 50% larger at high lengths
+				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.5)
+				
 				segment.Transparency = 1
 				segment.Size = Vector3new(0.05, 0.05, 0.05)
 				taskSpawn(function()
 					local growTime = 0.15
 					local t = 0
 					local startSize = Vector3new(0.05, 0.05, 0.05)
-					local endSize = activeConfig.SegmentSize
+					local endSize = targetSize
 					local heartbeat = RunService.Heartbeat
 
 					while t < growTime and segment.Parent do
@@ -821,14 +828,17 @@ local function createUltraSmoothSnake(character)
 			if segment and segment.Parent then
 				-- LOD OPTIMIZATION: Update distant segments less frequently
 				local updateFrequency = 1
-				if i > 100 then
+				if i > 50 then
 					updateFrequency = 2 -- Every 2 frames
 				end
-				if i > 200 then
+				if i > 100 then
 					updateFrequency = 3 -- Every 3 frames
 				end
+				if i > 200 then
+					updateFrequency = 5 -- Every 5 frames
+				end
 				if i > 300 then
-					updateFrequency = 4 -- Every 4 frames
+					updateFrequency = 8 -- Every 8 frames
 				end
 
 				if updateCounter % updateFrequency == 0 then
@@ -856,6 +866,14 @@ local function createUltraSmoothSnake(character)
 						local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 
 						segment.CFrame = CFramenew(newPos)
+						
+						-- Dynamic resizing for performance
+						if updateCounter % 30 == 0 then  -- Update size every 30 frames
+							local growthFactor = 1 + (mathMin(currentLength, 400) / 200) * 0.5
+							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.5)
+							-- Smooth size transition
+							segment.Size = segment.Size:Lerp(targetSize, 0.1)
+						end
 					end
 				end
 			end
