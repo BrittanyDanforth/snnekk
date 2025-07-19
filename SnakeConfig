@@ -4,42 +4,53 @@ return {
     -- SNAKE DIMENSIONS
     HeadSize = Vector3.new(3, 3, 3),
     SegmentSize = Vector3.new(2.5, 2.5, 2.5),
-    SegmentSpacing = 2.2, -- Adjusted for perfect connection
-
+    SegmentSpacing = 2.2,
+    SegmentGap = 3.0, -- For SnakeMovement path system
+    
     -- BODY SETTINGS
     InitialLength = 35,
-    MaxSegments = 2450, -- Increased for longer snakes
+    MaxSegments = 2450,
 
-    -- ENHANCED COLORS (Default skin)
-    HeadColor = Color3.fromRGB(57, 255, 20),
+    -- ENHANCED COLORS (Default skin - better green gradient)
+    HeadColor = Color3.fromRGB(76, 217, 100),
     BodyColors = {
-        Color3.fromRGB(57, 255, 20),
-        Color3.fromRGB(45, 220, 15),
-        Color3.fromRGB(70, 255, 35),
-        Color3.fromRGB(45, 220, 15),
-        Color3.fromRGB(57, 255, 20),
+        Color3.fromRGB(60, 180, 80),
+        Color3.fromRGB(80, 200, 100),
+        Color3.fromRGB(100, 220, 120),
+        Color3.fromRGB(80, 200, 100),
+        Color3.fromRGB(60, 180, 80),
     },
+    SegmentColor = Color3.fromRGB(80, 200, 100), -- For SnakeMovement
 
-    -- MOVEMENT
-    FollowSpeed = 0.92, -- Slightly slower for smoother following
-    BoostFollowSpeed = 0.99, -- Very tight when boosting
-    UpdateRate = 30, -- Much higher for smooth movement
+    -- MOVEMENT SETTINGS
+    FollowSpeed = 0.92,
+    BoostFollowSpeed = 0.99,
+    UpdateRate = 30,
     MinDistance = 0.02,
+    PathSmoothness = 0.85, -- For smooth client movement
     
-    -- SPEED SETTINGS (IMPORTANT - used by both players and AI)
-    BaseSpeed = 16,  -- Normal movement speed
-    BoostSpeed = 32,  -- 2x speed when boosting
+    -- SPEED SETTINGS (Balanced for fun gameplay)
+    BaseSpeed = 16,   -- Normal speed
+    BoostSpeed = 32,  -- 2x boost
+    TurnSpeed = 1.2,  -- AI turning speed (smooth)
+    
+    -- Special speed modes for SnakeMovement
+    CrawlSpeed = 8,
+    SlowSpeed = 18,
+    SuperSpeed = 55,
+    LudicrousSpeed = 90,
 
     -- MATERIALS
     HeadMaterial = Enum.Material.ForceField,
     BodyMaterial = Enum.Material.Neon,
 
     -- VISUAL ENHANCEMENTS
-    GlowIntensity = 1.5, -- Reduced for better visibility
-    GlowRange = 4, -- Reduced for performance
+    GlowIntensity = 1.5,
+    GlowRange = 4,
+    LODDistance = 120, -- Level of detail distance
     
     -- GAMEPLAY SETTINGS
-    OrbValue = 5,  -- How much length each orb gives
-    BoostDrainRate = 2,  -- Length lost per second while boosting
+    OrbValue = 5,
+    BoostDrainRate = 2,
 }
 
