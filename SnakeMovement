@@ -334,21 +334,11 @@
 				humanoid.JumpHeight = 0
 				humanoid.AutoRotate = false
 
-				rootPart.Shape = Enum.PartType.Ball
-				rootPart.Size = Config.HeadSize
-				rootPart.Material = Enum.Material.ForceField
-				rootPart.Color = Config.HeadColor
-				rootPart.TopSurface = Enum.SurfaceType.Smooth
-				rootPart.BottomSurface = Enum.SurfaceType.Smooth
+				-- Keep rootPart invisible - CharacterSetup handles the visual head
+				rootPart.Transparency = 1
+				rootPart.CanCollide = false
 
-				-- HeadGlow removed - was causing extra orb appearance
-
-				-- Optimized lighting
-				local light = Instance.new("PointLight")
-				light.Brightness = 1.8 -- Reduced from 2
-				light.Color = Config.HeadColor
-				light.Range = 10 -- Reduced from 12
-				light.Parent = rootPart
+				-- HeadGlow and lighting removed - CharacterSetup handles all visuals
 
 				-- Optimized trail
 				local attachment0 = Instance.new("Attachment")
