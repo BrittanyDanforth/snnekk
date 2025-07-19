@@ -753,8 +753,8 @@ local function createUltraSmoothSnake(character)
 		-- REMOVED expensive workspace:GetDescendants() check - causes lag!
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
-		-- ELASTIC follow speed - slower follow = more stretch
-		local followSpeed = isBoosting and math.min(activeConfig.FollowSpeed * 0.7, 0.4) or activeConfig.FollowSpeed
+		-- SUPER ELASTIC follow speed - much slower = visible stretch
+		local followSpeed = isBoosting and 0.25 or activeConfig.FollowSpeed  -- Very slow follow when boosting!
 
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
@@ -826,12 +826,14 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- ELASTIC STRETCH when boosting like real slither.io!
-					local delayMultiplier = isBoosting and 1.5 or 1.15  -- More elastic stretch
+					-- VISIBLE STRETCH when boosting like real slither.io!
+					local delayMultiplier = isBoosting and 1.8 or 1.15  -- Much more visible stretch
 					local delay = mathFloor(i * delayMultiplier)
 					local targetData = getFromHistory(delay)
 					if targetData then
-						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
+						-- STRETCH segments apart when boosting!
+						local spacingMultiplier = isBoosting and 0.3 or 0.08  -- Much bigger spacing when boosting
+						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
 						local currentSegmentPos = segment.Position
 
 						-- Enhanced anti-gap check - allow stretch when boosting
