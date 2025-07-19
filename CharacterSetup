@@ -380,26 +380,30 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- CURVED WRAP POSITIONING - Eyes wrap around the spherical head
+	-- POSITION EYES DIRECTLY ON HEAD SURFACE
 	local headRadius = headPart.Size.X / 2
-	-- Eyes should be AT the head surface, not outside it
-	local eyeThickness = leftEye.Size.Z / 2  -- Half the eye thickness
-	local radius = headRadius - eyeThickness * 0.8  -- INSIDE the head to eliminate gap
 	local angleOffset = math.rad(35)  -- 35 degree wrap around sides
 	
-	-- Calculate curved positions - EMBEDDED in head surface
-	local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -radius)
-	local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -radius)
+	-- Position eyes RIGHT ON the surface (no gap)
+	local eyeRadius = leftEye.Size.X / 2  -- Eye's own radius
+	local surfaceRadius = headRadius - eyeRadius * 0.5  -- Embed halfway into head
 	
-	leftEye.CFrame = headPart.CFrame * leftEyeOffset
-	rightEye.CFrame = headPart.CFrame * rightEyeOffset
+	-- Calculate positions
+	local leftPos = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
+	local rightPos = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
 	
-	-- Pupils slightly inset for realism
-	local pupilDepth = 0.65
-	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -pupilDepth)
-	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -pupilDepth)
+	-- CRITICAL: Position BEFORE creating welds
+	leftEye.CFrame = headPart.CFrame * leftPos
+	rightEye.CFrame = headPart.CFrame * rightPos
 	
-	-- Create welds for eyes
+	-- Position pupils
+	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.65)
+	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.65)
+	
+	-- Wait a frame to ensure positions are set
+	task.wait()
+	
+	-- NOW create welds AFTER positioning
 	local leftEyeWeld = Instance.new("WeldConstraint")
 	leftEyeWeld.Part0 = headPart
 	leftEyeWeld.Part1 = leftEye
@@ -410,7 +414,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	rightEyeWeld.Part1 = rightEye
 	rightEyeWeld.Parent = headPart
 	
-	-- Create welds for pupils
+	-- Weld pupils to eyes
 	local leftPupilWeld = Instance.new("WeldConstraint")
 	leftPupilWeld.Part0 = leftEye
 	leftPupilWeld.Part1 = leftPupil
@@ -867,36 +871,8 @@ local function createUltraSmoothSnake(character)
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
 			
-			-- Update eye positions when head grows to maintain proper spacing
-			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
-				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-				
-				-- CURVED WRAP POSITIONING - Eyes wrap around the spherical head
-				local headRadius = headParts.head.Size.X / 2
-				-- Eyes must be INSIDE the head radius to touch surface
-				local eyeThickness = headParts.leftEye.Size.Z / 2
-				local radius = headRadius - eyeThickness * 0.8  -- EMBEDDED in surface
-				
-				-- Dynamic angle for bigger heads (slightly more wrap)
-				local baseAngle = 35
-				local extraAngle = (scaleFactor - 1) * 5  -- Add up to 5 degrees for large heads
-				local angleOffset = math.rad(baseAngle + extraAngle)
-				
-				-- Calculate curved positions - EMBEDDED in head
-				local leftEyeOffset = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -radius)
-				local rightEyeOffset = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -radius)
-				
-				-- Update positions with curve wrap
-				headParts.leftEye.CFrame = headParts.head.CFrame * leftEyeOffset
-				headParts.rightEye.CFrame = headParts.head.CFrame * rightEyeOffset
-				
-				-- Update pupil positions with proper depth
-				if headParts.leftPupil and headParts.rightPupil then
-					local pupilDepth = 0.65
-					headParts.leftPupil.CFrame = headParts.leftEye.CFrame * CFramenew(0, 0, -pupilDepth)
-					headParts.rightPupil.CFrame = headParts.rightEye.CFrame * CFramenew(0, 0, -pupilDepth)
-				end
-			end
+			-- Eyes are welded to head - no need to update positions
+			-- The WeldConstraints handle all movement automatically
 			
 			-- LOD for performance
 			if headParts.leftPupil and headParts.rightPupil then
