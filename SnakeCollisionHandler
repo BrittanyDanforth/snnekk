@@ -500,7 +500,7 @@ local function queuePlayerDeath(player)
 		end
 		return
 	end
-	
+
 	-- Prevent double deaths
 	if deadPlayers[player] then
 		return
@@ -652,9 +652,9 @@ task.spawn(function()
 
 						-- Mark player as dead
 						deadPlayers[player] = true
-						
+
 						humanoid.Health = 0
-						
+
 						-- Clear dead flag after respawn time
 						task.spawn(function()
 							task.wait(5)
@@ -1087,7 +1087,7 @@ RunService.Stepped:Connect(function()
 				-- Real slither.io logic: check if either head hit the other's body
 				local playerADies = false
 				local playerBDies = false
-				
+
 				-- Check if Player A's head is touching Player B's body
 				local segDataB = getPlayerSegments(playerB)
 				if segDataB and segDataB.segments and #segDataB.segments > 3 then
@@ -1102,7 +1102,7 @@ RunService.Stepped:Connect(function()
 						end
 					end
 				end
-				
+
 				-- Check if Player B's head is touching Player A's body
 				local segDataA = getPlayerSegments(playerA)
 				if segDataA and segDataA.segments and #segDataA.segments > 3 then
@@ -1117,7 +1117,7 @@ RunService.Stepped:Connect(function()
 						end
 					end
 				end
-				
+
 				-- Apply deaths based on who hit what
 				if playerADies and playerBDies then
 					-- Both hit each other's bodies simultaneously (very rare)
@@ -1125,61 +1125,47 @@ RunService.Stepped:Connect(function()
 						print(string.format("[DEATH] Both die (mutual body hit): %s and %s", 
 							playerA.Name, playerB.Name))
 					end
-					-- Check invincibility before queuing deaths
-					if not isPlayerInvincible(playerA) then
-						queuePlayerDeath(playerA)
-					end
-					if not isPlayerInvincible(playerB) then
-						queuePlayerDeath(playerB)
-					end
+					queuePlayerDeath(playerA)
+					queuePlayerDeath(playerB)
 				elseif playerADies then
 					-- Player A's head hit B's body - A dies
 					if DEBUG_COLLISIONS then
 						print(string.format("[DEATH] %s dies (hit %s's body)", 
 							playerA.Name, playerB.Name))
 					end
-					-- Check invincibility before queuing death
-					if not isPlayerInvincible(playerA) then
-						queuePlayerDeath(playerA)
-					end
+					queuePlayerDeath(playerA)
 				elseif playerBDies then
 					-- Player B's head hit A's body - B dies
 					if DEBUG_COLLISIONS then
 						print(string.format("[DEATH] %s dies (hit %s's body)", 
 							playerB.Name, playerA.Name))
 					end
-					-- Check invincibility before queuing death
-					if not isPlayerInvincible(playerB) then
-						queuePlayerDeath(playerB)
-					end
+					queuePlayerDeath(playerB)
 				else
 					-- Pure head-to-head collision - only ONE dies
 					local velA = headA.AssemblyLinearVelocity or headA.Velocity
 					local velB = headB.AssemblyLinearVelocity or headB.Velocity
 					local dirAB = (headB.Position - headA.Position).Unit
 					local dirBA = -dirAB
-					
+
 					local dotA = velA:Dot(dirAB)
 					local dotB = velB:Dot(dirBA)
-					
+
 					-- Also check if they're actually moving (not just sitting there)
 					local speedA = velA.Magnitude
 					local speedB = velB.Magnitude
-					
+
 					-- Determine winner based on who's more aggressive
 					local scoreA = dotA * speedA
 					local scoreB = dotB * speedB
-					
+
 					if scoreA > scoreB then
 						-- A is more aggressive, B dies
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (less aggressive, score %.1f < %.1f)", 
 								playerB.Name, scoreB, scoreA))
 						end
-						-- Check invincibility before queuing death
-						if not isPlayerInvincible(playerB) then
-							queuePlayerDeath(playerB)
-						end
+						queuePlayerDeath(playerB)
 					else
 						-- B is more aggressive or equal, A dies
 						-- In case of tie, we just pick one (A)
@@ -1187,10 +1173,7 @@ RunService.Stepped:Connect(function()
 							print(string.format("[DEATH] %s dies (less aggressive, score %.1f <= %.1f)", 
 								playerA.Name, scoreA, scoreB))
 						end
-						-- Check invincibility before queuing death
-						if not isPlayerInvincible(playerA) then
-							queuePlayerDeath(playerA)
-						end
+						queuePlayerDeath(playerA)
 					end
 				end
 				break
@@ -1220,7 +1203,7 @@ RunService.Stepped:Connect(function()
 				if deadAISnakes[aiHead] then
 					continue
 				end
-				
+
 				-- Check AI invincibility
 				local aiSnake = nil
 				if AISnakeModule and AISnakeModule._activeSnakes then
@@ -1231,7 +1214,7 @@ RunService.Stepped:Connect(function()
 						end
 					end
 				end
-				
+
 				if aiSnake and aiSnake.IsInvincible then
 					continue -- Skip if AI is invincible
 				end
@@ -1246,7 +1229,7 @@ RunService.Stepped:Connect(function()
 					-- Real slither.io logic: check who hit whose body
 					local playerDies = false
 					local aiDies = false
-					
+
 					-- Check if player's head hit AI's body
 					if aiSnake and aiSnake.Segments then
 						for i = 4, #aiSnake.Segments do
@@ -1259,7 +1242,7 @@ RunService.Stepped:Connect(function()
 							end
 						end
 					end
-					
+
 					-- Check if AI's head hit player's body
 					local segData = getPlayerSegments(player)
 					if segData and segData.segments and #segData.segments > 3 then
@@ -1273,7 +1256,7 @@ RunService.Stepped:Connect(function()
 							end
 						end
 					end
-					
+
 					-- Apply deaths
 					if playerDies and aiDies then
 						-- Both hit bodies
@@ -1291,18 +1274,18 @@ RunService.Stepped:Connect(function()
 						local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity
 						local dirToAI = (aiHead.Position - head.Position).Unit
 						local dirToPlayer = -dirToAI
-						
+
 						local dotPlayer = velPlayer:Dot(dirToAI)
 						local dotAI = velAI:Dot(dirToPlayer)
-						
+
 						-- Check speeds
 						local speedPlayer = velPlayer.Magnitude
 						local speedAI = velAI.Magnitude
-						
+
 						-- Calculate aggression scores
 						local scorePlayer = dotPlayer * speedPlayer
 						local scoreAI = dotAI * speedAI
-						
+
 						if scorePlayer > scoreAI then
 							-- Player more aggressive, AI dies
 							queueAIDeath(aiHead)
