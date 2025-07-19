@@ -380,9 +380,9 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- Set initial positions - on sides, slightly forward
-	leftEye.CFrame = headPart.CFrame * CFramenew(-0.85, 0.3, 0.6) * CFrame.Angles(0, math.rad(15), 0)
-	rightEye.CFrame = headPart.CFrame * CFramenew(0.85, 0.3, 0.6) * CFrame.Angles(0, math.rad(-15), 0)
+	-- Set initial positions - ON the head surface, not floating
+	leftEye.CFrame = headPart.CFrame * CFramenew(-0.65, 0.2, 0.7) * CFrame.Angles(0, math.rad(10), 0)
+	rightEye.CFrame = headPart.CFrame * CFramenew(0.65, 0.2, 0.7) * CFrame.Angles(0, math.rad(-10), 0)
 	
 	-- Position pupils relative to eyes (adjust for GoogleyEyes orientation)
 	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.1)
@@ -860,14 +860,14 @@ local function createUltraSmoothSnake(character)
 			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
 				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
 				
-				-- Side positioning that scales with head
-				local eyeSpacing = 0.85 * scaleFactor  -- On the sides
-				local eyeUp = 0.3 * scaleFactor  -- Height
-				local eyeForward = 0.6 * scaleFactor  -- Forward position
+				-- Positioning that keeps eyes ON the head surface
+				local eyeSpacing = 0.65 * scaleFactor  -- Closer to center to stay on head
+				local eyeUp = 0.2 * scaleFactor  -- Lower to stay on surface
+				local eyeForward = 0.7 * scaleFactor  -- Forward but still on head
 				
 				-- Update positions with slight angle for natural look
-				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward) * CFrame.Angles(0, math.rad(15), 0)
-				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward) * CFrame.Angles(0, math.rad(-15), 0)
+				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward) * CFrame.Angles(0, math.rad(10), 0)
+				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward) * CFrame.Angles(0, math.rad(-10), 0)
 				
 				-- Update pupil positions
 				if headParts.leftPupil and headParts.rightPupil then
