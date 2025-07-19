@@ -750,16 +750,7 @@ local function createUltraSmoothSnake(character)
 			end
 		end
 		
-		-- Also check workspace for any selection boxes targeting this rootPart
-		if updateCounter % 10 == 0 then  -- Check every 10 frames
-			for _, obj in workspace:GetDescendants() do
-				if obj:IsA("SelectionBox") and obj.Adornee == rootPart then
-					obj:Destroy()
-				elseif obj:IsA("Highlight") and obj.Adornee == rootPart then
-					obj:Destroy()
-				end
-			end
-		end
+		-- REMOVED expensive workspace:GetDescendants() check - causes lag!
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
 		local followSpeed = isBoosting and activeConfig.BoostFollowSpeed or activeConfig.FollowSpeed
@@ -796,11 +787,13 @@ local function createUltraSmoothSnake(character)
 		-- Position history buffer with improved tracking for anti-gap
 		local lastHistoryPoint = getFromHistory(1)
 		local dist = (currentPos - lastHistoryPoint.position).Magnitude
-		if dist > 0.015 then
-			if dist > activeConfig.SegmentSpacing * 0.8 then
-				-- More interpolations when boosting to prevent gaps
-				local maxInterp = isBoosting and 8 or 3
-				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.4)), maxInterp)
+		
+		-- Always add position when moving (fixes gaps)
+		if dist > 0.01 then  -- Lowered threshold
+			-- More aggressive interpolation when boosting
+			if dist > activeConfig.SegmentSpacing * 0.5 then  -- Lowered from 0.8
+				local maxInterp = isBoosting and 12 or 4  -- Increased from 8/3
+				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.3)), maxInterp)
 				for i = 1, numInterpolations do
 					local fraction = i / (numInterpolations + 1)
 					local interpPos = lastHistoryPoint.position:Lerp(currentPos, fraction)
@@ -833,27 +826,30 @@ local function createUltraSmoothSnake(character)
 
 				if updateCounter % updateFrequency == 0 then
 					-- Tighter following when boosting
-					local delayMultiplier = isBoosting and 0.9 or 1.15
+					local delayMultiplier = isBoosting and 0.85 or 1.15  -- Tighter boost follow
 					local delay = mathFloor(i * delayMultiplier)
 					local targetData = getFromHistory(delay)
 					if targetData then
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
 						local currentSegmentPos = segment.Position
 
-						-- Simple anti-gap check when boosting
-						if isBoosting and i > 1 then
+						-- Enhanced anti-gap check
+						if i > 1 then
 							local prevSegment = segments[i - 1]
 							if prevSegment and prevSegment.Parent then
-								local gap = (currentSegmentPos - prevSegment.Position).Magnitude
-								if gap > activeConfig.SegmentSpacing * 1.5 then
-									-- Too far, pull it closer
-									local dir = (prevSegment.Position - currentSegmentPos).Unit
-									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
+								local gap = (segmentPos - prevSegment.Position).Magnitude
+								local maxGap = activeConfig.SegmentSpacing * (isBoosting and 1.2 or 1.4)
+								if gap > maxGap then
+									-- Pull closer to prevent gaps
+									local dir = (prevSegment.Position - segmentPos).Unit
+									segmentPos = prevSegment.Position - dir * (activeConfig.SegmentSpacing * 0.95)
 								end
 							end
 						end
 
-						local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
+						-- Smoother lerping for less jitter
+						local lerpSpeed = isBoosting and mathMin(followSpeed * 1.2, 0.8) or followSpeed
+						local newPos = currentSegmentPos:Lerp(segmentPos, lerpSpeed)
 
 						segment.CFrame = CFramenew(newPos)
 					end
@@ -975,51 +971,32 @@ Players.PlayerRemoving:Connect(function(player)
 	_G.PlayerSnakes[player] = nil
 end)
 
--- NEW: Periodic cleanup to prevent orphaned segments
+-- Optimized cleanup - runs less frequently and more efficiently
 task.spawn(function()
 	while true do
-		task.wait(10) -- Check every 10 seconds
-
-		local validSegments = {}
-
-		-- Collect all valid segments from active snakes
-		for _, player in pairs(Players:GetPlayers()) do
-			local snake = playerSnakes[player] or _G.PlayerSnakes[player]
-			if snake and snake.segments then
-				for _, seg in pairs(snake.segments) do
-					if seg and seg.Parent then
-						validSegments[seg] = true
-					end
-				end
-			end
+		task.wait(30) -- Check every 30 seconds instead of 10
+		
+		-- Only run cleanup if there are few players (less server load)
+		if #Players:GetPlayers() > 20 then
+			task.wait(30) -- Skip this cycle if too many players
+			continue
 		end
 
-		-- Check SegmentContainer for orphaned segments
-		if SegmentContainer then
-			for _, child in pairs(SegmentContainer:GetChildren()) do
-				if child:IsA("BasePart") and child.Name:match("^Segment") then
-					if not validSegments[child] then
-						-- This is an orphaned segment, destroy it
-						child:Destroy()
-					end
-				end
-			end
-		end
-
-		-- Clean up snake models without active players
+		-- Quick cleanup for orphaned models only
 		for _, child in pairs(workspace:GetChildren()) do
 			if child:IsA("Model") and child:GetAttribute("IsSnakeModel") then
 				local userId = child:GetAttribute("OwnerUserId")
-				local playerExists = false
-
+				local found = false
+				
+				-- Quick player check
 				for _, player in pairs(Players:GetPlayers()) do
 					if player.UserId == userId then
-						playerExists = true
+						found = true
 						break
 					end
 				end
-
-				if not playerExists then
+				
+				if not found then
 					child:Destroy()
 				end
 			end
