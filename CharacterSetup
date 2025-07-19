@@ -586,19 +586,68 @@ local function createUltraSmoothSnake(character)
 	local frozenTailIndex = 0
 	local growthTimer = 0
 	local GROWTH_RATE = 0.03 -- Add segment every 0.03 seconds (33 segments/second)
+	local FREEZE_THRESHOLD = 50 -- Only freeze tail if growing 50+ segments at once
 
 	local function growSnake(amount)
 		amount = amount or 5
-		-- Add to growth queue instead of growing immediately
-		growthQueue = growthQueue + amount
 		
-		-- Freeze the tail when starting to grow
-		if not tailFrozen and growthQueue > 0 then
-			tailFrozen = true
-			frozenTailIndex = currentLength
-			-- Store the current tail position
-			if segments[currentLength] then
-				frozenTailPosition = segments[currentLength].Position
+		-- For small amounts, use instant growth (old system)
+		if amount < FREEZE_THRESHOLD and growthQueue == 0 then
+			local grew = false
+			for i = 1, amount do
+				if currentLength < activeConfig.MaxSegments then
+					grew = true
+					currentLength = currentLength + 1
+					local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
+					local color = activeConfig.BodyColors[colorIndex]
+					local lastSegment = segments[#segments]
+					local newPos = lastSegment and lastSegment.Position or rootPart.Position
+					local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
+					segments[currentLength] = segment
+
+					segment.Transparency = 1
+					segment.Size = Vector3new(0.05, 0.05, 0.05)
+					taskSpawn(function()
+						local growTime = 0.15
+						local t = 0
+						local startSize = Vector3new(0.05, 0.05, 0.05)
+						local endSize = activeConfig.SegmentSize
+						local heartbeat = RunService.Heartbeat
+
+						while t < growTime and segment.Parent do
+							t = t + heartbeat:Wait()
+							if segment.Parent then
+								local alpha = mathMin(t / growTime, 1)
+								segment.Size = startSize:Lerp(endSize, alpha)
+								segment.Transparency = 1 - alpha
+							end
+						end
+						if segment.Parent then
+							segment.Size = endSize
+							segment.Transparency = 0
+						end
+					end)
+				end
+			end
+			
+			if grew and leaderstats and updateCounter % 5 == 0 then
+				local lengthValue = leaderstats:FindFirstChild("Length")
+				if lengthValue then
+					lengthValue.Value = currentLength
+				end
+			end
+		else
+			-- For large amounts or if already growing, add to queue
+			growthQueue = growthQueue + amount
+			
+			-- Only freeze tail for large growth bursts
+			if not tailFrozen and growthQueue >= FREEZE_THRESHOLD then
+				tailFrozen = true
+				frozenTailIndex = currentLength
+				-- Store the current tail position
+				if segments[currentLength] then
+					frozenTailPosition = segments[currentLength].Position
+				end
 			end
 		end
 	end
