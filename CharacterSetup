@@ -753,7 +753,8 @@ local function createUltraSmoothSnake(character)
 		-- REMOVED expensive workspace:GetDescendants() check - causes lag!
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
-		local followSpeed = isBoosting and activeConfig.BoostFollowSpeed or activeConfig.FollowSpeed
+		-- Faster follow speed when boosting for responsiveness
+		local followSpeed = isBoosting and math.min(activeConfig.BoostFollowSpeed * 1.5, 0.7) or activeConfig.FollowSpeed
 
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
@@ -825,30 +826,30 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- Tighter following when boosting
-					local delayMultiplier = isBoosting and 0.85 or 1.15  -- Tighter boost follow
+					-- STRETCH when boosting like real slither.io!
+					local delayMultiplier = isBoosting and 1.3 or 1.15  -- Stretch out when boosting
 					local delay = mathFloor(i * delayMultiplier)
 					local targetData = getFromHistory(delay)
 					if targetData then
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
 						local currentSegmentPos = segment.Position
 
-						-- Enhanced anti-gap check
+						-- Enhanced anti-gap check - allow stretch when boosting
 						if i > 1 then
 							local prevSegment = segments[i - 1]
 							if prevSegment and prevSegment.Parent then
 								local gap = (segmentPos - prevSegment.Position).Magnitude
-								local maxGap = activeConfig.SegmentSpacing * (isBoosting and 1.2 or 1.4)
+								local maxGap = activeConfig.SegmentSpacing * (isBoosting and 2.0 or 1.4) -- Allow 2x stretch when boosting
 								if gap > maxGap then
-									-- Pull closer to prevent gaps
+									-- Only prevent extreme gaps
 									local dir = (prevSegment.Position - segmentPos).Unit
-									segmentPos = prevSegment.Position - dir * (activeConfig.SegmentSpacing * 0.95)
+									segmentPos = prevSegment.Position - dir * (activeConfig.SegmentSpacing * 1.8)
 								end
 							end
 						end
 
-						-- Smoother lerping for less jitter
-						local lerpSpeed = isBoosting and mathMin(followSpeed * 1.2, 0.8) or followSpeed
+						-- Smoother lerping - let boost stretch naturally
+						local lerpSpeed = isBoosting and followSpeed or followSpeed
 						local newPos = currentSegmentPos:Lerp(segmentPos, lerpSpeed)
 
 						segment.CFrame = CFramenew(newPos)
