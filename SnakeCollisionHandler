@@ -28,6 +28,7 @@ local HEAD_COLLISION_DISTANCE = 3.2 -- Reduced from 3.5 for better accuracy
 local MIN_COLLISION_DISTANCE = 2.0 -- Minimum collision distance
 local COLLISION_BUFFER = 0.5 -- Additional buffer for network compensation
 local NETWORK_COMPENSATION = 0.3 -- Reduced from higher value
+local SPAWN_PROTECTION_TIME = 3 -- 3 seconds spawn protection for AI
 
 
 -- === DEBUG SYSTEM ===
@@ -44,9 +45,27 @@ local deadPlayers = {} -- Track dead players to prevent double deaths
 -- === INVINCIBILITY SYSTEM (UNCHANGED) ===
 local INVINCIBILITY_DURATION = 5
 local invinciblePlayers = {}
+local spawnProtectedAI = {} -- Track AI spawn protection
 
 local function setPlayerInvincible(player)
 	invinciblePlayers[player] = os.clock() + INVINCIBILITY_DURATION
+end
+
+local function setAISpawnProtection(aiHead)
+	spawnProtectedAI[aiHead] = os.clock() + SPAWN_PROTECTION_TIME
+end
+
+local function isAIProtected(aiHead)
+	if not aiHead then return false end
+	local protectionEnd = spawnProtectedAI[aiHead]
+	if protectionEnd then
+		if os.clock() < protectionEnd then
+			return true
+		else
+			spawnProtectedAI[aiHead] = nil
+		end
+	end
+	return false
 end
 
 local function isPlayerInvincible(player)
@@ -214,7 +233,16 @@ local function getAISnakeHeads()
 	if AISnakeModule._activeSnakes then
 		for _, snake in AISnakeModule._activeSnakes do
 			if snake.HeadParts and snake.HeadParts.head and snake.HeadParts.head.Parent then
-				heads[#heads + 1] = snake.HeadParts.head
+				local head = snake.HeadParts.head
+				heads[#heads + 1] = head
+				
+				-- Set spawn protection for new AI snakes
+				if not spawnProtectedAI[head] and not deadAISnakes[head] then
+					-- Check if this is a new snake (no segments yet or very few)
+					if not snake.Segments or #snake.Segments < 10 then
+						setAISpawnProtection(head)
+					end
+				end
 			end
 		end
 	end
@@ -1015,6 +1043,11 @@ RunService.Stepped:Connect(function()
 	-- AI vs Player body collisions
 	for _, aiHead in ipairs(aiHeads) do
 		if aiHead and aiHead.Parent then
+			-- Skip if AI is spawn protected
+			if isAIProtected(aiHead) then
+				continue
+			end
+			
 			local aiPos = aiHead.Position
 
 			for _, headData in ipairs(playerHeads) do
@@ -1303,9 +1336,18 @@ RunService.Stepped:Connect(function()
 	for i = 1, #aiHeads - 1 do
 		local headA = aiHeads[i]
 		if headA and headA.Parent then
+			-- Skip if AI A is spawn protected
+			if isAIProtected(headA) then
+				continue
+			end
+			
 			for j = i + 1, #aiHeads do
 				local headB = aiHeads[j]
 				if headB and headB.Parent then
+					-- Skip if AI B is spawn protected
+					if isAIProtected(headB) then
+						continue
+					end
 					local dist = (headA.Position - headB.Position).Magnitude
 					if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
 						local velA = headA.AssemblyLinearVelocity or headA.Velocity
@@ -1340,6 +1382,11 @@ RunService.Stepped:Connect(function()
 	-- AI vs other AI bodies
 	for _, aiHead in ipairs(aiHeads) do
 		if aiHead and aiHead.Parent and AISnakeModule._activeSnakes then
+			-- Skip if AI is spawn protected
+			if isAIProtected(aiHead) then
+				continue
+			end
+			
 			for _, snake in AISnakeModule._activeSnakes do
 				-- Skip self-collision
 				if snake and snake._active and snake.HeadParts and snake.HeadParts.head == aiHead then
