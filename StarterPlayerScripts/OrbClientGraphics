@@ -116,43 +116,73 @@ end
 -- Function to adjust snake glows
 local function adjustSnakeGlows(mode)
 	local preset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
+	local glowsFound = 0
 	
 	-- Find all snake segments and adjust their glow
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj:IsA("PointLight") and obj.Name == "Glow" then
 			local parent = obj.Parent
 			-- Check if parent is a snake segment
-			if parent and parent:IsA("BasePart") and 
-			   (parent:GetAttribute("IsSnakeSegment") or parent.Name == "AISnakeHead" or 
-			    (parent.Parent and parent.Parent.Name == "AISnake")) then
-				
-				-- Store original values
-				if not obj:GetAttribute("OriginalBrightness") then
-					obj:SetAttribute("OriginalBrightness", obj.Brightness)
-					obj:SetAttribute("OriginalRange", obj.Range)
+			if parent and parent:IsA("BasePart") then
+				local isSnakeSegment = parent:GetAttribute("IsSnakeSegment")
+				local isAIHead = parent.Name == "AISnakeHead"
+				local isAIPart = parent.Parent and (parent.Parent.Name == "AISnake" or parent.Parent.Parent and parent.Parent.Parent.Name == "AISnake")
+				-- Check if it's part of a player character's snake
+				local player = parent:FindFirstAncestorOfClass("Model")
+				local isPlayerSnake = false
+				if player then
+					local humanoid = player:FindFirstChildOfClass("Humanoid")
+					if humanoid then
+						isPlayerSnake = true
+					else
+						-- Check if parent model has snake parts
+						for _, child in ipairs(player:GetChildren()) do
+							if child:GetAttribute("IsSnakeSegment") then
+								isPlayerSnake = true
+								break
+							end
+						end
+					end
 				end
 				
-				if mode == "Low" then
-					-- Disable glow for low graphics
-					obj.Enabled = false
-				elseif mode == "Medium" then
-					-- Reduce glow for medium graphics
-					obj.Enabled = true
-					obj.Brightness = obj:GetAttribute("OriginalBrightness") * 0.5
-					obj.Range = obj:GetAttribute("OriginalRange") * 0.5
-				else
-					-- Full glow for high graphics
-					obj.Enabled = true
-					obj.Brightness = obj:GetAttribute("OriginalBrightness")
-					obj.Range = obj:GetAttribute("OriginalRange")
+				if isSnakeSegment or isAIHead or isAIPart or isPlayerSnake then
+					glowsFound = glowsFound + 1
+					
+					-- Store original values
+					if not obj:GetAttribute("OriginalBrightness") then
+						obj:SetAttribute("OriginalBrightness", obj.Brightness)
+						obj:SetAttribute("OriginalRange", obj.Range)
+					end
+					
+					if mode == "Low" then
+						-- Disable glow for low graphics
+						obj.Enabled = false
+					elseif mode == "Medium" then
+						-- Reduce glow for medium graphics
+						obj.Enabled = true
+						obj.Brightness = obj:GetAttribute("OriginalBrightness") * 0.5
+						obj.Range = obj:GetAttribute("OriginalRange") * 0.5
+					else
+						-- Full glow for high graphics
+						obj.Enabled = true
+						obj.Brightness = obj:GetAttribute("OriginalBrightness")
+						obj.Range = obj:GetAttribute("OriginalRange")
+					end
 				end
 			end
 		end
+	end
+	
+	-- Debug print first time
+	if glowsFound > 0 and not script:GetAttribute("GlowDebugPrinted") then
+		script:SetAttribute("GlowDebugPrinted", true)
+		print("Snake glows found and adjusted:", glowsFound, "Mode:", mode)
 	end
 end
 
 -- Main update loop
 local lastUpdate = 0
+local lastGlowUpdate = 0
 RunService.Heartbeat:Connect(function()
 	local now = tick()
 	if now - lastUpdate < 0.1 then return end  -- Update every 0.1 seconds
@@ -171,6 +201,12 @@ RunService.Heartbeat:Connect(function()
 			applyOrbGraphics(obj, distance)
 			orbCache[obj] = true
 		end
+	end
+	
+	-- Update snake glows every 0.5 seconds
+	if now - lastGlowUpdate > 0.5 then
+		lastGlowUpdate = now
+		adjustSnakeGlows(mode)
 	end
 	
 	-- Clean up cache for destroyed orbs
