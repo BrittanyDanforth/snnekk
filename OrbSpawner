@@ -613,7 +613,7 @@ local function createOrb()
 		upgradeOrbs[#upgradeOrbs + 1] = orb
 		orbs[#orbs + 1] = orb
 	else
-		orb = OrbUtils.spawnOrbAt(randomPosition(), 10)
+		orb = OrbUtils.spawnOrbAt(randomPosition(), 1)  -- REDUCED from 10 to 1
 		if orb then
 			-- Make sure new orbs from OrbUtils also start hidden
 			orb.Transparency = 1
