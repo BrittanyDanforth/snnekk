@@ -603,8 +603,8 @@ local function createUltraSmoothSnake(character)
 		currentLength = i
 	end
 
-	-- OPTIMIZED: Sweet spot that works without ping lag
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.7), 1750) -- 1750 max to avoid ping
+	-- OPTIMIZED: Dynamic buffer size based on current length to reduce ping
+	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.6), 1500) -- Reduced to 1500 for lower ping
 	local positionHistory = {}
 	local historyHead = 1
 	local historyCount = 0
@@ -835,10 +835,14 @@ local function createUltraSmoothSnake(character)
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 					
-					-- FIX: Reposition eyes based on head size
+					-- FIX: Better eye positioning with dynamic spacing
 					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-0.6 * scaleFactor, 0.55 * scaleFactor, 0.8 * scaleFactor)
-					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(0.6 * scaleFactor, 0.55 * scaleFactor, 0.8 * scaleFactor)
+					local eyeSpacing = 0.6 + (scaleFactor - 1) * 0.15  -- Eyes spread apart more as head grows
+					local eyeForward = 0.85 * scaleFactor  -- Keep eyes on surface
+					local eyeUp = 0.55 * scaleFactor
+					
+					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
+					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
 
 					-- Scale pupils too
 					if headParts.leftPupil and headParts.rightPupil then
@@ -917,8 +921,8 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- Optimized delay for smaller buffer
-					local delayMultiplier = isBoosting and 0.65 or 0.8  -- Tighter for smaller buffer
+					-- Optimized delay for reduced ping
+					local delayMultiplier = isBoosting and 0.7 or 0.85  -- Slightly looser to compensate for smaller buffer
 					local delay = mathFloor(i * delayMultiplier)
 					-- Ensure we don't exceed buffer
 					delay = mathMin(delay, historyCount - 1)
@@ -950,10 +954,10 @@ local function createUltraSmoothSnake(character)
 
 						segment.CFrame = CFramenew(newPos)
 
-						-- OPTIMIZED: Staggered updates for ALL segments
+						-- OPTIMIZED: Less frequent size updates to reduce ping
 						-- Update different segment groups on different frames
-						local updateGroup = i % 5  -- Split into 5 groups
-						if updateCounter % 30 == updateGroup then  -- Each group updates every 30 frames
+						local updateGroup = i % 10  -- Split into 10 groups for less network traffic
+						if updateCounter % 60 == updateGroup then  -- Each group updates every 60 frames
 							local growthFactor = 1
 
 							-- ALL segments grow UNIFORMLY like real slither.io
