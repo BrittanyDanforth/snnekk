@@ -1,3 +1,4 @@
+-- THIS IS INSIDE ServerScriptService as a script
 -- SnakeCollisionHandler V7.0: SUPREME SCALE COLLISION SYSTEM
 -- Zero-lag collision detection with network compensation
 -- Surgical fixes for attachment errors and death delays
