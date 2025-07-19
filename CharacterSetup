@@ -902,21 +902,19 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- AGGRESSIVE LOD: Much better FPS at max length
+				-- SMOOTH LOD: Balance visual quality and performance
 				local updateFrequency = 1
 				
-				if i > 50 then
+				if i > 150 then
 					updateFrequency = 2
-				elseif i > 200 then
+				elseif i > 400 then
+					updateFrequency = 3
+				elseif i > 800 then
 					updateFrequency = 4
-				elseif i > 500 then
-					updateFrequency = 8
-				elseif i > 1000 then
-					updateFrequency = 12
 				elseif i > 1500 then
-					updateFrequency = 16
+					updateFrequency = 5
 				elseif i > 2000 then
-					updateFrequency = 20  -- Far tail updates very rarely
+					updateFrequency = 6  -- Much smoother tail movement
 				end
 
 				if updateCounter % updateFrequency == 0 then
@@ -965,34 +963,30 @@ local function createUltraSmoothSnake(character)
 						local newPos = currentSegmentPos:Lerp(segmentPos, lerpSpeed)
 
 						segment.CFrame = CFramenew(newPos)
-
-						-- OPTIMIZED: Staggered size updates for all segments
-						-- Update different ranges at different rates
-						local shouldUpdateSize = false
-						if i <= 200 then
-							shouldUpdateSize = updateCounter % 60 == (i % 10)  -- Front updates more often
-						elseif i <= 800 then
-							shouldUpdateSize = updateCounter % 120 == (i % 20)  -- Middle updates less
-						else
-							shouldUpdateSize = updateCounter % 240 == (i % 40)  -- Tail updates rarely
-						end
-						
-						if shouldUpdateSize then
-							local growthFactor = 1
-
-							-- ALL segments grow UNIFORMLY like real slither.io
-							if currentLength > 200 then
-								-- Enhanced growth for more visual length
-								growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2  -- Bigger growth multiplier
-							end
-
-							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.2)  -- Max 2.2x size
-							-- Smooth size transition - faster for segments that are way off
-							local sizeDiff = (targetSize - segment.Size).Magnitude
-							local lerpSpeed = sizeDiff > 5 and 0.3 or 0.1  -- Faster if far from target
-							segment.Size = segment.Size:Lerp(targetSize, lerpSpeed)
-						end
 					end
+				end
+				
+				-- SEPARATE SIZE UPDATES: Less frequent, doesn't affect movement
+				if i <= 300 and updateCounter % 90 == (i % 15) then
+					-- Only update size for visible segments
+					local growthFactor = 1
+					if currentLength > 200 then
+						growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2
+					end
+					
+					local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.2)
+					local sizeDiff = (targetSize - segment.Size).Magnitude
+					local lerpSpeed = sizeDiff > 5 and 0.3 or 0.1
+					segment.Size = segment.Size:Lerp(targetSize, lerpSpeed)
+				elseif i > 300 and segment.Size.X < activeConfig.SegmentSize.X * 1.5 then
+					-- Ensure far segments have at least some growth
+					local growthFactor = 1
+					if currentLength > 200 then
+						growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2
+					end
+					
+					local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.2)
+					segment.Size = targetSize  -- Instant size for far segments
 				end
 			end
 		end
