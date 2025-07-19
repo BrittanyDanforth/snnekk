@@ -1,4 +1,5 @@
 --[[
+This goes into ServerScriptService
 ULTRA-SMOOTH & HIGH-PERFORMANCE SLITHER.IO SNAKE SYSTEM V5.2 - SKIN SYSTEM INTEGRATED
 - Fixed segment pooling to remove segments from workspace
 - Added periodic cleanup for orphaned segments
