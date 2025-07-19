@@ -1253,13 +1253,8 @@ function AISnake:updateMovement(dt)
 
 	-- MUCH smoother turn speed
 	local turnSpeed = self.TurnSpeed
-	if state == "AVOID_WALL" then
-		turnSpeed = turnSpeed * 3.0 -- REDUCED from 5.0
-	elseif state == "FLEE" then
-		turnSpeed = turnSpeed * 1.8 -- REDUCED from 2.2
-	elseif state == "CIRCLE" then
-		turnSpeed = turnSpeed * 1.5 -- REDUCED from 2.5
-	end
+	-- NO TURN SPEED MULTIPLIERS - fair gameplay
+	-- AI should turn at same speed as players regardless of state
 
 	-- SMOOTHER boost turning
 	if self.Boosting then
