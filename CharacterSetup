@@ -658,8 +658,13 @@ local function createUltraSmoothSnake(character)
 			if currentLength < activeConfig.MaxSegments then
 				grew = true
 				currentLength = currentLength + 1
-				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
-				local color = activeConfig.BodyColors[colorIndex]
+				-- Ensure we have colors to use
+				local bodyColors = activeConfig.BodyColors
+				if not bodyColors or #bodyColors == 0 then
+					bodyColors = Config.BodyColors  -- Fallback to default
+				end
+				local colorIndex = ((currentLength - 1) % #bodyColors) + 1
+				local color = bodyColors[colorIndex]
 				local lastSegment = segments[#segments]
 				local newPos = lastSegment and lastSegment.Position or rootPart.Position
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel, currentLength)
@@ -897,27 +902,21 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- SMOOTH LOD: Update groups of segments together to avoid visual lag
+				-- AGGRESSIVE LOD: Much better FPS at max length
 				local updateFrequency = 1
-				local groupOffset = (updateCounter + i) % 3  -- Stagger updates
-
-				if i > 100 then
-					updateFrequency = 2 -- Every 2 frames
-				end
-				if i > 300 then
-					updateFrequency = 3 -- Every 3 frames
-				end
-				if i > 600 then
-					updateFrequency = 4 -- Every 4 frames
-				end
-				if i > 1000 then
-					updateFrequency = 5 -- Every 5 frames
-				end
-				if i > 1500 then
-					updateFrequency = 6 -- Every 6 frames
-				end
-				if i > 2000 then
-					updateFrequency = 8 -- Every 8 frames for far tail
+				
+				if i > 50 then
+					updateFrequency = 2
+				elseif i > 200 then
+					updateFrequency = 4
+				elseif i > 500 then
+					updateFrequency = 8
+				elseif i > 1000 then
+					updateFrequency = 12
+				elseif i > 1500 then
+					updateFrequency = 16
+				elseif i > 2000 then
+					updateFrequency = 20  -- Far tail updates very rarely
 				end
 
 				if updateCounter % updateFrequency == 0 then
@@ -967,10 +966,9 @@ local function createUltraSmoothSnake(character)
 
 						segment.CFrame = CFramenew(newPos)
 
-						-- OPTIMIZED: Less frequent size updates to reduce ping
-						-- Update different segment groups on different frames
-						local updateGroup = i % 10  -- Split into 10 groups for less network traffic
-						if updateCounter % 60 == updateGroup then  -- Each group updates every 60 frames
+						-- ULTRA OPTIMIZED: Very rare size updates for max FPS
+						-- Only update size for visible segments
+						if i <= 100 and updateCounter % 120 == (i % 10) then  -- Only first 100 segments resize
 							local growthFactor = 1
 
 							-- ALL segments grow UNIFORMLY like real slither.io
