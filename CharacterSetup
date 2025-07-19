@@ -83,8 +83,8 @@ local taskWait = task.wait
 
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
-	HeadSize = Vector3new(3.6, 3.6, 3.6),  -- Head BARELY bigger than segments
-	SegmentSize = Vector3new(3.5, 3.5, 3.5),  -- Uniform segment size
+	HeadSize = Vector3new(4.5, 4.5, 4.5),  -- Bigger head
+	SegmentSize = Vector3new(3.5, 3.5, 4),  -- Thinner but still good
 	SegmentSpacing = 3.2,  -- Tighter for more segments visible
 	InitialLength = 55,  -- Starting length
 	MaxSegments = 3000,  -- MANY MORE segments for HUGE length
@@ -265,13 +265,13 @@ end
 local function createSegment(index, position, color, config, parentModel, currentLength)
 	local segment = getSegment()
 	segment.Name = "Segment" .. index
-	
+
 	-- Apply growth factor based on current snake length
 	local growthFactor = 1
 	if currentLength and currentLength > 200 then
 		growthFactor = 1 + ((currentLength - 200) / 2800) * 1.0  -- Match moderate growth
 	end
-	
+
 	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
 	segment.Material = config.BodyMaterial
 	segment.Color = color
@@ -314,7 +314,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local headPart = Instance.new("Part")
 	headPart.Name = "SnakeHead"
 	headPart.Size = config.HeadSize
-	headPart.Material = Enum.Material.Neon  -- VISIBLE HEAD! Not ForceField
+	headPart.Material = config.HeadMaterial
 	headPart.Color = config.HeadColor
 	headPart.Shape = Enum.PartType.Ball
 	headPart.CanCollide = false
@@ -341,122 +341,63 @@ local function createVisualHead(rootPart, config, parentModel)
 	headOutline.Transparency = 1
 	headOutline.Parent = headPart
 
-	-- Check if eyes already exist (prevent duplicates)
-	local existingLeftEye = headPart:FindFirstChild("Eye1")
-	local existingRightEye = headPart:FindFirstChild("Eye2")
-	if existingLeftEye and existingRightEye then
-		-- Eyes already exist, just return references
-		return {
-			head = headPart,
-			headLight = headLight,
-			headOutline = headOutline,
-			leftEye = existingLeftEye,
-			rightEye = existingRightEye,
-			leftPupil = headPart:FindFirstChild("Pupil1"),
-			rightPupil = headPart:FindFirstChild("Pupil2"),
-		}
+	local function createEye(name, position, parent)
+		local eye = Instance.new("Part")
+		eye.Name = name
+		eye.Size = Vector3new(0.6, 0.6, 0.6)  -- Match reference code size
+		eye.Material = Enum.Material.Neon
+		eye.Color = Color3.fromRGB(255, 255, 255)
+		eye.Shape = Enum.PartType.Ball
+		eye.CanCollide = false
+		eye.CanQuery = false
+		eye.CanTouch = false
+		eye.Anchored = false
+		eye.Massless = true  -- Make eyes massless
+		eye.CastShadow = false  -- No shadows for performance
+		eye.Parent = parent
+		-- Position FIRST, then weld
+		eye.CFrame = parent.CFrame * CFramenew(position)
+
+		-- Create weld AFTER positioning
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = parent
+		weld.Part1 = eye
+		weld.Parent = parent
+
+		-- No rigid constraint - it was causing conflicts!
+
+		return eye, weld
 	end
 
-	-- Use GoogleyEyes from ReplicatedStorage
-	local GoogleyEyes = ReplicatedStorage:WaitForChild("GoogleyEyes")
-	
-	-- Clone the GoogleyEyes model
-	local eyesModel = GoogleyEyes:Clone()
-	local leftEye = eyesModel:WaitForChild("Eye1")
-	local rightEye = eyesModel:WaitForChild("Eye2")
-	local leftPupil = eyesModel:WaitForChild("Pupil2")  -- Based on the structure
-	local rightPupil = eyesModel:WaitForChild("Pupil1")  -- Swapped to match visual appearance
-	
-	-- Ensure eyes and pupils have proper properties
-	for _, part in pairs({leftEye, rightEye, leftPupil, rightPupil}) do
-		if part then
-			part.CanCollide = false
-			part.CanQuery = false
-			part.CanTouch = false
-			part.Anchored = false
-			part.Massless = true
-			part.CastShadow = false
-		end
+	local function createPupil(name, position, parent)
+		local pupil = Instance.new("Part")
+		pupil.Name = name
+		pupil.Size = Vector3new(0.25, 0.25, 0.25)  -- Match reference code size
+		pupil.Material = Enum.Material.Neon
+		pupil.Color = Color3.fromRGB(0, 0, 0)
+		pupil.Shape = Enum.PartType.Ball
+		pupil.CanCollide = false
+		pupil.CanQuery = false
+		pupil.CanTouch = false
+		pupil.Anchored = false
+		pupil.Massless = true
+		pupil.CastShadow = false  -- No shadows
+		pupil.Parent = parent
+		pupil.CFrame = parent.CFrame * CFramenew(position)
+
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = parent
+		weld.Part1 = pupil
+		weld.Parent = parent
+
+		return pupil, weld
 	end
-	
-	-- DESTROY any existing welds from the GoogleyEyes model FIRST
-	for _, weld in pairs(eyesModel:GetDescendants()) do
-		if weld:IsA("WeldConstraint") or weld:IsA("Weld") or weld:IsA("Motor6D") then
-			weld:Destroy()
-		end
-	end
-	for _, weld in pairs(leftEye:GetDescendants()) do
-		if weld:IsA("WeldConstraint") or weld:IsA("Weld") or weld:IsA("Motor6D") then
-			weld:Destroy()
-		end
-	end
-	for _, weld in pairs(rightEye:GetDescendants()) do
-		if weld:IsA("WeldConstraint") or weld:IsA("Weld") or weld:IsA("Motor6D") then
-			weld:Destroy()
-		end
-	end
-	
-	-- Parent eyes to head FIRST (before positioning)
-	leftEye.Parent = headPart
-	rightEye.Parent = headPart
-	leftPupil.Parent = headPart
-	rightPupil.Parent = headPart
-	
-	-- Scale down the eyes
-	local eyeScale = 0.7  -- Make them smaller
-	for _, part in pairs({leftEye, rightEye}) do
-		part.Size = part.Size * eyeScale
-	end
-	for _, part in pairs({leftPupil, rightPupil}) do
-		part.Size = part.Size * eyeScale
-	end
-	
-	-- SIMPLE DIRECT POSITIONING - NO COMPLEX MATH
-	local headRadius = headPart.Size.X / 2
-	
-	-- Just put the eyes where they should be - on the sides, MUCH HIGHER up and forward
-	-- X = side offset, Y = up/down, Z = forward/back
-	local eyeOffset = headRadius * 0.7  -- 70% of head radius
-	local upOffset = headRadius * 0.7   -- 70% UP FROM CENTER - MUCH HIGHER!
-	local forwardOffset = -headRadius * 0.3  -- 30% forward
-	
-	-- LEFT EYE - negative X is left
-	leftEye.CFrame = headPart.CFrame * CFramenew(-eyeOffset, upOffset, forwardOffset)
-	
-	-- RIGHT EYE - positive X is right  
-	rightEye.CFrame = headPart.CFrame * CFramenew(eyeOffset, upOffset, forwardOffset)
-	
-	-- Pupils straight out from eyes
-	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.5)
-	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.5)
-	
-	-- Let physics settle
-	task.wait(0.1)
-	
-	-- NOW create welds AFTER positioning
-	local leftEyeWeld = Instance.new("WeldConstraint")
-	leftEyeWeld.Part0 = headPart
-	leftEyeWeld.Part1 = leftEye
-	leftEyeWeld.Parent = headPart
-	
-	local rightEyeWeld = Instance.new("WeldConstraint")
-	rightEyeWeld.Part0 = headPart
-	rightEyeWeld.Part1 = rightEye
-	rightEyeWeld.Parent = headPart
-	
-	-- Weld pupils to eyes
-	local leftPupilWeld = Instance.new("WeldConstraint")
-	leftPupilWeld.Part0 = leftEye
-	leftPupilWeld.Part1 = leftPupil
-	leftPupilWeld.Parent = leftEye
-	
-	local rightPupilWeld = Instance.new("WeldConstraint")
-	rightPupilWeld.Part0 = rightEye
-	rightPupilWeld.Part1 = rightPupil
-	rightPupilWeld.Parent = rightEye
-	
-	-- Clean up the GoogleyEyes model
-	eyesModel:Destroy()
+
+	-- Match reference code positioning: X=0.6, Y=0.55, Z=0.8
+	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.6, 0.55, 0.8), headPart)
+	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.6, 0.55, 0.8), headPart)
+	local leftPupil, leftPupilWeld = createPupil("LeftPupil", Vector3new(0, 0, -0.2), leftEye)
+	local rightPupil, rightPupilWeld = createPupil("RightPupil", Vector3new(0, 0, -0.2), rightEye)
 
 	return {
 		head = headPart,
@@ -468,6 +409,8 @@ local function createVisualHead(rootPart, config, parentModel)
 		rightPupil = rightPupil,
 		leftEyeWeld = leftEyeWeld,
 		rightEyeWeld = rightEyeWeld,
+		leftPupilWeld = leftPupilWeld,
+		rightPupilWeld = rightPupilWeld,
 	}
 end
 
@@ -674,7 +617,7 @@ local function createUltraSmoothSnake(character)
 	local positionHistory = {}
 	local historyHead = 1
 	local historyCount = 0
-	
+
 	-- Start small and grow
 	local initialHistoryPoint = { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
 	for i = 1, mathMin(100, maxHistorySize) do
@@ -699,7 +642,7 @@ local function createUltraSmoothSnake(character)
 		if stepsBack > historyCount then
 			return positionHistory[1]
 		end
-		
+
 		local index = historyHead - stepsBack
 		if index < 1 then
 			if historyCount >= maxHistorySize then
@@ -848,7 +791,7 @@ local function createUltraSmoothSnake(character)
 		if not isActive or not rootPart.Parent then return end
 
 		updateCounter = updateCounter + 1
-		
+
 		-- Calculate uniform size ONCE per frame for ALL segments
 		local currentGrowthFactor = 1
 		if currentLength > 200 then
@@ -887,25 +830,10 @@ local function createUltraSmoothSnake(character)
 		local headOffset = lookVector * 1.5
 		local headPos = currentPos + headOffset
 
-			-- Create head after 3 frames to prevent flash
-	if not headParts and framesSinceSpawn == 3 then
-		-- Clean up any duplicate heads first
-		for _, child in pairs(snakeModel:GetChildren()) do
-			if child.Name == "SnakeHead" and child ~= rootPart then
-				child:Destroy()
-			end
+		-- Create head after 3 frames to prevent flash
+		if not headParts and framesSinceSpawn == 3 then
+			headParts = createVisualHead(rootPart, activeConfig, snakeModel)
 		end
-		
-		-- Clean up any stray eyes
-		for _, child in pairs(workspace:GetDescendants()) do
-			if (child.Name == "Eye1" or child.Name == "Eye2" or child.Name == "Pupil1" or child.Name == "Pupil2") and
-			   not child:IsDescendantOf(snakeModel) then
-				child:Destroy()
-			end
-		end
-		
-		headParts = createVisualHead(rootPart, activeConfig, snakeModel)
-	end
 
 		-- Remove RootOutline if it exists (Roblox creates this automatically)
 		if rootPart:FindFirstChild("RootOutline") then
@@ -915,10 +843,21 @@ local function createUltraSmoothSnake(character)
 		if headParts and headParts.head and headParts.head.Parent then
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
-			
-			-- Eyes are welded to head - no need to update positions
-			-- The WeldConstraints handle all movement automatically
-			
+
+			-- Update eye positions when head grows to maintain proper spacing
+			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
+				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
+
+				-- Eyes need to spread out as head grows
+				local eyeSpacing = 0.6 * scaleFactor  -- Scale spacing with head
+				local eyeUp = 0.55 * scaleFactor
+				local eyeForward = 0.8 * scaleFactor
+
+				-- Update positions relative to head
+				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
+				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
+			end
+
 			-- LOD for performance
 			if headParts.leftPupil and headParts.rightPupil then
 				local pupilTransparency = currentLength > 2000 and 1 or 0
@@ -932,11 +871,11 @@ local function createUltraSmoothSnake(character)
 				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.0)  -- Match max
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
-				-- Scale eyes proportionally with head but not too much
+				-- Scale eyes proportionally with head
 				if headParts.leftEye and headParts.rightEye then
-					-- More controlled eye scaling
-					local eyeScale = 1 + ((headGrowth - 1) * 0.5)  -- 50% of head growth
-					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 1.3)  -- Max 1.3x
+					-- Eyes should scale with head but stay attached via welds
+					local eyeScale = headGrowth * 0.8  -- Eyes grow less than head
+					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 1.5)
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 
@@ -961,7 +900,7 @@ local function createUltraSmoothSnake(character)
 		-- OPTIMIZED Position history updates
 		local lastHistoryPoint = getFromHistory(1)
 		local dist = (currentPos - lastHistoryPoint.position).Magnitude
-		
+
 		-- Skip some updates at very long lengths to reduce lag
 		local historySkip = 1
 		if currentLength > 2000 then
@@ -969,7 +908,7 @@ local function createUltraSmoothSnake(character)
 		elseif currentLength > 2500 then
 			historySkip = 3  -- Update every 3rd frame
 		end
-		
+
 		if dist > 0.02 and updateCounter % historySkip == 0 then
 			-- Balanced interpolations
 			if dist > activeConfig.SegmentSpacing * 0.7 then
@@ -995,7 +934,7 @@ local function createUltraSmoothSnake(character)
 			if segment and segment.Parent then
 				-- AGGRESSIVE LOD: Prioritize performance
 				local updateFrequency = 1
-				
+
 				if i > 100 then
 					updateFrequency = 2
 				elseif i > 300 then
@@ -1060,7 +999,7 @@ local function createUltraSmoothSnake(character)
 						segment.CFrame = CFramenew(newPos)
 					end
 				end
-				
+
 				-- UNIFORM SIZE: All segments MUST be the same size
 				local sizeDiff = (uniformTargetSize - segment.Size).Magnitude
 				if sizeDiff > 0.01 then  -- Very small threshold
@@ -1232,7 +1171,7 @@ task.spawn(function()
 				end
 			end
 		end
-		
+
 		-- ADDED: Clean up AI snake models
 		for _, child in pairs(workspace:GetChildren()) do
 			if child:IsA("Model") and child.Name:match("^AISnakeModel_table:") then
@@ -1244,7 +1183,7 @@ task.spawn(function()
 						break
 					end
 				end
-				
+
 				if not hasSegments then
 					child:Destroy()
 				end
