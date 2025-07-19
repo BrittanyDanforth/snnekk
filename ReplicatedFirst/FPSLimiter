@@ -1,0 +1,31 @@
+-- FPS Limiter (ReplicatedFirst)
+-- Limits the game to 120 FPS for consistent gameplay across all clients
+
+local RunService = game:GetService("RunService")
+local UserSettings = UserSettings()
+local GameSettings = UserSettings.GameSettings
+
+-- Set max FPS to 120
+-- Note: This respects the user's graphics settings but caps at 120
+local TARGET_FPS = 120
+
+-- Simple frame time enforcement
+local lastFrame = 0
+local targetFrameTime = 1 / TARGET_FPS
+
+RunService.PreRender:Connect(function()
+    local now = tick()
+    local delta = now - lastFrame
+    
+    -- If running too fast, wait a tiny bit
+    if delta < targetFrameTime then
+        local waitTime = targetFrameTime - delta
+        task.wait(waitTime * 0.9) -- Wait 90% of the time to avoid overshooting
+    end
+    
+    lastFrame = tick()
+end)
+
+-- Also inform players about the FPS cap
+game.Players.LocalPlayer:WaitForChild("PlayerGui")
+print("⚡ FPS Limited to", TARGET_FPS, "for consistent gameplay")

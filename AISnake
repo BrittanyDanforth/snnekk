@@ -1345,9 +1345,7 @@ function AISnake:updateMovement(dt)
 	for i = 1, self.CurrentLength do
 		local segment = self.Segments[i]
 		if segment and segment.Parent then
-			-- FPS-independent delay based on actual distance, not frames
-			local timeDelay = i * 0.02 -- 0.02 seconds per segment
-			local delay = mathFloor(timeDelay * 60) -- Convert to approximate frame count at 60fps baseline
+			local delay = mathFloor(i * 1.2)
 			local targetData = self:getFromHistory(delay)
 			if targetData then
 				local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
