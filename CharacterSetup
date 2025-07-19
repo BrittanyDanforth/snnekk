@@ -774,6 +774,11 @@ local function createUltraSmoothSnake(character)
 		if not headParts and framesSinceSpawn == 3 then
 			headParts = createVisualHead(rootPart, activeConfig, snakeModel)
 		end
+		
+		-- Remove RootOutline if it exists (Roblox creates this automatically)
+		if rootPart:FindFirstChild("RootOutline") then
+			rootPart:FindFirstChild("RootOutline"):Destroy()
+		end
 
 		if headParts and headParts.head and headParts.head.Parent then
 			-- Position head properly without creating duplicates
