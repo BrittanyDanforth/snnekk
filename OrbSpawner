@@ -35,6 +35,9 @@ local function getAISnakeModule()
 	return AISnakeModule           -- may be nil during initial load
 end
 
+-- Forward declare attachOrbTouched
+local attachOrbTouched
+
 ---------------------------------------------------------------------
 -- Config
 ---------------------------------------------------------------------
@@ -435,7 +438,7 @@ end
 ---------------------------------------------------------------------
 -- Attach .Touched listener
 ---------------------------------------------------------------------
-local function attachOrbTouched(orb)
+attachOrbTouched = function(orb)
 	orb.Touched:Connect(function(hit)
 		if not orb or not orb.Parent or orbDebounce[orb] then return end
 
@@ -581,6 +584,9 @@ local OrbSpawner = {
 	setRenderDistance = function(dist) RENDER_DISTANCE = dist end,
 	setFadeDistance = function(dist) FADE_DISTANCE = dist end,
 }
+
+-- Set the attachOrbTouched function for OrbUtils
+OrbUtils.attachOrbTouched = attachOrbTouched
 
 _G.OrbSpawner = OrbSpawner
 print("OrbSpawner loaded successfully - Fixed attachment and remote event issues")
