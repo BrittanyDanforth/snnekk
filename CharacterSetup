@@ -262,10 +262,17 @@ local function getOrCreateSnakeModel(player)
 	return model
 end
 
-local function createSegment(index, position, color, config, parentModel)
+local function createSegment(index, position, color, config, parentModel, currentLength)
 	local segment = getSegment()
 	segment.Name = "Segment" .. index
-	segment.Size = config.SegmentSize
+	
+	-- Apply growth factor based on current snake length
+	local growthFactor = 1
+	if currentLength and currentLength > 200 then
+		growthFactor = 1 + ((currentLength - 200) / 2300) * 0.7
+	end
+	
+	segment.Size = config.SegmentSize * mathMin(growthFactor, 1.7)
 	segment.Material = config.BodyMaterial
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
@@ -591,7 +598,7 @@ local function createUltraSmoothSnake(character)
 		local pos = startPos - rootPart.CFrame.LookVector * (i * activeConfig.SegmentSpacing)
 		local colorIndex = ((i - 1) % #activeConfig.BodyColors) + 1
 		local color = activeConfig.BodyColors[colorIndex]
-		local segment = createSegment(i, pos, color, activeConfig, snakeModel)
+		local segment = createSegment(i, pos, color, activeConfig, snakeModel, i)
 		segments[i] = segment
 		currentLength = i
 	end
@@ -655,7 +662,7 @@ local function createUltraSmoothSnake(character)
 				local color = activeConfig.BodyColors[colorIndex]
 				local lastSegment = segments[#segments]
 				local newPos = lastSegment and lastSegment.Position or rootPart.Position
-				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
+				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel, currentLength)
 				segments[currentLength] = segment
 
 				-- Dynamic sizing: new segments match uniform growth
@@ -943,8 +950,10 @@ local function createUltraSmoothSnake(character)
 
 						segment.CFrame = CFramenew(newPos)
 
-						-- OPTIMIZED: Only resize nearby segments to reduce lag
-						if updateCounter % 30 == 0 and i <= 500 then  -- Only first 500 segments
+						-- OPTIMIZED: Staggered updates for ALL segments
+						-- Update different segment groups on different frames
+						local updateGroup = i % 5  -- Split into 5 groups
+						if updateCounter % 30 == updateGroup then  -- Each group updates every 30 frames
 							local growthFactor = 1
 
 							-- ALL segments grow UNIFORMLY like real slither.io
