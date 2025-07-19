@@ -363,17 +363,26 @@ local function createVisualHead(rootPart, config, parentModel)
 		end
 	end
 	
-	-- RESET eye positions to origin FIRST
-	leftEye.CFrame = CFrame.new(0, 0, 0)
-	rightEye.CFrame = CFrame.new(0, 0, 0)
-	leftPupil.CFrame = CFrame.new(0, 0, 0)
-	rightPupil.CFrame = CFrame.new(0, 0, 0)
+	-- DESTROY any existing welds from the GoogleyEyes model FIRST
+	for _, weld in pairs(eyesModel:GetDescendants()) do
+		if weld:IsA("WeldConstraint") or weld:IsA("Weld") or weld:IsA("Motor6D") then
+			weld:Destroy()
+		end
+	end
+	for _, weld in pairs(leftEye:GetDescendants()) do
+		if weld:IsA("WeldConstraint") or weld:IsA("Weld") or weld:IsA("Motor6D") then
+			weld:Destroy()
+		end
+	end
+	for _, weld in pairs(rightEye:GetDescendants()) do
+		if weld:IsA("WeldConstraint") or weld:IsA("Weld") or weld:IsA("Motor6D") then
+			weld:Destroy()
+		end
+	end
 	
-	-- Parent eyes to head
+	-- Parent eyes to head FIRST (before positioning)
 	leftEye.Parent = headPart
 	rightEye.Parent = headPart
-	
-	-- Parent pupils to head too (they're separate parts)
 	leftPupil.Parent = headPart
 	rightPupil.Parent = headPart
 	
@@ -386,33 +395,28 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- FIX: EMBED EYES DEEP INTO HEAD
+	-- POSITION EYES ON HEAD SURFACE
 	local headRadius = headPart.Size.X / 2
-	local angleOffset = math.rad(35)  -- 35 degree wrap around sides
+	local angleOffset = math.rad(40)  -- Slightly more to the sides
 	
-	-- DEEP EMBEDDING - eyes must be INSIDE the head sphere
+	-- Position at head surface
 	local eyeRadius = leftEye.Size.X / 2  
-	-- Make radius MUCH smaller so eyes are INSIDE head
-	local surfaceRadius = headRadius * 0.5  -- Only go out 50% of head radius
+	local surfaceRadius = headRadius * 0.8  -- 80% out from center
 	
-	-- Calculate positions - INSIDE the head
+	-- Calculate positions on the curved surface
 	local leftPos = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
 	local rightPos = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
 	
-	-- Set positions DEEP in head
+	-- CRITICAL: Set CFrame relative to head
 	leftEye.CFrame = headPart.CFrame * leftPos
 	rightEye.CFrame = headPart.CFrame * rightPos
 	
-	-- Position pupils
-	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.65)
-	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.65)
+	-- Position pupils on eyes
+	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.5)
+	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.5)
 	
-	-- FORCE positions to stick
-	leftEye.Anchored = true
-	rightEye.Anchored = true
-	task.wait()
-	leftEye.Anchored = false
-	rightEye.Anchored = false
+	-- Let physics settle
+	task.wait(0.1)
 	
 	-- NOW create welds AFTER positioning
 	local leftEyeWeld = Instance.new("WeldConstraint")
