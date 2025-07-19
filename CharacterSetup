@@ -380,9 +380,11 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- Set initial positions - ON the head surface, not floating
-	leftEye.CFrame = headPart.CFrame * CFramenew(-0.65, 0.2, 0.7) * CFrame.Angles(0, math.rad(10), 0)
-	rightEye.CFrame = headPart.CFrame * CFramenew(0.65, 0.2, 0.7) * CFrame.Angles(0, math.rad(-10), 0)
+	-- Set initial positions - PROPERLY ON THE SIDES
+	-- Head radius is about 2.25 (4.5/2), so position at that distance
+	local headRadius = headPart.Size.X / 2
+	leftEye.CFrame = headPart.CFrame * CFramenew(-headRadius * 0.9, 0, 0) * CFrame.Angles(0, math.rad(90), 0)
+	rightEye.CFrame = headPart.CFrame * CFramenew(headRadius * 0.9, 0, 0) * CFrame.Angles(0, math.rad(-90), 0)
 	
 	-- Position pupils relative to eyes (adjust for GoogleyEyes orientation)
 	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.1)
@@ -860,14 +862,15 @@ local function createUltraSmoothSnake(character)
 			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
 				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
 				
-				-- Positioning that keeps eyes ON the head surface
-				local eyeSpacing = 0.65 * scaleFactor  -- Closer to center to stay on head
-				local eyeUp = 0.2 * scaleFactor  -- Lower to stay on surface
-				local eyeForward = 0.7 * scaleFactor  -- Forward but still on head
+				-- PROPER SIDE POSITIONING - ON THE ACTUAL SIDES OF THE HEAD
+				local headRadius = headParts.head.Size.X / 2
 				
-				-- Update positions with slight angle for natural look
-				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward) * CFrame.Angles(0, math.rad(10), 0)
-				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward) * CFrame.Angles(0, math.rad(-10), 0)
+				-- Position eyes at 90% of head radius to ensure they're ON the surface
+				local eyeDistance = headRadius * 0.9
+				
+				-- Update positions - TRUE SIDE POSITIONING
+				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeDistance, 0, 0) * CFrame.Angles(0, math.rad(90), 0)
+				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeDistance, 0, 0) * CFrame.Angles(0, math.rad(-90), 0)
 				
 				-- Update pupil positions
 				if headParts.leftPupil and headParts.rightPupil then
