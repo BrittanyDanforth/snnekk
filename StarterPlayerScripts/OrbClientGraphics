@@ -163,18 +163,32 @@ local function adjustSnakeGlows(mode)
 					end
 					
 					if mode == "Low" then
-						-- Disable glow for low graphics
+						-- Disable glow for low graphics - MORE AGGRESSIVE
 						obj.Enabled = false
+						obj.Brightness = 0
+						obj.Range = 0
+						-- Also hide the parent part's glow effect
+						if parent.Material == Enum.Material.Neon then
+							parent.Material = Enum.Material.SmoothPlastic
+						end
 					elseif mode == "Medium" then
 						-- Reduce glow for medium graphics
 						obj.Enabled = true
 						obj.Brightness = obj:GetAttribute("OriginalBrightness") * 0.5
 						obj.Range = obj:GetAttribute("OriginalRange") * 0.5
+						-- Keep neon material for medium
+						if parent.Material == Enum.Material.SmoothPlastic then
+							parent.Material = Enum.Material.Neon
+						end
 					else
 						-- Full glow for high graphics
 						obj.Enabled = true
 						obj.Brightness = obj:GetAttribute("OriginalBrightness")
 						obj.Range = obj:GetAttribute("OriginalRange")
+						-- Ensure neon material for high
+						if parent.Material == Enum.Material.SmoothPlastic then
+							parent.Material = Enum.Material.Neon
+						end
 					end
 				end
 			end
