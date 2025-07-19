@@ -844,29 +844,30 @@ local function createUltraSmoothSnake(character)
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
 
-			-- Update eye positions when head grows to maintain proper spacing
-			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
-				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
+			-- Update eye positions to maintain EXACT proportions as head grows
+			if headParts.leftEye and headParts.rightEye and updateCounter % 30 == 0 then  -- Less frequent for performance
+				local headSize = headParts.head.Size.X
+				local baseHeadSize = activeConfig.HeadSize.X
 				
-				-- SMART SCALING - different formula for long snakes
-				local eyeSpacing, eyeUp, eyeForward
+				-- PROPORTIONAL SCALING - keep exact same look at all sizes
+				-- These ratios make eyes look perfect on small snake
+				local eyeSpacingRatio = 0.6 / baseHeadSize  -- Side spacing as ratio of head
+				local eyeUpRatio = 0.55 / baseHeadSize      -- Height as ratio of head  
+				local eyeForwardRatio = 1.1 / baseHeadSize  -- Forward as ratio of head
 				
-				if currentLength < 200 then
-					-- Small snake - use original perfect values
-					eyeSpacing = 0.6 * scaleFactor
-					eyeUp = 0.55 * scaleFactor
-					eyeForward = 1.1  -- Keep at 1.1 for small snakes
-				else
-					-- Big snake - eyes need to move OUTWARD more
-					local bigScale = 1 + (currentLength - 200) / 2800  -- 0 to 1 as length grows
-					eyeSpacing = 0.6 * scaleFactor * (1 + bigScale * 0.3)  -- Spread wider
-					eyeUp = 0.55 * scaleFactor * (1 + bigScale * 0.2)  -- Slightly higher
-					eyeForward = 1.1 + bigScale * 1.5  -- Move forward significantly
-				end
+				-- Apply ratios to current head size - maintains EXACT proportions
+				local eyeSpacing = headSize * eyeSpacingRatio
+				local eyeUp = headSize * eyeUpRatio
+				local eyeForward = headSize * eyeForwardRatio
 
-				-- Update positions relative to head
+				-- Update positions - eyes stay proportional to head
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
 				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
+				
+				-- Scale eyes slightly with head too for better look
+				local eyeScale = headSize / baseHeadSize * 0.8  -- Eyes grow but not as fast as head
+				headParts.leftEye.Size = Vector3new(0.8, 0.8, 0.8) * eyeScale
+				headParts.rightEye.Size = Vector3new(0.8, 0.8, 0.8) * eyeScale
 			end
 
 			-- LOD for performance
