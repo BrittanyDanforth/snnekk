@@ -344,7 +344,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local function createEye(name, position, parent)
 		local eye = Instance.new("Part")
 		eye.Name = name
-		eye.Size = Vector3new(1.0, 1.0, 1.0)  -- Good base eye size
+		eye.Size = Vector3new(0.7, 0.7, 0.7)  -- Smaller, less orb-like
 		eye.Material = Enum.Material.Neon
 		eye.Color = Color3.fromRGB(255, 255, 255)
 		eye.Shape = Enum.PartType.Ball
@@ -379,7 +379,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local function createPupil(name, position, parent)
 		local pupil = Instance.new("Part")
 		pupil.Name = name
-		pupil.Size = Vector3new(0.4, 0.4, 0.4)  -- Bigger pupils for visibility
+		pupil.Size = Vector3new(0.3, 0.3, 0.3)  -- Proportional to smaller eyes
 		pupil.Material = Enum.Material.Neon
 		pupil.Color = Color3.fromRGB(0, 0, 0)
 		pupil.Shape = Enum.PartType.Ball
@@ -855,9 +855,9 @@ local function createUltraSmoothSnake(character)
 				-- Only update eye positions every 15 frames for stability (ignore boost state)
 				if updateCounter % 15 == 0 or currentLength < 500 then
 					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-					local eyeSpacing = 0.85 + (scaleFactor - 1) * 0.3  -- More separated
-					local eyeForward = 0.5 * scaleFactor  -- More embedded in head
-					local eyeUp = 0.45 * scaleFactor  -- Slightly lower
+					local eyeSpacing = 1.2 + (scaleFactor - 1) * 0.4  -- MUCH more separated
+					local eyeForward = 0.2 * scaleFactor  -- DEEP inside head
+					local eyeUp = 0.4 * scaleFactor  -- Good height
 					
 					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
 					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
@@ -880,7 +880,7 @@ local function createUltraSmoothSnake(character)
 				-- Scale eyes proportionally with proper look
 				if headParts.leftEye and headParts.rightEye then
 					local eyeScale = headGrowth * 0.9  -- Eyes grow slightly less than head
-					local targetEyeSize = Vector3new(1.0, 1.0, 1.0) * mathMin(eyeScale, 1.8)  -- Reasonable max
+					local targetEyeSize = Vector3new(0.7, 0.7, 0.7) * mathMin(eyeScale, 1.6)  -- Smaller scaling
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 
