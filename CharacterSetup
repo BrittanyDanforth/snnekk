@@ -512,6 +512,11 @@ local function createUltraSmoothSnake(character)
 	-- IMMEDIATELY hide the character to prevent ANY flashing
 	rootPart.Transparency = 1
 	rootPart.CanCollide = false
+	-- Force rootPart to not be a sphere
+	if rootPart.Shape == Enum.PartType.Ball then
+		rootPart.Shape = Enum.PartType.Block
+	end
+	rootPart.Size = Vector3.new(0.1, 0.1, 0.1) -- Make it tiny
 	
 	-- Specifically hide the head to remove any face decals
 	local head = character:FindFirstChild("Head")
@@ -528,6 +533,13 @@ local function createUltraSmoothSnake(character)
 		if part:IsA("BasePart") then
 			part.Transparency = 1
 			part.CanCollide = false
+			-- Force all parts to not be spheres except intended ones
+			if part ~= rootPart and part.Name ~= "SnakeHead" and not part.Name:match("Eye") and not part.Name:match("Segment") then
+				if part.Shape == Enum.PartType.Ball then
+					part.Shape = Enum.PartType.Block
+				end
+				part.Size = Vector3.new(0.1, 0.1, 0.1) -- Make them tiny
+			end
 			-- Also remove any effects that might be visible
 			for _, effect in part:GetChildren() do
 				if effect:IsA("ParticleEmitter") or effect:IsA("Fire") or effect:IsA("Smoke") or 
@@ -725,6 +737,22 @@ local function createUltraSmoothSnake(character)
 		if not isActive or not rootPart.Parent then return end
 
 		updateCounter = updateCounter + 1
+		
+		-- Clean up any stray parts every 30 frames
+		if updateCounter % 30 == 0 then
+			for _, part in character:GetChildren() do
+				if part:IsA("BasePart") and part ~= rootPart and 
+				   not part.Name:match("Snake") and not part.Name:match("Eye") then
+					if part.Transparency < 1 or part.Shape == Enum.PartType.Ball then
+						part.Transparency = 1
+						part.Size = Vector3.new(0.1, 0.1, 0.1)
+						if part.Shape == Enum.PartType.Ball then
+							part.Shape = Enum.PartType.Block
+						end
+					end
+				end
+			end
+		end
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
 		local followSpeed = isBoosting and activeConfig.BoostFollowSpeed or activeConfig.FollowSpeed
@@ -734,6 +762,10 @@ local function createUltraSmoothSnake(character)
 		local lookVector = currentCFrame.LookVector
 		local headOffset = lookVector * 1.5
 		local headPos = currentPos + headOffset
+		
+		-- Make sure rootPart doesn't move forward creating a visible sphere
+		rootPart.CFrame = CFrame.new(currentPos, currentPos + lookVector)
+		rootPart.Transparency = 1 -- Ensure it stays invisible
 
 		-- Create head after 3 frames to prevent flash
 		if not headParts and framesSinceSpawn == 3 then
