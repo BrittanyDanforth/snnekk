@@ -616,8 +616,28 @@ local function createUltraSmoothSnake(character)
 				currentLength = currentLength + 1
 				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
 				local color = activeConfig.BodyColors[colorIndex]
-				local lastSegment = segments[#segments]
-				local newPos = lastSegment and lastSegment.Position or rootPart.Position
+				
+				-- FIX: Get position from history buffer to ensure proper following
+				local lastSegmentIndex = currentLength - 1
+				local targetData = nil
+				
+				if lastSegmentIndex > 0 then
+					-- Get position from history where the new segment should be
+					local delay = mathFloor(currentLength * 1.15)
+					targetData = getFromHistory(delay)
+				end
+				
+				local newPos
+				if targetData then
+					newPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
+				elseif lastSegmentIndex > 0 and segments[lastSegmentIndex] then
+					-- Fallback: place behind last segment
+					newPos = segments[lastSegmentIndex].Position
+				else
+					-- First segment, place behind root
+					newPos = rootPart.Position - rootPart.CFrame.LookVector * activeConfig.SegmentSpacing
+				end
+				
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
 				segments[currentLength] = segment
 
