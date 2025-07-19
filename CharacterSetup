@@ -543,6 +543,14 @@ local function createUltraSmoothSnake(character)
 			child:Destroy()
 		end
 	end
+	
+	-- Check entire character for selection boxes
+	task.wait()  -- Wait a frame for any scripts to add their boxes
+	for _, desc in character:GetDescendants() do
+		if desc:IsA("SelectionBox") then
+			desc:Destroy()
+		end
+	end
 
 	local snakeModel = getOrCreateSnakeModel(player)
 	for _, obj in snakeModel:GetChildren() do
@@ -737,6 +745,38 @@ local function createUltraSmoothSnake(character)
 				child:Destroy()
 			end
 		end
+		
+		-- Check ALL character parts for selection boxes
+		for _, part in character:GetDescendants() do
+			if part:IsA("SelectionBox") then
+				part:Destroy()
+			elseif part:IsA("BasePart") and part ~= rootPart then
+				-- Make sure other parts stay hidden too
+				if part.Transparency < 1 and not part.Name:match("Snake") and not part.Name:match("Eye") then
+					part.Transparency = 1
+				end
+			end
+		end
+		
+		-- ADDITIONAL: Force remove any selection indicators
+		local selection = game:GetService("Selection")
+		if selection then
+			pcall(function()
+				local selected = selection:Get()
+				for i, obj in ipairs(selected) do
+					if obj == rootPart then
+						table.remove(selected, i)
+						selection:Set(selected)
+						break
+					end
+				end
+			end)
+		end
+		
+		-- Make sure no outlines are showing
+		pcall(function()
+			rootPart.SelectionBox3DEnabled = false
+		end)
 
 		-- Create head after 3 frames to prevent flash
 		if not headParts and framesSinceSpawn == 3 then
