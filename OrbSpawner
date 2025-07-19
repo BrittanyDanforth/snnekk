@@ -45,47 +45,13 @@ local ORB_MAX             = 850
 local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
-local GRAPHICS_SETTINGS = {
-	Low = {
-		RENDER_DISTANCE = 80,   -- Full visibility range
-		FAR_DISTANCE = 150,     -- Reduced visibility range
-		FADE_DISTANCE = 30,     -- Distance to start fade-in
-		MIN_ORB_SIZE = 0.2,     -- Minimum orb size when far
-		MAX_ORB_SIZE = 1.5,     -- Full orb size
-		LOD_UPDATE_RATE = 0.2,  -- How often to update LOD (seconds)
-		LIGHT_ENABLED = false,  -- Disable orb lights
-		MATERIAL = Enum.Material.SmoothPlastic  -- Less demanding material
-	},
-	Medium = {
-		RENDER_DISTANCE = 120,
-		FAR_DISTANCE = 250,
-		FADE_DISTANCE = 40,
-		MIN_ORB_SIZE = 0.3,
-		MAX_ORB_SIZE = 1.8,
-		LOD_UPDATE_RATE = 0.15,
-		LIGHT_ENABLED = true,
-		MATERIAL = Enum.Material.Neon
-	},
-	High = {
-		RENDER_DISTANCE = 150,
-		FAR_DISTANCE = 300,
-		FADE_DISTANCE = 50,
-		MIN_ORB_SIZE = 0.3,
-		MAX_ORB_SIZE = 2.0,
-		LOD_UPDATE_RATE = 0.1,
-		LIGHT_ENABLED = true,
-		MATERIAL = Enum.Material.Neon
-	}
-}
-
--- Default to High settings
-local currentSettings = GRAPHICS_SETTINGS.High
-local RENDER_DISTANCE = currentSettings.RENDER_DISTANCE
-local FAR_DISTANCE = currentSettings.FAR_DISTANCE
-local FADE_DISTANCE = currentSettings.FADE_DISTANCE
-local MIN_ORB_SIZE = currentSettings.MIN_ORB_SIZE
-local MAX_ORB_SIZE = currentSettings.MAX_ORB_SIZE
-local LOD_UPDATE_RATE = currentSettings.LOD_UPDATE_RATE
+-- Server uses default high settings, clients handle their own graphics
+local RENDER_DISTANCE = 150
+local FAR_DISTANCE = 300
+local FADE_DISTANCE = 50
+local MIN_ORB_SIZE = 0.3
+local MAX_ORB_SIZE = 2.0
+local LOD_UPDATE_RATE = 0.1
 
 ---------------------------------------------------------------------
 -- Dynamic spawn area
@@ -210,12 +176,10 @@ local function applyOrbLOD(orb, state, fadeValue)
 		if light then light.Enabled = false end
 	else
 		local light = orb:FindFirstChild("PointLight")
-		if light and currentSettings.LIGHT_ENABLED then 
+		if light then 
 			light.Enabled = fadeValue > 0.1
 			light.Brightness = 2 * fadeValue
 			light.Range = 8 * fadeValue
-		elseif light then
-			light.Enabled = false
 		end
 
 		-- Smooth tween for visible orbs
@@ -330,7 +294,7 @@ local function createSafeOrb(position, value, name, color, material)
 	orb.Size = Vector3.new(0.1, 0.1, 0.1)  -- Start tiny
 	orb.Anchored = true
 	orb.CanCollide = false
-	orb.Material = material or currentSettings.MATERIAL
+	orb.Material = material or Enum.Material.Neon
 	orb.Color = color or Color3.new(1, 1, 0)
 	orb.Position = position
 	orb.TopSurface = Enum.SurfaceType.Smooth
@@ -343,15 +307,12 @@ local function createSafeOrb(position, value, name, color, material)
 	val.Value = value or 10
 	val.Parent = orb
 
-	-- Only create light if graphics settings allow it
-	if currentSettings.LIGHT_ENABLED then
-		local light = Instance.new("PointLight")
-		light.Parent = orb
-		light.Color = orb.Color
-		light.Brightness = 0
-		light.Range = 0
-		light.Enabled = false  -- Start disabled
-	end
+	local light = Instance.new("PointLight")
+	light.Parent = orb
+	light.Color = orb.Color
+	light.Brightness = 0
+	light.Range = 0
+	light.Enabled = false  -- Start disabled
 
 	-- Initialize as hidden
 	orbStates[orb] = {state = "hidden", fade = 0}
@@ -590,63 +551,7 @@ local function spawnDeathOrbsForSnake(pos, segCount)
 	return spawnDeathOrbs(pos, math.min(segCount, 50))
 end
 
----------------------------------------------------------------------
--- Graphics Settings Handler
----------------------------------------------------------------------
-local function updateGraphicsSettings()
-	-- Check all players for graphics settings
-	for _, player in Players:GetPlayers() do
-		local mode = player:GetAttribute("GraphicsMode") or "High"
-		if GRAPHICS_SETTINGS[mode] then
-			currentSettings = GRAPHICS_SETTINGS[mode]
-			RENDER_DISTANCE = currentSettings.RENDER_DISTANCE
-			FAR_DISTANCE = currentSettings.FAR_DISTANCE
-			FADE_DISTANCE = currentSettings.FADE_DISTANCE
-			MIN_ORB_SIZE = currentSettings.MIN_ORB_SIZE
-			MAX_ORB_SIZE = currentSettings.MAX_ORB_SIZE
-			LOD_UPDATE_RATE = currentSettings.LOD_UPDATE_RATE
-			
-			-- Update all existing orbs materials based on settings
-			for _, orb in ipairs(orbs) do
-				if orb and orb.Parent then
-					orb.Material = currentSettings.MATERIAL
-					
-					-- Update light settings
-					local light = orb:FindFirstChild("PointLight")
-					if light then
-						if not currentSettings.LIGHT_ENABLED then
-							light.Enabled = false
-						end
-					end
-				end
-			end
-			
-			print("Orb graphics updated to:", mode)
-			break -- Use first player's settings for now
-		end
-	end
-end
-
--- Listen for player graphics changes
-Players.PlayerAdded:Connect(function(player)
-	player.AttributeChanged:Connect(function(attribute)
-		if attribute == "GraphicsMode" then
-			updateGraphicsSettings()
-		end
-	end)
-end)
-
--- Check existing players
-for _, player in Players:GetPlayers() do
-	player.AttributeChanged:Connect(function(attribute)
-		if attribute == "GraphicsMode" then
-			updateGraphicsSettings()
-		end
-	end)
-end
-
--- Initial update
-updateGraphicsSettings()
+-- Remove the server-side graphics handler - this should be client-side only!
 
 ---------------------------------------------------------------------
 -- Initial fill & periodic spawn

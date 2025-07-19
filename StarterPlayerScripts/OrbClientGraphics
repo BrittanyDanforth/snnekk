@@ -1,0 +1,175 @@
+--[[
+ORB CLIENT GRAPHICS HANDLER
+Handles client-side orb rendering based on individual graphics settings
+This goes in StarterPlayerScripts as a LocalScript
+--]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Graphics presets for orbs
+local GRAPHICS_PRESETS = {
+	Low = {
+		RENDER_DISTANCE = 80,
+		MATERIAL = Enum.Material.SmoothPlastic,
+		DISABLE_LIGHTS = true,
+		PARTICLE_RATE_MULTIPLIER = 0.3,
+		DISABLE_SHADOWS = true,
+		ORB_TRANSPARENCY_MODIFIER = 0.2  -- Make distant orbs more transparent
+	},
+	Medium = {
+		RENDER_DISTANCE = 120,
+		MATERIAL = Enum.Material.Neon,
+		DISABLE_LIGHTS = false,
+		PARTICLE_RATE_MULTIPLIER = 0.7,
+		DISABLE_SHADOWS = false,
+		ORB_TRANSPARENCY_MODIFIER = 0
+	},
+	High = {
+		RENDER_DISTANCE = 150,
+		MATERIAL = Enum.Material.Neon,
+		DISABLE_LIGHTS = false,
+		PARTICLE_RATE_MULTIPLIER = 1,
+		DISABLE_SHADOWS = false,
+		ORB_TRANSPARENCY_MODIFIER = 0
+	}
+}
+
+local currentPreset = GRAPHICS_PRESETS.High
+local orbCache = {}  -- Track modified orbs
+
+-- Function to get player's position
+local function getPlayerPosition()
+	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		return LocalPlayer.Character.HumanoidRootPart.Position
+	end
+	return nil
+end
+
+-- Function to apply graphics settings to an orb
+local function applyOrbGraphics(orb, distance)
+	if not orb or not orb.Parent then return end
+	
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	local preset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
+	
+	-- Client-side material override
+	if orb.Material ~= preset.MATERIAL then
+		orb.Material = preset.MATERIAL
+	end
+	
+	-- Handle lights
+	local light = orb:FindFirstChild("PointLight")
+	if light then
+		if preset.DISABLE_LIGHTS then
+			light.Enabled = false
+		else
+			-- Let server handle the actual light state, but we can disable it client-side
+			if distance and distance > preset.RENDER_DISTANCE * 0.7 then
+				light.Enabled = false
+			end
+		end
+	end
+	
+	-- Apply transparency modifier for distant orbs in low graphics
+	if preset.ORB_TRANSPARENCY_MODIFIER > 0 and distance then
+		local fadeFactor = math.clamp((distance - 50) / (preset.RENDER_DISTANCE - 50), 0, 1)
+		local extraTransparency = preset.ORB_TRANSPARENCY_MODIFIER * fadeFactor
+		orb.LocalTransparencyModifier = extraTransparency
+	else
+		orb.LocalTransparencyModifier = 0
+	end
+	
+	-- Hide orbs beyond render distance
+	if distance and distance > preset.RENDER_DISTANCE then
+		orb.LocalTransparencyModifier = 1  -- Completely hide
+		if light then light.Enabled = false end
+	end
+end
+
+-- Function to handle particle effects
+local function adjustParticleEffects(mode)
+	local preset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
+	
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("ParticleEmitter") and obj.Parent and obj.Parent.Name == "OrbVFX" then
+			-- Reduce particle rate for lower graphics
+			local originalRate = obj:GetAttribute("OriginalRate")
+			if not originalRate then
+				originalRate = obj.Rate
+				obj:SetAttribute("OriginalRate", originalRate)
+			end
+			obj.Rate = originalRate * preset.PARTICLE_RATE_MULTIPLIER
+		end
+	end
+end
+
+-- Main update loop
+local lastUpdate = 0
+RunService.Heartbeat:Connect(function()
+	local now = tick()
+	if now - lastUpdate < 0.1 then return end  -- Update every 0.1 seconds
+	lastUpdate = now
+	
+	local playerPos = getPlayerPosition()
+	if not playerPos then return end
+	
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	currentPreset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
+	
+	-- Find and update all orbs
+	for _, obj in ipairs(workspace:GetChildren()) do
+		if obj:IsA("BasePart") and (obj.Name == "Orb" or obj.Name == "UpgradeOrb" or obj.Name == "DeathOrb") then
+			local distance = (obj.Position - playerPos).Magnitude
+			applyOrbGraphics(obj, distance)
+			orbCache[obj] = true
+		end
+	end
+	
+	-- Clean up cache for destroyed orbs
+	for orb, _ in pairs(orbCache) do
+		if not orb.Parent then
+			orbCache[orb] = nil
+		end
+	end
+end)
+
+-- Handle graphics mode changes
+LocalPlayer.AttributeChanged:Connect(function(attribute)
+	if attribute == "GraphicsMode" then
+		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+		print("Client graphics mode changed to:", mode)
+		
+		-- Immediately update all orbs
+		local playerPos = getPlayerPosition()
+		if playerPos then
+			for orb, _ in pairs(orbCache) do
+				if orb.Parent then
+					local distance = (orb.Position - playerPos).Magnitude
+					applyOrbGraphics(orb, distance)
+				end
+			end
+		end
+		
+		-- Adjust particle effects
+		adjustParticleEffects(mode)
+		
+		-- Apply general graphics settings
+		if mode == "Low" then
+			settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+		elseif mode == "Medium" then
+			settings().Rendering.QualityLevel = Enum.QualityLevel.Level10
+		else
+			settings().Rendering.QualityLevel = Enum.QualityLevel.Level21
+		end
+	end
+end)
+
+-- Initial setup
+local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+adjustParticleEffects(initialMode)
+
+print("Orb Client Graphics Handler initialized for:", LocalPlayer.Name)
