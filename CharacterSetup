@@ -393,9 +393,9 @@ local function createVisualHead(rootPart, config, parentModel)
 		return pupil, weld
 	end
 
-	-- Embed eyes more into head: X=0.6, Y=0.55, Z=0.4 (reduced from 0.8)
-	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.6, 0.55, 0.4), headPart)
-	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.6, 0.55, 0.4), headPart)
+	-- DEEP embed eyes into head: X=0.6, Y=0.55, Z=0.1 (way more inward!)
+	local leftEye, leftEyeWeld = createEye("LeftEye", Vector3new(-0.6, 0.55, 0.1), headPart)
+	local rightEye, rightEyeWeld = createEye("RightEye", Vector3new(0.6, 0.55, 0.1), headPart)
 	local leftPupil, leftPupilWeld = createPupil("LeftPupil", Vector3new(0, 0, -0.2), leftEye)
 	local rightPupil, rightPupilWeld = createPupil("RightPupil", Vector3new(0, 0, -0.2), rightEye)
 
@@ -851,7 +851,7 @@ local function createUltraSmoothSnake(character)
 				-- Eyes need to spread out as head grows
 				local eyeSpacing = 0.6 * scaleFactor  -- Scale spacing with head
 				local eyeUp = 0.55 * scaleFactor
-				local eyeForward = 0.4 * scaleFactor  -- REDUCED from 0.8 to embed eyes more
+				local eyeForward = 0.1 * scaleFactor  -- WAY MORE INWARD - almost flush!
 
 				-- Update positions relative to head
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
