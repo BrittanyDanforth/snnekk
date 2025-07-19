@@ -30,12 +30,6 @@ local BODY_COLLISION_DISTANCE = 2.8 -- Proper body collision distance
 local MIN_COLLISION_DISTANCE = 2.0 -- Minimum collision distance
 local COLLISION_BUFFER = 0.5 -- Additional buffer for network compensation
 
--- === FIXED COLLISION CONSTANTS ===
-local HEAD_COLLISION_DISTANCE = 3.5 -- Proper head collision distance
-local BODY_COLLISION_DISTANCE = 2.8 -- Proper body collision distance
-local MIN_COLLISION_DISTANCE = 2.0 -- Minimum collision distance
-local COLLISION_BUFFER = 0.5 -- Additional buffer for network compensation
-
 
 
 -- === DEBUG SYSTEM ===
@@ -47,6 +41,7 @@ local deathQueue = {}
 local orbSpawnQueue = {}
 local isProcessingDeaths = false
 local deadAISnakes = {} -- Track dead AI snakes to prevent double deaths
+local deadPlayers = {} -- Track dead players to prevent double deaths
 
 -- === INVINCIBILITY SYSTEM (UNCHANGED) ===
 local INVINCIBILITY_DURATION = 5
@@ -507,6 +502,11 @@ local function queuePlayerDeath(player)
 		end
 		return
 	end
+	
+	-- Prevent double deaths
+	if deadPlayers[player] then
+		return
+	end
 
 	if isPlayerInvincible(player) then 
 		-- Debug: Log when invincibility prevents death
@@ -652,7 +652,16 @@ task.spawn(function()
 							end
 						end
 
+						-- Mark player as dead
+						deadPlayers[player] = true
+						
 						humanoid.Health = 0
+						
+						-- Clear dead flag after respawn time
+						task.spawn(function()
+							task.wait(5)
+							deadPlayers[player] = nil
+						end)
 					end
 				end
 			elseif death.type == "ai" then
@@ -947,6 +956,57 @@ RunService.Stepped:Connect(function()
 								queuePlayerDeath(player)
 								break
 							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	-- Player vs Player body collisions (FIXED: Was missing!)
+	for i = 1, #playerHeads do
+		local headDataA = playerHeads[i]
+		local playerA = headDataA.player
+		local headA = headDataA.part
+
+		-- Skip if player A is invincible or dead
+		if isPlayerInvincible(playerA) or deadPlayers[playerA] then
+			continue
+		end
+
+		if headA and headA.Parent then
+			local headPosA = headA.Position
+
+			-- Check against all other players' bodies
+			for j = 1, #playerHeads do
+				if i ~= j then -- Don't check against self
+					local headDataB = playerHeads[j]
+					local playerB = headDataB.player
+
+					-- Don't need to check invincibility for playerB's body
+					local segmentData = getPlayerSegments(playerB)
+					if segmentData and segmentData.segments then
+						local collision = false
+
+						-- Use appropriate collision method
+						if segmentData.chunks then
+							collision = findCollisionInChunks(headPosA, segmentData.chunks, BODY_COLLISION_DISTANCE)
+						else
+							collision = findCollisionInSegments(
+								headPosA,
+								segmentData.segments,
+								BODY_COLLISION_DISTANCE,
+								segmentData.length > 200
+							)
+						end
+
+						if collision then
+							-- Debug collision
+							if DEBUG_COLLISIONS then
+								debugCollision(headPosA, headPosA, "PlayerBody", playerA.Name .. " hit " .. playerB.Name .. "'s body")
+							end
+							queuePlayerDeath(playerA)
+							break
 						end
 					end
 				end
