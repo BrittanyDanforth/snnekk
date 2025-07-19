@@ -781,6 +781,19 @@ local function createUltraSmoothSnake(character)
 				child:Destroy()
 			end
 		end
+		
+		-- DESTROY THE ROOT OUTLINE!
+		local rootOutline = rootPart:FindFirstChild("RootOutline")
+		if rootOutline then
+			rootOutline:Destroy()
+		end
+		
+		-- Also check for any outline by class name
+		for _, child in rootPart:GetChildren() do
+			if child.Name == "RootOutline" or child.ClassName == "RootOutline" then
+				child:Destroy()
+			end
+		end
 
 		-- Also check workspace for any selection boxes targeting this rootPart
 		if updateCounter % 10 == 0 then  -- Check every 10 frames
