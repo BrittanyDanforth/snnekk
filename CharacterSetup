@@ -11,6 +11,7 @@ ULTRA-SMOOTH & HIGH-PERFORMANCE SLITHER.IO SNAKE SYSTEM V5.2 - SKIN SYSTEM INTEG
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Helper function to get table keys (moved up to be available)
 local function getTableKeys(tbl)
@@ -579,6 +580,9 @@ local function createUltraSmoothSnake(character)
 	local networkUpdateInterval = 2
 	local lastNetworkUpdate = 0
 	
+	-- Track spawn time for invincibility
+	local spawnTime = tick()
+	
 	-- GROWTH QUEUE SYSTEM - Like real slither.io
 	local growthQueue = 0
 	local tailFrozen = false
@@ -740,6 +744,48 @@ local function createUltraSmoothSnake(character)
 
 		if headParts and headParts.head and headParts.head.Parent then
 			headParts.head.CFrame = CFramelookAt(headPos, headPos + lookVector)
+			
+			-- Check invincibility and update visuals
+			local isInvincible = false
+			local SnakeCollisionHandler = ServerScriptService:FindFirstChild("SnakeCollisionHandler")
+			if SnakeCollisionHandler then
+				local invinciblePlayers = SnakeCollisionHandler:GetAttribute("InvinciblePlayers")
+				if invinciblePlayers and invinciblePlayers[player] and os.clock() < invinciblePlayers[player] then
+					isInvincible = true
+				end
+			end
+			
+			-- Simple invincibility check - first 3 seconds after spawn
+			if currentTime - spawnTime < 3 then
+				isInvincible = true
+			end
+			
+			-- Update visual effects based on invincibility
+			if isInvincible then
+				-- Make head glow with force field effect
+				headParts.head.Material = Enum.Material.ForceField
+				if headParts.headOutline then
+					headParts.headOutline.Color3 = Color3.fromRGB(0, 255, 255)
+					headParts.headOutline.LineThickness = 0.2
+					headParts.headOutline.Transparency = 0
+				end
+				if headParts.headLight then
+					headParts.headLight.Brightness = activeConfig.GlowIntensity + 3
+					headParts.headLight.Color = Color3.fromRGB(0, 255, 255)
+				end
+			else
+				-- Normal appearance
+				headParts.head.Material = activeConfig.HeadMaterial
+				if headParts.headOutline then
+					headParts.headOutline.Color3 = Color3.fromRGB(255, 255, 255)
+					headParts.headOutline.LineThickness = 0.08
+					headParts.headOutline.Transparency = 1
+				end
+				if headParts.headLight then
+					headParts.headLight.Brightness = activeConfig.GlowIntensity + 1
+					headParts.headLight.Color = activeConfig.HeadColor
+				end
+			end
 		end
 
 		-- Position history buffer with improved tracking for anti-gap
@@ -958,6 +1004,7 @@ local function handlePlayer(player)
 			end
 		end
 
+		local spawnTime = tick()  -- Track when player spawned for invincibility
 		taskSpawn(createUltraSmoothSnake, character)
 	end
 
