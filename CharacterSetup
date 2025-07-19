@@ -513,6 +513,12 @@ local function createUltraSmoothSnake(character)
 	rootPart.Transparency = 1
 	rootPart.CanCollide = false
 	
+	-- Ensure rootPart can't be selected or highlighted
+	pcall(function()
+		rootPart.Locked = true  -- Prevent selection in Studio
+		rootPart.SelectionBox3DEnabled = false  -- Disable 3D selection box if property exists
+	end)
+
 	-- Specifically hide the head to remove any face decals
 	local head = character:FindFirstChild("Head")
 	if head then
@@ -728,12 +734,19 @@ local function createUltraSmoothSnake(character)
 		
 		-- Ensure rootPart stays invisible
 		rootPart.Transparency = 1
+		rootPart.Material = Enum.Material.SmoothPlastic  -- Reset material to remove ForceField glow
 		
 		-- Remove any selection box that might be on rootPart
 		for _, child in rootPart:GetChildren() do
 			if child:IsA("SelectionBox") then
 				child:Destroy()
 			end
+		end
+		
+		-- Additional check for Highlight instances (new Roblox feature)
+		local highlight = character:FindFirstChildOfClass("Highlight")
+		if highlight then
+			highlight:Destroy()
 		end
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
