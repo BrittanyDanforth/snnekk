@@ -1333,6 +1333,9 @@ function AISnake:updateMovement(dt)
 	local headOffset = self.Direction * 1.5
 	local newHeadPos = self.Position + headOffset
 	self.HeadParts.head.CFrame = CFramelookAt(newHeadPos, newHeadPos + self.Direction)
+	
+	-- Set velocity for collision detection
+	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
 
 	-- History management
 	local lastHistoryPoint = self:getFromHistory(1)

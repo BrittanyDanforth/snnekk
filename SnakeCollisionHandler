@@ -1142,7 +1142,7 @@ RunService.Stepped:Connect(function()
 					end
 					queuePlayerDeath(playerB)
 				else
-					-- Pure head-to-head collision - check who hit more directly
+					-- Pure head-to-head collision - only ONE dies
 					local velA = headA.AssemblyLinearVelocity or headA.Velocity
 					local velB = headB.AssemblyLinearVelocity or headB.Velocity
 					local dirAB = (headB.Position - headA.Position).Unit
@@ -1155,87 +1155,25 @@ RunService.Stepped:Connect(function()
 					local speedA = velA.Magnitude
 					local speedB = velB.Magnitude
 					
-					-- Check angles - are they actually cutting in front?
-					local velANorm = velA.Unit
-					local velBNorm = velB.Unit
-					local crossAngle = math.abs(velANorm:Dot(velBNorm))
+					-- Determine winner based on who's more aggressive
+					local scoreA = dotA * speedA
+					local scoreB = dotB * speedB
 					
-					-- If someone is moving perpendicular (side hit), they shouldn't win
-					if crossAngle < 0.5 then
-						-- One is hitting from the side
-						if dotA > 0.5 and speedA > 5 then
-							-- A is moving toward B's path
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] %s dies (got cut off)", 
-									playerB.Name))
-							end
-							queuePlayerDeath(playerB)
-						elseif dotB > 0.5 and speedB > 5 then
-							-- B is moving toward A's path
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] %s dies (got cut off)", 
-									playerA.Name))
-							end
-							queuePlayerDeath(playerA)
-						else
-							-- Glancing blow, no clear cutter - both die
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] Both die (unclear side collision): %s and %s", 
-									playerA.Name, playerB.Name))
-							end
-							queuePlayerDeath(playerA)
-							queuePlayerDeath(playerB)
+					if scoreA > scoreB then
+						-- A is more aggressive, B dies
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (less aggressive, score %.1f < %.1f)", 
+								playerB.Name, scoreB, scoreA))
 						end
+						queuePlayerDeath(playerB)
 					else
-						-- Head-on collision (both going roughly same/opposite direction)
-						if dotA > 0.1 and dotB > 0.1 then
-							-- Both moving toward each other - who hit harder?
-							if dotA > dotB * 1.2 then
-								-- A hit more aggressively
-								if DEBUG_COLLISIONS then
-									print(string.format("[DEATH] %s dies (less aggressive in head collision)", 
-										playerB.Name))
-								end
-								queuePlayerDeath(playerB)
-							elseif dotB > dotA * 1.2 then
-								-- B hit more aggressively
-								if DEBUG_COLLISIONS then
-									print(string.format("[DEATH] %s dies (less aggressive in head collision)", 
-										playerA.Name))
-								end
-								queuePlayerDeath(playerA)
-							else
-								-- Too close to call - both die
-								if DEBUG_COLLISIONS then
-									print(string.format("[DEATH] Both die (equal head collision): %s and %s", 
-										playerA.Name, playerB.Name))
-								end
-								queuePlayerDeath(playerA)
-								queuePlayerDeath(playerB)
-							end
-						elseif dotA > 0.1 then
-							-- Only A moving toward B
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] %s dies (not moving toward collision)", 
-									playerB.Name))
-							end
-							queuePlayerDeath(playerB)
-						elseif dotB > 0.1 then
-							-- Only B moving toward A
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] %s dies (not moving toward collision)", 
-									playerA.Name))
-							end
-							queuePlayerDeath(playerA)
-						else
-							-- Neither really moving toward each other - both die
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] Both die (both avoiding): %s and %s", 
-									playerA.Name, playerB.Name))
-							end
-							queuePlayerDeath(playerA)
-							queuePlayerDeath(playerB)
+						-- B is more aggressive or equal, A dies
+						-- In case of tie, we just pick one (A)
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (less aggressive, score %.1f <= %.1f)", 
+								playerA.Name, scoreA, scoreB))
 						end
+						queuePlayerDeath(playerA)
 					end
 				end
 				break
@@ -1331,7 +1269,7 @@ RunService.Stepped:Connect(function()
 						-- AI hit player's body
 						queueAIDeath(aiHead)
 					else
-						-- Pure head-to-head - check who hit more directly
+						-- Pure head-to-head - only ONE dies
 						local velPlayer = head.AssemblyLinearVelocity or head.Velocity
 						local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity
 						local dirToAI = (aiHead.Position - head.Position).Unit
@@ -1340,52 +1278,20 @@ RunService.Stepped:Connect(function()
 						local dotPlayer = velPlayer:Dot(dirToAI)
 						local dotAI = velAI:Dot(dirToPlayer)
 						
-						-- Check speeds and angles
+						-- Check speeds
 						local speedPlayer = velPlayer.Magnitude
 						local speedAI = velAI.Magnitude
-						local velPlayerNorm = velPlayer.Unit
-						local velAINorm = velAI.Unit
-						local crossAngle = math.abs(velPlayerNorm:Dot(velAINorm))
 						
-						if crossAngle < 0.5 then
-							-- Side collision - check who's cutting
-							if dotPlayer > 0.5 and speedPlayer > 5 then
-								-- Player cutting off AI
-								queueAIDeath(aiHead)
-							elseif dotAI > 0.5 and speedAI > 5 then
-								-- AI cutting off player
-								queuePlayerDeath(player)
-							else
-								-- Unclear side hit
-								queuePlayerDeath(player)
-								queueAIDeath(aiHead)
-							end
+						-- Calculate aggression scores
+						local scorePlayer = dotPlayer * speedPlayer
+						local scoreAI = dotAI * speedAI
+						
+						if scorePlayer > scoreAI then
+							-- Player more aggressive, AI dies
+							queueAIDeath(aiHead)
 						else
-							-- Head-on collision
-							if dotPlayer > 0.1 and dotAI > 0.1 then
-								-- Both moving toward each other
-								if dotPlayer > dotAI * 1.2 then
-									-- Player more aggressive
-									queueAIDeath(aiHead)
-								elseif dotAI > dotPlayer * 1.2 then
-									-- AI more aggressive
-									queuePlayerDeath(player)
-								else
-									-- Equal collision
-									queuePlayerDeath(player)
-									queueAIDeath(aiHead)
-								end
-							elseif dotPlayer > 0.1 then
-								-- Only player moving toward AI
-								queueAIDeath(aiHead)
-							elseif dotAI > 0.1 then
-								-- Only AI moving toward player
-								queuePlayerDeath(player)
-							else
-								-- Both avoiding
-								queuePlayerDeath(player)
-								queueAIDeath(aiHead)
-							end
+							-- AI more aggressive or equal, player dies
+							queuePlayerDeath(player)
 						end
 					end
 				end
