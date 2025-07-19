@@ -749,6 +749,9 @@ local function createUltraSmoothSnake(character)
 	local heartbeatConn
 	heartbeatConn = RunService.Heartbeat:Connect(function(dt)
 		if not isActive or not rootPart.Parent then return end
+		
+		-- Skip segment updates during spawn stabilization
+		if spawnStabilizing then return end
 
 		updateCounter = updateCounter + 1
 		
@@ -842,19 +845,20 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- Proper delay calculation for ANY length
-					local baseDelay = 1.15
-					local delayMultiplier = isBoosting and 1.05 or 1.0
-					-- Use logarithmic scaling for long snakes
-					local scaledDelay = baseDelay + (math.log(i + 1) * 0.5)
+					-- Proper delay calculation with segment spacing
+					local baseDelay = 3  -- Higher base delay for proper spacing
+					local delayMultiplier = isBoosting and 1.1 or 1.0
+					-- Add delay based on segment index for proper trail
+					local scaledDelay = baseDelay + (i * 0.8)  -- Each segment trails more
 					local delay = mathFloor(scaledDelay * delayMultiplier)
 					-- Cap delay to prevent accessing too old history
 					delay = mathMin(delay, maxHistorySize - 10)
 					local targetData = getFromHistory(delay)
 					if targetData then
-						-- NO GAPS - keep segments close
-						local spacingMultiplier = 0.08  -- Same spacing always, no stretch
-						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
+						-- PROPER SPACING - not bunched up!
+						local spacingMultiplier = 0.9  -- 90% spacing for smooth following
+						-- Position segment behind the target position
+						local segmentPos = targetData.position
 						local currentSegmentPos = segment.Position
 
 						-- Enhanced anti-gap check - allow stretch when boosting
