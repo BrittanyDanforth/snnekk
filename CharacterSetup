@@ -344,7 +344,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local function createEye(name, position, parent)
 		local eye = Instance.new("Part")
 		eye.Name = name
-		eye.Size = Vector3new(0.8, 0.8, 0.8)  -- Bigger base eye size
+		eye.Size = Vector3new(1.2, 1.2, 1.2)  -- BIG GOOGLY base eye size
 		eye.Material = Enum.Material.Neon
 		eye.Color = Color3.fromRGB(255, 255, 255)
 		eye.Shape = Enum.PartType.Ball
@@ -858,7 +858,7 @@ local function createUltraSmoothSnake(character)
 				-- Scale eyes proportionally - BIGGER GROWTH
 				if headParts.leftEye and headParts.rightEye then
 					local eyeScale = headGrowth * 1.0  -- Eyes grow same as head
-					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 2.0)  -- Match head max
+					local targetEyeSize = Vector3new(1.2, 1.2, 1.2) * mathMin(eyeScale, 2.0)  -- BIG eyes that scale
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 
