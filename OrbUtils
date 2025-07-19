@@ -224,10 +224,21 @@ end
 -- Backup: AI head proximity check for orb pickup (call this in AISnake update loop)
 function OrbUtils.checkAISnakeHeadPickup(head)
     local PICKUP_RADIUS = 12  -- INCREASED from 7 to match player pickup better
+    local PICKUP_RADIUS_SQ = PICKUP_RADIUS * PICKUP_RADIUS  -- Square for faster checks
+    local headPos = head.Position
+    
+    -- Early exit if no orbs
+    if #OrbUtils.orbs == 0 then return end
+    
     for i = #OrbUtils.orbs, 1, -1 do
         local orb = OrbUtils.orbs[i]
-        if orb and orb.Parent and (head.Position - orb.Position).Magnitude < PICKUP_RADIUS then
-            if not orbDebounce[orb] then
+        if orb and orb.Parent then
+            -- Quick bounds check first (cheaper than distance)
+            local delta = headPos - orb.Position
+            if math.abs(delta.X) < PICKUP_RADIUS and math.abs(delta.Y) < PICKUP_RADIUS and math.abs(delta.Z) < PICKUP_RADIUS then
+                -- Now do precise squared distance check
+                                if delta.X * delta.X + delta.Y * delta.Y + delta.Z * delta.Z < PICKUP_RADIUS_SQ then
+                    if not orbDebounce[orb] then
                 orbDebounce[orb] = true
                 playOrbCollectVFX(orb.Position)
                 local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1  -- REDUCED from 10

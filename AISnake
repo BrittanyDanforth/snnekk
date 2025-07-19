@@ -1337,9 +1337,10 @@ function AISnake:updateMovement(dt)
 	-- Set velocity for collision detection
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
 	
-	-- CHECK FOR ORB PICKUP - CRITICAL FOR DEATH ORBS!
-	if self.HeadParts and self.HeadParts.head then
-		local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
+	-- CHECK FOR ORB PICKUP - OPTIMIZED FOR FPS
+	-- Only check every 3 frames to reduce lag
+	self._orbCheckFrame = (self._orbCheckFrame or 0) + 1
+	if self._orbCheckFrame % 3 == 0 and self.HeadParts and self.HeadParts.head then
 		OrbUtils.checkAISnakeHeadPickup(self.HeadParts.head)
 	end
 
