@@ -84,8 +84,8 @@ local taskWait = task.wait
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
 	HeadSize = Vector3new(4.5, 4.5, 4.5),  -- Bigger head
-	SegmentSize = Vector3new(4.5, 4.5, 5),  -- Longer segments for more visual length
-	SegmentSpacing = 4.2,  -- Adjusted spacing for longer appearance
+	SegmentSize = Vector3new(5, 5, 6.5),  -- MUCH longer segments for visual length
+	SegmentSpacing = 5.5,  -- More spacing for length appearance
 	InitialLength = 55,  -- Starting length
 	MaxSegments = 1800,  -- Reduced for better performance at max
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
@@ -344,7 +344,7 @@ local function createVisualHead(rootPart, config, parentModel)
 	local function createEye(name, position, parent)
 		local eye = Instance.new("Part")
 		eye.Name = name
-		eye.Size = Vector3new(0.6, 0.6, 0.6)
+		eye.Size = Vector3new(0.8, 0.8, 0.8)  -- Bigger base eye size
 		eye.Material = Enum.Material.Neon
 		eye.Color = Color3.fromRGB(255, 255, 255)
 		eye.Shape = Enum.PartType.Ball
@@ -840,9 +840,9 @@ local function createUltraSmoothSnake(character)
 			-- ALWAYS update eye positions to prevent lag
 			if headParts.leftEye and headParts.rightEye then
 				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-				local eyeSpacing = 0.6 + (scaleFactor - 1) * 0.15
-				local eyeForward = 0.85 * scaleFactor
-				local eyeUp = 0.55 * scaleFactor
+				local eyeSpacing = 0.6 + (scaleFactor - 1) * 0.25  -- More spacing for bigger eyes
+				local eyeForward = 0.9 * scaleFactor  -- Keep eyes on surface
+				local eyeUp = 0.6 * scaleFactor
 				
 				-- Update eye positions EVERY FRAME
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
@@ -855,10 +855,10 @@ local function createUltraSmoothSnake(character)
 				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.8)  -- Match max
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
-				-- Scale eyes proportionally
+				-- Scale eyes proportionally - BIGGER GROWTH
 				if headParts.leftEye and headParts.rightEye then
-					local eyeScale = headGrowth * 0.8  -- Eyes grow slightly less than head
-					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 1.5)
+					local eyeScale = headGrowth * 1.0  -- Eyes grow same as head
+					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 2.8)  -- Match head max
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 
