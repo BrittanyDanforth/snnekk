@@ -96,11 +96,11 @@ local Config = {
 		Color3.fromRGB(80, 200, 100),
 		Color3.fromRGB(60, 180, 80),
 	},
-	FollowSpeed = 0.96,
+	FollowSpeed = 0.92,
 	UpdateRate = 30,
 	MinDistance = 0.02,
 	BoostSpeed = 32,
-	BoostFollowSpeed = 0.98,
+	BoostFollowSpeed = 0.99, -- Increased for tighter following when boosting
 	HeadMaterial = Enum.Material.ForceField,
 	BodyMaterial = Enum.Material.Neon,
 	GlowIntensity = 1.5,
@@ -745,6 +745,20 @@ local function createUltraSmoothSnake(character)
 				if targetData then
 					local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
 					local currentSegmentPos = segment.Position
+					
+					-- Simple anti-gap check when boosting
+					if isBoosting and i > 1 then
+						local prevSegment = segments[i - 1]
+						if prevSegment and prevSegment.Parent then
+							local gap = (currentSegmentPos - prevSegment.Position).Magnitude
+							if gap > activeConfig.SegmentSpacing * 1.5 then
+								-- Too far, pull it closer
+								local dir = (prevSegment.Position - currentSegmentPos).Unit
+								segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
+							end
+						end
+					end
+					
 					local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 
 					segment.CFrame = CFramenew(newPos)
