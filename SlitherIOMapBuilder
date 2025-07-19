@@ -1,0 +1,291 @@
+-- SlitherIOMapBuilder: Builds a large, visually appealing map with invisible boundary walls
+-- Now supports High/Low graphics mode and multiplayer-safe decoration toggling
+
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- CONFIGURABLE MAP SIZE
+local MAP_SIZE = 800      -- Map is MAP_SIZE x MAP_SIZE studs
+local MAP_HEIGHT = 1      -- Height of the ground
+local WALL_THICKNESS = 8  -- Thickness of invisible walls
+local WALL_HEIGHT = 60    -- Height of invisible walls
+
+-- GROUP NAMES for easy cleanup/toggling
+local DECOR_GROUP_NAME = "SlitherIOMapDecor"
+local GRID_GROUP_NAME = "SlitherIOMapGrid"
+
+-- Helper: Remove all map decor (grid lines, hexagons, spots, corners)
+local function removeDecor()
+    local decor = Workspace:FindFirstChild(DECOR_GROUP_NAME)
+    if decor then
+        decor:Destroy()
+    end
+    local grid = Workspace:FindFirstChild(GRID_GROUP_NAME)
+    if grid then
+        grid:Destroy()
+    end
+end
+
+-- Helper: Remove old map parts (ground, walls)
+local function removeMapParts()
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if obj:IsA("Part") and (obj.Name == "SlitherIOGround" or obj.Name:match("^SlitherIOWall")) then
+            obj:Destroy()
+        end
+    end
+end
+
+-- Helper: Create the ground part
+local function createGround()
+    local ground = Instance.new("Part")
+    ground.Name = "SlitherIOGround"
+    ground.Size = Vector3.new(MAP_SIZE, MAP_HEIGHT, MAP_SIZE)
+    ground.Position = Vector3.new(0, MAP_HEIGHT/2, 0)
+    ground.Anchored = true
+    ground.CanCollide = true
+    ground.Locked = true
+    ground.TopSurface = Enum.SurfaceType.Smooth
+    ground.BottomSurface = Enum.SurfaceType.Smooth
+    ground.Material = Enum.Material.SmoothPlastic
+    ground.Color = Color3.fromRGB(17, 17, 22)  -- Dark slither.io style
+    ground.Parent = Workspace
+
+    -- Add a surface texture for the grid pattern (always present, but faint)
+    local texture = Instance.new("Texture")
+    texture.Texture = "rbxasset://textures/grid.dds"
+    texture.Face = Enum.NormalId.Top
+    texture.StudsPerTileU = 20
+    texture.StudsPerTileV = 20
+    texture.Transparency = 0.92
+    texture.Color3 = Color3.fromRGB(40, 40, 50)
+    texture.Parent = ground
+end
+
+-- Helper: Create invisible boundary walls
+local function createWalls()
+    local function createWall(name, size, position)
+        local wall = Instance.new("Part")
+        wall.Name = name
+        wall.Size = size
+        wall.Position = position
+        wall.Anchored = true
+        wall.CanCollide = true
+        wall.Locked = true
+        wall.Transparency = 1
+        wall.Material = Enum.Material.SmoothPlastic  -- Fully invisible
+        wall.Parent = Workspace
+        return wall
+    end
+    local half = MAP_SIZE/2
+    createWall("SlitherIOWall_Left", Vector3.new(WALL_THICKNESS, WALL_HEIGHT, MAP_SIZE+WALL_THICKNESS*2), Vector3.new(-half-WALL_THICKNESS/2, WALL_HEIGHT/2, 0))
+    createWall("SlitherIOWall_Right", Vector3.new(WALL_THICKNESS, WALL_HEIGHT, MAP_SIZE+WALL_THICKNESS*2), Vector3.new(half+WALL_THICKNESS/2, WALL_HEIGHT/2, 0))
+    createWall("SlitherIOWall_Top", Vector3.new(MAP_SIZE+WALL_THICKNESS*2, WALL_HEIGHT, WALL_THICKNESS), Vector3.new(0, WALL_HEIGHT/2, -half-WALL_THICKNESS/2))
+    createWall("SlitherIOWall_Bottom", Vector3.new(MAP_SIZE+WALL_THICKNESS*2, WALL_HEIGHT, WALL_THICKNESS), Vector3.new(0, WALL_HEIGHT/2, half+WALL_THICKNESS/2))
+end
+
+-- Helper: Create map decorations (only in High graphics)
+local function createDecor()
+    local decorGroup = Instance.new("Folder")
+    decorGroup.Name = DECOR_GROUP_NAME
+    decorGroup.Parent = Workspace
+
+    -- Hexagonal-style decorative elements (like slither.io)
+    for i = 1, 60 do
+        local x = math.random(-MAP_SIZE/2+40, MAP_SIZE/2-40)
+        local z = math.random(-MAP_SIZE/2+40, MAP_SIZE/2-40)
+
+        -- Create hexagon-like shape using cylinder
+        local circle = Instance.new("Part")
+        circle.Name = "GroundCircle"
+        circle.Shape = Enum.PartType.Cylinder
+        circle.Size = Vector3.new(0.2, math.random(25, 45), math.random(25, 45))
+        circle.Position = Vector3.new(x, MAP_HEIGHT+0.1, z)
+        circle.Orientation = Vector3.new(0, 0, 90)
+        circle.Anchored = true
+        circle.CanCollide = false
+        circle.Locked = true
+        circle.Transparency = 0.93
+        circle.Color = Color3.fromRGB(25, 25, 35)
+        circle.Material = Enum.Material.SmoothPlastic
+        circle.Parent = decorGroup
+
+        -- Add decorative ring
+        local ring = Instance.new("Part")
+        ring.Name = "GroundCircle"
+        ring.Shape = Enum.PartType.Cylinder
+        ring.Size = Vector3.new(0.15, circle.Size.Y + 5, circle.Size.Z + 5)
+        ring.Position = Vector3.new(x, MAP_HEIGHT+0.075, z)
+        ring.Orientation = Vector3.new(0, 0, 90)
+        ring.Anchored = true
+        ring.CanCollide = false
+        ring.Locked = true
+        ring.Transparency = 0.95
+        ring.Color = Color3.fromRGB(35, 35, 45)
+        ring.Material = Enum.Material.SmoothPlastic
+        ring.Parent = decorGroup
+    end
+
+    -- Subtle color spots (very faint)
+    for i = 1, 25 do
+        local spot = Instance.new("Part")
+        spot.Name = "GroundCircle"
+        spot.Shape = Enum.PartType.Cylinder
+        spot.Size = Vector3.new(0.1, math.random(60, 100), math.random(60, 100))
+        spot.Position = Vector3.new(
+            math.random(-MAP_SIZE/2+50, MAP_SIZE/2-50),
+            MAP_HEIGHT+0.05,
+            math.random(-MAP_SIZE/2+50, MAP_SIZE/2-50)
+        )
+        spot.Orientation = Vector3.new(0, 0, 90)
+        spot.Anchored = true
+        spot.CanCollide = false
+        spot.Locked = true
+        spot.Transparency = 0.98
+        spot.Color = Color3.fromHSV(math.random(), 0.2, 0.4)
+        spot.Material = Enum.Material.SmoothPlastic
+        spot.Parent = decorGroup
+    end
+
+    -- Corner markers (subtle)
+    local corners = {
+        {-MAP_SIZE/2 + 20, -MAP_SIZE/2 + 20},
+        {MAP_SIZE/2 - 20, -MAP_SIZE/2 + 20},
+        {-MAP_SIZE/2 + 20, MAP_SIZE/2 - 20},
+        {MAP_SIZE/2 - 20, MAP_SIZE/2 - 20}
+    }
+    for _, pos in pairs(corners) do
+        local marker = Instance.new("Part")
+        marker.Name = "GroundCircle"
+        marker.Size = Vector3.new(15, 0.1, 15)
+        marker.Position = Vector3.new(pos[1], MAP_HEIGHT + 0.05, pos[2])
+        marker.Anchored = true
+        marker.CanCollide = false
+        marker.Locked = true
+        marker.Transparency = 0.9
+        marker.Color = Color3.fromRGB(40, 40, 50)
+        marker.Material = Enum.Material.SmoothPlastic
+        marker.Parent = decorGroup
+
+        -- Corner detail
+        local detail = Instance.new("Part")
+        detail.Name = "GroundCircle"
+        detail.Size = Vector3.new(8, 0.15, 8)
+        detail.Position = Vector3.new(pos[1], MAP_HEIGHT + 0.075, pos[2])
+        detail.Anchored = true
+        detail.CanCollide = false
+        detail.Locked = true
+        detail.Transparency = 0.85
+        detail.Color = Color3.fromRGB(50, 50, 60)
+        detail.Material = Enum.Material.SmoothPlastic
+        detail.Parent = decorGroup
+    end
+end
+
+-- Helper: Create grid lines (only in High graphics)
+local function createGrid()
+    local gridGroup = Instance.new("Folder")
+    gridGroup.Name = GRID_GROUP_NAME
+    gridGroup.Parent = Workspace
+
+    for i = -MAP_SIZE/2, MAP_SIZE/2, 50 do
+        -- Vertical grid lines
+        local vLine = Instance.new("Part")
+        vLine.Name = "GroundCircle"
+        vLine.Size = Vector3.new(0.3, 0.05, MAP_SIZE)
+        vLine.Position = Vector3.new(i, MAP_HEIGHT + 0.025, 0)
+        vLine.Anchored = true
+        vLine.CanCollide = false
+        vLine.Locked = true
+        vLine.Transparency = 0.97
+        vLine.Color = Color3.fromRGB(30, 30, 40)
+        vLine.Material = Enum.Material.SmoothPlastic
+        vLine.Parent = gridGroup
+
+        -- Horizontal grid lines
+        local hLine = Instance.new("Part")
+        hLine.Name = "GroundCircle"
+        hLine.Size = Vector3.new(MAP_SIZE, 0.05, 0.3)
+        hLine.Position = Vector3.new(0, MAP_HEIGHT + 0.025, i)
+        hLine.Anchored = true
+        hLine.CanCollide = false
+        hLine.Locked = true
+        hLine.Transparency = 0.97
+        hLine.Color = Color3.fromRGB(30, 30, 40)
+        hLine.Material = Enum.Material.SmoothPlastic
+        hLine.Parent = gridGroup
+    end
+end
+
+-- Helper: Remove the default Baseplate if present
+local function removeBaseplate()
+    local baseplate = Workspace:FindFirstChild("Baseplate")
+    if baseplate then
+        baseplate:Destroy()
+    end
+end
+
+-- Helper: Determine if majority of players are on High graphics
+local function shouldShowDecor()
+    local highCount = 0
+    local total = 0
+    for _, player in pairs(Players:GetPlayers()) do
+        total = total + 1
+        local mode = player:GetAttribute("GraphicsMode")
+        if mode == nil or mode == "High" then
+            highCount = highCount + 1
+        end
+    end
+    if total == 0 then return true end
+    return highCount >= (total / 2)
+end
+
+-- Main: Build the map (ground, walls, and decor based on graphics)
+local function buildMap()
+    removeMapParts()
+    removeDecor()
+    createGround()
+    createWalls()
+    removeBaseplate()
+    if shouldShowDecor() then
+        createDecor()
+        createGrid()
+    end
+end
+
+-- Helper: Update only the decor (for graphics mode changes)
+local function updateDecor()
+    removeDecor()
+    if shouldShowDecor() then
+        createDecor()
+        createGrid()
+    end
+end
+
+-- Listen for player graphics mode changes and player join/leave
+for _, player in pairs(Players:GetPlayers()) do
+    player:GetAttributeChangedSignal("GraphicsMode"):Connect(function()
+        updateDecor()
+    end)
+end
+Players.PlayerAdded:Connect(function(player)
+    player:GetAttributeChangedSignal("GraphicsMode"):Connect(function()
+        updateDecor()
+    end)
+    updateDecor()
+end)
+Players.PlayerRemoving:Connect(function()
+    updateDecor()
+end)
+
+-- Listen for remote event to rebuild the map (e.g. after a round or admin command)
+local rebuildEvent = ReplicatedStorage:FindFirstChild("RequestMapRebuild")
+if rebuildEvent then
+    rebuildEvent.OnServerEvent:Connect(function()
+        buildMap()
+    end)
+end
+
+-- Initial build
+buildMap()
+
