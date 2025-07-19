@@ -455,6 +455,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = true,
 		TargetOrbs = true,
 		AvoidOthers = false,
+		SpeedMultiplier = 1.2,
 		TurnBias = 0.05, -- REDUCED from 0.1
 		BoostChance = 0.08, -- REDUCED from 0.15
 		CombatRadius = 70, -- REDUCED from 80
@@ -471,6 +472,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = false,
 		TargetOrbs = true,
 		AvoidOthers = true,
+		SpeedMultiplier = 1.1, -- INCREASED from 1.0
 		TurnBias = 0.1, -- REDUCED from 0.2
 		BoostChance = 0.05, -- REDUCED from 0.1
 		CombatRadius = 50, -- REDUCED from 60
@@ -487,6 +489,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = true,
 		TargetOrbs = true,
 		AvoidOthers = false,
+		SpeedMultiplier = 1.15, -- REDUCED from 1.2
 		TurnBias = 0.1, -- REDUCED from 0.3
 		BoostChance = 0.1, -- REDUCED from 0.2
 		CombatRadius = 60,
@@ -503,6 +506,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = false,
 		TargetOrbs = true,
 		AvoidOthers = true,
+		SpeedMultiplier = 1.0, -- INCREASED from 0.9
 		TurnBias = 0.1, -- REDUCED from 0.25
 		BoostChance = 0.15, -- REDUCED from 0.3
 		CombatRadius = 80, -- INCREASED from 70
@@ -519,6 +523,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = true,
 		TargetOrbs = true,
 		AvoidOthers = false,
+		SpeedMultiplier = 1.2, -- REDUCED from 1.25
 		TurnBias = 0.02, -- REDUCED from 0.05
 		BoostChance = 0.08, -- REDUCED from 0.12
 		CombatRadius = 80, -- REDUCED from 90
@@ -535,6 +540,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = true,
 		TargetOrbs = true,
 		AvoidOthers = false,
+		SpeedMultiplier = 1.1, -- REDUCED from 1.15
 		TurnBias = 0.01, -- REDUCED from 0.02
 		BoostChance = 0.05, -- REDUCED from 0.08
 		CombatRadius = 70,
@@ -551,6 +557,7 @@ AISnake.PersonalityDefinitions = {
 		TargetPlayers = true,
 		TargetOrbs = true,
 		AvoidOthers = false,
+		SpeedMultiplier = 1.25, -- REDUCED from 1.3
 		TurnBias = 0.0,
 		BoostChance = 0.03, -- REDUCED from 0.05
 		CombatRadius = 90, -- REDUCED from 100
@@ -1032,10 +1039,9 @@ function AISnake.new(startPosition)
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
-	self.TargetDirection = Vector3new(0, 0, 1) -- Match initial direction
-	self.Speed = self.Config.BaseSpeed  -- No fallback, must use SnakeConfig value
-	self.NormalSpeed = self.Config.BaseSpeed  -- Will be 35 from SnakeConfig
-	self.BoostSpeed = self.Config.BoostSpeed  -- Will be 70 from SnakeConfig
+	self.Speed = self.Config.BaseSpeed or 10
+	self.NormalSpeed = self.Config.BaseSpeed or 10
+	self.BoostSpeed = self.Config.BoostSpeed or 24
 	self.TurnSpeed = self.Config.TurnSpeed or 1.2 -- REDUCED for smoother turning
 	self.RandomTurnInterval = 1.5
 	self.LastTurn = tick()
@@ -1236,23 +1242,42 @@ function AISnake:updateMovement(dt)
 	local now = tick()
 	local p = self.Personality
 	local state = self.State
-	local steer = self.SteerDirection or self.Direction
+	local steer = self.SteerDirection
 
-	-- SMOOTHER turning - match player turning exactly
-	local turnRate = self.TurnSpeed * dt
-	
-	-- Calculate target direction from steer input
-	if steer and steer.Magnitude > 0.01 then
-		self.TargetDirection = steer.Unit
+	-- SMOOTHER turning
+	local forward = self.Direction
+	local flatForward = Vector3new(forward.X, 0, forward.Z).Unit
+	local flatSteer = Vector3new(steer.X, 0, steer.Z)
+	local angle = 0
+	if flatSteer.Magnitude > 0.01 then
+		flatSteer = flatSteer.Unit
+		angle = mathAtan2(flatSteer.X, flatSteer.Z) - mathAtan2(flatForward.X, flatForward.Z)
+		if angle > mathPi then angle = angle - 2 * mathPi end
+		if angle < -mathPi then angle = angle + 2 * mathPi end
 	end
-	
-	-- Smooth direction changes using lerp (like players)
-	local newDirection = self.Direction:Lerp(self.TargetDirection, turnRate)
-	
-	-- CRITICAL: Normalize after lerping (same as player code)
-	if newDirection.Magnitude > 0.001 then
-		self.Direction = newDirection.Unit
+	local desiredYaw = self.CurrentYaw + angle
+	self.TargetYaw = desiredYaw
+
+	-- MUCH smoother turn speed
+	local turnSpeed = self.TurnSpeed
+	if state == "AVOID_WALL" then
+		turnSpeed = turnSpeed * 3.0 -- REDUCED from 5.0
+	elseif state == "FLEE" then
+		turnSpeed = turnSpeed * 1.8 -- REDUCED from 2.2
+	elseif state == "CIRCLE" then
+		turnSpeed = turnSpeed * 1.5 -- REDUCED from 2.5
 	end
+
+	-- SMOOTHER boost turning
+	if self.Boosting then
+		turnSpeed = turnSpeed * 0.7 -- INCREASED from 0.5
+	end
+
+	local yawDiff = self.TargetYaw - self.CurrentYaw
+	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.8) -- CAPPED at 0.8
+
+	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
+	self.Direction = cf.LookVector
 
 	-- Boost management
 	if self.Boosting and now > self.BoostEndTime then
@@ -1277,16 +1302,17 @@ function AISnake:updateMovement(dt)
 		end
 	end
 
-	-- Movement and state handling
-	local state = self.State
-	local steer = self.SteerDirection or self.Direction
-	local p = self.Personality
+	-- Speed calculation
+	local speedMultiplier = p.SpeedMultiplier or 1
 
-	-- No speed multipliers - fair gameplay like real slither.io
+	if state == "SEEK_ORB" then
+		speedMultiplier = speedMultiplier * 1.1
+	end
+
 	if self.Boosting then
-		self.Speed = self.BoostSpeed
+		self.Speed = self.BoostSpeed * speedMultiplier
 	else
-		self.Speed = self.NormalSpeed
+		self.Speed = self.NormalSpeed * speedMultiplier
 	end
 
 	self.Position = self.Position + self.Direction * self.Speed * dt
@@ -1506,3 +1532,4 @@ AISnake._brainConnection = RunService.Stepped:Connect(function(time, deltaTime)
 end)
 
 return AISnake
+
