@@ -1,4 +1,5 @@
 -- SlitherIOMapBuilder: Builds a large, visually appealing map with invisible boundary walls
+-- this is a script inside workspace
 -- Now supports High/Low graphics mode and multiplayer-safe decoration toggling
 
 local Workspace = game:GetService("Workspace")
