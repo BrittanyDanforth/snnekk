@@ -28,7 +28,8 @@ local HEAD_COLLISION_DISTANCE = 3.2 -- Reduced from 3.5 for better accuracy
 local MIN_COLLISION_DISTANCE = 2.0 -- Minimum collision distance
 local COLLISION_BUFFER = 0.5 -- Additional buffer for network compensation
 local NETWORK_COMPENSATION = 0.3 -- Reduced from higher value
-local SPAWN_PROTECTION_TIME = 3 -- 3 seconds spawn protection for AI
+local SPAWN_PROTECTION_TIME = 5 -- 5 seconds spawn protection for AI (increased)
+local MIN_AI_SPAWN_DISTANCE = 50 -- Minimum distance between AI spawn points
 
 
 -- === DEBUG SYSTEM ===
@@ -239,7 +240,7 @@ local function getAISnakeHeads()
 				-- Set spawn protection for new AI snakes
 				if not spawnProtectedAI[head] and not deadAISnakes[head] then
 					-- Check if this is a new snake (no segments yet or very few)
-					if not snake.Segments or #snake.Segments < 10 then
+					if not snake.Segments or #snake.Segments < 50 then
 						setAISpawnProtection(head)
 					end
 				end
@@ -655,8 +656,12 @@ task.spawn(function()
 										)
 
 										-- Spawn at segment position with small offset
+										-- Clamp Y position to prevent sky-high orbs
+										local spawnPos = pos + offset
+										spawnPos = Vector3.new(spawnPos.X, math.min(spawnPos.Y + ORB_SPAWN_HEIGHT, 10), spawnPos.Z)
+										
 										local success = pcall(function()
-											spawnOrbDirect(pos + offset + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), valuePerOrb)
+											spawnOrbDirect(spawnPos, valuePerOrb)
 											spawnedOrbs = spawnedOrbs + 1
 										end)
 
@@ -757,10 +762,13 @@ task.spawn(function()
 												(math.random() - 0.5) * 2
 											)
 
-											-- Ensure proper height
+											-- Ensure proper height (clamped to prevent sky-high orbs)
+											local yPos = math.max(groundY + ORB_SPAWN_HEIGHT, pos.Y)
+											yPos = math.min(yPos, 10) -- Max height of 10 studs
+											
 											local spawnPos = Vector3.new(
 												pos.X + offset.X,
-												math.max(groundY + ORB_SPAWN_HEIGHT, pos.Y),
+												yPos,
 												pos.Z + offset.Z
 											)
 
