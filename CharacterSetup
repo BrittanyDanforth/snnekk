@@ -511,7 +511,7 @@ local function createUltraSmoothSnake(character)
 
 	-- IMMEDIATELY hide the character to prevent ANY flashing
 	rootPart.Transparency = 1
-	rootPart.CanCollide = false
+	-- Keep CanCollide true for orb collection!
 	
 	-- Specifically hide the head to remove any face decals
 	local head = character:FindFirstChild("Head")

@@ -336,7 +336,8 @@
 
 				-- Keep rootPart invisible but functional for orb collection
 				rootPart.Transparency = 1
-				rootPart.CanCollide = true -- Must be true for orb collection!
+				rootPart.CanCollide = false -- Don't block movement
+				rootPart.CanTouch = true -- Enable touch detection for orbs!
 				rootPart.Size = Config.HeadSize -- Keep size for collision detection
 				rootPart.Shape = Enum.PartType.Ball -- Ball shape for proper collision
 

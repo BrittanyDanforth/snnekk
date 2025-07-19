@@ -359,6 +359,7 @@ local function createSafeOrb(position, value, name, color, material)
 	orb.Size = Vector3.new(0.1, 0.1, 0.1)  -- Start tiny
 	orb.Anchored = true
 	orb.CanCollide = false
+	orb.CanTouch = true -- Explicitly enable touch detection
 	orb.Material = material or Enum.Material.Neon
 	orb.Color = color or Color3.new(1, 1, 0)
 	orb.Position = position
