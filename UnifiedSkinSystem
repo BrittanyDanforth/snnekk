@@ -234,13 +234,16 @@ local function handlePurchase(player, itemName)
 
 	player:SetAttribute("Coins", data.coins)
 	player:SetAttribute("OwnedSkinsJSON", HttpService:JSONEncode(data.ownedSkins))
+	-- Make sure selected skin attributes are preserved
+	player:SetAttribute("SelectedSkin", data.selectedSkin)
+	player:SetAttribute("ClientSelectedSkin", data.clientSelectedSkin)
 
 	-- Notify client
 	PurchaseSuccessRemote:FireClient(player, skinName)
 	UpdateClientRemote:FireClient(player, {
 		coins = data.coins,
 		ownedSkins = data.ownedSkins,
-		selectedSkin = data.clientSelectedSkin
+		selectedSkin = data.clientSelectedSkin -- Send the client skin name, not server name
 	})
 end
 

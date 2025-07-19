@@ -2612,8 +2612,8 @@ function ShopUI.applySkin()
 	local isOwned = table.find(ShopUI.playerData.ownedSkins, uiState.selectedSkin) ~= nil
 
 	if isOwned then
-		-- Update client-side data
-		ShopUI.playerData.currentSkin = uiState.selectedSkin
+		-- DON'T update client-side data immediately - wait for server confirmation
+		-- ShopUI.playerData.currentSkin = uiState.selectedSkin
 		syncPlayerData()
 
 		-- FIXED: Fire to server for skin selection (this will handle the actual application)
