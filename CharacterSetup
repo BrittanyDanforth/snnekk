@@ -593,8 +593,8 @@ local function createUltraSmoothSnake(character)
 		currentLength = i
 	end
 
-	-- Position history setup (like reference)
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 1.1) + 10, 1000) -- Capped at 1000 for performance
+	-- Position history setup - MUST handle max segments!
+	local maxHistorySize = mathFloor(activeConfig.MaxSegments * 1.5) + 100 -- Need MORE history for long snakes
 	local positionHistory = table.create(maxHistorySize)
 	local historyHead = 1
 	local initialHistoryPoint = { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
@@ -813,22 +813,33 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- LOD OPTIMIZATION: Update distant segments less frequently
+				-- LOD OPTIMIZATION: More aggressive for LONG snakes
 				local updateFrequency = 1
 				if i > 100 then
-					updateFrequency = 2 -- Every 2 frames
-				end
-				if i > 200 then
-					updateFrequency = 3 -- Every 3 frames
+					updateFrequency = 2
 				end
 				if i > 300 then
-					updateFrequency = 4 -- Every 4 frames
+					updateFrequency = 3
+				end
+				if i > 600 then
+					updateFrequency = 4
+				end
+				if i > 1000 then
+					updateFrequency = 6 -- Much less frequent for tail
+				end
+				if i > 1500 then
+					updateFrequency = 8 -- Very rare updates for far tail
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- NO GAPS - tight following!
-					local delayMultiplier = isBoosting and 1.2 or 1.15  -- Even less delay
-					local delay = mathFloor(i * delayMultiplier)
+					-- Proper delay calculation for ANY length
+					local baseDelay = 1.15
+					local delayMultiplier = isBoosting and 1.05 or 1.0
+					-- Use logarithmic scaling for long snakes
+					local scaledDelay = baseDelay + (math.log(i + 1) * 0.5)
+					local delay = mathFloor(scaledDelay * delayMultiplier)
+					-- Cap delay to prevent accessing too old history
+					delay = mathMin(delay, maxHistorySize - 10)
 					local targetData = getFromHistory(delay)
 					if targetData then
 						-- NO GAPS - keep segments close
