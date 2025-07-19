@@ -165,7 +165,7 @@ end
 -- Enhanced Segment Pooling with better cleanup
 local SegmentPool = {}
 local PoolSize = 0
-local MAX_POOL_SIZE = 1000
+local MAX_POOL_SIZE = 500  -- Reduced to save memory
 
 -- Dedicated container for better organization
 local SegmentContainer = workspace:FindFirstChild("SegmentContainer")
@@ -821,12 +821,17 @@ local function createUltraSmoothSnake(character)
 				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 1.8)
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
-				-- Scale eyes proportionally to prevent them getting "sucked in"
+				-- Scale eyes proportionally and reposition them
 				if headParts.leftEye and headParts.rightEye then
 					local eyeScale = headGrowth * 0.8  -- Eyes grow slightly less than head
 					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 1.5)
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
+					
+					-- FIX: Reposition eyes based on head size
+					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
+					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-0.6 * scaleFactor, 0.55 * scaleFactor, 0.8 * scaleFactor)
+					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(0.6 * scaleFactor, 0.55 * scaleFactor, 0.8 * scaleFactor)
 
 					-- Scale pupils too
 					if headParts.leftPupil and headParts.rightPupil then
@@ -938,19 +943,19 @@ local function createUltraSmoothSnake(character)
 
 						segment.CFrame = CFramenew(newPos)
 
-						-- Dynamic resizing based on total snake length
-						if updateCounter % 20 == 0 then  -- Update size every 20 frames
+						-- OPTIMIZED: Only resize nearby segments to reduce lag
+						if updateCounter % 30 == 0 and i <= 500 then  -- Only first 500 segments
 							local growthFactor = 1
 
 							-- ALL segments grow UNIFORMLY like real slither.io
 							if currentLength > 200 then
 								-- Uniform growth for ALL segments based on total length
-								growthFactor = 1 + ((currentLength - 200) / 2800) * 0.8  -- Up to 80% at 3000
+								growthFactor = 1 + ((currentLength - 200) / 2300) * 0.7  -- Adjusted for 2500 max
 							end
 
-							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
+							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.7)
 							-- Smooth size transition
-							segment.Size = segment.Size:Lerp(targetSize, 0.15)
+							segment.Size = segment.Size:Lerp(targetSize, 0.1)
 						end
 					end
 				end
@@ -1071,10 +1076,10 @@ Players.PlayerRemoving:Connect(function(player)
 	_G.PlayerSnakes[player] = nil
 end)
 
--- NEW: Periodic cleanup to prevent orphaned segments
+-- ENHANCED: More aggressive cleanup to prevent lag
 task.spawn(function()
 	while true do
-		task.wait(10) -- Check every 10 seconds
+		task.wait(5) -- Check every 5 seconds for better performance
 
 		local validSegments = {}
 
@@ -1116,6 +1121,24 @@ task.spawn(function()
 				end
 
 				if not playerExists then
+					child:Destroy()
+				end
+			end
+		end
+		
+		-- ADDED: Clean up AI snake models
+		for _, child in pairs(workspace:GetChildren()) do
+			if child:IsA("Model") and child.Name:match("^AISnakeModel_table:") then
+				-- Check if it has any segments
+				local hasSegments = false
+				for _, part in pairs(child:GetChildren()) do
+					if part:IsA("BasePart") and part.Name:match("Segment") then
+						hasSegments = true
+						break
+					end
+				end
+				
+				if not hasSegments then
 					child:Destroy()
 				end
 			end
