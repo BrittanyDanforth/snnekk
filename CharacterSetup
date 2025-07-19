@@ -528,10 +528,16 @@ local function createUltraSmoothSnake(character)
 		if part:IsA("BasePart") then
 			part.Transparency = 1
 			part.CanCollide = false
+			-- Also remove any effects that might be visible
+			for _, effect in part:GetChildren() do
+				if effect:IsA("ParticleEmitter") or effect:IsA("Fire") or effect:IsA("Smoke") or 
+				   effect:IsA("Sparkles") or effect:IsA("PointLight") or effect:IsA("SpotLight") or
+				   effect:IsA("SurfaceLight") then
+					effect.Enabled = false
+					effect:Destroy()
+				end
+			end
 		elseif part:IsA("Accessory") or part:IsA("Tool") then
-			part:Destroy()
-		elseif part:IsA("Highlight") then
-			-- Remove any highlight effects that might show outlines
 			part:Destroy()
 		end
 	end
@@ -543,69 +549,6 @@ local function createUltraSmoothSnake(character)
 			child:Destroy()
 		end
 	end
-	
-	-- Check entire character for selection boxes
-	task.wait()  -- Wait a frame for any scripts to add their boxes
-	for _, desc in character:GetDescendants() do
-		if desc:IsA("SelectionBox") then
-			desc:Destroy()
-		end
-	end
-	
-	-- COMPREHENSIVE CLEANUP for transparent circles
-	local function cleanupVisualEffects(parent)
-		for _, obj in parent:GetDescendants() do
-			if obj:IsA("SelectionSphere") or 
-			   obj:IsA("SphereHandleAdornment") or
-			   obj:IsA("BoxHandleAdornment") or
-			   obj:IsA("ConeHandleAdornment") or
-			   obj:IsA("CylinderHandleAdornment") or
-			   obj:IsA("ImageHandleAdornment") or
-			   obj:IsA("LineHandleAdornment") or
-			   obj:IsA("WireframeHandleAdornment") then
-				obj:Destroy()
-			elseif obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") or obj:IsA("ScreenGui") then
-				obj:Destroy()
-			elseif obj:IsA("Trail") or obj:IsA("Beam") then
-				obj.Enabled = false
-				obj:Destroy()
-			elseif obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
-				obj.Enabled = false
-				obj:Destroy()
-			elseif obj:IsA("Attachment") then
-				-- Check if attachment has any visual effects
-				for _, child in obj:GetChildren() do
-					if child:IsA("Trail") or child:IsA("Beam") or child:IsA("ParticleEmitter") then
-						child:Destroy()
-					end
-				end
-			elseif obj:IsA("Highlight") then
-				obj:Destroy()
-			elseif obj.Name:lower():match("debug") or obj.Name:lower():match("visual") or obj.Name:lower():match("radius") then
-				-- Remove any debug visualization parts
-				obj:Destroy()
-			end
-		end
-	end
-	
-	-- Clean character and any associated models
-	cleanupVisualEffects(character)
-	cleanupVisualEffects(snakeModel)
-	
-	-- Also check workspace for any visualization objects tied to this player
-	task.spawn(function()
-		wait(0.1)
-		for _, obj in workspace:GetDescendants() do
-			if obj:IsA("SelectionSphere") or obj:IsA("SphereHandleAdornment") then
-				-- Check if it's related to this character
-				if obj.Adornee and (obj.Adornee:IsDescendantOf(character) or obj.Adornee == rootPart) then
-					obj:Destroy()
-				elseif obj.Parent and obj.Parent.Name:match(player.Name) then
-					obj:Destroy()
-				end
-			end
-		end
-	end)
 
 	local snakeModel = getOrCreateSnakeModel(player)
 	for _, obj in snakeModel:GetChildren() do
@@ -789,62 +732,8 @@ local function createUltraSmoothSnake(character)
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
 		local lookVector = currentCFrame.LookVector
-		local headOffset = lookVector * 0.8  -- Reduced from 1.5 to bring head closer
+		local headOffset = lookVector * 1.5
 		local headPos = currentPos + headOffset
-		
-		-- Ensure rootPart stays invisible every frame
-		rootPart.Transparency = 1
-		-- Remove any selection box that might be on it
-		for _, child in rootPart:GetChildren() do
-			if child:IsA("SelectionBox") or child:IsA("SelectionSphere") or child:IsA("Highlight") then
-				child:Destroy()
-			end
-		end
-		
-		-- Check ALL character parts for selection boxes
-		for _, part in character:GetDescendants() do
-			if part:IsA("SelectionBox") then
-				part:Destroy()
-			elseif part:IsA("BasePart") and part ~= rootPart then
-				-- Make sure other parts stay hidden too
-				if part.Transparency < 1 and not part.Name:match("Snake") and not part.Name:match("Eye") then
-					part.Transparency = 1
-				end
-			end
-		end
-		
-		-- Periodic cleanup of visual effects (every 60 frames)
-		if updateCounter % 60 == 0 then
-			for _, obj in character:GetDescendants() do
-				if obj:IsA("SelectionSphere") or 
-				   obj:IsA("SphereHandleAdornment") or
-				   obj:IsA("Highlight") or
-				   (obj:IsA("Attachment") and obj:FindFirstChildWhichIsA("Trail")) or
-				   (obj:IsA("Attachment") and obj:FindFirstChildWhichIsA("Beam")) then
-					obj:Destroy()
-				end
-			end
-		end
-		
-		-- ADDITIONAL: Force remove any selection indicators
-		local selection = game:GetService("Selection")
-		if selection then
-			pcall(function()
-				local selected = selection:Get()
-				for i, obj in ipairs(selected) do
-					if obj == rootPart then
-						table.remove(selected, i)
-						selection:Set(selected)
-						break
-					end
-				end
-			end)
-		end
-		
-		-- Make sure no outlines are showing
-		pcall(function()
-			rootPart.SelectionBox3DEnabled = false
-		end)
 
 		-- Create head after 3 frames to prevent flash
 		if not headParts and framesSinceSpawn == 3 then
