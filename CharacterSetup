@@ -512,13 +512,41 @@ local function createUltraSmoothSnake(character)
 	-- IMMEDIATELY hide the character to prevent ANY flashing
 	rootPart.Transparency = 1
 	rootPart.CanCollide = false
+	
+	-- Specifically hide the head to remove any face decals
+	local head = character:FindFirstChild("Head")
+	if head then
+		head.Transparency = 1
+		-- Remove face decal
+		local face = head:FindFirstChild("face") or head:FindFirstChild("Face")
+		if face then
+			face:Destroy()
+		end
+	end
 
 	for _, part in character:GetChildren() do
 		if part:IsA("BasePart") then
 			part.Transparency = 1
 			part.CanCollide = false
+			-- Also remove any effects that might be visible
+			for _, effect in part:GetChildren() do
+				if effect:IsA("ParticleEmitter") or effect:IsA("Fire") or effect:IsA("Smoke") or 
+				   effect:IsA("Sparkles") or effect:IsA("PointLight") or effect:IsA("SpotLight") or
+				   effect:IsA("SurfaceLight") then
+					effect.Enabled = false
+					effect:Destroy()
+				end
+			end
 		elseif part:IsA("Accessory") or part:IsA("Tool") then
 			part:Destroy()
+		end
+	end
+	
+	-- Also hide the humanoid root part's selection box if any
+	for _, child in rootPart:GetChildren() do
+		if child:IsA("SelectionBox") or child:IsA("SelectionSphere") or 
+		   child:IsA("SurfaceGui") or child:IsA("BillboardGui") then
+			child:Destroy()
 		end
 	end
 
@@ -713,7 +741,16 @@ local function createUltraSmoothSnake(character)
 		end
 
 		if headParts and headParts.head and headParts.head.Parent then
-			headParts.head.CFrame = CFramelookAt(headPos, headPos + lookVector)
+			-- Position head properly without creating duplicates
+			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
+			
+			-- Ensure eyes stay visible
+			if headParts.leftEye then
+				headParts.leftEye.Transparency = 0
+			end
+			if headParts.rightEye then  
+				headParts.rightEye.Transparency = 0
+			end
 		end
 
 		-- Position history buffer with improved tracking for anti-gap
