@@ -290,7 +290,7 @@ function ShopManager.findExistingShop()
 		end
 	end
 
-	print("❓ No shop found - Shop Manager will wait for shop creation")
+	-- Don't spam the console
 	return false
 end
 
@@ -665,12 +665,20 @@ function ShopManager.initialize()
 
 	-- Find and enhance existing shop
 	spawn(function()
-		while not ShopManager.currentShop do
+		local attempts = 0
+		local maxAttempts = 10
+		
+		while not ShopManager.currentShop and attempts < maxAttempts do
 			if ShopManager.findExistingShop() then
 				ShopManager.enhanceShop()
 				break
 			end
-			wait(1)
+			attempts = attempts + 1
+			wait(2) -- Wait 2 seconds between attempts instead of 1
+		end
+		
+		if not ShopManager.currentShop and attempts >= maxAttempts then
+			print("⚠️ Shop Manager: No shop found after", maxAttempts, "attempts. Shop features disabled.")
 		end
 	end)
 
