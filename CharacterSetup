@@ -11,7 +11,6 @@ ULTRA-SMOOTH & HIGH-PERFORMANCE SLITHER.IO SNAKE SYSTEM V5.2 - SKIN SYSTEM INTEG
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Helper function to get table keys (moved up to be available)
 local function getTableKeys(tbl)
@@ -540,7 +539,7 @@ local function createUltraSmoothSnake(character)
 	local segments = {}
 	local currentLength = 0 -- Start with 0 segments
 	local targetLength = activeConfig.InitialLength
-	
+
 	-- Create initial segments spread out behind spawn position (like reference)
 	local startPos = rootPart.Position
 	for i = 1, activeConfig.InitialLength do
@@ -551,7 +550,7 @@ local function createUltraSmoothSnake(character)
 		segments[i] = segment
 		currentLength = i
 	end
-	
+
 	-- Position history setup (like reference)
 	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 1.1) + 10, 1000) -- Capped at 1000 for performance
 	local positionHistory = table.create(maxHistorySize)
@@ -573,85 +572,56 @@ local function createUltraSmoothSnake(character)
 		end
 		return positionHistory[index]
 	end
-	
+
 	local connections = {}
 	local isActive = true
 	local updateCounter = 0
 	local networkUpdateInterval = 2
 	local lastNetworkUpdate = 0
-	
-	-- Track spawn time for invincibility
-	local spawnTime = tick()
-	
-	-- GROWTH QUEUE SYSTEM - Like real slither.io
-	local growthQueue = 0
-	local tailFrozen = false
-	local frozenTailPosition = nil
-	local frozenTailIndex = 0
-	local growthTimer = 0
-	local GROWTH_RATE = 0.03 -- Add segment every 0.03 seconds (33 segments/second)
-	local FREEZE_THRESHOLD = 50 -- Only freeze tail if growing 50+ segments at once
 
 	local function growSnake(amount)
 		amount = amount or 5
-		
-		-- For small amounts, use instant growth (old system)
-		if amount < FREEZE_THRESHOLD and growthQueue == 0 then
-			local grew = false
-			for i = 1, amount do
-				if currentLength < activeConfig.MaxSegments then
-					grew = true
-					currentLength = currentLength + 1
-					local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
-					local color = activeConfig.BodyColors[colorIndex]
-					local lastSegment = segments[#segments]
-					local newPos = lastSegment and lastSegment.Position or rootPart.Position
-					local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
-					segments[currentLength] = segment
+		local grew = false
+		for i = 1, amount do
+			if currentLength < activeConfig.MaxSegments then
+				grew = true
+				currentLength = currentLength + 1
+				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
+				local color = activeConfig.BodyColors[colorIndex]
+				local lastSegment = segments[#segments]
+				local newPos = lastSegment and lastSegment.Position or rootPart.Position
+				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
+				segments[currentLength] = segment
 
-					segment.Transparency = 1
-					segment.Size = Vector3new(0.05, 0.05, 0.05)
-					taskSpawn(function()
-						local growTime = 0.15
-						local t = 0
-						local startSize = Vector3new(0.05, 0.05, 0.05)
-						local endSize = activeConfig.SegmentSize
-						local heartbeat = RunService.Heartbeat
+				segment.Transparency = 1
+				segment.Size = Vector3new(0.05, 0.05, 0.05)
+				taskSpawn(function()
+					local growTime = 0.15
+					local t = 0
+					local startSize = Vector3new(0.05, 0.05, 0.05)
+					local endSize = activeConfig.SegmentSize
+					local heartbeat = RunService.Heartbeat
 
-						while t < growTime and segment.Parent do
-							t = t + heartbeat:Wait()
-							if segment.Parent then
-								local alpha = mathMin(t / growTime, 1)
-								segment.Size = startSize:Lerp(endSize, alpha)
-								segment.Transparency = 1 - alpha
-							end
-						end
+					while t < growTime and segment.Parent do
+						t = t + heartbeat:Wait()
 						if segment.Parent then
-							segment.Size = endSize
-							segment.Transparency = 0
+							local alpha = mathMin(t / growTime, 1)
+							segment.Size = startSize:Lerp(endSize, alpha)
+							segment.Transparency = 1 - alpha
 						end
-					end)
-				end
+					end
+					if segment.Parent then
+						segment.Size = endSize
+						segment.Transparency = 0
+					end
+				end)
 			end
-			
-			if grew and leaderstats and updateCounter % 5 == 0 then
-				local lengthValue = leaderstats:FindFirstChild("Length")
-				if lengthValue then
-					lengthValue.Value = currentLength
-				end
-			end
-		else
-			-- For large amounts or if already growing, add to queue
-			growthQueue = growthQueue + amount
-			
-			-- Only freeze tail for large growth bursts
-			if not tailFrozen and growthQueue >= FREEZE_THRESHOLD then
-				tailFrozen = true
-				frozenTailIndex = currentLength
-				-- Store the current tail position
-				if segments[currentLength] then
-					frozenTailPosition = segments[currentLength].Position
-				end
+		end
+
+		if grew and leaderstats and updateCounter % 5 == 0 then
+			local lengthValue = leaderstats:FindFirstChild("Length")
+			if lengthValue then
+				lengthValue.Value = currentLength
 			end
 		end
 	end
@@ -744,48 +714,6 @@ local function createUltraSmoothSnake(character)
 
 		if headParts and headParts.head and headParts.head.Parent then
 			headParts.head.CFrame = CFramelookAt(headPos, headPos + lookVector)
-			
-			-- Check invincibility and update visuals
-			local isInvincible = false
-			local SnakeCollisionHandler = ServerScriptService:FindFirstChild("SnakeCollisionHandler")
-			if SnakeCollisionHandler then
-				local invinciblePlayers = SnakeCollisionHandler:GetAttribute("InvinciblePlayers")
-				if invinciblePlayers and invinciblePlayers[player] and os.clock() < invinciblePlayers[player] then
-					isInvincible = true
-				end
-			end
-			
-			-- Simple invincibility check - first 3 seconds after spawn
-			if currentTime - spawnTime < 3 then
-				isInvincible = true
-			end
-			
-			-- Update visual effects based on invincibility
-			if isInvincible then
-				-- Make head glow with force field effect
-				headParts.head.Material = Enum.Material.ForceField
-				if headParts.headOutline then
-					headParts.headOutline.Color3 = Color3.fromRGB(0, 255, 255)
-					headParts.headOutline.LineThickness = 0.2
-					headParts.headOutline.Transparency = 0
-				end
-				if headParts.headLight then
-					headParts.headLight.Brightness = activeConfig.GlowIntensity + 3
-					headParts.headLight.Color = Color3.fromRGB(0, 255, 255)
-				end
-			else
-				-- Normal appearance
-				headParts.head.Material = activeConfig.HeadMaterial
-				if headParts.headOutline then
-					headParts.headOutline.Color3 = Color3.fromRGB(255, 255, 255)
-					headParts.headOutline.LineThickness = 0.08
-					headParts.headOutline.Transparency = 1
-				end
-				if headParts.headLight then
-					headParts.headLight.Brightness = activeConfig.GlowIntensity + 1
-					headParts.headLight.Color = activeConfig.HeadColor
-				end
-			end
 		end
 
 		-- Position history buffer with improved tracking for anti-gap
@@ -807,52 +735,6 @@ local function createUltraSmoothSnake(character)
 		end
 
 		local currentTime = tick()
-		
-		-- PROCESS GROWTH QUEUE - Add segments while tail is frozen
-		if growthQueue > 0 and framesSinceSpawn > 10 then
-			growthTimer = growthTimer + dt
-			
-			-- Add segments at controlled rate
-			while growthTimer >= GROWTH_RATE and growthQueue > 0 do
-				growthTimer = growthTimer - GROWTH_RATE
-				
-				if currentLength < activeConfig.MaxSegments then
-					currentLength = currentLength + 1
-					growthQueue = growthQueue - 1
-					
-					local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
-					local color = activeConfig.BodyColors[colorIndex]
-					
-					-- New segments appear at the frozen tail position
-					local newPos = frozenTailPosition or (segments[#segments] and segments[#segments].Position) or rootPart.Position
-					local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
-					segments[currentLength] = segment
-					
-					-- Instant appearance - no grow animation during rapid growth
-					segment.Transparency = 0
-					segment.Size = activeConfig.SegmentSize
-				else
-					growthQueue = 0 -- Can't grow anymore
-					break
-				end
-			end
-			
-			-- Unfreeze tail when growth queue is empty
-			if growthQueue == 0 then
-				tailFrozen = false
-				frozenTailPosition = nil
-				frozenTailIndex = 0
-				growthTimer = 0
-			end
-			
-			-- Update length display
-			if leaderstats then
-				local lengthValue = leaderstats:FindFirstChild("Length")
-				if lengthValue then
-					lengthValue.Value = currentLength
-				end
-			end
-		end
 
 		-- POSITION HISTORY BASED MOVEMENT WITH ANTI-GAP FOR BOOSTING
 		framesSinceSpawn = framesSinceSpawn + 1
@@ -860,12 +742,6 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- FROZEN TAIL: Don't update segments at or beyond the frozen tail
-				if tailFrozen and i >= frozenTailIndex then
-					-- Keep these segments at their current position
-					continue
-				end
-				
 				-- LOD OPTIMIZATION: Update distant segments less frequently
 				local updateFrequency = 1
 				if i > 100 then
@@ -877,7 +753,7 @@ local function createUltraSmoothSnake(character)
 				if i > 300 then
 					updateFrequency = 4 -- Every 4 frames
 				end
-				
+
 				if updateCounter % updateFrequency == 0 then
 					-- Tighter following when boosting
 					local delayMultiplier = isBoosting and 0.9 or 1.15
@@ -886,7 +762,7 @@ local function createUltraSmoothSnake(character)
 					if targetData then
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
 						local currentSegmentPos = segment.Position
-						
+
 						-- Simple anti-gap check when boosting
 						if isBoosting and i > 1 then
 							local prevSegment = segments[i - 1]
@@ -899,7 +775,7 @@ local function createUltraSmoothSnake(character)
 								end
 							end
 						end
-						
+
 						local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 
 						segment.CFrame = CFramenew(newPos)
@@ -1004,7 +880,6 @@ local function handlePlayer(player)
 			end
 		end
 
-		local spawnTime = tick()  -- Track when player spawned for invincibility
 		taskSpawn(createUltraSmoothSnake, character)
 	end
 
