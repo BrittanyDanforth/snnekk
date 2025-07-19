@@ -246,10 +246,13 @@ local function handleSnakeGlows(mode, playerPos)
 	lastMode = mode
 	
 	-- Only print if there's a significant change
+	-- DISABLED: This was spamming the console
+	--[[
 	if math.abs(glowCount - processedCount) > 10 then
 		print(string.format("Graphics: %s | Glows: %d | Processed: %d | Cached: %d", 
 			mode, glowCount, processedCount, #snakeGlowCache))
 	end
+	--]]
 end
 
 -- Main update loop with dynamic timing
