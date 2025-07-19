@@ -1032,6 +1032,7 @@ function AISnake.new(startPosition)
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
+	self.TargetDirection = Vector3new(0, 0, 1) -- Match initial direction
 	self.Speed = self.Config.BaseSpeed  -- No fallback, must use SnakeConfig value
 	self.NormalSpeed = self.Config.BaseSpeed  -- Will be 35 from SnakeConfig
 	self.BoostSpeed = self.Config.BoostSpeed  -- Will be 70 from SnakeConfig
@@ -1237,35 +1238,21 @@ function AISnake:updateMovement(dt)
 	local state = self.State
 	local steer = self.SteerDirection or self.Direction
 
-	-- SMOOTHER turning
-	local forward = self.Direction
-	local flatForward = Vector3new(forward.X, 0, forward.Z).Unit
-	local flatSteer = Vector3new(steer.X, 0, steer.Z)
-	local angle = 0
-	if flatSteer.Magnitude > 0.01 then
-		flatSteer = flatSteer.Unit
-		angle = mathAtan2(flatSteer.X, flatSteer.Z) - mathAtan2(flatForward.X, flatForward.Z)
-		if angle > mathPi then angle = angle - 2 * mathPi end
-		if angle < -mathPi then angle = angle + 2 * mathPi end
+	-- SMOOTHER turning - match player turning exactly
+	local turnRate = self.TurnSpeed * dt
+	
+	-- Calculate target direction from steer input
+	if steer and steer.Magnitude > 0.01 then
+		self.TargetDirection = steer.Unit
 	end
-	local desiredYaw = self.CurrentYaw + angle
-	self.TargetYaw = desiredYaw
-
-	-- MUCH smoother turn speed
-	local turnSpeed = self.TurnSpeed
-	-- NO TURN SPEED MULTIPLIERS - fair gameplay
-	-- AI should turn at same speed as players regardless of state
-
-	-- SMOOTHER boost turning
-	if self.Boosting then
-		turnSpeed = turnSpeed * 0.7 -- INCREASED from 0.5
+	
+	-- Smooth direction changes using lerp (like players)
+	local newDirection = self.Direction:Lerp(self.TargetDirection, turnRate)
+	
+	-- CRITICAL: Normalize after lerping (same as player code)
+	if newDirection.Magnitude > 0.001 then
+		self.Direction = newDirection.Unit
 	end
-
-	local yawDiff = self.TargetYaw - self.CurrentYaw
-	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.8) -- CAPPED at 0.8
-
-	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
-	self.Direction = cf.LookVector
 
 	-- Boost management
 	if self.Boosting and now > self.BoostEndTime then
