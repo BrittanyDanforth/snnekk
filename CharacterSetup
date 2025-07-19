@@ -84,9 +84,9 @@ local taskWait = task.wait
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
 	HeadSize = Vector3new(3, 3, 3),
-	SegmentSize = Vector3new(2.5, 2.5, 2.5),
-	SegmentSpacing = 2.2,
-	InitialLength = 35,
+	SegmentSize = Vector3new(3.5, 3.5, 3.5),  -- Bigger segments
+	SegmentSpacing = 5.0,  -- MUCH bigger spacing for realistic snake length
+	InitialLength = 10,  -- Less segments needed with bigger spacing
 	MaxSegments = 2450,
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
 	BodyColors = {
@@ -589,7 +589,7 @@ local function createUltraSmoothSnake(character)
 	-- First, create position history with spread out positions
 	local tempPositions = {}
 	for i = 0, activeConfig.InitialLength * 2 do
-		local histPos = startPos - lookDir * (i * activeConfig.SegmentSpacing * 0.5)
+		local histPos = startPos - lookDir * (i * activeConfig.SegmentSpacing * 0.8)
 		table.insert(tempPositions, { position = histPos, lookVector = lookDir })
 	end
 	
