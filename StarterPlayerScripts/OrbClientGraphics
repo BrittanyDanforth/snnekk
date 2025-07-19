@@ -140,11 +140,11 @@ local function adjustSnakeGlows(mode)
 				local model = parent.Parent
 				if model and model:IsA("Model") then
 					-- Player snake models: SnakeModel_[UserId]
-					if model.Name:match("^SnakeModel_") then
+					if model.Name:find("SnakeModel_") then
 						isSnakePart = true
 					end
-					-- AI snake models: AISnakeModel_[id]
-					if model.Name:match("^AISnakeModel_") then
+					-- AI snake models: AISnakeModel_table:[id]
+					if model.Name:find("AISnakeModel_") then
 						isSnakePart = true
 					end
 					-- Also check if model has IsSnakeModel attribute
@@ -181,8 +181,25 @@ local function adjustSnakeGlows(mode)
 		end
 	end
 	
-	-- Debug - print every time to see if it's working
-	print("Snake glows adjusted:", glowsFound, "Mode:", mode)
+	-- Debug - print what we found
+	if glowsFound > 0 then
+		print("Snake glows adjusted:", glowsFound, "Mode:", mode)
+	else
+		-- More detailed debug when no glows found
+		local lightsFound = 0
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("PointLight") and obj.Name == "Glow" then
+				lightsFound = lightsFound + 1
+				if obj.Parent and obj.Parent:IsA("BasePart") then
+					local model = obj.Parent.Parent
+					if model and model:IsA("Model") then
+						print("Found glow in:", obj.Parent.Name, "Model:", model.Name)
+					end
+				end
+			end
+		end
+		print("Total Glow lights found:", lightsFound, "but none in snake models")
+	end
 end
 
 -- Main update loop
