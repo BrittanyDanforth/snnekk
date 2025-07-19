@@ -411,28 +411,22 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- POSITION EYES FLUSH ON HEAD
+	-- SIMPLE DIRECT POSITIONING - NO COMPLEX MATH
 	local headRadius = headPart.Size.X / 2
-	local eyeRadius = leftEye.Size.X / 2
 	
-	-- Eyes embedded into head surface
-	local embedDepth = eyeRadius * 0.6  -- Embed 60% of eye into head
-	local surfaceDistance = headRadius - embedDepth
+	-- Just put the eyes where they should be - on the sides, slightly up and forward
+	-- X = side offset, Y = up/down, Z = forward/back
+	local eyeOffset = headRadius * 0.7  -- 70% of head radius
+	local upOffset = headRadius * 0.3   -- 30% up from center
+	local forwardOffset = -headRadius * 0.3  -- 30% forward
 	
-	-- Position eyes HIGHER and to the sides
-	local angleUp = math.rad(15)      -- 15 degrees UP from center
-	local angleSide = math.rad(45)    -- 45 degrees to side
+	-- LEFT EYE - negative X is left
+	leftEye.CFrame = headPart.CFrame * CFramenew(-eyeOffset, upOffset, forwardOffset)
 	
-	-- Position with upward angle for proper height
-	leftEye.CFrame = headPart.CFrame * 
-		CFrame.Angles(angleUp, -angleSide, 0) * 
-		CFramenew(0, 0, -surfaceDistance)
-		
-	rightEye.CFrame = headPart.CFrame * 
-		CFrame.Angles(angleUp, angleSide, 0) * 
-		CFramenew(0, 0, -surfaceDistance)
+	-- RIGHT EYE - positive X is right  
+	rightEye.CFrame = headPart.CFrame * CFramenew(eyeOffset, upOffset, forwardOffset)
 	
-	-- Position pupils on eyes
+	-- Pupils straight out from eyes
 	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.5)
 	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.5)
 	
@@ -463,16 +457,6 @@ local function createVisualHead(rootPart, config, parentModel)
 	
 	-- Clean up the GoogleyEyes model
 	eyesModel:Destroy()
-	
-	-- FINAL CHECK: Make sure eyes are actually on the head
-	if (leftEye.Position - headPart.Position).Magnitude > headPart.Size.X then
-		warn("Eyes too far from head, repositioning...")
-		-- Force eyes to head surface
-		local angle = math.rad(40)
-		local radius = headPart.Size.X / 2 * 0.9
-		leftEye.CFrame = headPart.CFrame * CFrame.Angles(0, -angle, 0) * CFramenew(0, 0, -radius)
-		rightEye.CFrame = headPart.CFrame * CFrame.Angles(0, angle, 0) * CFramenew(0, 0, -radius)
-	end
 
 	return {
 		head = headPart,
