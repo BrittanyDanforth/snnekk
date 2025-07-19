@@ -721,7 +721,9 @@ local function createUltraSmoothSnake(character)
 		local dist = (currentPos - lastHistoryPoint.position).Magnitude
 		if dist > 0.015 then
 			if dist > activeConfig.SegmentSpacing * 0.8 then
-				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.6)), 3)
+				-- More interpolations when boosting to prevent gaps
+				local maxInterp = isBoosting and 8 or 3
+				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.4)), maxInterp)
 				for i = 1, numInterpolations do
 					local fraction = i / (numInterpolations + 1)
 					local interpPos = lastHistoryPoint.position:Lerp(currentPos, fraction)
@@ -740,7 +742,9 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				local delay = mathFloor(i * 1.15)
+				-- Tighter following when boosting
+				local delayMultiplier = isBoosting and 0.9 or 1.15
+				local delay = mathFloor(i * delayMultiplier)
 				local targetData = getFromHistory(delay)
 				if targetData then
 					local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
