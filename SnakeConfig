@@ -23,20 +23,20 @@ return {
     SegmentColor = Color3.fromRGB(80, 200, 100), -- For SnakeMovement
 
     -- MOVEMENT SETTINGS
-    FollowSpeed = 0.92,
+    FollowSpeed = 0.96,     -- Increased for tighter following
     BoostFollowSpeed = 0.99,
     UpdateRate = 30,
     MinDistance = 0.02,
-    PathSmoothness = 0.85, -- For smooth client movement
+    PathSmoothness = 0.9,   -- Increased for smoother movement
     
-    -- SPEED SETTINGS (Balanced for fun gameplay)
-    BaseSpeed = 16,   -- Normal speed
-    BoostSpeed = 32,  -- 2x boost
-    TurnSpeed = 1.2,  -- AI turning speed (smooth)
+    -- SPEED SETTINGS (Fast like real slither.io)
+    BaseSpeed = 35,   -- Much faster normal speed
+    BoostSpeed = 70,  -- 2x boost 
+    TurnSpeed = 5.0,  -- Much faster turning for smooth control
     
     -- Special speed modes for SnakeMovement
-    CrawlSpeed = 8,
-    SlowSpeed = 18,
+    CrawlSpeed = 15,
+    SlowSpeed = 25,
     SuperSpeed = 55,
     LudicrousSpeed = 90,
 
