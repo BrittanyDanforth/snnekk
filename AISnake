@@ -652,19 +652,29 @@ function AISnake:findNearbyThreats()
 			local lengthDiff = enemyLength - self.CurrentLength
 			local isThreat = false
 
-			-- MORE SELECTIVE threat detection
-			if lengthDiff > 30 or (dist < 15 and lengthDiff > 10) then
-				isThreat = true
+			-- MORE SENSITIVE threat detection
+			if lengthDiff > 10 then
+				isThreat = true -- Any snake 10+ segments bigger is a threat
+			elseif dist < 20 and lengthDiff > -10 then
+				isThreat = true -- Close snakes even if smaller can be threats
+			elseif dist < 30 and lengthDiff > 5 then
+				isThreat = true -- Medium range if they're bigger
 			end
 
-			if not isThreat and dist < 25 and lengthDiff > 20 then
+			-- Check if enemy is moving towards us
+			if not isThreat and dist < 40 then
 				local enemyVel = Vector3new(0, 0, 0)
 				if entity.type == "PLAYER_HEAD" then
-					enemyVel = getPlayerVelocity(entity.owner)
+					local humanoid = entity.owner.Character and entity.owner.Character:FindFirstChild("Humanoid")
+					if humanoid then
+						enemyVel = humanoid.RootPart.AssemblyLinearVelocity
+					end
+				elseif entity.owner.Direction then
+					enemyVel = entity.owner.Direction * (entity.owner.Speed or 10)
 				end
 				local toUs = (myPos - entity.part.Position).Unit
-				local facingUs = enemyVel.Magnitude > 0.1 and enemyVel.Unit:Dot(toUs) > 0.8
-				if facingUs then
+				local facingUs = enemyVel.Magnitude > 0.1 and enemyVel.Unit:Dot(toUs) > 0.5
+				if facingUs and lengthDiff > -20 then
 					isThreat = true
 				end
 			end
@@ -812,32 +822,38 @@ function AISnake:_determineAction()
 		return "AVOID_WALL", wallVec.Unit
 	end
 
-	-- Priority 2: Threat assessment (MUCH more selective)
+	-- Priority 2: Threat assessment with personality-based fleeing
 	local threats = self:findNearbyThreats()
 	local shouldFlee = false
 	local fleeReason = ""
 
 	if #threats > 0 then
 		local closestThreat = threats[1]
+		local avoidWeight = (p.ThreatAvoidance or 0.5)
 
-		-- MUCH more selective fleeing
-		if closestThreat.distance < 12 and closestThreat.lengthDiff > 15 then
+		-- Base flee conditions
+		if closestThreat.distance < 15 and closestThreat.lengthDiff > 10 then
 			shouldFlee = true
 			fleeReason = "immediate_danger"
-		elseif closestThreat.lengthDiff > 40 and closestThreat.distance < 25 then
+		elseif closestThreat.lengthDiff > 30 and closestThreat.distance < 35 then
 			shouldFlee = true
 			fleeReason = "giant_enemy"
-		elseif #threats >= 4 and closestThreat.distance < 15 then
+		elseif #threats >= 3 and closestThreat.distance < 25 then
 			shouldFlee = true
 			fleeReason = "surrounded"
-		elseif p.Type == "Coward" and closestThreat.lengthDiff > 20 and closestThreat.distance < 30 then
-			shouldFlee = true
-			fleeReason = "coward_instinct"
+		elseif closestThreat.distance < 40 and closestThreat.lengthDiff > 0 then
+			-- Use personality avoid weight for close threats
+			if mathRandom() < avoidWeight then
+				shouldFlee = true
+				fleeReason = "personality_avoid"
+			end
 		end
 
-		-- Aggressive types are braver
-		if shouldFlee and (p.Type == "Aggressor" or p.Type == "Hunter") and closestThreat.lengthDiff < 25 then
-			shouldFlee = false
+		-- Berserker and Aggressive personalities are braver
+		if shouldFlee and self._personalityType == "Berserker" and closestThreat.lengthDiff < 50 then
+			shouldFlee = mathRandom() < 0.3 -- 70% chance to ignore flee
+		elseif shouldFlee and self._personalityType == "Aggressive" and closestThreat.lengthDiff < 30 then
+			shouldFlee = mathRandom() < 0.5 -- 50% chance to ignore flee
 		end
 	end
 
