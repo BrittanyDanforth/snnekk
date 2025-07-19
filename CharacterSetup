@@ -348,34 +348,36 @@ local function createVisualHead(rootPart, config, parentModel)
 	local eyesModel = GoogleyEyes:Clone()
 	local leftEye = eyesModel:WaitForChild("Eye1")
 	local rightEye = eyesModel:WaitForChild("Eye2")
-	local leftPupil = eyesModel:FindFirstChild("Pupil1") or leftEye:FindFirstChild("Pupil1")
-	local rightPupil = eyesModel:FindFirstChild("Pupil2") or rightEye:FindFirstChild("Pupil2")
+	local leftPupil = eyesModel:WaitForChild("Pupil2")  -- Based on the structure
+	local rightPupil = eyesModel:WaitForChild("Pupil1")  -- Swapped to match visual appearance
 	
-	-- Ensure eyes have proper properties
-	for _, eye in pairs({leftEye, rightEye}) do
-		eye.CanCollide = false
-		eye.CanQuery = false
-		eye.CanTouch = false
-		eye.Anchored = false
-		eye.Massless = true
-		eye.CastShadow = false
+	-- Ensure eyes and pupils have proper properties
+	for _, part in pairs({leftEye, rightEye, leftPupil, rightPupil}) do
+		if part then
+			part.CanCollide = false
+			part.CanQuery = false
+			part.CanTouch = false
+			part.Anchored = false
+			part.Massless = true
+			part.CastShadow = false
+		end
 	end
 	
-	-- Parent to head and set properties
+	-- Parent eyes to head
 	leftEye.Parent = headPart
 	rightEye.Parent = headPart
 	
-	-- Handle pupils if they're children
-	if leftPupil and leftPupil.Parent ~= leftEye then
-		leftPupil.Parent = leftEye
-	end
-	if rightPupil and rightPupil.Parent ~= rightEye then
-		rightPupil.Parent = rightEye
-	end
+	-- Parent pupils to head too (they're separate parts)
+	leftPupil.Parent = headPart
+	rightPupil.Parent = headPart
 	
 	-- Set initial positions
 	leftEye.CFrame = headPart.CFrame * CFramenew(-0.6, 0.55, 0.8)
 	rightEye.CFrame = headPart.CFrame * CFramenew(0.6, 0.55, 0.8)
+	
+	-- Position pupils relative to eyes
+	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.2)
+	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.2)
 	
 	-- Create welds for eyes
 	local leftEyeWeld = Instance.new("WeldConstraint")
@@ -387,6 +389,17 @@ local function createVisualHead(rootPart, config, parentModel)
 	rightEyeWeld.Part0 = headPart
 	rightEyeWeld.Part1 = rightEye
 	rightEyeWeld.Parent = headPart
+	
+	-- Create welds for pupils
+	local leftPupilWeld = Instance.new("WeldConstraint")
+	leftPupilWeld.Part0 = leftEye
+	leftPupilWeld.Part1 = leftPupil
+	leftPupilWeld.Parent = leftEye
+	
+	local rightPupilWeld = Instance.new("WeldConstraint")
+	rightPupilWeld.Part0 = rightEye
+	rightPupilWeld.Part1 = rightPupil
+	rightPupilWeld.Parent = rightEye
 	
 	-- Clean up the GoogleyEyes model
 	eyesModel:Destroy()
