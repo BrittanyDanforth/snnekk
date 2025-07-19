@@ -83,8 +83,43 @@ end
 local function initializePlayer(player)
 	print("🎮 Initializing player:", player.Name)
 
+	-- Try to load existing data first
+	local existingOwnedSkins = nil
+	local ownedSkinsJSON = player:GetAttribute("OwnedSkinsJSON")
+	if ownedSkinsJSON then
+		local success, decoded = pcall(function()
+			return HttpService:JSONDecode(ownedSkinsJSON)
+		end)
+		if success and decoded then
+			existingOwnedSkins = decoded
+			print("📋 Loaded existing owned skins:", table.concat(decoded, ", "))
+		end
+	end
+
 	-- Get or create data
 	local data = PlayerData[player] or getDefaultData()
+	
+	-- If we have existing owned skins, use them instead of default
+	if existingOwnedSkins then
+		data.ownedSkins = existingOwnedSkins
+	end
+	
+	-- Also check for existing coins
+	local existingCoins = player:GetAttribute("Coins")
+	if existingCoins then
+		data.coins = existingCoins
+	end
+	
+	-- Check for existing selected skin
+	local existingSelectedSkin = player:GetAttribute("SelectedSkin")
+	local existingClientSkin = player:GetAttribute("ClientSelectedSkin")
+	if existingSelectedSkin then
+		data.selectedSkin = existingSelectedSkin
+	end
+	if existingClientSkin then
+		data.clientSelectedSkin = existingClientSkin
+	end
+	
 	PlayerData[player] = data
 
 	-- Create leaderstats
