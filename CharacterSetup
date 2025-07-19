@@ -847,11 +847,22 @@ local function createUltraSmoothSnake(character)
 			-- Update eye positions when head grows to maintain proper spacing
 			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
 				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-
-				-- Eyes need to spread out as head grows
-				local eyeSpacing = 0.6 * scaleFactor  -- Scale spacing with head
-				local eyeUp = 0.55 * scaleFactor
-				local eyeForward = 1.1 * scaleFactor  -- PERFECT position that works!
+				
+				-- SMART SCALING - different formula for long snakes
+				local eyeSpacing, eyeUp, eyeForward
+				
+				if currentLength < 200 then
+					-- Small snake - use original perfect values
+					eyeSpacing = 0.6 * scaleFactor
+					eyeUp = 0.55 * scaleFactor
+					eyeForward = 1.1  -- Keep at 1.1 for small snakes
+				else
+					-- Big snake - eyes need to move OUTWARD more
+					local bigScale = 1 + (currentLength - 200) / 2800  -- 0 to 1 as length grows
+					eyeSpacing = 0.6 * scaleFactor * (1 + bigScale * 0.3)  -- Spread wider
+					eyeUp = 0.55 * scaleFactor * (1 + bigScale * 0.2)  -- Slightly higher
+					eyeForward = 1.1 + bigScale * 1.5  -- Move forward significantly
+				end
 
 				-- Update positions relative to head
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
