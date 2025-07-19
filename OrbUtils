@@ -223,7 +223,7 @@ end
 
 -- Backup: AI head proximity check for orb pickup (call this in AISnake update loop)
 function OrbUtils.checkAISnakeHeadPickup(head)
-    local PICKUP_RADIUS = 7
+    local PICKUP_RADIUS = 12  -- INCREASED from 7 to match player pickup better
     for i = #OrbUtils.orbs, 1, -1 do
         local orb = OrbUtils.orbs[i]
         if orb and orb.Parent and (head.Position - orb.Position).Magnitude < PICKUP_RADIUS then

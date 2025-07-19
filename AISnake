@@ -1336,6 +1336,12 @@ function AISnake:updateMovement(dt)
 	
 	-- Set velocity for collision detection
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
+	
+	-- CHECK FOR ORB PICKUP - CRITICAL FOR DEATH ORBS!
+	if self.HeadParts and self.HeadParts.head then
+		local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
+		OrbUtils.checkAISnakeHeadPickup(self.HeadParts.head)
+	end
 
 	-- History management
 	local lastHistoryPoint = self:getFromHistory(1)
