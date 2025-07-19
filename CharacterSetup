@@ -855,9 +855,9 @@ local function createUltraSmoothSnake(character)
 				-- Only update eye positions every 15 frames for stability (ignore boost state)
 				if updateCounter % 15 == 0 or currentLength < 500 then
 					local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
-					local eyeSpacing = 1.2 + (scaleFactor - 1) * 0.4  -- MUCH more separated
-					local eyeForward = 0.2 * scaleFactor  -- DEEP inside head
-					local eyeUp = 0.4 * scaleFactor  -- Good height
+					local eyeSpacing = 0.5 * scaleFactor  -- Proper spacing on sides
+					local eyeForward = 0.8 * scaleFactor  -- Near front of head
+					local eyeUp = 0.3 * scaleFactor  -- Good height
 					
 					headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
 					headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
