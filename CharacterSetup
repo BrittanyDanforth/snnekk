@@ -419,19 +419,17 @@ local function createVisualHead(rootPart, config, parentModel)
 	local embedDepth = eyeRadius * 0.6  -- Embed 60% of eye into head
 	local surfaceDistance = headRadius - embedDepth
 	
-	-- Slight forward angle for slither.io look
-	local angleForward = math.rad(30)  -- 30 degrees forward
-	local angleSide = math.rad(45)     -- 45 degrees to side
+	-- Position eyes HIGHER and to the sides
+	local angleUp = math.rad(15)      -- 15 degrees UP from center
+	local angleSide = math.rad(45)    -- 45 degrees to side
 	
-	-- Position with forward-side angle
+	-- Position with upward angle for proper height
 	leftEye.CFrame = headPart.CFrame * 
-		CFrame.Angles(0, -angleSide, 0) * 
-		CFrame.Angles(-angleForward, 0, 0) * 
+		CFrame.Angles(angleUp, -angleSide, 0) * 
 		CFramenew(0, 0, -surfaceDistance)
 		
 	rightEye.CFrame = headPart.CFrame * 
-		CFrame.Angles(0, angleSide, 0) * 
-		CFrame.Angles(-angleForward, 0, 0) * 
+		CFrame.Angles(angleUp, angleSide, 0) * 
 		CFramenew(0, 0, -surfaceDistance)
 	
 	-- Position pupils on eyes
