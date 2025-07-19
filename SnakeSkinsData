@@ -22,7 +22,7 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 1.5,
 		GlowRange = 4,
-		price = 0,
+		Price = 0,
 		tag = "FREE",
 		Description = "The original slither.io look!"
 	},
@@ -44,7 +44,7 @@ local SnakeSkinsData = {
 		BodyMaterial = Enum.Material.Neon,
 		GlowIntensity = 2.0,
 		GlowRange = 6,
-		price = 100,
+		Price = 100,
 		tag = "Popular",
 		Description = "Blood red serpent of power!"
 	},
@@ -402,7 +402,7 @@ local SnakeSkinsData = {
 		GlowRange = 12,
 		Price = 8000,
 		RobuxPrice = 150,
-		tag = "Legendary",
+		Tag = "Legendary",
 		Description = "Rise from the ashes like a phoenix!",
 		VFX = {
 			Type = "Fire",
