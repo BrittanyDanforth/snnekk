@@ -363,6 +363,12 @@ local function createVisualHead(rootPart, config, parentModel)
 		end
 	end
 	
+	-- RESET eye positions to origin FIRST
+	leftEye.CFrame = CFrame.new(0, 0, 0)
+	rightEye.CFrame = CFrame.new(0, 0, 0)
+	leftPupil.CFrame = CFrame.new(0, 0, 0)
+	rightPupil.CFrame = CFrame.new(0, 0, 0)
+	
 	-- Parent eyes to head
 	leftEye.Parent = headPart
 	rightEye.Parent = headPart
@@ -380,19 +386,20 @@ local function createVisualHead(rootPart, config, parentModel)
 		part.Size = part.Size * eyeScale
 	end
 	
-	-- POSITION EYES DIRECTLY ON HEAD SURFACE
+	-- FIX: EMBED EYES DEEP INTO HEAD
 	local headRadius = headPart.Size.X / 2
 	local angleOffset = math.rad(35)  -- 35 degree wrap around sides
 	
-	-- Position eyes RIGHT ON the surface (no gap)
-	local eyeRadius = leftEye.Size.X / 2  -- Eye's own radius
-	local surfaceRadius = headRadius - eyeRadius * 0.5  -- Embed halfway into head
+	-- DEEP EMBEDDING - eyes must be INSIDE the head sphere
+	local eyeRadius = leftEye.Size.X / 2  
+	-- Make radius MUCH smaller so eyes are INSIDE head
+	local surfaceRadius = headRadius * 0.5  -- Only go out 50% of head radius
 	
-	-- Calculate positions
+	-- Calculate positions - INSIDE the head
 	local leftPos = CFrame.Angles(0, -angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
 	local rightPos = CFrame.Angles(0, angleOffset, 0) * CFramenew(0, 0, -surfaceRadius)
 	
-	-- CRITICAL: Position BEFORE creating welds
+	-- Set positions DEEP in head
 	leftEye.CFrame = headPart.CFrame * leftPos
 	rightEye.CFrame = headPart.CFrame * rightPos
 	
@@ -400,8 +407,12 @@ local function createVisualHead(rootPart, config, parentModel)
 	leftPupil.CFrame = leftEye.CFrame * CFramenew(0, 0, -0.65)
 	rightPupil.CFrame = rightEye.CFrame * CFramenew(0, 0, -0.65)
 	
-	-- Wait a frame to ensure positions are set
+	-- FORCE positions to stick
+	leftEye.Anchored = true
+	rightEye.Anchored = true
 	task.wait()
+	leftEye.Anchored = false
+	rightEye.Anchored = false
 	
 	-- NOW create welds AFTER positioning
 	local leftEyeWeld = Instance.new("WeldConstraint")
