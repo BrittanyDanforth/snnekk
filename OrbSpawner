@@ -435,7 +435,7 @@ end
 ---------------------------------------------------------------------
 -- Attach .Touched listener
 ---------------------------------------------------------------------
-function attachOrbTouched(orb)
+local function attachOrbTouched(orb)
 	orb.Touched:Connect(function(hit)
 		if not orb or not orb.Parent or orbDebounce[orb] then return end
 
