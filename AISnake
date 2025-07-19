@@ -1532,4 +1532,3 @@ AISnake._brainConnection = RunService.Stepped:Connect(function(time, deltaTime)
 end)
 
 return AISnake
-
