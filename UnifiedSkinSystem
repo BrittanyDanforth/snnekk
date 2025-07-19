@@ -9,23 +9,25 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
--- Skin name mappings (client -> server)
+-- Skin name mapping (Client name -> Server name)
 local SKIN_NAME_MAP = {
 	["Default"] = "Classic",
-	["Crimson"] = "Lava Red",
-	["Arctic"] = "Arctic", -- Same name
-	["Emerald"] = "Emerald", -- Same name
-	["Void"] = "Void", -- Same name
-	["Plasma"] = "Electric Purple",
-	["Galaxy"] = "Galaxy", -- Same name
-	["Ocean"] = "Ocean Blue",
-	["Shadow"] = "Shadow", -- Same name
-	["Cyber"] = "Cyberpunk",
-	["Dragon"] = "Dragon Lord",
-	["VIP Diamond"] = "VIP Diamond", -- Same name
-	["VIP Inferno"] = "VIP Inferno", -- Same name
-	["VIP Cosmic"] = "VIP Cosmic", -- Same name
-	["Rainbow"] = "Rainbow Prism"
+	["Crimson"] = "Crimson", -- Fixed: was mapping to non-existent "Lava Red"
+	["Arctic"] = "Arctic",
+	["Emerald"] = "Emerald",
+	["Golden"] = "Golden",
+	["Ocean Blue"] = "Ocean Blue",
+	["Electric Purple"] = "Electric Purple",
+	["Rainbow Prism"] = "Rainbow Prism",
+	["Shadow"] = "Shadow",
+	["Galaxy"] = "Galaxy",
+	["VIP Inferno"] = "VIP Inferno",
+	["VIP Cosmic"] = "VIP Cosmic",
+	["VIP Diamond"] = "VIP Diamond",
+	["Lightning"] = "Lightning",
+	["Void"] = "Void",
+	["Cyberpunk"] = "Cyberpunk",
+	["Dragon Lord"] = "Dragon Lord"
 }
 
 -- Reverse mapping (server -> client)
