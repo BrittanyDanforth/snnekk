@@ -921,14 +921,27 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- Optimized delay for reduced ping
-					local delayMultiplier = isBoosting and 0.7 or 0.85  -- Slightly looser to compensate for smaller buffer
-					local delay = mathFloor(i * delayMultiplier)
+					-- Dynamic delay based on length to prevent pattern bunching
+					local baseMultiplier = isBoosting and 0.8 or 1.0
+					-- Increase spacing as snake gets longer to preserve pattern visibility
+					if currentLength > 1000 then
+						baseMultiplier = baseMultiplier * 1.2  -- 20% more spread
+					elseif currentLength > 1500 then
+						baseMultiplier = baseMultiplier * 1.4  -- 40% more spread
+					elseif currentLength > 2000 then
+						baseMultiplier = baseMultiplier * 1.6  -- 60% more spread
+					end
+					local delay = mathFloor(i * baseMultiplier)
 					-- Ensure we don't exceed buffer
 					delay = mathMin(delay, historyCount - 1)
 					local targetData = getFromHistory(delay)
 					if targetData then
-						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.1)  -- Adjusted for longer segments
+						-- Dynamic spacing to prevent pattern loss at high lengths
+						local spacingMultiplier = 0.15  -- Base spacing
+						if currentLength > 1500 then
+							spacingMultiplier = 0.2  -- More spacing to show pattern
+						end
+						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
 						local currentSegmentPos = segment.Position
 
 						-- Simple anti-gap check when boosting
