@@ -19,8 +19,8 @@ if success and externalConfig then
 else
 	print(" External config not found using defaults")
 	Config = {
-		BaseSpeed = 35, -- Slightly reduced for better network performance
-		BoostSpeed = 70, -- Reduced from 80
+			BaseSpeed = 50, -- Increased for proper speed
+	BoostSpeed = 100, -- Proper boost speed
 		TurnSpeed = 5.1, -- Slightly reduced
 		CrawlSpeed = 8,
 		SlowSpeed = 18,
@@ -379,11 +379,11 @@ local function initializeForCharacter(character)
 
 	-- 🚀 NETWORK-OPTIMIZED SPEED MODES
 	local speedModes = {
-		crawl = Config.CrawlSpeed or 8,
-		slow = Config.SlowSpeed or 18,
+		crawl = Config.CrawlSpeed or 15,
+		slow = Config.SlowSpeed or 30,
 		normal = Config.BaseSpeed,
-		super = Config.SuperSpeed or 55,
-		ludicrous = Config.LudicrousSpeed or 90
+		super = Config.SuperSpeed or 75,
+		ludicrous = Config.LudicrousSpeed or 120
 	}
 
 	local function setSpeedMode(mode)
