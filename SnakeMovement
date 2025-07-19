@@ -334,9 +334,11 @@
 				humanoid.JumpHeight = 0
 				humanoid.AutoRotate = false
 
-				-- Keep rootPart invisible - CharacterSetup handles the visual head
+				-- Keep rootPart invisible but functional for orb collection
 				rootPart.Transparency = 1
-				rootPart.CanCollide = false
+				rootPart.CanCollide = true -- Must be true for orb collection!
+				rootPart.Size = Config.HeadSize -- Keep size for collision detection
+				rootPart.Shape = Enum.PartType.Ball -- Ball shape for proper collision
 
 				-- HeadGlow and lighting removed - CharacterSetup handles all visuals
 
