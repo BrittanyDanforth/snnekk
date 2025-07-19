@@ -84,10 +84,10 @@ local taskWait = task.wait
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
 	HeadSize = Vector3new(4.5, 4.5, 4.5),  -- Bigger head
-	SegmentSize = Vector3new(5, 5, 6.5),  -- MUCH longer segments for visual length
-	SegmentSpacing = 5.5,  -- More spacing for length appearance
+	SegmentSize = Vector3new(3.5, 3.5, 4),  -- Thinner but still good
+	SegmentSpacing = 3.2,  -- Tighter for more segments visible
 	InitialLength = 55,  -- Starting length
-	MaxSegments = 1800,  -- Reduced for better performance at max
+	MaxSegments = 3000,  -- MANY MORE segments for HUGE length
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
 	BodyColors = {
 		Color3.fromRGB(60, 180, 80),
@@ -269,10 +269,10 @@ local function createSegment(index, position, color, config, parentModel, curren
 	-- Apply growth factor based on current snake length
 	local growthFactor = 1
 	if currentLength and currentLength > 200 then
-		growthFactor = 1 + ((currentLength - 200) / 1600) * 1.8  -- Match aggressive growth
+		growthFactor = 1 + ((currentLength - 200) / 2800) * 1.0  -- Match moderate growth
 	end
 	
-	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.8)  -- Match new max
+	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
 	segment.Material = config.BodyMaterial
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
@@ -605,8 +605,8 @@ local function createUltraSmoothSnake(character)
 		currentLength = i
 	end
 
-	-- OPTIMIZED: Smaller buffer for much lower ping
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.5), 1000) -- Only 1000 for minimal ping
+	-- OPTIMIZED: Buffer sized for 3000 segments
+	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.6), 1800) -- 1800 for longer snake
 	local positionHistory = {}
 	local historyHead = 1
 	local historyCount = 0
@@ -676,9 +676,9 @@ local function createUltraSmoothSnake(character)
 				local growthFactor = 1
 				if currentLength > 200 then
 					-- Same uniform growth as all other segments
-					growthFactor = 1 + ((currentLength - 200) / 1600) * 1.8  -- Match aggressive growth
+					growthFactor = 1 + ((currentLength - 200) / 2800) * 1.0  -- Match moderate growth
 				end
-				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.8)  -- Match new max
+				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
 
 				segment.Transparency = 1
 				segment.Size = Vector3new(0.05, 0.05, 0.05)
@@ -788,10 +788,10 @@ local function createUltraSmoothSnake(character)
 		-- Calculate uniform size ONCE per frame for ALL segments
 		local currentGrowthFactor = 1
 		if currentLength > 200 then
-			-- More aggressive growth for visual impact with fewer segments
-			currentGrowthFactor = 1 + ((currentLength - 200) / 1600) * 1.8  -- Bigger multiplier
+			-- Moderate growth to stay long not just thick
+			currentGrowthFactor = 1 + ((currentLength - 200) / 2800) * 1.0  -- Less growth
 		end
-		local uniformTargetSize = activeConfig.SegmentSize * mathMin(currentGrowthFactor, 2.8)  -- Bigger max
+		local uniformTargetSize = activeConfig.SegmentSize * mathMin(currentGrowthFactor, 2.0)  -- Max 2x size only
 
 		-- Remove selection box every frame to ensure it stays gone
 		if rootPart:FindFirstChild("SelectionBox") then
@@ -851,14 +851,14 @@ local function createUltraSmoothSnake(character)
 
 			-- Dynamic head sizing - same growth as body segments
 			if updateCounter % 20 == 0 and currentLength > 200 then
-				local headGrowth = 1 + ((currentLength - 200) / 1600) * 1.8  -- Match body growth
-				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.8)  -- Match max
+				local headGrowth = 1 + ((currentLength - 200) / 2800) * 1.0  -- Match body growth
+				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.0)  -- Match max
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
 				-- Scale eyes proportionally - BIGGER GROWTH
 				if headParts.leftEye and headParts.rightEye then
 					local eyeScale = headGrowth * 1.0  -- Eyes grow same as head
-					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 2.8)  -- Match head max
+					local targetEyeSize = Vector3new(0.6, 0.6, 0.6) * mathMin(eyeScale, 2.0)  -- Match head max
 					headParts.leftEye.Size = headParts.leftEye.Size:Lerp(targetEyeSize, 0.15)
 					headParts.rightEye.Size = headParts.rightEye.Size:Lerp(targetEyeSize, 0.15)
 
