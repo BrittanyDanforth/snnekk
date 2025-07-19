@@ -549,6 +549,20 @@ local function createUltraSmoothSnake(character)
 			child:Destroy()
 		end
 	end
+	
+	-- Clean up any debug visuals on the player's model in workspace
+	task.spawn(function()
+		wait(0.1)
+		local playerModel = workspace:FindFirstChild(player.Name)
+		if playerModel then
+			for _, obj in playerModel:GetDescendants() do
+				if obj:IsA("SelectionBox") or obj:IsA("Highlight") or 
+				   (obj:IsA("Part") and obj.Name:match("Debug")) then
+					obj:Destroy()
+				end
+			end
+		end
+	end)
 
 	local snakeModel = getOrCreateSnakeModel(player)
 	for _, obj in snakeModel:GetChildren() do
