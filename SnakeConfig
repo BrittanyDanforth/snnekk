@@ -1,4 +1,4 @@
--- Global SnakeConfig for both Player and AI snakes This is a ModuleScript inside ReplicatedStorage
+-- Global SnakeConfig for both Player and AI snakes
 
 return {
     -- SNAKE DIMENSIONS
@@ -8,38 +8,27 @@ return {
 
     -- BODY SETTINGS
     InitialLength = 35,
-    MaxSegments = 2450,  -- Increased from 2000 for longer snakes
+    MaxSegments = 2000,
 
-    -- ENHANCED COLORS (Default skin)
+    -- ENHANCED COLORS
     HeadColor = Color3.fromRGB(57, 255, 20),
     BodyColors = {
         Color3.fromRGB(57, 255, 20),
         Color3.fromRGB(45, 220, 15),
         Color3.fromRGB(70, 255, 35),
-        Color3.fromRGB(45, 220, 15),  -- Added more variation
-        Color3.fromRGB(57, 255, 20),
     },
 
     -- MOVEMENT
-    FollowSpeed = 0.92,  -- Slightly reduced for smoother following
-    BoostFollowSpeed = 0.99,  -- Added for tight boost control
-    UpdateRate = 30,  -- Increased from 1 for smoother movement
+    FollowSpeed = 0.95,
+    UpdateRate = 1,
     MinDistance = 0.02,
-    
-    -- SPEED SETTINGS
-    BaseSpeed = 16,  -- Normal movement speed
-    BoostSpeed = 32,  -- 2x speed when boosting
 
     -- MATERIALS
     HeadMaterial = Enum.Material.ForceField,
     BodyMaterial = Enum.Material.Neon,
 
     -- VISUAL ENHANCEMENTS
-    GlowIntensity = 1.5,  -- Reduced slightly for better visibility
-    GlowRange = 4,  -- Reduced for performance
-    
-    -- GAMEPLAY SETTINGS
-    OrbValue = 5,  -- How much length each orb gives
-    BoostDrainRate = 2,  -- Length lost per second while boosting
+    GlowIntensity = 2,
+    GlowRange = 5,
 }
 
