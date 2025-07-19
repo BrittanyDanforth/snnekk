@@ -341,22 +341,7 @@
 				rootPart.TopSurface = Enum.SurfaceType.Smooth
 				rootPart.BottomSurface = Enum.SurfaceType.Smooth
 
-				-- Optimized glow effect
-				local glowPart = Instance.new("Part")
-				glowPart.Name = "HeadGlow"
-				glowPart.Shape = Enum.PartType.Ball
-				glowPart.Size = Config.HeadSize * 1.2 -- Reduced from 1.3
-				glowPart.Material = Enum.Material.ForceField
-				glowPart.Color = Config.HeadColor
-				glowPart.Transparency = 0.7 -- Increased for better performance
-				glowPart.CanCollide = false
-				glowPart.Anchored = false
-				glowPart.Parent = rootPart
-
-				local weld = Instance.new("WeldConstraint")
-				weld.Part0 = rootPart
-				weld.Part1 = glowPart
-				weld.Parent = rootPart
+				-- HeadGlow removed - was causing extra orb appearance
 
 				-- Optimized lighting
 				local light = Instance.new("PointLight")
