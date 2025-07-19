@@ -356,11 +356,11 @@ local function createVisualHead(rootPart, config, parentModel)
 		eye.Parent = parent
 		eye.CFrame = parent.CFrame * CFramenew(position)
 
-		-- Don't use welds since we're updating position manually
-		-- local weld = Instance.new("WeldConstraint")
-		-- weld.Part0 = parent
-		-- weld.Part1 = eye
-		-- weld.Parent = parent
+		-- USE WELDS to keep eyes attached
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = parent
+		weld.Part1 = eye
+		weld.Parent = parent
 
 		return eye, weld
 	end
@@ -927,7 +927,11 @@ local function createUltraSmoothSnake(character)
 				elseif i > 1000 then
 					updateFrequency = 12
 				elseif i > 1400 then
-					updateFrequency = 16  -- Far tail updates rarely
+					updateFrequency = 16
+				elseif i > 2000 then
+					updateFrequency = 20  -- Very far tail for 3000 segments
+				elseif i > 2500 then
+					updateFrequency = 30  -- Extreme tail barely updates
 				end
 
 				if updateCounter % updateFrequency == 0 then
