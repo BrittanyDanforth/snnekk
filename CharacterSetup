@@ -844,8 +844,21 @@ local function createUltraSmoothSnake(character)
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
 			
-			-- The welds should handle eye positioning automatically!
-			-- We only need to handle LOD for performance
+			-- Update eye positions when head grows to maintain proper spacing
+			if headParts.leftEye and headParts.rightEye and updateCounter % 20 == 0 then
+				local scaleFactor = headParts.head.Size.X / activeConfig.HeadSize.X
+				
+				-- Eyes need to spread out as head grows
+				local eyeSpacing = 0.6 * scaleFactor  -- Scale spacing with head
+				local eyeUp = 0.55 * scaleFactor
+				local eyeForward = 0.8 * scaleFactor
+				
+				-- Update positions relative to head
+				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
+				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
+			end
+			
+			-- LOD for performance
 			if headParts.leftPupil and headParts.rightPupil then
 				local pupilTransparency = currentLength > 2000 and 1 or 0
 				headParts.leftPupil.Transparency = pupilTransparency
