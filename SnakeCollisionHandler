@@ -1141,8 +1141,66 @@ RunService.Stepped:Connect(function()
 							playerB.Name, playerA.Name))
 					end
 					queuePlayerDeath(playerB)
+				else
+					-- Pure head-to-head collision - check who hit more directly
+					local velA = headA.AssemblyLinearVelocity or headA.Velocity
+					local velB = headB.AssemblyLinearVelocity or headB.Velocity
+					local dirAB = (headB.Position - headA.Position).Unit
+					local dirBA = -dirAB
+					
+					local dotA = velA:Dot(dirAB)
+					local dotB = velB:Dot(dirBA)
+					
+					-- Who was moving more directly toward the other?
+					if dotA > 0.1 and dotB > 0.1 then
+						-- Both moving toward each other - who hit harder?
+						if dotA > dotB * 1.2 then
+							-- A hit more aggressively
+							if DEBUG_COLLISIONS then
+								print(string.format("[DEATH] %s dies (less aggressive in head collision)", 
+									playerB.Name))
+							end
+							queuePlayerDeath(playerB)
+						elseif dotB > dotA * 1.2 then
+							-- B hit more aggressively
+							if DEBUG_COLLISIONS then
+								print(string.format("[DEATH] %s dies (less aggressive in head collision)", 
+									playerA.Name))
+							end
+							queuePlayerDeath(playerA)
+						else
+							-- Too close to call - both die
+							if DEBUG_COLLISIONS then
+								print(string.format("[DEATH] Both die (equal head collision): %s and %s", 
+									playerA.Name, playerB.Name))
+							end
+							queuePlayerDeath(playerA)
+							queuePlayerDeath(playerB)
+						end
+					elseif dotA > 0.1 then
+						-- Only A moving toward B
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (not moving toward collision)", 
+								playerB.Name))
+						end
+						queuePlayerDeath(playerB)
+					elseif dotB > 0.1 then
+						-- Only B moving toward A
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (not moving toward collision)", 
+								playerA.Name))
+						end
+						queuePlayerDeath(playerA)
+					else
+						-- Neither really moving toward each other - both die
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] Both die (sideways collision): %s and %s", 
+								playerA.Name, playerB.Name))
+						end
+						queuePlayerDeath(playerA)
+						queuePlayerDeath(playerB)
+					end
 				end
-				-- If neither hit a body, it's just heads bumping - no one dies
 				break
 			end
 		end
@@ -1235,6 +1293,40 @@ RunService.Stepped:Connect(function()
 					elseif aiDies then
 						-- AI hit player's body
 						queueAIDeath(aiHead)
+					else
+						-- Pure head-to-head - check who hit more directly
+						local velPlayer = head.AssemblyLinearVelocity or head.Velocity
+						local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity
+						local dirToAI = (aiHead.Position - head.Position).Unit
+						local dirToPlayer = -dirToAI
+						
+						local dotPlayer = velPlayer:Dot(dirToAI)
+						local dotAI = velAI:Dot(dirToPlayer)
+						
+						if dotPlayer > 0.1 and dotAI > 0.1 then
+							-- Both moving toward each other
+							if dotPlayer > dotAI * 1.2 then
+								-- Player more aggressive
+								queueAIDeath(aiHead)
+							elseif dotAI > dotPlayer * 1.2 then
+								-- AI more aggressive
+								queuePlayerDeath(player)
+							else
+								-- Equal collision
+								queuePlayerDeath(player)
+								queueAIDeath(aiHead)
+							end
+						elseif dotPlayer > 0.1 then
+							-- Only player moving toward AI
+							queueAIDeath(aiHead)
+						elseif dotAI > 0.1 then
+							-- Only AI moving toward player
+							queuePlayerDeath(player)
+						else
+							-- Sideways collision
+							queuePlayerDeath(player)
+							queueAIDeath(aiHead)
+						end
 					end
 				end
 			end
