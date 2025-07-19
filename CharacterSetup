@@ -610,60 +610,82 @@ local function createUltraSmoothSnake(character)
 	local function growSnake(amount)
 		amount = amount or 5
 		local grew = false
-		for i = 1, amount do
-			if currentLength < activeConfig.MaxSegments then
-				grew = true
-				currentLength = currentLength + 1
-				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
-				local color = activeConfig.BodyColors[colorIndex]
-				
-				-- FIX: Get position from history buffer to ensure proper following
-				local lastSegmentIndex = currentLength - 1
-				local targetData = nil
-				
-				if lastSegmentIndex > 0 then
-					-- Get position from history where the new segment should be
-					local delay = mathFloor(currentLength * 1.15)
-					targetData = getFromHistory(delay)
-				end
-				
-				local newPos
-				if targetData then
-					newPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
-				elseif lastSegmentIndex > 0 and segments[lastSegmentIndex] then
-					-- Fallback: place behind last segment
-					newPos = segments[lastSegmentIndex].Position
-				else
-					-- First segment, place behind root
-					newPos = rootPart.Position - rootPart.CFrame.LookVector * activeConfig.SegmentSpacing
-				end
-				
-				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
-				segments[currentLength] = segment
-
-				segment.Transparency = 1
-				segment.Size = Vector3new(0.05, 0.05, 0.05)
-				taskSpawn(function()
-					local growTime = 0.15
-					local t = 0
-					local startSize = Vector3new(0.05, 0.05, 0.05)
-					local endSize = activeConfig.SegmentSize
-					local heartbeat = RunService.Heartbeat
-
-					while t < growTime and segment.Parent do
-						t = t + heartbeat:Wait()
-						if segment.Parent then
-							local alpha = mathMin(t / growTime, 1)
-							segment.Size = startSize:Lerp(endSize, alpha)
-							segment.Transparency = 1 - alpha
-						end
-					end
-					if segment.Parent then
-						segment.Size = endSize
-						segment.Transparency = 0
-					end
-				end)
+		
+		-- CRITICAL: Ensure segments table is clean and continuous
+		local cleanSegments = {}
+		local actualCount = 0
+		for i = 1, #segments do
+			if segments[i] and segments[i].Parent then
+				actualCount = actualCount + 1
+				cleanSegments[actualCount] = segments[i]
 			end
+		end
+		segments = cleanSegments
+		currentLength = actualCount
+		
+		-- Now grow the snake properly
+		for i = 1, amount do
+			if currentLength >= activeConfig.MaxSegments then
+				break
+			end
+			
+			grew = true
+			currentLength = currentLength + 1
+			local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
+			local color = activeConfig.BodyColors[colorIndex]
+			
+			-- GUARANTEED CONNECTED POSITION
+			local newPos
+			local lookDir = rootPart.CFrame.LookVector
+			
+			if currentLength == 1 then
+				-- First segment: directly behind head
+				newPos = rootPart.Position - lookDir * activeConfig.SegmentSpacing * 2
+			else
+				-- Get the ACTUAL last segment
+				local lastSeg = segments[currentLength - 1]
+				if lastSeg and lastSeg.Parent then
+					-- Place new segment behind the last one
+					local lastToHead = (rootPart.Position - lastSeg.Position).Unit
+					newPos = lastSeg.Position - lastToHead * activeConfig.SegmentSpacing
+				else
+					-- Fallback: calculate position based on chain
+					newPos = rootPart.Position - lookDir * (currentLength * activeConfig.SegmentSpacing)
+				end
+			end
+			
+			-- Create the segment
+			local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
+			segments[currentLength] = segment
+			
+			-- INSTANT CONNECTION: Force the segment into position history immediately
+			for j = 1, 10 do
+				addToHistory({ position = newPos, lookVector = -lookDir })
+			end
+			
+			-- Smooth growth animation
+			segment.Transparency = 1
+			segment.Size = Vector3new(0.05, 0.05, 0.05)
+			taskSpawn(function()
+				local growTime = 0.15
+				local t = 0
+				local startSize = Vector3new(0.05, 0.05, 0.05)
+				local endSize = activeConfig.SegmentSize
+				local heartbeat = RunService.Heartbeat
+
+				while t < growTime and segment.Parent do
+					t = t + heartbeat:Wait()
+					if segment.Parent then
+						local alpha = mathMin(t / growTime, 1)
+						segment.Size = startSize:Lerp(endSize, alpha)
+						segment.Transparency = 1 - alpha
+					end
+				end
+				if segment.Parent then
+					segment.Size = endSize
+					segment.Transparency = 0
+				end
+			end)
 		end
 		
 		-- PERFORMANCE: Resize history buffer if needed
@@ -839,6 +861,23 @@ local function createUltraSmoothSnake(character)
 
 		if currentTime - lastNetworkUpdate > 0.1 then
 			lastNetworkUpdate = currentTime
+			
+			-- VALIDATION: Ensure segments are connected every 0.1 seconds
+			if updateCounter % 3 == 0 then
+				for i = 2, currentLength do
+					local segment = segments[i]
+					local prevSegment = segments[i - 1]
+					if segment and segment.Parent and prevSegment and prevSegment.Parent then
+						local gap = (segment.Position - prevSegment.Position).Magnitude
+						if gap > activeConfig.SegmentSpacing * 2 then
+							-- Segment is disconnected! Force it back
+							local dir = (prevSegment.Position - segment.Position).Unit
+							segment.CFrame = CFramenew(prevSegment.Position - dir * activeConfig.SegmentSpacing)
+							print("⚠️ Fixed disconnected segment", i)
+						end
+					end
+				end
+			end
 		end
 	end)
 	table.insert(connections, heartbeatConn)
