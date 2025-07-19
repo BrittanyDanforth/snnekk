@@ -446,135 +446,124 @@ local function isPartsColliding(partA, partB)
 end
 
 -- === FIXED AI PERSONALITIES - MUCH SMOOTHER ===
-AISnake.PersonalityTypes = {
-	"Aggressor", "Scavenger", "Trickster", "Coward", "Hunter", "Trapper", "Assassin"
-}
-
+AISnake.PersonalityTypes = {"Aggressive", "Cautious", "Opportunist", "Territorial", "Predator", "Survivor", "Berserker"}
 AISnake.PersonalityDefinitions = {
-	Aggressor = {
-		Type = "Aggressor",
-		TargetPlayers = true,
-		TargetOrbs = true,
-		AvoidOthers = false,
-		SpeedMultiplier = 1.2,
-		TurnBias = 0.05, -- REDUCED from 0.1
-		BoostChance = 0.08, -- REDUCED from 0.15
-		CombatRadius = 70, -- REDUCED from 80
-		RandomTurnInterval = 3.0, -- INCREASED from 1.5
-		OrbSeekRadius = 50, -- INCREASED from 40
-		Description = "Aggressive but controlled hunter",
-		Erratic = false,
-		PackHunter = false,
-		PredictionTime = 0.8,
-		TrapStyle = "circle",
+	Aggressive = {
+		OrbSeekRange = 150,
+		OrbPriority = 0.6,
+		ThreatAvoidance = 0.4,
+		TargetingRange = 100,
+		SpeedMultiplier = 1.0,  -- Reduced from 1.2
+		BoostAggressiveness = 0.8,
+		PreferredLength = 300,
+		BehaviorWeights = {
+			seekOrbs = 0.5,
+			avoidThreats = 0.3,
+			huntSmaller = 0.7,
+			wander = 0.3
+		}
 	},
-	Scavenger = {
-		Type = "Scavenger",
-		TargetPlayers = false,
-		TargetOrbs = true,
-		AvoidOthers = true,
-		SpeedMultiplier = 1.1, -- INCREASED from 1.0
-		TurnBias = 0.1, -- REDUCED from 0.2
-		BoostChance = 0.05, -- REDUCED from 0.1
-		CombatRadius = 50, -- REDUCED from 60
-		RandomTurnInterval = 4.0, -- INCREASED from 2.0
-		OrbSeekRadius = 100, -- INCREASED from 80
-		Description = "Orb-focused with smooth movement",
-		Erratic = false,
-		PackHunter = false,
-		PredictionTime = 0,
-		TrapStyle = "none",
+
+	Cautious = {
+		OrbSeekRange = 100,
+		OrbPriority = 0.7,
+		ThreatAvoidance = 0.8,
+		TargetingRange = 60,
+		SpeedMultiplier = 0.9,  -- Reduced from 1.1
+		BoostAggressiveness = 0.3,
+		PreferredLength = 200,
+		BehaviorWeights = {
+			seekOrbs = 0.7,
+			avoidThreats = 0.8,
+			huntSmaller = 0.2,
+			wander = 0.5
+		}
 	},
-	Trickster = {
-		Type = "Trickster",
-		TargetPlayers = true,
-		TargetOrbs = true,
-		AvoidOthers = false,
-		SpeedMultiplier = 1.15, -- REDUCED from 1.2
-		TurnBias = 0.1, -- REDUCED from 0.3
-		BoostChance = 0.1, -- REDUCED from 0.2
-		CombatRadius = 60,
-		RandomTurnInterval = 2.0, -- INCREASED from 0.6
-		OrbSeekRadius = 40, -- INCREASED from 30
-		Description = "Unpredictable but smoother",
-		Erratic = false, -- CHANGED from true
-		PackHunter = false,
-		PredictionTime = 0.5,
-		TrapStyle = "zigzag",
+
+	Opportunist = {
+		OrbSeekRange = 120,
+		OrbPriority = 0.8,
+		ThreatAvoidance = 0.5,
+		TargetingRange = 80,
+		SpeedMultiplier = 0.95,  -- Reduced from 1.15
+		BoostAggressiveness = 0.6,
+		PreferredLength = 250,
+		BehaviorWeights = {
+			seekOrbs = 0.8,
+			avoidThreats = 0.5,
+			huntSmaller = 0.4,
+			wander = 0.4
+		}
 	},
-	Coward = {
-		Type = "Coward",
-		TargetPlayers = false,
-		TargetOrbs = true,
-		AvoidOthers = true,
-		SpeedMultiplier = 1.0, -- INCREASED from 0.9
-		TurnBias = 0.1, -- REDUCED from 0.25
-		BoostChance = 0.15, -- REDUCED from 0.3
-		CombatRadius = 80, -- INCREASED from 70
-		RandomTurnInterval = 3.0, -- INCREASED from 1.8
-		OrbSeekRadius = 80, -- INCREASED from 60
-		Description = "Cautious but efficient",
-		Erratic = false,
-		PackHunter = false,
-		PredictionTime = 0,
-		TrapStyle = "none",
+
+	Territorial = {
+		OrbSeekRange = 80,
+		OrbPriority = 0.5,
+		ThreatAvoidance = 0.3,
+		TargetingRange = 120,
+		SpeedMultiplier = 0.85,  -- Reduced from 1.0
+		BoostAggressiveness = 0.7,
+		PreferredLength = 400,
+		BehaviorWeights = {
+			seekOrbs = 0.4,
+			avoidThreats = 0.3,
+			huntSmaller = 0.6,
+			wander = 0.2
+		}
 	},
-	Hunter = {
-		Type = "Hunter",
-		TargetPlayers = true,
-		TargetOrbs = true,
-		AvoidOthers = false,
-		SpeedMultiplier = 1.2, -- REDUCED from 1.25
-		TurnBias = 0.02, -- REDUCED from 0.05
-		BoostChance = 0.08, -- REDUCED from 0.12
-		CombatRadius = 80, -- REDUCED from 90
-		RandomTurnInterval = 4.0, -- INCREASED from 3.0
-		OrbSeekRadius = 35, -- INCREASED from 25
-		Description = "Strategic and smooth",
-		Erratic = false,
-		PackHunter = true,
-		PredictionTime = 1.0, -- REDUCED from 1.2
-		TrapStyle = "cutoff",
+
+	Predator = {
+		OrbSeekRange = 100,
+		OrbPriority = 0.4,
+		ThreatAvoidance = 0.2,
+		TargetingRange = 150,
+		SpeedMultiplier = 1.05,  -- Reduced from 1.2
+		BoostAggressiveness = 0.9,
+		PreferredLength = 500,
+		BehaviorWeights = {
+			seekOrbs = 0.3,
+			avoidThreats = 0.2,
+			huntSmaller = 0.9,
+			wander = 0.2
+		}
 	},
-	Trapper = {
-		Type = "Trapper",
-		TargetPlayers = true,
-		TargetOrbs = true,
-		AvoidOthers = false,
-		SpeedMultiplier = 1.1, -- REDUCED from 1.15
-		TurnBias = 0.01, -- REDUCED from 0.02
-		BoostChance = 0.05, -- REDUCED from 0.08
-		CombatRadius = 70,
-		RandomTurnInterval = 5.0, -- INCREASED from 4.0
-		OrbSeekRadius = 40, -- INCREASED from 30
-		Description = "Patient spiral trapper",
-		Erratic = false,
-		PackHunter = false,
-		PredictionTime = 1.0, -- INCREASED from 0.8
-		TrapStyle = "spiral",
+
+	Survivor = {
+		OrbSeekRange = 140,
+		OrbPriority = 0.9,
+		ThreatAvoidance = 0.9,
+		TargetingRange = 50,
+		SpeedMultiplier = 0.95,  -- Reduced from 1.1
+		BoostAggressiveness = 0.2,
+		PreferredLength = 150,
+		BehaviorWeights = {
+			seekOrbs = 0.9,
+			avoidThreats = 0.9,
+			huntSmaller = 0.1,
+			wander = 0.6
+		}
 	},
-	Assassin = {
-		Type = "Assassin",
-		TargetPlayers = true,
-		TargetOrbs = true,
-		AvoidOthers = false,
-		SpeedMultiplier = 1.25, -- REDUCED from 1.3
-		TurnBias = 0.0,
-		BoostChance = 0.03, -- REDUCED from 0.05
-		CombatRadius = 90, -- REDUCED from 100
-		RandomTurnInterval = 6.0, -- INCREASED from 5.0
-		OrbSeekRadius = 30, -- INCREASED from 20
-		Description = "Patient stalker",
-		Erratic = false,
-		PackHunter = false,
-		PredictionTime = 1.2, -- INCREASED from 1.0
-		TrapStyle = "stalk",
-	},
+
+	Berserker = {
+		OrbSeekRange = 90,
+		OrbPriority = 0.3,
+		ThreatAvoidance = 0.1,
+		TargetingRange = 180,
+		SpeedMultiplier = 1.1,  -- Reduced from 1.25
+		BoostAggressiveness = 1.0,
+		PreferredLength = 600,
+		BehaviorWeights = {
+			seekOrbs = 0.2,
+			avoidThreats = 0.1,
+			huntSmaller = 1.0,
+			wander = 0.1
+		}
+	}
 }
 
 -- === AI METHODS ===
 function AISnake:findBestOrb()
-	local minDist = self.Personality.OrbSeekRadius or 50
+	local minDist = self.Personality.OrbSeekRange or 50
 	local nearest = nil
 	local headPos = self.HeadParts and self.HeadParts.head and self.HeadParts.head.Position or self.Position
 
@@ -622,7 +611,7 @@ function AISnake:findNearestSnakeHead()
 	local minDist = math.huge
 	local nearest = nil
 
-	local nearbyEntities = SpatialGrid.QueryRadius(myPos, self.Personality.CombatRadius or 60)
+	local nearbyEntities = SpatialGrid.QueryRadius(myPos, self.Personality.TargetingRange or 60)
 
 	for _, entity in nearbyEntities do
 		if entity.owner ~= self and (entity.type == "AI_HEAD" or entity.type == "PLAYER_HEAD") then
@@ -1040,14 +1029,21 @@ function AISnake.new(startPosition)
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
-	self.Speed = self.Config.BaseSpeed or 10
-	self.NormalSpeed = self.Config.BaseSpeed or 10
-	self.BoostSpeed = self.Config.BoostSpeed or 24
-	self.TurnSpeed = self.Config.TurnSpeed or 1.2 -- REDUCED for smoother turning
-	self.RandomTurnInterval = 1.5
+	
+	-- AI-specific speeds (slower than players for fairness)
+	self.Speed = 10  -- AI normal speed
+	self.NormalSpeed = 10
+	self.BoostSpeed = 20  -- AI boost speed (2x normal)
+	self.TurnSpeed = 0.8  -- Reduced for smoother turning
+	
+	self.RandomTurnInterval = 3.0  -- Increased for less erratic movement
 	self.LastTurn = tick()
 	self.TargetYaw = 0
 	self.CurrentYaw = 0
+	
+	-- Smoothing parameters
+	self.TurnSmoothing = 0.1  -- How quickly to interpolate turns
+	self.LastSteerDirection = self.Direction
 
 	self.FollowSpeed = self.Config.FollowSpeed or 0.95
 	self.BoostFollowSpeed = self.Config.BoostFollowSpeed or 0.98
@@ -1274,8 +1270,17 @@ function AISnake:updateMovement(dt)
 		turnSpeed = turnSpeed * 0.7 -- INCREASED from 0.5
 	end
 
+	-- Smooth steering interpolation
+	if self.SteerDirection then
+		-- Lerp between last and current steering direction
+		self.LastSteerDirection = self.LastSteerDirection:Lerp(self.SteerDirection, self.TurnSmoothing)
+		local steerYaw = mathAtan2(self.LastSteerDirection.X, self.LastSteerDirection.Z)
+		self.TargetYaw = steerYaw
+	end
+
 	local yawDiff = self.TargetYaw - self.CurrentYaw
-	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.8) -- CAPPED at 0.8
+	-- Smooth yaw interpolation with reduced turn speed
+	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.5) -- Reduced cap from 0.8
 
 	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
 	self.Direction = cf.LookVector
