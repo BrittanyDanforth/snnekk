@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
+local AISnakeOrbPickup = require(ReplicatedStorage:WaitForChild("AISnakeOrbPickup"))
 
 local Vector3new = Vector3.new
 local CFramenew = CFrame.new
@@ -1338,10 +1339,13 @@ function AISnake:updateMovement(dt)
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
 	
 	-- CHECK FOR ORB PICKUP - OPTIMIZED FOR FPS
-	-- Only check every 3 frames to reduce lag
+	-- Only check every 4 frames to reduce lag
 	self._orbCheckFrame = (self._orbCheckFrame or 0) + 1
-	if self._orbCheckFrame % 3 == 0 and self.HeadParts and self.HeadParts.head then
-		OrbUtils.checkAISnakeHeadPickup(self.HeadParts.head)
+	if self._orbCheckFrame % 4 == 0 and self.HeadParts and self.HeadParts.head then
+		-- Use optimized AISnakeOrbPickup module
+		local AISnakeOrbPickup = require(ReplicatedStorage:WaitForChild("AISnakeOrbPickup"))
+		local orbFolder = Workspace:FindFirstChild("Orbs") or Workspace
+		AISnakeOrbPickup.PickupNearbyOrbs(orbFolder, self.HeadParts.head, self)
 	end
 
 	-- History management
