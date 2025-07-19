@@ -770,15 +770,12 @@ local function createUltraSmoothSnake(character)
 		local segmentUpdateStart = 1
 		local segmentUpdateEnd = currentLength
 		
+		-- For very long snakes, we still update all segments but skip some frames for distant ones
+		local updateAllSegments = true
+		
 		if currentLength > 500 then
-			-- For very long snakes, update in rotating batches to prevent lag
-			local batchSize = 100
-			local batchNumber = math.floor(updateCounter / 3) % math.ceil(currentLength / batchSize)
-			segmentUpdateStart = batchNumber * batchSize + 1
-			segmentUpdateEnd = math.min((batchNumber + 1) * batchSize, currentLength)
-			
-			-- Always update first 50 segments (near head) for responsiveness
-			for i = 1, math.min(50, currentLength) do
+			-- Always update first 100 segments every frame
+			for i = 1, math.min(100, currentLength) do
 				local segment = segments[i]
 				if segment and segment.Parent then
 					-- SPAWN FIX: Force segments to stay in line for first few frames
@@ -856,6 +853,15 @@ local function createUltraSmoothSnake(character)
 		for i = segmentUpdateStart, segmentUpdateEnd do
 			local segment = segments[i]
 			if segment and segment.Parent then
+				-- For long snakes, skip some updates for distant segments
+				if currentLength > 500 and i > 100 then
+					-- Update less frequently based on distance from head
+					local updateFrequency = math.min(math.floor((i - 100) / 200) + 1, 4)
+					if updateCounter % updateFrequency ~= 0 then
+						continue -- Skip this update
+					end
+				end
+				
 				-- SPAWN FIX: Force segments to stay in line for first few frames
 				if framesSinceSpawn < 10 then
 					-- Manual positioning during spawn
