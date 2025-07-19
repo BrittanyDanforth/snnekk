@@ -1,3 +1,4 @@
+-- THIS GOES INTO ReplicatedStorage As a ModuleScript
 -- AISnake Module: SMOOTH AI MOVEMENT V4.0 - FIXED ERRATIC BEHAVIOR
 -- Completely redesigned AI brain for smooth, intelligent movement
 local RunService = game:GetService("RunService")
