@@ -1,0 +1,46 @@
+-- Spawns and manages multiple AI snakes in the Workspace
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace         = game:GetService("Workspace")
+local RunService        = game:GetService("RunService")
+
+local AISnake = require(ReplicatedStorage:WaitForChild("AISnake"))
+
+-- === CONFIGURATION ===
+local NUM_SNAKES   = 6          -- total AI snakes
+local SPAWN_RADIUS = 100         -- ↑ bump this up to spread them out
+local SPAWN_HEIGHT = 5
+local SPAWN_CENTER = Vector3.new(0, SPAWN_HEIGHT, 0)
+
+local spawnPositions = {}
+
+-- Generate evenly spaced positions around a big circle,
+-- then add a slight ±3-stud jitter so they’re not perfectly radial.
+for i = 1, NUM_SNAKES do
+	local angle = (2 * math.pi / NUM_SNAKES) * (i - 1)
+	local x = SPAWN_CENTER.X + SPAWN_RADIUS * math.cos(angle)
+	local z = SPAWN_CENTER.Z + SPAWN_RADIUS * math.sin(angle)
+
+	-- tiny random offset so they don’t overlap exactly
+	x += math.random(-3, 3)
+	z += math.random(-3, 3)
+
+	spawnPositions[i] = Vector3.new(x, SPAWN_HEIGHT, z)
+end
+
+-- === AI SNAKE MANAGEMENT ===
+local aiSnakes = {}
+
+-- Initial spawn
+for i = 1, NUM_SNAKES do
+	aiSnakes[i] = AISnake.new(spawnPositions[i])
+end
+
+-- Auto-respawn any snake that dies/disappears
+RunService.Stepped:Connect(function()
+	for i = 1, NUM_SNAKES do
+		local snake = aiSnakes[i]
+		if not snake or not snake.RootPart or not snake.RootPart.Parent then
+			aiSnakes[i] = AISnake.new(spawnPositions[i])
+		end
+	end
+end)
