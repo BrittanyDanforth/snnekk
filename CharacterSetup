@@ -582,10 +582,20 @@ local function createUltraSmoothSnake(character)
 	local currentLength = 0 -- Start with 0 segments
 	local targetLength = activeConfig.InitialLength
 
-	-- Create initial segments spread out behind spawn position (like reference)
+	-- Create initial segments spread out behind spawn position
 	local startPos = rootPart.Position
+	local lookDir = rootPart.CFrame.LookVector
+	
+	-- First, create position history with spread out positions
+	local tempPositions = {}
+	for i = 0, activeConfig.InitialLength * 2 do
+		local histPos = startPos - lookDir * (i * activeConfig.SegmentSpacing * 0.5)
+		table.insert(tempPositions, { position = histPos, lookVector = lookDir })
+	end
+	
+	-- Create segments at their positions
 	for i = 1, activeConfig.InitialLength do
-		local pos = startPos - rootPart.CFrame.LookVector * (i * activeConfig.SegmentSpacing)
+		local pos = startPos - lookDir * (i * activeConfig.SegmentSpacing)
 		local colorIndex = ((i - 1) % #activeConfig.BodyColors) + 1
 		local color = activeConfig.BodyColors[colorIndex]
 		local segment = createSegment(i, pos, color, activeConfig, snakeModel)
@@ -597,9 +607,11 @@ local function createUltraSmoothSnake(character)
 	local maxHistorySize = mathFloor(activeConfig.MaxSegments * 1.5) + 100 -- Need MORE history for long snakes
 	local positionHistory = table.create(maxHistorySize)
 	local historyHead = 1
-	local initialHistoryPoint = { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
+	
+	-- Fill history with spread out positions from tempPositions
 	for i = 1, maxHistorySize do
-		positionHistory[i] = initialHistoryPoint
+		local tempIndex = ((i - 1) % #tempPositions) + 1
+		positionHistory[i] = tempPositions[tempIndex]
 	end
 
 	local function addToHistory(data)
