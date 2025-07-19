@@ -124,28 +124,18 @@ local function adjustSnakeGlows(mode)
 			local parent = obj.Parent
 			-- Check if parent is a snake segment
 			if parent and parent:IsA("BasePart") then
+				-- Simple checks
 				local isSnakeSegment = parent:GetAttribute("IsSnakeSegment")
 				local isAIHead = parent.Name == "AISnakeHead"
-				local isAIPart = parent.Parent and (parent.Parent.Name == "AISnake" or parent.Parent.Parent and parent.Parent.Parent.Name == "AISnake")
-				-- Check if it's part of a player character's snake
-				local player = parent:FindFirstAncestorOfClass("Model")
-				local isPlayerSnake = false
-				if player then
-					local humanoid = player:FindFirstChildOfClass("Humanoid")
-					if humanoid then
-						isPlayerSnake = true
-					else
-						-- Check if parent model has snake parts
-						for _, child in ipairs(player:GetChildren()) do
-							if child:GetAttribute("IsSnakeSegment") then
-								isPlayerSnake = true
-								break
-							end
-						end
-					end
-				end
 				
-				if isSnakeSegment or isAIHead or isAIPart or isPlayerSnake then
+				-- Check if part of SnakeModel (player snakes)
+				local snakeModel = parent.Parent
+				local isInSnakeModel = snakeModel and snakeModel:GetAttribute("IsSnakeModel")
+				
+				-- Check if part of AISnake model
+				local isInAISnake = snakeModel and snakeModel.Name == "AISnake"
+				
+				if isSnakeSegment or isAIHead or isInSnakeModel or isInAISnake then
 					glowsFound = glowsFound + 1
 					
 					-- Store original values
@@ -173,11 +163,8 @@ local function adjustSnakeGlows(mode)
 		end
 	end
 	
-	-- Debug print first time
-	if glowsFound > 0 and not script:GetAttribute("GlowDebugPrinted") then
-		script:SetAttribute("GlowDebugPrinted", true)
-		print("Snake glows found and adjusted:", glowsFound, "Mode:", mode)
-	end
+	-- Debug - print every time to see if it's working
+	print("Snake glows adjusted:", glowsFound, "Mode:", mode)
 end
 
 -- Main update loop
