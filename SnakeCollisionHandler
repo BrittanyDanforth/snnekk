@@ -1084,54 +1084,66 @@ RunService.Stepped:Connect(function()
 					playerA.Name, playerB.Name, dist))
 			end
 			if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
-				local velA = headA.AssemblyLinearVelocity or headA.Velocity
-				local velB = headB.AssemblyLinearVelocity or headB.Velocity
-				local dirAB = (headB.Position - headA.Position).Unit
-				local dirBA = -dirAB
-
-				local dotA = velA:Dot(dirAB)
-				local dotB = velB:Dot(dirBA)
-
-				-- True slither.io head-to-head logic: size-based winner
-				local lengthA = 0
-				local lengthB = 0
+				-- Real slither.io logic: check if either head hit the other's body
+				local playerADies = false
+				local playerBDies = false
 				
-				-- Get snake lengths
-				if player2SegmentMap[playerA] then
-					local segData = getPlayerSegments(playerA)
-					lengthA = segData and segData.length or 35
-				end
-				if player2SegmentMap[playerB] then
-					local segData = getPlayerSegments(playerB)
-					lengthB = segData and segData.length or 35
+				-- Check if Player A's head is touching Player B's body
+				local segDataB = getPlayerSegments(playerB)
+				if segDataB and segDataB.segments and #segDataB.segments > 3 then
+					for i = 4, #segDataB.segments do
+						local seg = segDataB.segments[i]
+						if seg and seg.Parent then
+							local segPos = seg.Position
+							if (headA.Position - segPos).Magnitude < BODY_COLLISION_DISTANCE then
+								playerADies = true
+								break
+							end
+						end
+					end
 				end
 				
-				-- Size difference determines winner (like real slither.io)
-				local sizeDiff = math.abs(lengthA - lengthB)
+				-- Check if Player B's head is touching Player A's body
+				local segDataA = getPlayerSegments(playerA)
+				if segDataA and segDataA.segments and #segDataA.segments > 3 then
+					for i = 4, #segDataA.segments do
+						local seg = segDataA.segments[i]
+						if seg and seg.Parent then
+							local segPos = seg.Position
+							if (headB.Position - segPos).Magnitude < BODY_COLLISION_DISTANCE then
+								playerBDies = true
+								break
+							end
+						end
+					end
+				end
 				
-				if sizeDiff < 10 then
-					-- Similar size: both die
+				-- Apply deaths based on who hit what
+				if playerADies and playerBDies then
+					-- Both hit each other's bodies simultaneously (very rare)
 					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Both die (similar size): %s (%d) and %s (%d)", 
-							playerA.Name, lengthA, playerB.Name, lengthB))
+						print(string.format("[DEATH] Both die (mutual body hit): %s and %s", 
+							playerA.Name, playerB.Name))
 					end
 					queuePlayerDeath(playerA)
 					queuePlayerDeath(playerB)
-				elseif lengthA > lengthB then
-					-- Player A is bigger, B dies
+				elseif playerADies then
+					-- Player A's head hit B's body - A dies
 					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Smaller snake dies: %s (%d) < %s (%d)", 
-							playerB.Name, lengthB, playerA.Name, lengthA))
-					end
-					queuePlayerDeath(playerB)
-				else
-					-- Player B is bigger, A dies
-					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Smaller snake dies: %s (%d) < %s (%d)", 
-							playerA.Name, lengthA, playerB.Name, lengthB))
+						print(string.format("[DEATH] %s dies (hit %s's body)", 
+							playerA.Name, playerB.Name))
 					end
 					queuePlayerDeath(playerA)
+				elseif playerBDies then
+					-- Player B's head hit A's body - B dies
+					if DEBUG_COLLISIONS then
+						print(string.format("[DEATH] %s dies (hit %s's body)", 
+							playerB.Name, playerA.Name))
+					end
+					queuePlayerDeath(playerB)
 				end
+				-- If neither hit a body, it's just heads bumping - no one dies
+				break
 			end
 		end
 	end
@@ -1181,33 +1193,48 @@ RunService.Stepped:Connect(function()
 
 				local dist = (head.Position - aiHead.Position).Magnitude
 				if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
-					-- Size-based collision (like player vs player)
-					local playerLength = 35
-					local aiLength = 35
+					-- Real slither.io logic: check who hit whose body
+					local playerDies = false
+					local aiDies = false
 					
-					-- Get player length
-					if player2SegmentMap[player] then
-						local segData = getPlayerSegments(player)
-						playerLength = segData and segData.length or 35
+					-- Check if player's head hit AI's body
+					if aiSnake and aiSnake.Segments then
+						for i = 4, #aiSnake.Segments do
+							local seg = aiSnake.Segments[i]
+							if seg and seg.Parent then
+								if (head.Position - seg.Position).Magnitude < BODY_COLLISION_DISTANCE then
+									playerDies = true
+									break
+								end
+							end
+						end
 					end
 					
-					-- Get AI length
-					if aiSnake then
-						aiLength = aiSnake.CurrentLength or 35
+					-- Check if AI's head hit player's body
+					local segData = getPlayerSegments(player)
+					if segData and segData.segments and #segData.segments > 3 then
+						for i = 4, #segData.segments do
+							local seg = segData.segments[i]
+							if seg and seg.Parent then
+								if (aiHead.Position - seg.Position).Magnitude < BODY_COLLISION_DISTANCE then
+									aiDies = true
+									break
+								end
+							end
+						end
 					end
 					
-					local sizeDiff = math.abs(playerLength - aiLength)
-					
-					if sizeDiff < 10 then
-						-- Similar size: both die
+					-- Apply deaths
+					if playerDies and aiDies then
+						-- Both hit bodies
 						queuePlayerDeath(player)
 						queueAIDeath(aiHead)
-					elseif playerLength > aiLength then
-						-- Player is bigger, AI dies
-						queueAIDeath(aiHead)
-					else
-						-- AI is bigger, player dies
+					elseif playerDies then
+						-- Player hit AI's body
 						queuePlayerDeath(player)
+					elseif aiDies then
+						-- AI hit player's body
+						queueAIDeath(aiHead)
 					end
 				end
 			end
