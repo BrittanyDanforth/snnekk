@@ -87,7 +87,7 @@ local Config = {
 	SegmentSize = Vector3new(4.5, 4.5, 5),  -- Longer segments for more visual length
 	SegmentSpacing = 4.2,  -- Adjusted spacing for longer appearance
 	InitialLength = 55,  -- Starting length
-	MaxSegments = 2500,  -- Optimized max for performance
+	MaxSegments = 1800,  -- Reduced for better performance at max
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
 	BodyColors = {
 		Color3.fromRGB(60, 180, 80),
@@ -269,10 +269,10 @@ local function createSegment(index, position, color, config, parentModel, curren
 	-- Apply growth factor based on current snake length
 	local growthFactor = 1
 	if currentLength and currentLength > 200 then
-		growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2  -- Match new growth
+		growthFactor = 1 + ((currentLength - 200) / 1600) * 1.8  -- Match aggressive growth
 	end
 	
-	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.2)  -- Match new max
+	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.8)  -- Match new max
 	segment.Material = config.BodyMaterial
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
@@ -605,8 +605,8 @@ local function createUltraSmoothSnake(character)
 		currentLength = i
 	end
 
-	-- OPTIMIZED: Dynamic buffer size based on current length to reduce ping
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.6), 1500) -- Reduced to 1500 for lower ping
+	-- OPTIMIZED: Smaller buffer for much lower ping
+	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.5), 1000) -- Only 1000 for minimal ping
 	local positionHistory = {}
 	local historyHead = 1
 	local historyCount = 0
@@ -676,9 +676,9 @@ local function createUltraSmoothSnake(character)
 				local growthFactor = 1
 				if currentLength > 200 then
 					-- Same uniform growth as all other segments
-					growthFactor = 1 + ((currentLength - 200) / 2300) * 1.2  -- Match new growth
+					growthFactor = 1 + ((currentLength - 200) / 1600) * 1.8  -- Match aggressive growth
 				end
-				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.2)  -- Match new max
+				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 2.8)  -- Match new max
 
 				segment.Transparency = 1
 				segment.Size = Vector3new(0.05, 0.05, 0.05)
@@ -788,9 +788,10 @@ local function createUltraSmoothSnake(character)
 		-- Calculate uniform size ONCE per frame for ALL segments
 		local currentGrowthFactor = 1
 		if currentLength > 200 then
-			currentGrowthFactor = 1 + ((currentLength - 200) / 2300) * 1.2
+			-- More aggressive growth for visual impact with fewer segments
+			currentGrowthFactor = 1 + ((currentLength - 200) / 1600) * 1.8  -- Bigger multiplier
 		end
-		local uniformTargetSize = activeConfig.SegmentSize * mathMin(currentGrowthFactor, 2.2)
+		local uniformTargetSize = activeConfig.SegmentSize * mathMin(currentGrowthFactor, 2.8)  -- Bigger max
 
 		-- Remove selection box every frame to ensure it stays gone
 		if rootPart:FindFirstChild("SelectionBox") then
@@ -850,8 +851,8 @@ local function createUltraSmoothSnake(character)
 
 			-- Dynamic head sizing - same growth as body segments
 			if updateCounter % 20 == 0 and currentLength > 200 then
-				local headGrowth = 1 + ((currentLength - 200) / 2300) * 1.2  -- Match body growth
-				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.2)  -- Match max
+				local headGrowth = 1 + ((currentLength - 200) / 1600) * 1.8  -- Match body growth
+				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 2.8)  -- Match max
 				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
 
 				-- Scale eyes proportionally
@@ -914,19 +915,19 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- SMOOTH LOD: Balance visual quality and performance
+				-- AGGRESSIVE LOD: Prioritize performance
 				local updateFrequency = 1
 				
-				if i > 150 then
+				if i > 100 then
 					updateFrequency = 2
-				elseif i > 400 then
-					updateFrequency = 3
-				elseif i > 800 then
+				elseif i > 300 then
 					updateFrequency = 4
-				elseif i > 1500 then
-					updateFrequency = 5
-				elseif i > 2000 then
-					updateFrequency = 6  -- Much smoother tail movement
+				elseif i > 600 then
+					updateFrequency = 8
+				elseif i > 1000 then
+					updateFrequency = 12
+				elseif i > 1400 then
+					updateFrequency = 16  -- Far tail updates rarely
 				end
 
 				if updateCounter % updateFrequency == 0 then
