@@ -373,6 +373,8 @@ end
 
 -- ADD ERROR HANDLING
 function ShopManager.addErrorHandling(shopGui)
+	-- DISABLED: This was causing conflicts with the shop system
+	--[[
 	-- Global error handler for shop operations
 	local originalPurchase = nil
 	local originalEquip = nil
@@ -385,8 +387,9 @@ function ShopManager.addErrorHandling(shopGui)
 			if not success then
 				warn("❌ Purchase error:", result)
 				ShopManager.handlePurchaseError(result)
+				return false
 			end
-			return result
+			return true  -- Return success
 		end
 	end
 
@@ -396,11 +399,12 @@ function ShopManager.addErrorHandling(shopGui)
 			local success, result = pcall(originalEquip, ...)
 			if not success then
 				warn("❌ Equip error:", result)
-				ShopManager.handleEquipError(result)
+				ShopManager.showErrorNotification("Failed to equip skin")
 			end
 			return result
 		end
 	end
+	--]]
 
 	print("🛡️ Error handling added")
 end
