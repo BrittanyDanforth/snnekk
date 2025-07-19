@@ -382,6 +382,297 @@ local SnakeSkinsData = {
 			Color = Color3.fromRGB(255, 255, 100)
 		}
 	},
+
+	-- NEW SKINS FROM SHOPUI
+	["Phoenix"] = {
+		HeadColor = Color3.fromRGB(255, 100, 0),
+		BodyColors = {
+			Color3.fromRGB(255, 50, 0),
+			Color3.fromRGB(255, 100, 0),
+			Color3.fromRGB(255, 150, 0),
+			Color3.fromRGB(255, 200, 0),
+			Color3.fromRGB(255, 100, 0),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.5,
+		GlowRange = 12,
+		Price = 8000,
+		RobuxPrice = 150,
+		tag = "Legendary",
+		Description = "Rise from the ashes like a phoenix!",
+		VFX = {
+			Type = "Fire",
+			Color = Color3.fromRGB(255, 100, 0),
+			SecondaryColor = Color3.fromRGB(255, 200, 0)
+		}
+	},
+
+	["Toxic"] = {
+		HeadColor = Color3.fromRGB(100, 255, 0),
+		BodyColors = {
+			Color3.fromRGB(50, 200, 0),
+			Color3.fromRGB(75, 225, 0),
+			Color3.fromRGB(100, 255, 0),
+			Color3.fromRGB(75, 225, 0),
+			Color3.fromRGB(50, 200, 0),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 2.8,
+		GlowRange = 9,
+		Price = 3000,
+		RobuxPrice = 65,
+		tag = "Dangerous",
+		Description = "Toxic waste powered snake!",
+		VFX = {
+			Type = "Bubble",
+			Color = Color3.fromRGB(100, 255, 0)
+		}
+	},
+
+	["Quantum"] = {
+		HeadColor = Color3.fromRGB(200, 100, 255),
+		BodyColors = {
+			Color3.fromRGB(150, 50, 200),
+			Color3.fromRGB(175, 75, 225),
+			Color3.fromRGB(200, 100, 255),
+			Color3.fromRGB(225, 125, 255),
+			Color3.fromRGB(200, 100, 255),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 4.0,
+		GlowRange = 15,
+		Price = 25000,
+		RobuxPrice = 249,
+		tag = "Special",
+		Description = "Quantum entanglement powers!",
+		VFX = {
+			Type = "Portal",
+			Color = Color3.fromRGB(200, 100, 255),
+			ParticleTexture = "rbxasset://textures/particles/sparkles_main.dds"
+		}
+	},
+
+	["Prismatic"] = {
+		HeadColor = Color3.fromRGB(255, 255, 255),
+		BodyColors = {
+			Color3.fromRGB(255, 200, 200),
+			Color3.fromRGB(200, 255, 200),
+			Color3.fromRGB(200, 200, 255),
+			Color3.fromRGB(255, 255, 200),
+			Color3.fromRGB(255, 200, 255),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.5,
+		GlowRange = 14,
+		Price = 30000,
+		RobuxPrice = 299,
+		tag = "Special",
+		Description = "All colors refracted through prisms!",
+		VFX = {
+			Type = "Rainbow",
+			Color = Color3.fromRGB(255, 255, 255)
+		}
+	},
+
+	["VIP Nebula"] = {
+		HeadColor = Color3.fromRGB(255, 100, 255),
+		BodyColors = {
+			Color3.fromRGB(200, 50, 200),
+			Color3.fromRGB(255, 100, 255),
+			Color3.fromRGB(150, 50, 255),
+			Color3.fromRGB(255, 100, 200),
+			Color3.fromRGB(200, 50, 255),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 5.0,
+		GlowRange = 20,
+		Price = nil, -- Robux only
+		RobuxPrice = 599,
+		tag = "VIP",
+		Description = "Nebula from deep space - VIP exclusive!",
+		VFX = {
+			Type = "Nebula",
+			Color = Color3.fromRGB(255, 100, 255),
+			ParticleTexture = "rbxasset://textures/particles/sparkles_main.dds"
+		}
+	},
+
+	["VIP Crystal"] = {
+		HeadColor = Color3.fromRGB(150, 255, 255),
+		BodyColors = {
+			Color3.fromRGB(100, 200, 255),
+			Color3.fromRGB(150, 255, 255),
+			Color3.fromRGB(200, 255, 255),
+			Color3.fromRGB(150, 255, 255),
+			Color3.fromRGB(100, 200, 255),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 4.5,
+		GlowRange = 18,
+		Price = nil, -- Robux only
+		RobuxPrice = 699,
+		tag = "VIP",
+		Description = "Crystal clear VIP power!",
+		VFX = {
+			Type = "Crystal",
+			Color = Color3.fromRGB(150, 255, 255),
+			ParticleTexture = "rbxasset://textures/particles/sparkles_main.dds"
+		}
+	},
+
+	-- ADDITIONAL MISSING SKINS
+	["Plasma"] = {
+		HeadColor = Color3.fromRGB(255, 0, 255),
+		BodyColors = {
+			Color3.fromRGB(200, 0, 200),
+			Color3.fromRGB(255, 50, 255),
+			Color3.fromRGB(255, 0, 255),
+			Color3.fromRGB(255, 50, 255),
+			Color3.fromRGB(200, 0, 200),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.0,
+		GlowRange = 10,
+		Price = 5000,
+		RobuxPrice = 75,
+		tag = "Trending",
+		Description = "Pure plasma energy!",
+		VFX = {
+			Type = "Energy",
+			Color = Color3.fromRGB(255, 0, 255)
+		}
+	},
+
+	["Ocean"] = {
+		HeadColor = Color3.fromRGB(0, 150, 255),
+		BodyColors = {
+			Color3.fromRGB(0, 100, 200),
+			Color3.fromRGB(0, 125, 225),
+			Color3.fromRGB(0, 150, 255),
+			Color3.fromRGB(0, 125, 225),
+			Color3.fromRGB(0, 100, 200),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 2.0,
+		GlowRange = 7,
+		Price = 1500,
+		RobuxPrice = 35,
+		Description = "Deep ocean vibes!",
+		VFX = {
+			Type = "Water",
+			Color = Color3.fromRGB(0, 150, 255)
+		}
+	},
+
+	["Cyber"] = {
+		HeadColor = Color3.fromRGB(0, 255, 255),
+		BodyColors = {
+			Color3.fromRGB(0, 200, 200),
+			Color3.fromRGB(0, 225, 225),
+			Color3.fromRGB(0, 255, 255),
+			Color3.fromRGB(0, 225, 225),
+			Color3.fromRGB(0, 200, 200),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.0,
+		GlowRange = 10,
+		Price = 10000,
+		RobuxPrice = 125,
+		tag = "Tech",
+		Description = "Cyberpunk 2077 style!",
+		VFX = {
+			Type = "Digital",
+			Color = Color3.fromRGB(0, 255, 255)
+		}
+	},
+
+	["Dragon"] = {
+		HeadColor = Color3.fromRGB(255, 50, 0),
+		BodyColors = {
+			Color3.fromRGB(200, 0, 0),
+			Color3.fromRGB(255, 50, 0),
+			Color3.fromRGB(255, 100, 0),
+			Color3.fromRGB(255, 50, 0),
+			Color3.fromRGB(200, 0, 0),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.5,
+		GlowRange = 12,
+		Price = 15000,
+		RobuxPrice = 149,
+		tag = "Epic",
+		Description = "Breathe fire like a dragon!",
+		VFX = {
+			Type = "Fire",
+			Color = Color3.fromRGB(255, 50, 0)
+		}
+	},
+
+	["Rainbow"] = {
+		HeadColor = Color3.fromRGB(255, 0, 255),
+		BodyColors = {
+			Color3.fromRGB(255, 0, 0),
+			Color3.fromRGB(255, 255, 0),
+			Color3.fromRGB(0, 255, 0),
+			Color3.fromRGB(0, 255, 255),
+			Color3.fromRGB(255, 0, 255),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		SegmentSpacing = 2.2,
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.0,
+		GlowRange = 10,
+		Price = 20000,
+		RobuxPrice = 199,
+		tag = "Special",
+		Description = "All the colors of the rainbow!",
+		VFX = {
+			Type = "Rainbow",
+			Color = Color3.fromRGB(255, 255, 255)
+		}
+	},
 }
 
 return SnakeSkinsData

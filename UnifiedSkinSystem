@@ -11,23 +11,45 @@ local RunService = game:GetService("RunService")
 
 -- Skin name mapping (Client name -> Server name)
 local SKIN_NAME_MAP = {
-	["Default"] = "Classic",
-	["Crimson"] = "Crimson", -- Fixed: was mapping to non-existent "Lava Red"
+	-- Basic skins
+	["Default"] = "Default",  -- Changed back to Default
+	["Crimson"] = "Crimson",
 	["Arctic"] = "Arctic",
 	["Emerald"] = "Emerald",
 	["Golden"] = "Golden",
+	
+	-- Premium skins (from ShopUI)
+	["Void"] = "Void",
+	["Ocean"] = "Ocean",  -- Now we have Ocean skin
+	["Shadow"] = "Shadow",
+	
+	-- Ultra Premium skins
+	["Plasma"] = "Plasma",  -- Now we have Plasma skin
+	["Galaxy"] = "Galaxy",
+	["Cyber"] = "Cyber",  -- Now we have Cyber skin
+	["Dragon"] = "Dragon",  -- Now we have Dragon skin
+	["Rainbow"] = "Rainbow",  -- Now we have Rainbow skin
+	
+	-- VIP skins
+	["VIP Diamond"] = "VIP Diamond",
+	["VIP Inferno"] = "VIP Inferno",
+	["VIP Nebula"] = "VIP Nebula",  -- Now we have VIP Nebula
+	["VIP Crystal"] = "VIP Crystal",  -- Now we have VIP Crystal
+	
+	-- New additions from ShopUI
+	["Phoenix"] = "Phoenix",  -- Now we have Phoenix skin
+	["Toxic"] = "Toxic",  -- Now we have Toxic skin
+	["Lightning"] = "Lightning",
+	["Quantum"] = "Quantum",  -- Now we have Quantum skin
+	["Prismatic"] = "Prismatic",  -- Now we have Prismatic skin
+	
+	-- Direct mappings for server names
 	["Ocean Blue"] = "Ocean Blue",
 	["Electric Purple"] = "Electric Purple",
 	["Rainbow Prism"] = "Rainbow Prism",
-	["Shadow"] = "Shadow",
-	["Galaxy"] = "Galaxy",
-	["VIP Inferno"] = "VIP Inferno",
-	["VIP Cosmic"] = "VIP Cosmic",
-	["VIP Diamond"] = "VIP Diamond",
-	["Lightning"] = "Lightning",
-	["Void"] = "Void",
 	["Cyberpunk"] = "Cyberpunk",
-	["Dragon Lord"] = "Dragon Lord"
+	["Dragon Lord"] = "Dragon Lord",
+	["VIP Cosmic"] = "VIP Cosmic"
 }
 
 -- Reverse mapping (server -> client)
@@ -76,7 +98,7 @@ local function getDefaultData()
 	return {
 		coins = 50000,
 		ownedSkins = {"Default"},
-		selectedSkin = "Classic",
+		selectedSkin = "Default",  -- Changed from "Classic" to "Default"
 		clientSelectedSkin = "Default"
 	}
 end
