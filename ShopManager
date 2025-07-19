@@ -1,3 +1,4 @@
+-- THIS GOES INTO StarterPlayerScripts
 -- SLITHER.IO SHOP MANAGER - MANAGES YOUR EXISTING SHOP SYSTEM
 -- This script manages and enhances your existing shop, doesn't create a new one
 -- Handles data persistence, error management, and shop enhancements
