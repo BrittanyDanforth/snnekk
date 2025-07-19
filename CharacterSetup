@@ -83,11 +83,11 @@ local taskWait = task.wait
 
 -- ENHANCED: Base config with skin override capability (Classic green colors)
 local Config = {
-	HeadSize = Vector3new(4, 4, 4),  -- Reasonable head size
-	SegmentSize = Vector3new(3, 3, 3),  -- Medium segments for smooth look
-	SegmentSpacing = 2.8,  -- Tight spacing for continuous appearance
-	InitialLength = 45,  -- Good starter length
-	MaxSegments = 2000,  -- Allow long snakes
+	HeadSize = Vector3new(3, 3, 3),
+	SegmentSize = Vector3new(2.5, 2.5, 2.5),
+	SegmentSpacing = 2.2,
+	InitialLength = 1500,
+	MaxSegments = 2450,
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
 	BodyColors = {
 		Color3.fromRGB(60, 180, 80),
@@ -512,7 +512,7 @@ local function createUltraSmoothSnake(character)
 	-- IMMEDIATELY hide the character to prevent ANY flashing
 	rootPart.Transparency = 1
 	-- Keep CanCollide true for orb collection!
-	
+
 	-- Specifically hide the head to remove any face decals
 	local head = character:FindFirstChild("Head")
 	if head then
@@ -531,8 +531,8 @@ local function createUltraSmoothSnake(character)
 			-- Also remove any effects that might be visible
 			for _, effect in part:GetChildren() do
 				if effect:IsA("ParticleEmitter") or effect:IsA("Fire") or effect:IsA("Smoke") or 
-				   effect:IsA("Sparkles") or effect:IsA("PointLight") or effect:IsA("SpotLight") or
-				   effect:IsA("SurfaceLight") then
+					effect:IsA("Sparkles") or effect:IsA("PointLight") or effect:IsA("SpotLight") or
+					effect:IsA("SurfaceLight") then
 					effect.Enabled = false
 					effect:Destroy()
 				end
@@ -541,15 +541,15 @@ local function createUltraSmoothSnake(character)
 			part:Destroy()
 		end
 	end
-	
+
 	-- Also hide the humanoid root part's selection box if any
 	for _, child in rootPart:GetChildren() do
 		if child:IsA("SelectionBox") or child:IsA("SelectionSphere") or 
-		   child:IsA("SurfaceGui") or child:IsA("BillboardGui") then
+			child:IsA("SurfaceGui") or child:IsA("BillboardGui") then
 			child:Destroy()
 		end
 	end
-	
+
 	-- Clean up any debug visuals on the player's model in workspace
 	task.spawn(function()
 		wait(0.1)
@@ -557,7 +557,7 @@ local function createUltraSmoothSnake(character)
 		if playerModel then
 			for _, obj in playerModel:GetDescendants() do
 				if obj:IsA("SelectionBox") or obj:IsA("Highlight") or 
-				   (obj:IsA("Part") and obj.Name:match("Debug")) then
+					(obj:IsA("Part") and obj.Name:match("Debug")) then
 					obj:Destroy()
 				end
 			end
@@ -582,20 +582,10 @@ local function createUltraSmoothSnake(character)
 	local currentLength = 0 -- Start with 0 segments
 	local targetLength = activeConfig.InitialLength
 
-	-- Create initial segments spread out behind spawn position
+	-- Create initial segments spread out behind spawn position (like reference)
 	local startPos = rootPart.Position
-	local lookDir = rootPart.CFrame.LookVector
-	
-	-- First, create position history with spread out positions
-	local tempPositions = {}
-	for i = 0, activeConfig.InitialLength * 2 do
-		local histPos = startPos - lookDir * (i * activeConfig.SegmentSpacing * 0.8)
-		table.insert(tempPositions, { position = histPos, lookVector = lookDir })
-	end
-	
-	-- Create segments at their positions
 	for i = 1, activeConfig.InitialLength do
-		local pos = startPos - lookDir * (i * activeConfig.SegmentSpacing)
+		local pos = startPos - rootPart.CFrame.LookVector * (i * activeConfig.SegmentSpacing)
 		local colorIndex = ((i - 1) % #activeConfig.BodyColors) + 1
 		local color = activeConfig.BodyColors[colorIndex]
 		local segment = createSegment(i, pos, color, activeConfig, snakeModel)
@@ -603,15 +593,13 @@ local function createUltraSmoothSnake(character)
 		currentLength = i
 	end
 
-	-- Position history setup - MUST handle max segments!
-	local maxHistorySize = mathFloor(activeConfig.MaxSegments * 1.5) + 100 -- Need MORE history for long snakes
+	-- Position history setup (like reference)
+	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 1.1) + 10, 1000) -- Capped at 1000 for performance
 	local positionHistory = table.create(maxHistorySize)
 	local historyHead = 1
-	
-	-- Fill history with spread out positions from tempPositions
+	local initialHistoryPoint = { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
 	for i = 1, maxHistorySize do
-		local tempIndex = ((i - 1) % #tempPositions) + 1
-		positionHistory[i] = tempPositions[tempIndex]
+		positionHistory[i] = initialHistoryPoint
 	end
 
 	local function addToHistory(data)
@@ -749,12 +737,9 @@ local function createUltraSmoothSnake(character)
 	local heartbeatConn
 	heartbeatConn = RunService.Heartbeat:Connect(function(dt)
 		if not isActive or not rootPart.Parent then return end
-		
-		-- Skip segment updates during spawn stabilization
-		if spawnStabilizing then return end
 
 		updateCounter = updateCounter + 1
-		
+
 		-- Remove selection box every frame to ensure it stays gone
 		if rootPart:FindFirstChild("SelectionBox") then
 			rootPart.SelectionBox:Destroy()
@@ -764,12 +749,20 @@ local function createUltraSmoothSnake(character)
 				child:Destroy()
 			end
 		end
-		
-		-- REMOVED expensive workspace:GetDescendants() check - causes lag!
+
+		-- Also check workspace for any selection boxes targeting this rootPart
+		if updateCounter % 10 == 0 then  -- Check every 10 frames
+			for _, obj in workspace:GetDescendants() do
+				if obj:IsA("SelectionBox") and obj.Adornee == rootPart then
+					obj:Destroy()
+				elseif obj:IsA("Highlight") and obj.Adornee == rootPart then
+					obj:Destroy()
+				end
+			end
+		end
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
-		-- TIGHT follow speed when boosting - no drag!
-		local followSpeed = isBoosting and 0.6 or activeConfig.FollowSpeed  -- Much tighter following
+		local followSpeed = isBoosting and activeConfig.BoostFollowSpeed or activeConfig.FollowSpeed
 
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
@@ -781,7 +774,7 @@ local function createUltraSmoothSnake(character)
 		if not headParts and framesSinceSpawn == 3 then
 			headParts = createVisualHead(rootPart, activeConfig, snakeModel)
 		end
-		
+
 		-- Remove RootOutline if it exists (Roblox creates this automatically)
 		if rootPart:FindFirstChild("RootOutline") then
 			rootPart:FindFirstChild("RootOutline"):Destroy()
@@ -790,7 +783,7 @@ local function createUltraSmoothSnake(character)
 		if headParts and headParts.head and headParts.head.Parent then
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
-			
+
 			-- Ensure eyes stay visible
 			if headParts.leftEye then
 				headParts.leftEye.Transparency = 0
@@ -803,13 +796,11 @@ local function createUltraSmoothSnake(character)
 		-- Position history buffer with improved tracking for anti-gap
 		local lastHistoryPoint = getFromHistory(1)
 		local dist = (currentPos - lastHistoryPoint.position).Magnitude
-		
-		-- Always add position for smooth movement
-		if dist > 0.001 then  -- Very low threshold for smooth updates
-			-- More aggressive interpolation for smooth movement
-			if dist > activeConfig.SegmentSpacing * 0.1 then  -- Much lower threshold
-				local maxInterp = 8  -- Always smooth
-				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.1)), maxInterp)
+		if dist > 0.015 then
+			if dist > activeConfig.SegmentSpacing * 0.8 then
+				-- More interpolations when boosting to prevent gaps
+				local maxInterp = isBoosting and 8 or 3
+				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.4)), maxInterp)
 				for i = 1, numInterpolations do
 					local fraction = i / (numInterpolations + 1)
 					local interpPos = lastHistoryPoint.position:Lerp(currentPos, fraction)
@@ -828,62 +819,43 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- SLITHER.IO OPTIMIZATION: Update key segments more often
-				local isKeySegment = (i % 5 == 1) or (i <= 30) -- Every 5th OR first 30
+				-- LOD OPTIMIZATION: Update distant segments less frequently
 				local updateFrequency = 1
-				
-				if not isKeySegment then
-					-- Non-key segments update less
-					if i > 100 then updateFrequency = 3 end
-					if i > 500 then updateFrequency = 5 end
-					if i > 1000 then updateFrequency = 8 end
-				else
-					-- Key segments still have LOD
-					if i > 500 then updateFrequency = 2 end
-					if i > 1000 then updateFrequency = 3 end
-					if i > 1500 then updateFrequency = 4 end
+				if i > 100 then
+					updateFrequency = 2 -- Every 2 frames
+				end
+				if i > 200 then
+					updateFrequency = 3 -- Every 3 frames
+				end
+				if i > 300 then
+					updateFrequency = 4 -- Every 4 frames
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- Proper delay calculation with segment spacing
-					local baseDelay = 3  -- Higher base delay for proper spacing
-					local delayMultiplier = isBoosting and 1.1 or 1.0
-					-- Add delay based on segment index for proper trail
-					local scaledDelay = baseDelay + (i * 0.8)  -- Each segment trails more
-					local delay = mathFloor(scaledDelay * delayMultiplier)
-					-- Cap delay to prevent accessing too old history
-					delay = mathMin(delay, maxHistorySize - 10)
+					-- Tighter following when boosting
+					local delayMultiplier = isBoosting and 0.9 or 1.15
+					local delay = mathFloor(i * delayMultiplier)
 					local targetData = getFromHistory(delay)
 					if targetData then
-						-- Direct positioning for proper following
-						local segmentPos = targetData.position
+						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
 						local currentSegmentPos = segment.Position
 
-						-- Enhanced anti-gap check - allow stretch when boosting
-						if i > 1 then
+						-- Simple anti-gap check when boosting
+						if isBoosting and i > 1 then
 							local prevSegment = segments[i - 1]
 							if prevSegment and prevSegment.Parent then
-								local gap = (segmentPos - prevSegment.Position).Magnitude
-								local maxGap = activeConfig.SegmentSpacing * (isBoosting and 1.6 or 1.4) -- Reduced to prevent gaps
-								if gap > maxGap then
-									-- Aggressive gap prevention
-									local dir = (prevSegment.Position - segmentPos).Unit
-									segmentPos = prevSegment.Position - dir * (activeConfig.SegmentSpacing * 1.1)
+								local gap = (currentSegmentPos - prevSegment.Position).Magnitude
+								if gap > activeConfig.SegmentSpacing * 1.5 then
+									-- Too far, pull it closer
+									local dir = (prevSegment.Position - currentSegmentPos).Unit
+									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
 								end
 							end
 						end
 
-						-- Responsive following
-						local smoothFactor = 0.4  -- Good balance of smooth and responsive
-						-- Head segments follow faster
-						if i <= 10 then smoothFactor = 0.5 end
-						local newPos = currentSegmentPos:Lerp(segmentPos, smoothFactor)
+						local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 
 						segment.CFrame = CFramenew(newPos)
-						
-						-- Subtle size variation
-						local scaleFactor = 1 - (i / currentLength) * 0.1  -- 90-100% size
-						segment.Size = activeConfig.SegmentSize * scaleFactor
 					end
 				end
 			end
@@ -1003,32 +975,51 @@ Players.PlayerRemoving:Connect(function(player)
 	_G.PlayerSnakes[player] = nil
 end)
 
--- Optimized cleanup - runs less frequently and more efficiently
+-- NEW: Periodic cleanup to prevent orphaned segments
 task.spawn(function()
 	while true do
-		task.wait(30) -- Check every 30 seconds instead of 10
-		
-		-- Only run cleanup if there are few players (less server load)
-		if #Players:GetPlayers() > 20 then
-			task.wait(30) -- Skip this cycle if too many players
-			continue
+		task.wait(10) -- Check every 10 seconds
+
+		local validSegments = {}
+
+		-- Collect all valid segments from active snakes
+		for _, player in pairs(Players:GetPlayers()) do
+			local snake = playerSnakes[player] or _G.PlayerSnakes[player]
+			if snake and snake.segments then
+				for _, seg in pairs(snake.segments) do
+					if seg and seg.Parent then
+						validSegments[seg] = true
+					end
+				end
+			end
 		end
 
-		-- Quick cleanup for orphaned models only
+		-- Check SegmentContainer for orphaned segments
+		if SegmentContainer then
+			for _, child in pairs(SegmentContainer:GetChildren()) do
+				if child:IsA("BasePart") and child.Name:match("^Segment") then
+					if not validSegments[child] then
+						-- This is an orphaned segment, destroy it
+						child:Destroy()
+					end
+				end
+			end
+		end
+
+		-- Clean up snake models without active players
 		for _, child in pairs(workspace:GetChildren()) do
 			if child:IsA("Model") and child:GetAttribute("IsSnakeModel") then
 				local userId = child:GetAttribute("OwnerUserId")
-				local found = false
-				
-				-- Quick player check
+				local playerExists = false
+
 				for _, player in pairs(Players:GetPlayers()) do
 					if player.UserId == userId then
-						found = true
+						playerExists = true
 						break
 					end
 				end
-				
-				if not found then
+
+				if not playerExists then
 					child:Destroy()
 				end
 			end
