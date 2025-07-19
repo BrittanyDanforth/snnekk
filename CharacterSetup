@@ -87,7 +87,7 @@ local Config = {
 	SegmentSize = Vector3new(4, 4, 4),  -- Larger segments = fewer needed
 	SegmentSpacing = 3.6,  -- Slightly tighter spacing for smooth appearance
 	InitialLength = 55,  -- Much fewer segments but still good length
-	MaxSegments = 600,  -- Cap at 600 for performance
+	MaxSegments = 1500,  -- Allow proper long snakes
 	HeadColor = Color3.fromRGB(76, 217, 100), -- Classic green
 	BodyColors = {
 		Color3.fromRGB(60, 180, 80),
@@ -275,8 +275,8 @@ local function createSegment(index, position, color, config, parentModel)
 	segment:SetAttribute("IsSnakeSegment", true)
 	segment:SetAttribute("SegmentIndex", index)
 
-	-- Only add glow to first few segments for performance
-	if index <= 20 then
+	-- Add glow to head segments and every 10th segment for performance
+	if index <= 30 or index % 10 == 0 then
 		local light = segment:FindFirstChild("Glow")
 		if not light then
 			light = Instance.new("PointLight")
@@ -639,8 +639,11 @@ local function createUltraSmoothSnake(character)
 				segments[currentLength] = segment
 
 				-- Dynamic sizing: segments get larger as snake grows to reduce total count
-				local growthFactor = 1 + (currentLength / 200) * 0.5  -- Up to 50% larger at high lengths
-				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.5)
+				local growthFactor = 1
+				if currentLength > 200 then
+					growthFactor = 1 + ((currentLength - 200) / 500) * 0.8  -- Up to 80% larger
+				end
+				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
 				
 				segment.Transparency = 1
 				segment.Size = Vector3new(0.05, 0.05, 0.05)
@@ -826,19 +829,21 @@ local function createUltraSmoothSnake(character)
 		for i = 1, currentLength do
 			local segment = segments[i]
 			if segment and segment.Parent then
-				-- LOD OPTIMIZATION: Update distant segments less frequently
+				-- SMOOTH LOD: Update groups of segments together to avoid visual lag
 				local updateFrequency = 1
-				if i > 50 then
+				local groupOffset = (updateCounter + i) % 3  -- Stagger updates
+				
+				if i > 100 then
 					updateFrequency = 2 -- Every 2 frames
 				end
-				if i > 100 then
+				if i > 300 then
 					updateFrequency = 3 -- Every 3 frames
 				end
-				if i > 200 then
-					updateFrequency = 5 -- Every 5 frames
+				if i > 600 then
+					updateFrequency = 4 -- Every 4 frames
 				end
-				if i > 300 then
-					updateFrequency = 8 -- Every 8 frames
+				if i > 1000 then
+					updateFrequency = 5 -- Every 5 frames
 				end
 
 				if updateCounter % updateFrequency == 0 then
@@ -863,16 +868,25 @@ local function createUltraSmoothSnake(character)
 							end
 						end
 
-						local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
+						-- Smoother interpolation for distant segments
+						local lerpSpeed = followSpeed
+						if i > 300 then
+							lerpSpeed = followSpeed * 0.95  -- Slightly slower for smoother tail
+						end
+						
+						local newPos = currentSegmentPos:Lerp(segmentPos, lerpSpeed)
 
 						segment.CFrame = CFramenew(newPos)
 						
 						-- Dynamic resizing for performance
-						if updateCounter % 30 == 0 then  -- Update size every 30 frames
-							local growthFactor = 1 + (mathMin(currentLength, 400) / 200) * 0.5
-							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.5)
+						if updateCounter % 20 == 0 then  -- Update size every 20 frames
+							local growthFactor = 1
+							if i > 200 then
+								growthFactor = 1 + ((i - 200) / 500) * 0.8
+							end
+							local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
 							-- Smooth size transition
-							segment.Size = segment.Size:Lerp(targetSize, 0.1)
+							segment.Size = segment.Size:Lerp(targetSize, 0.15)
 						end
 					end
 				end
