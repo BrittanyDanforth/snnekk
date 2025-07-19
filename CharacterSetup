@@ -296,7 +296,6 @@ local function createSegment(index, position, color, config, parentModel)
 	outline.Color3 = Color3.fromRGB(255, 255, 255)
 	outline.LineThickness = 0.03
 	outline.Transparency = 1
-	outline.Enabled = false  -- Add this to ensure it's disabled
 
 	return segment
 end
@@ -330,7 +329,6 @@ local function createVisualHead(rootPart, config, parentModel)
 	headOutline.Color3 = Color3.fromRGB(255, 255, 255)
 	headOutline.LineThickness = 0.08
 	headOutline.Transparency = 1
-	headOutline.Enabled = false  -- Add this to ensure it's disabled
 	headOutline.Parent = headPart
 
 	local function createEye(name, position, parent)
@@ -731,27 +729,10 @@ local function createUltraSmoothSnake(character)
 		-- Ensure rootPart stays invisible
 		rootPart.Transparency = 1
 		
-		-- Remove any selection boxes or debug visuals every 30 frames
-		if updateCounter % 30 == 0 then
-			-- Check character for unwanted visuals
-			for _, part in character:GetDescendants() do
-				if part:IsA("SelectionBox") or part:IsA("SelectionSphere") then
-					part:Destroy()
-				elseif part:IsA("BillboardGui") and part.Name == "PersonalityDebug" then
-					part:Destroy()
-				elseif part:IsA("SphereHandleAdornment") or part:IsA("BoxHandleAdornment") then
-					part:Destroy()
-				end
-			end
-			
-			-- Check workspace for any AI debug visuals near player
-			for _, obj in workspace:GetDescendants() do
-				if obj:IsA("BillboardGui") and obj.Name == "PersonalityDebug" then
-					-- Check if it's near the player
-					if obj.Adornee and (obj.Adornee.Position - rootPart.Position).Magnitude < 50 then
-						obj.Enabled = false
-					end
-				end
+		-- Remove any selection box that might be on rootPart
+		for _, child in rootPart:GetChildren() do
+			if child:IsA("SelectionBox") then
+				child:Destroy()
 			end
 		end
 
@@ -779,11 +760,6 @@ local function createUltraSmoothSnake(character)
 			end
 			if headParts.rightEye then  
 				headParts.rightEye.Transparency = 0
-			end
-			
-			-- Ensure head outline stays disabled
-			if headParts.headOutline then
-				headParts.headOutline.Enabled = false
 			end
 		end
 
