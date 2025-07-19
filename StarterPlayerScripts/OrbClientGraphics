@@ -1,6 +1,6 @@
 --[[
-CLIENT GRAPHICS HANDLER
-Handles client-side graphics settings for orbs and snake glows
+ORB CLIENT GRAPHICS HANDLER
+Handles client-side orb rendering and snake glow based on individual graphics settings
 This goes in StarterPlayerScripts as a LocalScript
 --]]
 
@@ -10,10 +10,9 @@ local Lighting = game:GetService("Lighting")
 local workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Graphics presets for orbs and snakes
+-- Graphics presets for orbs
 local GRAPHICS_PRESETS = {
 	Low = {
-		-- Orb settings
 		RENDER_DISTANCE = 80,
 		MATERIAL = Enum.Material.SmoothPlastic,
 		DISABLE_LIGHTS = true,
@@ -21,13 +20,9 @@ local GRAPHICS_PRESETS = {
 		DISABLE_SHADOWS = true,
 		ORB_TRANSPARENCY_MODIFIER = 0.2,
 		-- Snake glow settings
-		SNAKE_GLOW_ENABLED = false,        -- Completely disable glow
-		SNAKE_GLOW_BRIGHTNESS = 0,         -- No brightness
-		SNAKE_GLOW_RANGE = 0,              -- No range
-		SNAKE_MATERIAL = Enum.Material.SmoothPlastic  -- Less glowy material
+		SNAKE_GLOW_ENABLED = false  -- No glow for low
 	},
 	Medium = {
-		-- Orb settings
 		RENDER_DISTANCE = 120,
 		MATERIAL = Enum.Material.Neon,
 		DISABLE_LIGHTS = false,
@@ -35,13 +30,9 @@ local GRAPHICS_PRESETS = {
 		DISABLE_SHADOWS = false,
 		ORB_TRANSPARENCY_MODIFIER = 0,
 		-- Snake glow settings
-		SNAKE_GLOW_ENABLED = true,         -- Glow enabled but reduced
-		SNAKE_GLOW_BRIGHTNESS = 0.5,       -- Half brightness
-		SNAKE_GLOW_RANGE = 0.5,            -- Half range
-		SNAKE_MATERIAL = Enum.Material.Neon
+		SNAKE_GLOW_MULTIPLIER = 0.5  -- Half glow for medium
 	},
 	High = {
-		-- Orb settings
 		RENDER_DISTANCE = 150,
 		MATERIAL = Enum.Material.Neon,
 		DISABLE_LIGHTS = false,
@@ -49,16 +40,12 @@ local GRAPHICS_PRESETS = {
 		DISABLE_SHADOWS = false,
 		ORB_TRANSPARENCY_MODIFIER = 0,
 		-- Snake glow settings
-		SNAKE_GLOW_ENABLED = true,         -- Keep default glow
-		SNAKE_GLOW_BRIGHTNESS = 1,         -- Don't modify (use server default)
-		SNAKE_GLOW_RANGE = 1,              -- Don't modify (use server default)
-		SNAKE_MATERIAL = Enum.Material.Neon
+		SNAKE_GLOW_MULTIPLIER = 1  -- Full glow for high (no change)
 	}
 }
 
 local currentPreset = GRAPHICS_PRESETS.High
 local orbCache = {}  -- Track modified orbs
-local snakeCache = {}  -- Track modified snake segments
 
 -- Function to get player's position
 local function getPlayerPosition()
@@ -109,59 +96,6 @@ local function applyOrbGraphics(orb, distance)
 	end
 end
 
--- Function to apply graphics settings to snake segments
-local function applySnakeGraphics(segment, preset)
-	if not segment or not segment.Parent then return end
-	
-	-- Check if it's a snake segment (not an orb)
-	local isSnakeSegment = segment:GetAttribute("IsSnakeSegment")
-	local isAISnakeHead = segment.Name == "AISnakeHead"
-	local isAISnakePart = segment.Parent and segment.Parent.Name == "AISnake" and segment.Name:match("Segment")
-	
-	if not isSnakeSegment and not isAISnakeHead and not isAISnakePart then
-		return
-	end
-	
-	-- Double-check it's not an orb
-	if segment.Name == "Orb" or segment.Name == "UpgradeOrb" or segment.Name == "DeathOrb" then
-		return
-	end
-	
-	-- Apply material
-	segment.Material = preset.SNAKE_MATERIAL
-	
-	-- Handle glow light
-	local glow = segment:FindFirstChild("Glow")
-	if glow and glow:IsA("PointLight") then
-		-- Store original values on first encounter
-		if not glow:GetAttribute("OriginalBrightness") then
-			glow:SetAttribute("OriginalBrightness", glow.Brightness)
-			glow:SetAttribute("OriginalRange", glow.Range)
-		end
-		
-		local originalBrightness = glow:GetAttribute("OriginalBrightness")
-		local originalRange = glow:GetAttribute("OriginalRange")
-		
-		if not preset.SNAKE_GLOW_ENABLED then
-			-- Low graphics - disable glow completely
-			glow.Enabled = false
-		else
-			glow.Enabled = true
-			if preset.SNAKE_GLOW_BRIGHTNESS < 1 then
-				-- Medium graphics - reduce glow
-				glow.Brightness = originalBrightness * preset.SNAKE_GLOW_BRIGHTNESS
-				glow.Range = originalRange * preset.SNAKE_GLOW_RANGE
-			else
-				-- High graphics - use original server values
-				glow.Brightness = originalBrightness
-				glow.Range = originalRange
-			end
-		end
-	end
-	
-	snakeCache[segment] = true
-end
-
 -- Function to handle particle effects
 local function adjustParticleEffects(mode)
 	local preset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
@@ -179,9 +113,46 @@ local function adjustParticleEffects(mode)
 	end
 end
 
+-- Function to adjust snake glows
+local function adjustSnakeGlows(mode)
+	local preset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
+	
+	-- Find all snake segments and adjust their glow
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("PointLight") and obj.Name == "Glow" then
+			local parent = obj.Parent
+			-- Check if parent is a snake segment
+			if parent and parent:IsA("BasePart") and 
+			   (parent:GetAttribute("IsSnakeSegment") or parent.Name == "AISnakeHead" or 
+			    (parent.Parent and parent.Parent.Name == "AISnake")) then
+				
+				-- Store original values
+				if not obj:GetAttribute("OriginalBrightness") then
+					obj:SetAttribute("OriginalBrightness", obj.Brightness)
+					obj:SetAttribute("OriginalRange", obj.Range)
+				end
+				
+				if mode == "Low" then
+					-- Disable glow for low graphics
+					obj.Enabled = false
+				elseif mode == "Medium" then
+					-- Reduce glow for medium graphics
+					obj.Enabled = true
+					obj.Brightness = obj:GetAttribute("OriginalBrightness") * 0.5
+					obj.Range = obj:GetAttribute("OriginalRange") * 0.5
+				else
+					-- Full glow for high graphics
+					obj.Enabled = true
+					obj.Brightness = obj:GetAttribute("OriginalBrightness")
+					obj.Range = obj:GetAttribute("OriginalRange")
+				end
+			end
+		end
+	end
+end
+
 -- Main update loop
 local lastUpdate = 0
-local lastSnakeUpdate = 0
 RunService.Heartbeat:Connect(function()
 	local now = tick()
 	if now - lastUpdate < 0.1 then return end  -- Update every 0.1 seconds
@@ -202,46 +173,10 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 	
-	-- Update snake segments less frequently (every 0.5 seconds)
-	if now - lastSnakeUpdate > 0.5 then
-		lastSnakeUpdate = now
-		
-		-- Find all snake segments and AI snake heads
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("BasePart") then
-				-- Check for player snake segments
-				if obj:GetAttribute("IsSnakeSegment") then
-					applySnakeGraphics(obj, currentPreset)
-				-- Check for AI snake heads and segments
-				elseif obj.Name == "AISnakeHead" or (obj.Parent and obj.Parent.Name == "AISnake") then
-					applySnakeGraphics(obj, currentPreset)
-				end
-			end
-		end
-		
-		-- Also check player characters for snake segments
-		for _, player in ipairs(Players:GetPlayers()) do
-			if player.Character then
-				for _, obj in ipairs(player.Character:GetDescendants()) do
-					if obj:IsA("BasePart") and obj:GetAttribute("IsSnakeSegment") then
-						applySnakeGraphics(obj, currentPreset)
-					end
-				end
-			end
-		end
-	end
-	
 	-- Clean up cache for destroyed orbs
 	for orb, _ in pairs(orbCache) do
 		if not orb.Parent then
 			orbCache[orb] = nil
-		end
-	end
-	
-	-- Clean up cache for destroyed snake segments
-	for segment, _ in pairs(snakeCache) do
-		if not segment.Parent then
-			snakeCache[segment] = nil
 		end
 	end
 end)
@@ -251,8 +186,6 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 	if attribute == "GraphicsMode" then
 		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
 		print("Client graphics mode changed to:", mode)
-		
-		currentPreset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
 		
 		-- Immediately update all orbs
 		local playerPos = getPlayerPosition()
@@ -265,24 +198,11 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 			end
 		end
 		
-		-- Immediately update all snake segments
-		for segment, _ in pairs(snakeCache) do
-			if segment.Parent then
-				applySnakeGraphics(segment, currentPreset)
-			end
-		end
-		
-		-- Force a full snake update
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("BasePart") then
-				if obj:GetAttribute("IsSnakeSegment") or obj.Name == "AISnakeHead" or (obj.Parent and obj.Parent.Name == "AISnake") then
-					applySnakeGraphics(obj, currentPreset)
-				end
-			end
-		end
-		
 		-- Adjust particle effects
 		adjustParticleEffects(mode)
+		
+		-- Adjust snake glows
+		adjustSnakeGlows(mode)
 		
 		-- Apply general graphics settings
 		if mode == "Low" then
@@ -298,5 +218,6 @@ end)
 -- Initial setup
 local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
 adjustParticleEffects(initialMode)
+adjustSnakeGlows(initialMode)
 
-print("Client Graphics Handler initialized for:", LocalPlayer.Name)
+print("Orb Client Graphics Handler initialized for:", LocalPlayer.Name)
