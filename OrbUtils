@@ -301,28 +301,30 @@ function OrbUtils.checkAISnakeHeadPickup(head)
             local delta = headPos - orb.Position
             if math.abs(delta.X) < PICKUP_RADIUS and math.abs(delta.Y) < PICKUP_RADIUS and math.abs(delta.Z) < PICKUP_RADIUS then
                 -- Now do precise squared distance check
-                                if delta.X * delta.X + delta.Y * delta.Y + delta.Z * delta.Z < PICKUP_RADIUS_SQ then
+                if delta.X * delta.X + delta.Y * delta.Y + delta.Z * delta.Z < PICKUP_RADIUS_SQ then
                     if not orbDebounce[orb] then
-                orbDebounce[orb] = true
-                playOrbCollectVFX(orb.Position)
-                local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1  -- REDUCED from 10
-                local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
-                if AISnakeModule._activeSnakes then
-                    for _, snake in AISnakeModule._activeSnakes do
-                        if snake.HeadParts and snake.HeadParts.head == head then
-                            if orb.Name == "UpgradeOrb" then
-                                require(ReplicatedStorage:WaitForChild("SnakeUpgrades")).GiveUpgrade(snake)
-                            else
-                                if snake.grow then
-                                    snake:grow(orbValue or 1)  -- REDUCED from 10
+                        orbDebounce[orb] = true
+                        playOrbCollectVFX(orb.Position)
+                        local orbValue = (orb:FindFirstChild("Value") and orb.Value.Value) or 1  -- REDUCED from 10
+                        local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
+                        if AISnakeModule._activeSnakes then
+                            for _, snake in AISnakeModule._activeSnakes do
+                                if snake.HeadParts and snake.HeadParts.head == head then
+                                    if orb.Name == "UpgradeOrb" then
+                                        require(ReplicatedStorage:WaitForChild("SnakeUpgrades")).GiveUpgrade(snake)
+                                    else
+                                        if snake.grow then
+                                            snake:grow(orbValue or 1)  -- REDUCED from 10
+                                        end
+                                    end
                                 end
                             end
                         end
+                        OrbUtils.removeOrb(orb)
+                        if orb and orb.Parent then
+                            orb:Destroy()
+                        end
                     end
-                end
-                OrbUtils.removeOrb(orb)
-                if orb and orb.Parent then
-                    orb:Destroy()
                 end
             end
         end
