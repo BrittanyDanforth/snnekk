@@ -596,23 +596,21 @@ local function createUltraSmoothSnake(character)
 		currentLength = i
 	end
 
-	-- OPTIMIZED Position history setup - 3500 works but optimized
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 1.16) + 20, 3500) -- 3500 fixes gaps!
-	
-	-- OPTIMIZATION 1: Don't create all 3500 at once
+	-- OPTIMIZED: Sweet spot that works without ping lag
+	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 0.7), 1750) -- 1750 max to avoid ping
 	local positionHistory = {}
 	local historyHead = 1
 	local historyCount = 0
 	
-	-- Start with smaller buffer that grows
+	-- Start small and grow
 	local initialHistoryPoint = { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
-	for i = 1, mathMin(200, maxHistorySize) do
+	for i = 1, mathMin(100, maxHistorySize) do
 		positionHistory[i] = initialHistoryPoint
 		historyCount = i
 	end
 
 	local function addToHistory(data)
-		-- Grow buffer as needed instead of pre-allocating
+		-- Grow dynamically
 		if historyCount < maxHistorySize then
 			historyCount = historyCount + 1
 			positionHistory[historyCount] = data
@@ -907,9 +905,11 @@ local function createUltraSmoothSnake(character)
 				end
 
 				if updateCounter % updateFrequency == 0 then
-					-- Tighter following when boosting
-					local delayMultiplier = isBoosting and 0.9 or 1.15
+					-- Optimized delay for smaller buffer
+					local delayMultiplier = isBoosting and 0.65 or 0.8  -- Tighter for smaller buffer
 					local delay = mathFloor(i * delayMultiplier)
+					-- Ensure we don't exceed buffer
+					delay = mathMin(delay, historyCount - 1)
 					local targetData = getFromHistory(delay)
 					if targetData then
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.08)
