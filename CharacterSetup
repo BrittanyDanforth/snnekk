@@ -642,9 +642,9 @@ local function createUltraSmoothSnake(character)
 				local growthFactor = 1
 				if currentLength > 200 then
 					-- Base growth for all segments
-					local baseGrowth = (currentLength - 200) / 1000 * 0.3
-					-- Position-based growth for this new segment
-					local positionGrowth = ((currentLength - 50) / currentLength) * 0.5
+					local baseGrowth = (currentLength - 200) / 1000 * 0.4
+					-- Position-based growth for this new segment (tail gets 60% total)
+					local positionGrowth = 0.2 + ((currentLength - 50) / currentLength) * 0.4
 					growthFactor = 1 + baseGrowth + positionGrowth
 				end
 				local targetSize = activeConfig.SegmentSize * mathMin(growthFactor, 1.8)
@@ -797,6 +797,13 @@ local function createUltraSmoothSnake(character)
 		if headParts and headParts.head and headParts.head.Parent then
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
+			
+			-- Dynamic head sizing based on snake length
+			if updateCounter % 20 == 0 and currentLength > 200 then
+				local headGrowth = 1 + (currentLength - 200) / 1000 * 0.5  -- Up to 50% larger
+				local targetHeadSize = activeConfig.HeadSize * mathMin(headGrowth, 1.5)
+				headParts.head.Size = headParts.head.Size:Lerp(targetHeadSize, 0.15)
+			end
 
 			-- Ensure eyes stay visible
 			if headParts.leftEye then
@@ -889,12 +896,16 @@ local function createUltraSmoothSnake(character)
 							-- ALL segments grow based on total length, but more growth toward tail
 							if currentLength > 200 then
 								-- Base growth for all segments when snake is long
-								local baseGrowth = (currentLength - 200) / 1000 * 0.3  -- Up to 30% for all
+								local baseGrowth = (currentLength - 200) / 1000 * 0.4  -- Up to 40% for all
 								
 								-- Additional growth based on segment position
 								local positionGrowth = 0
-								if i > 50 then  -- Start gradual growth after segment 50
-									positionGrowth = ((i - 50) / currentLength) * 0.5  -- Up to 50% more
+								-- Head segments (1-50) get 0-20% additional growth
+								if i <= 50 then
+									positionGrowth = (i / 50) * 0.2
+								else
+									-- Body/tail segments get 20-40% additional growth
+									positionGrowth = 0.2 + ((i - 50) / currentLength) * 0.4
 								end
 								
 								growthFactor = 1 + baseGrowth + positionGrowth
