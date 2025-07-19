@@ -207,6 +207,7 @@ local function createMenu(onPlay)
 	graphicsButton.Font = Enum.Font.SourceSans
 	graphicsButton.TextScaled = true
 	graphicsButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+	graphicsButton.AutoButtonColor = true  -- Enable automatic button press effects
 	graphicsButton.Parent = bgFrame
 
 	local graphicsCorner = Instance.new("UICorner")
@@ -465,14 +466,35 @@ local function createMenu(onPlay)
 		graphicsMode = graphicsModes[currentModeIndex]
 
 		graphicsButton.Text = "Graphics: " .. graphicsMode
+		
+		-- Apply the graphics mode
 		setGraphicsMode(graphicsMode)
 
-		-- Visual feedback
+		-- Enhanced visual feedback
 		local originalColor = graphicsButton.TextColor3
+		local originalBgColor = graphicsButton.BackgroundColor3
+		
+		-- Flash green to indicate success
 		graphicsButton.TextColor3 = Color3.fromRGB(76, 217, 100)
-		TweenService:Create(graphicsButton, TweenInfo.new(0.3), {
-			TextColor3 = originalColor
+		graphicsButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+		
+		-- Animate back to original colors
+		TweenService:Create(graphicsButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+			TextColor3 = originalColor,
+			BackgroundColor3 = originalBgColor
 		}):Play()
+		
+		-- Add click sound effect if available
+		local clickSound = Instance.new("Sound")
+		clickSound.SoundId = "rbxasset://sounds/uuhhh.mp3"  -- Default click sound
+		clickSound.Volume = 0.3
+		clickSound.Parent = graphicsButton
+		clickSound:Play()
+		clickSound.Ended:Connect(function()
+			clickSound:Destroy()
+		end)
+		
+		print("Graphics mode changed to:", graphicsMode)
 	end)
 
 	-- Update graphics button when attribute changes
