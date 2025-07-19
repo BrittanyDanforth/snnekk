@@ -37,7 +37,7 @@ local GRAPHICS_PRESETS = {
 		-- Snake glow settings
 		SNAKE_GLOW_ENABLED = true,         -- Glow enabled but reduced
 		SNAKE_GLOW_BRIGHTNESS = 0.5,       -- Half brightness
-		SNAKE_GLOW_RANGE = 4,              -- Reduced range
+		SNAKE_GLOW_RANGE = 0.5,            -- Half range
 		SNAKE_MATERIAL = Enum.Material.Neon
 	},
 	High = {
@@ -49,9 +49,9 @@ local GRAPHICS_PRESETS = {
 		DISABLE_SHADOWS = false,
 		ORB_TRANSPARENCY_MODIFIER = 0,
 		-- Snake glow settings
-		SNAKE_GLOW_ENABLED = true,         -- Full glow
-		SNAKE_GLOW_BRIGHTNESS = 1,         -- Full brightness (server default)
-		SNAKE_GLOW_RANGE = 8,              -- Full range (server default)
+		SNAKE_GLOW_ENABLED = true,         -- Keep default glow
+		SNAKE_GLOW_BRIGHTNESS = 1,         -- Don't modify (use server default)
+		SNAKE_GLOW_RANGE = 1,              -- Don't modify (use server default)
 		SNAKE_MATERIAL = Enum.Material.Neon
 	}
 }
@@ -113,8 +113,17 @@ end
 local function applySnakeGraphics(segment, preset)
 	if not segment or not segment.Parent then return end
 	
-	-- Check if it's a snake segment
-	if not segment:GetAttribute("IsSnakeSegment") and segment.Name ~= "AISnakeHead" then
+	-- Check if it's a snake segment (not an orb)
+	local isSnakeSegment = segment:GetAttribute("IsSnakeSegment")
+	local isAISnakeHead = segment.Name == "AISnakeHead"
+	local isAISnakePart = segment.Parent and segment.Parent.Name == "AISnake" and segment.Name:match("Segment")
+	
+	if not isSnakeSegment and not isAISnakeHead and not isAISnakePart then
+		return
+	end
+	
+	-- Double-check it's not an orb
+	if segment.Name == "Orb" or segment.Name == "UpgradeOrb" or segment.Name == "DeathOrb" then
 		return
 	end
 	
@@ -124,19 +133,29 @@ local function applySnakeGraphics(segment, preset)
 	-- Handle glow light
 	local glow = segment:FindFirstChild("Glow")
 	if glow and glow:IsA("PointLight") then
-		if preset.SNAKE_GLOW_ENABLED then
-			glow.Enabled = true
-			glow.Brightness = glow:GetAttribute("OriginalBrightness") or glow.Brightness
-			glow.Brightness = glow.Brightness * preset.SNAKE_GLOW_BRIGHTNESS
-			glow.Range = glow:GetAttribute("OriginalRange") or glow.Range
-			glow.Range = glow.Range * preset.SNAKE_GLOW_RANGE
-		else
-			-- Store original values before disabling
-			if not glow:GetAttribute("OriginalBrightness") then
-				glow:SetAttribute("OriginalBrightness", glow.Brightness)
-				glow:SetAttribute("OriginalRange", glow.Range)
-			end
+		-- Store original values on first encounter
+		if not glow:GetAttribute("OriginalBrightness") then
+			glow:SetAttribute("OriginalBrightness", glow.Brightness)
+			glow:SetAttribute("OriginalRange", glow.Range)
+		end
+		
+		local originalBrightness = glow:GetAttribute("OriginalBrightness")
+		local originalRange = glow:GetAttribute("OriginalRange")
+		
+		if not preset.SNAKE_GLOW_ENABLED then
+			-- Low graphics - disable glow completely
 			glow.Enabled = false
+		else
+			glow.Enabled = true
+			if preset.SNAKE_GLOW_BRIGHTNESS < 1 then
+				-- Medium graphics - reduce glow
+				glow.Brightness = originalBrightness * preset.SNAKE_GLOW_BRIGHTNESS
+				glow.Range = originalRange * preset.SNAKE_GLOW_RANGE
+			else
+				-- High graphics - use original server values
+				glow.Brightness = originalBrightness
+				glow.Range = originalRange
+			end
 		end
 	end
 	
