@@ -789,12 +789,12 @@ local function createUltraSmoothSnake(character)
 		local lastHistoryPoint = getFromHistory(1)
 		local dist = (currentPos - lastHistoryPoint.position).Magnitude
 		
-		-- Always add position when moving (fixes gaps)
-		if dist > 0.01 then  -- Lowered threshold
-			-- More aggressive interpolation when boosting
-			if dist > activeConfig.SegmentSpacing * 0.5 then  -- Lowered from 0.8
-				local maxInterp = isBoosting and 12 or 4  -- Increased from 8/3
-				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.3)), maxInterp)
+		-- Always add position for smooth movement
+		if dist > 0.001 then  -- Very low threshold for smooth updates
+			-- More aggressive interpolation for smooth movement
+			if dist > activeConfig.SegmentSpacing * 0.1 then  -- Much lower threshold
+				local maxInterp = 8  -- Always smooth
+				local numInterpolations = mathMin(mathFloor(dist / (activeConfig.SegmentSpacing * 0.1)), maxInterp)
 				for i = 1, numInterpolations do
 					local fraction = i / (numInterpolations + 1)
 					local interpPos = lastHistoryPoint.position:Lerp(currentPos, fraction)
