@@ -27,14 +27,7 @@ return {
     BoostFollowSpeed = 0.99,
     UpdateRate = 1,
     MinDistance = 0.02,
-    PathSmoothness = 0.9,   -- Increased for smoother movement
-    
-    -- REMOVED SPEED SETTINGS - AISnake handles its own speeds
-    -- Special speed modes for SnakeMovement
-    CrawlSpeed = 15,
-    SlowSpeed = 25,
-    SuperSpeed = 55,
-    LudicrousSpeed = 90,
+    PathSmoothness = 0.9,
 
     -- MATERIALS
     HeadMaterial = Enum.Material.ForceField,
@@ -46,16 +39,16 @@ return {
     LODDistance = 120, -- Level of detail distance
     
     -- GAMEPLAY SETTINGS
-    OrbValue = 1,           -- REDUCED from 5 - each orb only gives 1 segment
-    BoostDrainRate = 3,     -- Increased from 2 - boost drains faster
+    OrbValue = 1,           -- Each orb gives 1 segment
+    BoostDrainRate = 3,     -- Boost drains faster
     
     -- DEATH ORB VALUES (percentage of snake length returned as orbs)
     DeathOrbReturn = {
-        small = 0.30,       -- Small snakes (< 100): return 30% (was 50%)
-        medium = 0.25,      -- Medium snakes (100-200): return 25% (was 45%)
-        large = 0.20,       -- Large snakes (200-500): return 20% (was 35%)
-        huge = 0.15,        -- Huge snakes (500+): return 15% (was 25%)
-        cap = 150           -- Max value from death orbs (was 200)
+        small = 0.30,       -- Small snakes (< 100): return 30%
+        medium = 0.25,      -- Medium snakes (100-200): return 25%
+        large = 0.20,       -- Large snakes (200-500): return 20%
+        huge = 0.15,        -- Huge snakes (500+): return 15%
+        cap = 150           -- Max value from death orbs
     }
 }
 

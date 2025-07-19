@@ -67,10 +67,10 @@ local function getOrbSpawnArea()
 		return {
 			minX = math.floor(pos.X - hx) + 5, maxX = math.ceil(pos.X + hx) - 5,
 			minZ = math.floor(pos.Z - hz) + 5, maxZ = math.ceil(pos.Z + hz) - 5,
-			y    = pos.Y + size.Y / 2 + 1
+			y    = pos.Y + size.Y / 2 + 2  -- Match death orb height
 		}
 	end
-	return {minX = -600, maxX = 150, minZ = -600, maxZ = 600, y = 4}
+	return {minX = -600, maxX = 150, minZ = -600, maxZ = 600, y = 5}  -- Also increased default
 end
 
 ---------------------------------------------------------------------
@@ -348,7 +348,7 @@ end
 ---------------------------------------------------------------------
 local function createSafeOrb(position, value, name, color, material)
 	-- Ensure minimum height to prevent unreachable orbs
-	local minHeight = 3
+	local minHeight = 4  -- Increased from 3 to ensure orbs are grabbable
 	if position.Y < minHeight then
 		position = Vector3.new(position.X, minHeight, position.Z)
 	end
