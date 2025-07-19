@@ -227,14 +227,7 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		-- Adjust snake glows
 		adjustSnakeGlows(mode)
 		
-		-- Apply general graphics settings
-		if mode == "Low" then
-			settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-		elseif mode == "Medium" then
-			settings().Rendering.QualityLevel = Enum.QualityLevel.Level10
-		else
-			settings().Rendering.QualityLevel = Enum.QualityLevel.Level21
-		end
+		-- Note: Can't change QualityLevel from LocalScript
 	end
 end)
 
