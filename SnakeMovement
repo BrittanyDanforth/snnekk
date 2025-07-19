@@ -537,7 +537,7 @@
 			-- 🚀 NETWORK-OPTIMIZED MAIN MOVEMENT LOOP
 			local lastPosition = rootPart.Position
 			local updateCounter = 0
-			local networkUpdateInterval = 2 -- Update every 2 frames for network optimization
+			local networkUpdateInterval = 1 -- Update EVERY frame for butter smooth movement
 
 			heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
 				if not rootPart or not rootPart.Parent then
@@ -561,13 +561,13 @@
 					local delta = mousePos - rootPart.Position
 					delta = Vector3.new(delta.X, 0, delta.Z)
 
-					if delta.Magnitude > 1.8 then -- Increased from 1.5
+					if delta.Magnitude > 1.0 then -- Reduced for more responsive control
 						State.targetDirection = delta.Unit
 					end
 				end
 
-				-- Smooth direction changes - just slightly faster when boosting
-				local turnRate = State.boosting and (Config.TurnSpeed * 1.1 * dt) or (Config.TurnSpeed * dt)
+				-- BUTTERY smooth direction changes
+				local turnRate = Config.TurnSpeed * dt * 1.2 -- Slightly faster turning for responsiveness
 				local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
 				-- CRITICAL FIX: Normalize the direction vector after lerping.
 				-- Without this, the vector's length shrinks during turns, causing the snake
@@ -576,8 +576,8 @@
 					State.currentDirection = newDirection.Unit
 				end
 
-				-- INSTANT speed changes for no drag feeling
-				local speedRate = State.boosting and 20 * dt or 10 * dt -- Much faster speed changes
+				-- BUTTERY smooth speed changes
+				local speedRate = 15 * dt -- Consistent smooth acceleration
 				State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
 				-- Apply movement
