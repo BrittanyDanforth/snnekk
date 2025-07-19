@@ -1125,22 +1125,33 @@ RunService.Stepped:Connect(function()
 						print(string.format("[DEATH] Both die (mutual body hit): %s and %s", 
 							playerA.Name, playerB.Name))
 					end
-					queuePlayerDeath(playerA)
-					queuePlayerDeath(playerB)
+					-- Check invincibility before queuing deaths
+					if not isPlayerInvincible(playerA) then
+						queuePlayerDeath(playerA)
+					end
+					if not isPlayerInvincible(playerB) then
+						queuePlayerDeath(playerB)
+					end
 				elseif playerADies then
 					-- Player A's head hit B's body - A dies
 					if DEBUG_COLLISIONS then
 						print(string.format("[DEATH] %s dies (hit %s's body)", 
 							playerA.Name, playerB.Name))
 					end
-					queuePlayerDeath(playerA)
+					-- Check invincibility before queuing death
+					if not isPlayerInvincible(playerA) then
+						queuePlayerDeath(playerA)
+					end
 				elseif playerBDies then
 					-- Player B's head hit A's body - B dies
 					if DEBUG_COLLISIONS then
 						print(string.format("[DEATH] %s dies (hit %s's body)", 
 							playerB.Name, playerA.Name))
 					end
-					queuePlayerDeath(playerB)
+					-- Check invincibility before queuing death
+					if not isPlayerInvincible(playerB) then
+						queuePlayerDeath(playerB)
+					end
 				else
 					-- Pure head-to-head collision - only ONE dies
 					local velA = headA.AssemblyLinearVelocity or headA.Velocity
@@ -1165,7 +1176,10 @@ RunService.Stepped:Connect(function()
 							print(string.format("[DEATH] %s dies (less aggressive, score %.1f < %.1f)", 
 								playerB.Name, scoreB, scoreA))
 						end
-						queuePlayerDeath(playerB)
+						-- Check invincibility before queuing death
+						if not isPlayerInvincible(playerB) then
+							queuePlayerDeath(playerB)
+						end
 					else
 						-- B is more aggressive or equal, A dies
 						-- In case of tie, we just pick one (A)
@@ -1173,7 +1187,10 @@ RunService.Stepped:Connect(function()
 							print(string.format("[DEATH] %s dies (less aggressive, score %.1f <= %.1f)", 
 								playerA.Name, scoreA, scoreB))
 						end
-						queuePlayerDeath(playerA)
+						-- Check invincibility before queuing death
+						if not isPlayerInvincible(playerA) then
+							queuePlayerDeath(playerA)
+						end
 					end
 				end
 				break

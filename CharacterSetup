@@ -512,15 +512,22 @@ local function createUltraSmoothSnake(character)
 	-- IMMEDIATELY hide the character to prevent ANY flashing
 	rootPart.Transparency = 1
 	rootPart.CanCollide = false
+	rootPart.CanQuery = false  -- Prevent selection boxes from showing
+	rootPart.CanTouch = false   -- Prevent touch detection
 
 	for _, part in character:GetChildren() do
 		if part:IsA("BasePart") then
 			part.Transparency = 1
 			part.CanCollide = false
+			part.CanQuery = false
+			part.CanTouch = false
 		elseif part:IsA("Accessory") or part:IsA("Tool") then
 			part:Destroy()
 		end
 	end
+	
+	-- Also hide any humanoid display
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 
 	local snakeModel = getOrCreateSnakeModel(player)
 	for _, obj in snakeModel:GetChildren() do
@@ -704,7 +711,7 @@ local function createUltraSmoothSnake(character)
 		local currentPos = rootPart.Position
 		local currentCFrame = rootPart.CFrame
 		local lookVector = currentCFrame.LookVector
-		local headOffset = lookVector * 1.5
+		local headOffset = lookVector * 1.0  -- Reduced from 1.5 to 1.0 for closer head
 		local headPos = currentPos + headOffset
 
 		-- Create head after 3 frames to prevent flash
