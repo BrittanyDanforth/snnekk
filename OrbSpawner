@@ -82,6 +82,59 @@ local orbDebounce = {}                      -- debounce table
 local orbTweens   = {}                      -- active tweens for orbs
 local orbStates   = {}                      -- track orb visibility states
 
+-- OPTIMIZATION: Spatial grid for efficient collision detection
+local GRID_SIZE = 50  -- Size of each grid cell
+local orbGrid = {}    -- Spatial partitioning grid
+
+local function getGridKey(position)
+	local x = math.floor(position.X / GRID_SIZE)
+	local z = math.floor(position.Z / GRID_SIZE)
+	return x .. "," .. z
+end
+
+local function addOrbToGrid(orb)
+	local key = getGridKey(orb.Position)
+	if not orbGrid[key] then
+		orbGrid[key] = {}
+	end
+	orbGrid[key][orb] = true
+end
+
+local function removeOrbFromGrid(orb)
+	local key = getGridKey(orb.Position)
+	if orbGrid[key] then
+		orbGrid[key][orb] = nil
+		if next(orbGrid[key]) == nil then
+			orbGrid[key] = nil
+		end
+	end
+end
+
+local function getOrbsNearPosition(position, radius)
+	local nearbyOrbs = {}
+	local cellRadius = math.ceil(radius / GRID_SIZE)
+	local centerX = math.floor(position.X / GRID_SIZE)
+	local centerZ = math.floor(position.Z / GRID_SIZE)
+	
+	for dx = -cellRadius, cellRadius do
+		for dz = -cellRadius, cellRadius do
+			local key = (centerX + dx) .. "," .. (centerZ + dz)
+			if orbGrid[key] then
+				for orb, _ in pairs(orbGrid[key]) do
+					if orb and orb.Parent then
+						local dist = (orb.Position - position).Magnitude
+						if dist <= radius then
+							table.insert(nearbyOrbs, orb)
+						end
+					end
+				end
+			end
+		end
+	end
+	
+	return nearbyOrbs
+end
+
 ---------------------------------------------------------------------
 -- Utility: get all player heads
 ---------------------------------------------------------------------
@@ -241,7 +294,10 @@ local function growPlayerSnake(player, value)
 	if not snakeInst and player.Character:FindFirstChild("__SnakeInstance") then
 		snakeInst = player.Character.__SnakeInstance.Value
 	end
-	if snakeInst and snakeInst.grow then snakeInst.grow(value or 10) end
+	if snakeInst and snakeInst.grow then 
+		-- Queue the growth instead of growing immediately
+		snakeInst.grow(value or 10) 
+	end
 end
 
 local function giveUpgradeToPlayerSnake(player)
@@ -319,6 +375,7 @@ local function createSafeOrb(position, value, name, color, material)
 
 	-- Initialize as hidden
 	orbStates[orb] = {state = "hidden", fade = 0}
+	addOrbToGrid(orb) -- Add to grid
 
 	return orb
 end
@@ -354,6 +411,7 @@ local function removeOrb(orb)
 	end
 	orbDebounce[orb] = nil
 	orbStates[orb] = nil
+	removeOrbFromGrid(orb) -- Remove from grid
 	if orbTweens[orb] then
 		orbTweens[orb]:Cancel()
 		orbTweens[orb] = nil
@@ -495,21 +553,37 @@ task.spawn(function()
 		end
 		local players = getPlayerHeads()
 
-		for i = #orbs, 1, -1 do
-			local orb = orbs[i]
-			local orbState = orbStates[orb]
-			-- Only check visible orbs
-			if orb and orb.Parent and not orbDebounce[orb] and orbState and orbState.state ~= "hidden" then
-				for _, h in aiHeads do
-					if (h.Position - orb.Position).Magnitude < 5 then
-						atomicCollectOrb(orb, "ai", h)
-						break
+		-- OPTIMIZATION: Use spatial grid for efficient proximity checks
+		for _, ph in ipairs(players) do
+			if ph and ph.Parent then
+				local nearbyOrbs = getOrbsNearPosition(ph.Position, 12)
+				for _, orb in ipairs(nearbyOrbs) do
+					if orb and orb.Parent and not orbDebounce[orb] then
+						local orbState = orbStates[orb]
+						if orbState and orbState.state ~= "hidden" then
+							local dist = (orb.Position - ph.Position).Magnitude
+							if dist < orb.Size.X * 0.8 + 3 then
+								local p = getPlayerFromTouchedPart(ph)
+								if p then atomicCollectOrb(orb, "player", p) end
+							end
+						end
 					end
 				end
-				for _, ph in players do
-					if orb and orb.Parent and (ph.part.Position - orb.Position).Magnitude < 5 then
-						atomicCollectOrb(orb, "player", ph.player)
-						break
+			end
+		end
+
+		for _, ah in ipairs(aiHeads) do
+			if ah and ah.Parent then
+				local nearbyOrbs = getOrbsNearPosition(ah.Position, 12)
+				for _, orb in ipairs(nearbyOrbs) do
+					if orb and orb.Parent and not orbDebounce[orb] then
+						local orbState = orbStates[orb]
+						if orbState and orbState.state ~= "hidden" then
+							local dist = (orb.Position - ah.Position).Magnitude
+							if dist < orb.Size.X * 0.8 + 3 then
+								atomicCollectOrb(orb, "ai", ah)
+							end
+						end
 					end
 				end
 			end
@@ -541,6 +615,7 @@ local function createOrb()
 			orbStates[orb] = {state = "hidden", fade = 0}
 			local light = orb:FindFirstChild("PointLight")
 			if light then light.Enabled = false end
+			addOrbToGrid(orb) -- Add to grid
 		end
 	end
 	if orb then attachOrbTouched(orb) end

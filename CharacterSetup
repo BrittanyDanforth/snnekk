@@ -105,7 +105,14 @@ local Config = {
 	HeadMaterial = Enum.Material.ForceField,
 	BodyMaterial = Enum.Material.Neon,
 	GlowIntensity = 1.5,
-	GlowRange = 4,
+	GlowRange = 1.5,
+	
+	-- OPTIMIZATION: New performance settings
+	UpdateBatchSize = 50,  -- Update segments in batches
+	LODDistance = 100,     -- Distance for LOD switching
+	MaxHistorySize = 500,  -- Limit position history
+	SegmentPoolSize = 100, -- Pre-allocated segment pool
+	UpdateInterval = 2,    -- Update every N frames for far segments
 }
 
 -- ENHANCED: Get active config with skin overrides
@@ -538,94 +545,122 @@ local function createUltraSmoothSnake(character)
 	-- Don't create visual parts yet
 	local headParts = nil
 	local segments = {}
-	local currentLength = 0 -- Start with 0 segments
+	local currentLength = activeConfig.InitialLength
 	local targetLength = activeConfig.InitialLength
-	local maxHistorySize = mathMin(mathFloor(activeConfig.MaxSegments * 1.1) + 10, 2000)
-	local positionHistory = table.create(maxHistorySize)
-	local historyHead = 1
 
-	-- Initialize position history with proper trail positions to prevent spawn glitches
-	for i = 1, maxHistorySize do
-		-- Create a gradual trail of positions behind the spawn point
-		local trailOffset = (i - 1) * activeConfig.SegmentSpacing * 0.05
-		local trailPos = rootPart.Position - rootPart.CFrame.LookVector * trailOffset
-		positionHistory[i] = { 
-			position = trailPos, 
-			lookVector = rootPart.CFrame.LookVector 
-		}
-	end
+	-- OPTIMIZATION: Limited size position history with circular buffer
+	local positionHistory = {}
+	local historyIndex = 1
+	local historySize = 0
+	local maxHistory = activeConfig.MaxHistorySize or 500
 
 	local function addToHistory(data)
-		positionHistory[historyHead] = data
-		historyHead = (historyHead % maxHistorySize) + 1
+		positionHistory[historyIndex] = data
+		historyIndex = (historyIndex % maxHistory) + 1
+		historySize = math.min(historySize + 1, maxHistory)
 	end
 
-	local function getFromHistory(stepsBack)
-		local index = historyHead - stepsBack
-		if index < 1 then
-			index = index + maxHistorySize
+	local function getFromHistory(steps)
+		if historySize == 0 then
+			return { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
 		end
-		return positionHistory[index]
+		
+		local idx = historyIndex - steps - 1
+		if idx < 1 then
+			idx = idx + maxHistory
+		end
+		
+		-- Ensure we don't go beyond available history
+		if steps > historySize then
+			idx = (historyIndex - historySize + maxHistory - 1) % maxHistory + 1
+		end
+		
+		return positionHistory[idx] or { position = rootPart.Position, lookVector = rootPart.CFrame.LookVector }
 	end
 
 	local connections = {}
 	local isActive = true
-	local updateCounter = 0
-	local networkUpdateInterval = 3 -- Reduced network updates for better ping
-	local lastNetworkUpdate = 0
-	local recentGrowth = 0 -- Track recent growth to prevent stretching when eating orbs
-	local growthResetTime = 0
+
+	-- OPTIMIZATION: Growth queue system
+	local growthQueue = 0
+	local isProcessingGrowth = false
+	local lastGrowthTime = 0
+	
+	-- OPTIMIZATION: Segment update batching
+	local segmentUpdateFrame = 0
+	local batchSize = activeConfig.UpdateBatchSize or 50
+	local updateInterval = activeConfig.UpdateInterval or 2
+
+	-- Growth tracking
+	local recentGrowth = 0
+	local growthResetTime = tick()
 
 	local function growSnake(amount)
 		amount = amount or 5
-		local grew = false
-
+		growthQueue = growthQueue + amount
+		
 		-- Track growth for anti-stretch
 		recentGrowth = recentGrowth + amount
-		growthResetTime = tick() + 1 -- Reset after 1 second
-
-		for i = 1, amount do
-			if currentLength < activeConfig.MaxSegments then
-				grew = true
-				currentLength = currentLength + 1
-				local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
-				local color = activeConfig.BodyColors[colorIndex]
-				local lastSegment = segments[#segments]
-				local newPos = lastSegment and lastSegment.Position or rootPart.Position
-				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
-				segments[currentLength] = segment
-
-				segment.Transparency = 1
-				segment.Size = Vector3new(0.05, 0.05, 0.05)
-				taskSpawn(function()
-					local growTime = 0.15
-					local t = 0
-					local startSize = Vector3new(0.05, 0.05, 0.05)
-					local endSize = activeConfig.SegmentSize
-					local heartbeat = RunService.Heartbeat
-
-					while t < growTime and segment.Parent do
-						t = t + heartbeat:Wait()
-						if segment.Parent then
-							local alpha = mathMin(t / growTime, 1)
-							segment.Size = startSize:Lerp(endSize, alpha)
-							segment.Transparency = 1 - alpha
-						end
-					end
-					if segment.Parent then
-						segment.Size = endSize
-						segment.Transparency = 0
-					end
-				end)
-			end
+		growthResetTime = tick() + 1
+	end
+	
+	-- OPTIMIZATION: Process growth queue gradually
+	local function processGrowthQueue()
+		if growthQueue <= 0 or isProcessingGrowth then return end
+		if currentLength >= activeConfig.MaxSegments then
+			growthQueue = 0
+			return
 		end
-
-		if grew and leaderstats and updateCounter % 5 == 0 then
+		
+		isProcessingGrowth = true
+		local segmentsPerFrame = 3 -- Grow 3 segments per frame max
+		local segmentsToGrow = math.min(growthQueue, segmentsPerFrame, activeConfig.MaxSegments - currentLength)
+		
+		for i = 1, segmentsToGrow do
+			currentLength = currentLength + 1
+			growthQueue = growthQueue - 1
+			
+			local colorIndex = ((currentLength - 1) % #activeConfig.BodyColors) + 1
+			local color = activeConfig.BodyColors[colorIndex]
+			local lastSegment = segments[currentLength - 1]
+			local newPos = lastSegment and lastSegment.Position or rootPart.Position
+			local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel)
+			segments[currentLength] = segment
+			
+			-- Smooth growth animation
+			segment.Transparency = 1
+			segment.Size = Vector3new(0.05, 0.05, 0.05)
+			taskSpawn(function()
+				local growTime = 0.15
+				local t = 0
+				local startSize = Vector3new(0.05, 0.05, 0.05)
+				local endSize = activeConfig.SegmentSize
+				
+				while t < growTime and segment.Parent do
+					t = t + RunService.Heartbeat:Wait()
+					if segment.Parent then
+						local alpha = mathMin(t / growTime, 1)
+						segment.Size = startSize:Lerp(endSize, alpha)
+						segment.Transparency = 1 - alpha
+					end
+				end
+				if segment.Parent then
+					segment.Size = endSize
+					segment.Transparency = 0
+				end
+			end)
+		end
+		
+		-- Update leaderboard
+		if leaderstats then
 			local lengthValue = leaderstats:FindFirstChild("Length")
 			if lengthValue then
 				lengthValue.Value = currentLength
 			end
 		end
+		
+		lastGrowthTime = tick()
+		isProcessingGrowth = false
 	end
 
 	local function cleanup()
@@ -698,7 +733,10 @@ local function createUltraSmoothSnake(character)
 	heartbeatConn = RunService.Heartbeat:Connect(function(dt)
 		if not isActive or not rootPart.Parent then return end
 
-		updateCounter = updateCounter + 1
+		segmentUpdateFrame = segmentUpdateFrame + 1
+		
+		-- Process growth queue
+		processGrowthQueue()
 
 		-- Reset growth tracking after timeout
 		if tick() > growthResetTime then
@@ -706,7 +744,6 @@ local function createUltraSmoothSnake(character)
 		end
 
 		local isBoosting = humanoid.WalkSpeed > 16.1
-		-- EXTREME follow speed when boosting to prevent ANY stretching
 		local followSpeed = isBoosting and 0.998 or activeConfig.FollowSpeed
 
 		local currentPos = rootPart.Position
@@ -767,84 +804,128 @@ local function createUltraSmoothSnake(character)
 		-- POSITION HISTORY BASED MOVEMENT WITH ANTI-GAP FOR BOOSTING
 		framesSinceSpawn = framesSinceSpawn + 1
 
-		for i = 1, currentLength do
-			local segment = segments[i]
-			if segment and segment.Parent then
-				-- SPAWN FIX: Force segments to stay in line for first few frames
-				if framesSinceSpawn < 10 then
-					-- Manual positioning during spawn
-					local targetPos = headPos - lookVector * (i * activeConfig.SegmentSpacing * 0.9)
-					segment.CFrame = CFramenew(segment.Position:Lerp(targetPos, 0.5))
+		-- OPTIMIZATION: Batch segment updates and use LOD
+		local camera = workspace.CurrentCamera
+		local cameraPos = camera and camera.CFrame.Position or rootPart.Position
+		
+		-- Helper function to update segment position
+		local function updateSegmentPosition(i, segment)
+			-- SPAWN FIX: Force segments to stay in line for first few frames
+			if framesSinceSpawn < 10 then
+				local targetPos = headPos - lookVector * (i * activeConfig.SegmentSpacing * 0.9)
+				segment.CFrame = CFramenew(segment.Position:Lerp(targetPos, 0.5))
+				return
+			end
+			
+			-- Normal movement after spawn
+			local delay = (i == 1) and 1 or mathFloor(i * 0.9)
+			local targetData = getFromHistory(delay)
+			if targetData then
+				local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.05)
+				local currentSegmentPos = segment.Position
+				
+				-- Distance check for LOD
+				local distToCamera = (currentSegmentPos - cameraPos).Magnitude
+				local isNearCamera = distToCamera < activeConfig.LODDistance
+				
+				-- Skip update for far segments on some frames
+				if not isNearCamera and segmentUpdateFrame % updateInterval ~= 0 then
+					return
+				end
+
+				-- HARD LIMIT ON STRETCHING WHEN BOOSTING OR EATING
+				local isGrowing = tick() < growthResetTime and recentGrowth > 0
+				if (isBoosting or isGrowing) and i > 1 then
+					local prevSegment = segments[i - 1]
+					if prevSegment and prevSegment.Parent then
+						local distToPrev = (segmentPos - prevSegment.Position).Magnitude
+						local maxAllowedDist = isGrowing and activeConfig.SegmentSpacing * 1.2 or activeConfig.SegmentSpacing * 1.5
+
+						if distToPrev > maxAllowedDist then
+							local dirToPrev = (prevSegment.Position - segmentPos).Unit
+							segmentPos = prevSegment.Position - dirToPrev * activeConfig.SegmentSpacing
+						end
+					end
+				end
+
+				-- IMPROVED ANTI-GAP
+				local dynamicFollowSpeed = followSpeed
+
+				if spawnStabilizing then
+					dynamicFollowSpeed = 0.99
+				elseif i > 1 then
+					local prevSegment = segments[i - 1]
+					if prevSegment and prevSegment.Parent then
+						local gap = (currentSegmentPos - prevSegment.Position).Magnitude
+						local idealGap = activeConfig.SegmentSpacing
+						local maxGapMultiplier = isBoosting and 1.1 or 1.2
+
+						if gap > idealGap * maxGapMultiplier then
+							local gapRatio = gap / idealGap
+							local pingCompensation = math.min(gapRatio * 0.01, 0.02)
+							local correctionStrength = isBoosting and 0.04 or 0.02
+							dynamicFollowSpeed = mathMin(followSpeed + (gapRatio - 1) * correctionStrength + pingCompensation, 0.995)
+						elseif gap < idealGap * 0.8 then
+							dynamicFollowSpeed = followSpeed * 0.95
+						end
+					end
+				end
+
+				local newPos = currentSegmentPos:Lerp(segmentPos, dynamicFollowSpeed)
+				segment.CFrame = CFramenew(newPos)
+				
+				-- LOD: Reduce visual quality for far segments
+				if not isNearCamera then
+					local light = segment:FindFirstChild("Glow")
+					if light and light.Enabled then
+						light.Enabled = false
+					end
+					
+					-- OPTIMIZATION: Cull very far segments
+					if distToCamera > activeConfig.LODDistance * 2 then
+						segment.Transparency = 0.5
+					else
+						segment.Transparency = 0
+					end
 				else
-					-- Normal movement after spawn
-					-- CONSISTENT DELAY - Make segments follow closer together
-					-- Special handling for first segment to prevent detachment
-
-					-- POSITION CALCULATION
-					local delay = (i == 1) and 1 or mathFloor(i * 0.9)
-					local targetData = getFromHistory(delay)
-					if targetData then
-						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * 0.05)
-						local currentSegmentPos = segment.Position
-
-						-- HARD LIMIT ON STRETCHING WHEN BOOSTING OR EATING
-						local isGrowing = tick() < growthResetTime and recentGrowth > 0
-						if (isBoosting or isGrowing) and i > 1 then
-							local prevSegment = segments[i - 1]
-							if prevSegment and prevSegment.Parent then
-								local distToPrev = (segmentPos - prevSegment.Position).Magnitude
-								-- Even tighter when eating orbs
-								local maxAllowedDist = isGrowing and activeConfig.SegmentSpacing * 1.2 or activeConfig.SegmentSpacing * 1.5
-
-								-- If target position would stretch too far, clamp it
-								if distToPrev > maxAllowedDist then
-									local dirToPrev = (prevSegment.Position - segmentPos).Unit
-									segmentPos = prevSegment.Position - dirToPrev * activeConfig.SegmentSpacing
-								end
-							end
-						end
-
-						-- IMPROVED ANTI-GAP - Works for both normal and boost
-						local dynamicFollowSpeed = followSpeed
-
-						-- During spawn stabilization, use very high follow speed
-						if spawnStabilizing then
-							dynamicFollowSpeed = 0.99 -- Very high follow speed to snap to position
-						elseif i > 1 then
-							local prevSegment = segments[i - 1]
-							if prevSegment and prevSegment.Parent then
-								local gap = (currentSegmentPos - prevSegment.Position).Magnitude
-								local idealGap = activeConfig.SegmentSpacing
-
-								-- TIGHTER BOOST CONTROL
-								local maxGapMultiplier = isBoosting and 1.1 or 1.2 -- Tighter when boosting
-
-								-- Smooth adjustment based on gap size with lag compensation
-								if gap > idealGap * maxGapMultiplier then
-									-- Gap too big - speed up to catch up
-									local gapRatio = gap / idealGap
-									-- More aggressive correction when boosting or high ping
-									local pingCompensation = math.min(gapRatio * 0.01, 0.02) -- Extra speed for lag
-									local correctionStrength = isBoosting and 0.04 or 0.02
-									dynamicFollowSpeed = mathMin(followSpeed + (gapRatio - 1) * correctionStrength + pingCompensation, 0.995)
-								elseif gap < idealGap * 0.8 then
-									-- Too close - slow down slightly
-									dynamicFollowSpeed = followSpeed * 0.95
-								end
-							end
-						end
-
-						local newPos = currentSegmentPos:Lerp(segmentPos, dynamicFollowSpeed)
-						segment.CFrame = CFramenew(newPos)
+					local light = segment:FindFirstChild("Glow")
+					if light and not light.Enabled then
+						light.Enabled = true
+					end
+					segment.Transparency = 0
+				end
+			end
+		end
+		
+		-- Determine update range based on performance
+		local startIdx = 1
+		local endIdx = currentLength
+		local step = 1
+		
+		-- Update segments in batches
+		if currentLength > 200 then
+			-- For very long snakes, update in rotating batches
+			local batchStart = ((segmentUpdateFrame - 1) % math.ceil(currentLength / batchSize)) * batchSize + 1
+			startIdx = math.max(1, batchStart)
+			endIdx = math.min(currentLength, batchStart + batchSize - 1)
+			
+			-- Always update first 50 segments (near head) every frame
+			if startIdx > 50 then
+				for i = 1, math.min(50, currentLength) do
+					local segment = segments[i]
+					if segment and segment.Parent then
+						updateSegmentPosition(i, segment)
 					end
 				end
 			end
 		end
 
-		-- Network optimization - only update when needed
-		if updateCounter % networkUpdateInterval == 0 then
-			lastNetworkUpdate = currentTime
-			-- This is where remote events would fire if needed
+		-- Update segments in the determined range
+		for i = startIdx, endIdx, step do
+			local segment = segments[i]
+			if segment and segment.Parent then
+				updateSegmentPosition(i, segment)
+			end
 		end
 	end)
 	table.insert(connections, heartbeatConn)
