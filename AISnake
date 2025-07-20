@@ -8,6 +8,15 @@ local Players = game:GetService("Players")
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
+-- Load the orb pickup module
+local AISnakeOrbPickup
+pcall(function()
+	-- Try multiple locations
+	AISnakeOrbPickup = require(workspace:WaitForChild("AISnakeOrbPickup", 2))
+		or require(game.ServerScriptService:FindFirstChild("AISnakeOrbPickup"))
+		or require(ReplicatedStorage:FindFirstChild("AISnakeOrbPickup"))
+end)
+
 local Vector3new = Vector3.new
 local CFramenew = CFrame.new
 local CFramelookAt = CFrame.lookAt
@@ -1108,6 +1117,11 @@ function AISnake.new(startPosition)
 	self.RootPart.Parent = self.Model
 
 	self.HeadParts = createVisualHead(self.Config, self.Model)
+	
+	-- Register head with orb pickup system
+	if AISnakeOrbPickup and self.HeadParts and self.HeadParts.head then
+		AISnakeOrbPickup.TrackHead(self.HeadParts.head)
+	end
 
 	self.Segments = {}
 	self.CurrentLength = self.Config.InitialLength
@@ -1200,6 +1214,11 @@ end
 function AISnake:Destroy()
 	if not self._active then return end
 	self._active = false
+	
+	-- Untrack head from orb pickup system
+	if AISnakeOrbPickup and self.HeadParts and self.HeadParts.head then
+		AISnakeOrbPickup.UntrackHead(self.HeadParts.head)
+	end
 
 	for i = #AISnake._activeSnakes, 1, -1 do
 		if AISnake._activeSnakes[i] == self then

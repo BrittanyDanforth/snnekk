@@ -1,0 +1,76 @@
+-- This module handles ALL orb collection for AI snakes
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local ORB_PICKUP_RADIUS = 6  -- Collection radius
+
+local AISnakeOrbPickup = {}
+
+-- Active AI heads being tracked
+local trackedHeads = {}
+
+-- Start tracking an AI snake head for orb collection
+function AISnakeOrbPickup.TrackHead(aiSnakeHead)
+	if not aiSnakeHead then return end
+	trackedHeads[aiSnakeHead] = true
+	print("🎯 AISnakeOrbPickup: Now tracking AI head:", aiSnakeHead.Name)
+end
+
+-- Stop tracking an AI snake head
+function AISnakeOrbPickup.UntrackHead(aiSnakeHead)
+	trackedHeads[aiSnakeHead] = nil
+end
+
+-- Get required modules
+local OrbSpawner
+local AISnakeModule
+pcall(function()
+	OrbSpawner = require(game.ServerScriptService:WaitForChild("OrbSpawner"))
+	AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
+end)
+
+-- Main collection loop - runs every heartbeat
+local function collectOrbsLoop()
+	for head, _ in pairs(trackedHeads) do
+		if head and head.Parent then
+			-- Check ALL parts in workspace for orbs
+			for _, obj in pairs(workspace:GetDescendants()) do
+				if obj:IsA("BasePart") and obj.Parent and 
+				   (obj.Name == "Orb" or obj.Name == "DeathOrb") then
+					local dist = (obj.Position - head.Position).Magnitude
+					if dist <= ORB_PICKUP_RADIUS then
+						-- Find the AI snake that owns this head
+						if AISnakeModule and AISnakeModule._activeSnakes then
+							for _, snake in AISnakeModule._activeSnakes do
+								if snake.HeadParts and snake.HeadParts.head == head then
+									-- Get orb value
+									local valObj = obj:FindFirstChild("Value")
+									local value = (valObj and valObj.Value) or 1
+									
+									-- Grow the snake
+									if snake.grow then
+										snake:grow(value)
+										print("🍴 AI Snake collected", obj.Name, "worth", value)
+									end
+									
+									-- Destroy the orb
+									obj:Destroy()
+									break
+								end
+							end
+						end
+					end
+				end
+			end
+		else
+			-- Remove invalid heads
+			trackedHeads[head] = nil
+		end
+	end
+end
+
+-- Start the collection loop
+RunService.Heartbeat:Connect(collectOrbsLoop)
+
+return AISnakeOrbPickup
