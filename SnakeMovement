@@ -672,55 +672,42 @@ local function initializeForCharacter(character)
 		-- Clamp turn rate to prevent overshooting
 		turnRate = math.min(turnRate, 1.0)
 		
-		-- Anti-zigzag mechanics
-		local antiZigzag = false
+		-- Slither.io style turn limiting
 		if State.lastDirection then
-			-- Check if trying to do a sharp reversal (180 degree turn)
-			local reversalDot = State.lastDirection:Dot(State.targetDirection)
-			if reversalDot < -0.5 then -- More than 120 degree turn
-				antiZigzag = true
-				-- Slow down sharp turns to prevent zigzag boosting
-				turnRate = turnRate * 0.3 -- 70% slower for reversals
-			end
-		end
-		
-		-- For mobile, use more direct turning when close to target
-		if _G.IsMobile then
-			-- Calculate angle difference
-			local dot = State.currentDirection:Dot(State.targetDirection)
+			-- Check if trying to do a sharp reversal
+			local reversalDot = State.currentDirection:Dot(State.targetDirection)
 			
-			-- If very close to target direction and not zigzagging, snap to it
-			if dot > 0.98 and not antiZigzag then
-				State.currentDirection = State.targetDirection
-			else
-				-- Otherwise smooth interpolation
-				local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
-				if newDirection.Magnitude > 0.001 then
-					State.currentDirection = newDirection.Unit
+			-- If trying to reverse direction (more than 90 degrees), limit it
+			if reversalDot < -0.2 then
+				-- Calculate the maximum allowed turn (perpendicular to current direction)
+				local rightVector = Vector3.new(-State.currentDirection.Z, 0, State.currentDirection.X)
+				local leftVector = Vector3.new(State.currentDirection.Z, 0, -State.currentDirection.X)
+				
+				-- Choose the direction closer to where player wants to go
+				local rightDot = rightVector:Dot(State.targetDirection)
+				local leftDot = leftVector:Dot(State.targetDirection)
+				
+				-- Set target to the perpendicular direction (90 degree max turn)
+				if rightDot > leftDot then
+					State.targetDirection = rightVector
+				else
+					State.targetDirection = leftVector
 				end
 			end
-		else
-			-- PC uses normal lerping with anti-zigzag
-			local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
-			if newDirection.Magnitude > 0.001 then
-				State.currentDirection = newDirection.Unit
-			end
 		end
 		
-		-- Store last direction for anti-zigzag
+		-- Normal turning (no speed penalties)
+		local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
+		if newDirection.Magnitude > 0.001 then
+			State.currentDirection = newDirection.Unit
+		end
+		
+		-- Store last direction
 		State.lastDirection = State.currentDirection
 
 		-- BUTTERY smooth speed changes
 		local speedRate = 15 * dt -- Consistent smooth acceleration
-		
-		-- Apply speed penalty for zigzagging
-		local actualTargetSpeed = State.targetSpeed
-		if antiZigzag then
-			-- Slow down during sharp turns
-			actualTargetSpeed = actualTargetSpeed * 0.7 -- 30% speed penalty
-		end
-		
-		State.smoothSpeed = State.smoothSpeed + (actualTargetSpeed - State.smoothSpeed) * speedRate
+		State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
 		-- Apply movement DIRECTLY for proper speed
 		local moveDistance = State.smoothSpeed * dt
