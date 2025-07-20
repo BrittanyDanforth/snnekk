@@ -1631,6 +1631,55 @@ local function createMainShop()
 	coinAmount.Font = SHOP_CONFIG.FONTS.PRICE
 	coinAmount.Parent = currencyFrame
 
+	-- Inventory button
+	local inventoryBtn = Instance.new("TextButton")
+	inventoryBtn.Name = "InventoryButton"
+	inventoryBtn.Size = UDim2.new(0.08, 0, 0.7, 0)
+	inventoryBtn.Position = UDim2.new(0.85, 0, 0.15, 0)
+	inventoryBtn.Text = "📦"
+	inventoryBtn.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	inventoryBtn.TextScaled = true
+	inventoryBtn.Font = SHOP_CONFIG.FONTS.BUTTON
+	inventoryBtn.Parent = header
+	
+	createCorner(inventoryBtn, 8)
+	createGlassPanel(inventoryBtn, 0.9)
+	
+	-- Add hover effect and tooltip
+	local tooltip = Instance.new("TextLabel")
+	tooltip.Name = "Tooltip"
+	tooltip.Size = UDim2.new(0.12, 0, 0.5, 0)
+	tooltip.Position = UDim2.new(-0.02, 0, 1.2, 0)
+	tooltip.BackgroundColor3 = SHOP_CONFIG.COLORS.SECONDARY
+	tooltip.Text = "Inventory"
+	tooltip.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	tooltip.TextScaled = true
+	tooltip.Font = SHOP_CONFIG.FONTS.BODY
+	tooltip.Visible = false
+	tooltip.Parent = inventoryBtn
+	
+	createCorner(tooltip, 6)
+	createGlassPanel(tooltip, 0.8)
+	
+	inventoryBtn.MouseEnter:Connect(function()
+		TweenService:Create(inventoryBtn, TweenInfo.new(0.2), {
+			BackgroundColor3 = SHOP_CONFIG.COLORS.ACCENT,
+			BackgroundTransparency = 0.3
+		}):Play()
+		tooltip.Visible = true
+		TweenService:Create(tooltip, TweenInfo.new(0.2), {
+			BackgroundTransparency = 0
+		}):Play()
+	end)
+	
+	inventoryBtn.MouseLeave:Connect(function()
+		TweenService:Create(inventoryBtn, TweenInfo.new(0.2), {
+			BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY,
+			BackgroundTransparency = 0.5
+		}):Play()
+		tooltip.Visible = false
+	end)
+
 	-- Modern close button
 	local closeBtn = Instance.new("TextButton")
 	closeBtn.Name = "CloseButton"
@@ -1882,6 +1931,7 @@ local function createMainShop()
 		favoriteBtn = favoriteBtn,
 		coinAmount = coinAmount,
 		closeBtn = closeBtn,
+		inventoryBtn = inventoryBtn,
 		blur = blur,
 	}
 
@@ -2201,6 +2251,14 @@ local function createSkinCard(skinName, index)
 
 	createCorner(card, 16)
 	createGlassPanel(card, 0.75)
+	
+	-- Card stroke for equipped state
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Name = "CardStroke"
+	cardStroke.Thickness = 2
+	cardStroke.Transparency = 0.5
+	cardStroke.Color = SHOP_CONFIG.COLORS.PRIMARY
+	cardStroke.Parent = card
 
 	-- Glow effect
 	local glow = Instance.new("ImageLabel")
@@ -2238,7 +2296,13 @@ local function createSkinCard(skinName, index)
 	local colorPreview = Instance.new("Frame")
 	colorPreview.Size = UDim2.new(0.65, 0, 0.65, 0)
 	colorPreview.Position = UDim2.new(0.175, 0, 0.175, 0)
-	colorPreview.BackgroundColor3 = SnakeSkinsData[skinName] and SnakeSkinsData[skinName].HeadColor or Color3.fromRGB(180, 0, 255)
+	-- Safely get the color, checking if skin data exists
+	local skinData = SnakeSkinsData[skinName]
+	if skinData and skinData.HeadColor then
+		colorPreview.BackgroundColor3 = skinData.HeadColor
+	else
+		colorPreview.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
+	end
 	colorPreview.Parent = miniPreview
 
 	createCorner(colorPreview, 50)
@@ -2278,6 +2342,10 @@ local function createSkinCard(skinName, index)
 	elseif isOwned then
 		statusLabel.Text = "✓ OWNED"
 		statusLabel.TextColor3 = SHOP_CONFIG.COLORS.ACCENT
+		-- Make stroke less prominent for owned but not equipped
+		if cardStroke then
+			cardStroke.Transparency = 0.8
+		end
 	else
 		-- Show both coin and Robux price if available
 		if skinData.robux then
@@ -2798,6 +2866,16 @@ function ShopUI.init()
 	-- Connect buttons
 	ShopUI.uiElements.closeBtn.MouseButton1Click:Connect(function()
 		ShopUI.close()
+	end)
+	
+	ShopUI.uiElements.inventoryBtn.MouseButton1Click:Connect(function()
+		-- Open inventory
+		local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
+		if InventoryUI then
+			ShopUI.close()
+			task.wait(0.2)
+			InventoryUI.open()
+		end
 	end)
 
 	ShopUI.uiElements.purchaseBtn.MouseButton1Click:Connect(function()
