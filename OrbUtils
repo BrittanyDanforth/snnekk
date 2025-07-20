@@ -204,7 +204,6 @@ function OrbUtils.spawnOrbAt(position, value)
 	local orb = Instance.new("Part")
 	orb.Name = "Orb"  -- ALL orbs are just "Orb" like in the old version
 	orb.Size = Vector3.new(1.5, 1.5, 1.5)
-	orb.Transparency = 0  -- Ensure orb is visible
 	orb.Shape = Enum.PartType.Ball
 	orb.Anchored = true
 	orb.CanCollide = false
