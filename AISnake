@@ -672,12 +672,12 @@ function AISnake:findNearbyThreats()
 			local lengthDiff = enemyLength - self.CurrentLength
 			local isThreat = false
 
-			-- MORE SELECTIVE threat detection
-			if lengthDiff > 30 or (dist < 15 and lengthDiff > 10) then
+			-- More balanced threat detection
+			if lengthDiff > 20 or (dist < 20 and lengthDiff > 5) then
 				isThreat = true
 			end
 
-			if not isThreat and dist < 25 and lengthDiff > 20 then
+			if not isThreat and dist < 30 and lengthDiff > 15 then
 				local enemyVel = Vector3new(0, 0, 0)
 				if entity.type == "PLAYER_HEAD" then
 					enemyVel = getPlayerVelocity(entity.owner)
@@ -840,23 +840,23 @@ function AISnake:_determineAction()
 	if #threats > 0 then
 		local closestThreat = threats[1]
 
-		-- MUCH more selective fleeing
-		if closestThreat.distance < 12 and closestThreat.lengthDiff > 15 then
+		-- More balanced fleeing decisions
+		if closestThreat.distance < 20 and closestThreat.lengthDiff > 10 then
 			shouldFlee = true
 			fleeReason = "immediate_danger"
-		elseif closestThreat.lengthDiff > 40 and closestThreat.distance < 25 then
+		elseif closestThreat.lengthDiff > 30 and closestThreat.distance < 35 then
 			shouldFlee = true
 			fleeReason = "giant_enemy"
-		elseif #threats >= 4 and closestThreat.distance < 15 then
+		elseif #threats >= 3 and closestThreat.distance < 25 then
 			shouldFlee = true
 			fleeReason = "surrounded"
-		elseif p.Type == "Coward" and closestThreat.lengthDiff > 20 and closestThreat.distance < 30 then
+		elseif p.Type == "Coward" and closestThreat.lengthDiff > 15 and closestThreat.distance < 40 then
 			shouldFlee = true
 			fleeReason = "coward_instinct"
 		end
 
-		-- Aggressive types are braver
-		if shouldFlee and (p.Type == "Aggressor" or p.Type == "Hunter") and closestThreat.lengthDiff < 25 then
+		-- Aggressive types are braver but still cautious
+		if shouldFlee and (p.Type == "Aggressor" or p.Type == "Hunter") and closestThreat.lengthDiff < 15 then
 			shouldFlee = false
 		end
 	end
