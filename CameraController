@@ -3,19 +3,60 @@
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
 
--- Detect mobile
-local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+-- Better mobile detection
+local function isMobileDevice()
+	-- Multiple detection methods for reliability
+	if UserInputService.TouchEnabled then
+		return true
+	end
+	
+	-- Check platform
+	if GuiService:IsTenFootInterface() then
+		return false -- Console
+	end
+	
+	-- Check viewport size
+	local viewport = camera.ViewportSize
+	local aspectRatio = viewport.X / viewport.Y
+	
+	-- Mobile devices typically have portrait or narrow landscape ratios
+	if viewport.X < 1024 or (aspectRatio < 1.5 and viewport.Y > viewport.X) then
+		return true
+	end
+	
+	-- Check for gyroscope (mobile-specific)
+	if UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled then
+		return true
+	end
+	
+	return false
+end
+
+local isMobile = isMobileDevice()
 
 -- Mobile-optimized settings
-local HEIGHT = isMobile and 60 or 50  -- Higher on mobile for better view
-local SMOOTHNESS = isMobile and 0.08 or 0.05  -- Smoother on mobile
-local FOV = isMobile and 80 or 70  -- Wider FOV on mobile
+local HEIGHT = isMobile and 65 or 50  -- Higher on mobile for better view
+local SMOOTHNESS = isMobile and 0.1 or 0.05  -- Smoother on mobile
+local FOV = isMobile and 85 or 70  -- Wider FOV on mobile
+
+-- Additional mobile settings
+local MOBILE_HEIGHT_MULTIPLIER = 1.2  -- Extra height based on snake size
+local MOBILE_DYNAMIC_FOV = true  -- Adjust FOV based on snake speed
 
 camera.CameraType = Enum.CameraType.Scriptable
+
+-- Update mobile status on screen size change
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+	isMobile = isMobileDevice()
+	HEIGHT = isMobile and 65 or 50
+	SMOOTHNESS = isMobile and 0.1 or 0.05
+	FOV = isMobile and 85 or 70
+end)
 
 RunService.RenderStepped:Connect(function()
 	local character = player.Character
@@ -24,17 +65,34 @@ RunService.RenderStepped:Connect(function()
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 
-	-- Use mobile camera update if available
-	if _G.MobileControls and _G.MobileControls.UpdateCamera then
-		_G.MobileControls.UpdateCamera(rootPart)
-	else
-		-- Default camera behavior
-		local targetCFrame = CFrame.new(
-			rootPart.Position + Vector3.new(0, HEIGHT, 0),
-			rootPart.Position
-		)
-
-		camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
-		camera.FieldOfView = FOV
+	-- Dynamic camera adjustments for mobile
+	local currentHeight = HEIGHT
+	local currentFOV = FOV
+	
+	if isMobile then
+		-- Adjust height based on snake length if available
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			local snake = _G.PlayerSnakes[player]
+			local length = snake.currentLength or 10
+			
+			-- Scale height with snake size on mobile
+			if length > 100 then
+				currentHeight = HEIGHT * (1 + math.min((length - 100) / 1000, 0.5))
+			end
+			
+			-- Dynamic FOV based on boost
+			if MOBILE_DYNAMIC_FOV and snake.isBoosting then
+				currentFOV = FOV + 10  -- Wider FOV when boosting
+			end
+		end
 	end
+
+	-- Smooth camera position
+	local targetCFrame = CFrame.new(
+		rootPart.Position + Vector3.new(0, currentHeight, 0),
+		rootPart.Position
+	)
+
+	camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
+	camera.FieldOfView = camera.FieldOfView + (currentFOV - camera.FieldOfView) * 0.1
 end)

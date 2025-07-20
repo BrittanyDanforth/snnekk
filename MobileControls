@@ -10,321 +10,109 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- 📱 MOBILE DETECTION
-local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
-local isTablet = isMobile and workspace.CurrentCamera.ViewportSize.X > 600
-
--- 🚫 DISABLE DEFAULT MOBILE CONTROLS
-if isMobile then
-	-- Disable default Roblox mobile controls
-	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchGui, false)
-	UserInputService.ModalEnabled = false
-end
-
--- 📐 MOBILE CONFIGURATION
-local MobileConfig = {
-	-- Joystick settings
-	JoystickSize = isTablet and 150 or 120,
-	JoystickThumbSize = isTablet and 60 or 50,
-	JoystickTransparency = 0.3,
-	JoystickPosition = UDim2.new(0, 20, 1, -170),
-	
-	-- Boost button settings
-	BoostButtonSize = isTablet and 100 or 80,
-	BoostButtonPosition = UDim2.new(1, -120, 1, -150),
-	
-	-- UI scaling
-	UIScale = isTablet and 1 or 0.85,
-	
-	-- Sensitivity
-	TouchSensitivity = 1.2,
-	DeadZone = 0.15,
-}
-
--- 🎯 CREATE MOBILE UI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SnakeMobileControls"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = playerGui
-
--- 🕹️ CUSTOM JOYSTICK
-local joystickFrame = Instance.new("Frame")
-joystickFrame.Name = "Joystick"
-joystickFrame.Size = UDim2.new(0, MobileConfig.JoystickSize, 0, MobileConfig.JoystickSize)
-joystickFrame.Position = MobileConfig.JoystickPosition
-joystickFrame.BackgroundTransparency = MobileConfig.JoystickTransparency
-joystickFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-joystickFrame.BorderSizePixel = 0
-joystickFrame.Parent = screenGui
-
--- Make joystick circular
-local joystickCorner = Instance.new("UICorner")
-joystickCorner.CornerRadius = UDim.new(0.5, 0)
-joystickCorner.Parent = joystickFrame
-
--- Joystick border
-local joystickBorder = Instance.new("UIStroke")
-joystickBorder.Color = Color3.fromRGB(100, 200, 100)
-joystickBorder.Thickness = 3
-joystickBorder.Transparency = 0.5
-joystickBorder.Parent = joystickFrame
-
--- Joystick thumb
-local joystickThumb = Instance.new("Frame")
-joystickThumb.Name = "Thumb"
-joystickThumb.Size = UDim2.new(0, MobileConfig.JoystickThumbSize, 0, MobileConfig.JoystickThumbSize)
-joystickThumb.Position = UDim2.new(0.5, -MobileConfig.JoystickThumbSize/2, 0.5, -MobileConfig.JoystickThumbSize/2)
-joystickThumb.BackgroundColor3 = Color3.fromRGB(150, 255, 150)
-joystickThumb.BorderSizePixel = 0
-joystickThumb.Parent = joystickFrame
-
-local thumbCorner = Instance.new("UICorner")
-thumbCorner.CornerRadius = UDim.new(0.5, 0)
-thumbCorner.Parent = joystickThumb
-
--- 🚀 BOOST BUTTON
-local boostButton = Instance.new("TextButton")
-boostButton.Name = "BoostButton"
-boostButton.Size = UDim2.new(0, MobileConfig.BoostButtonSize, 0, MobileConfig.BoostButtonSize)
-boostButton.Position = MobileConfig.BoostButtonPosition
-boostButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-boostButton.BorderSizePixel = 0
-boostButton.Text = "BOOST"
-boostButton.TextColor3 = Color3.new(1, 1, 1)
-boostButton.Font = Enum.Font.SourceSansBold
-boostButton.TextScaled = true
-boostButton.Parent = screenGui
-
-local boostCorner = Instance.new("UICorner")
-boostCorner.CornerRadius = UDim.new(0.3, 0)
-boostCorner.Parent = boostButton
-
-local boostStroke = Instance.new("UIStroke")
-boostStroke.Color = Color3.fromRGB(200, 50, 50)
-boostStroke.Thickness = 3
-boostStroke.Parent = boostButton
-
--- 📊 MOBILE-OPTIMIZED CAMERA
-local CameraController = {}
-CameraController.Height = isMobile and 60 or 50  -- Higher view on mobile
-CameraController.Smoothness = 0.08  -- Smoother for mobile
-CameraController.FieldOfView = isMobile and 80 or 70  -- Wider FOV on mobile
-
-function CameraController:Update(rootPart)
-	if not rootPart then return end
-	
-	local camera = workspace.CurrentCamera
-	camera.CameraType = Enum.CameraType.Scriptable
-	
-	local targetCFrame = CFrame.new(
-		rootPart.Position + Vector3.new(0, self.Height, 0),
-		rootPart.Position
-	)
-	
-	camera.CFrame = camera.CFrame:Lerp(targetCFrame, self.Smoothness)
-	camera.FieldOfView = self.FieldOfView
-end
-
--- 🎮 JOYSTICK CONTROLLER
-local JoystickController = {
-	active = false,
-	inputVector = Vector2.new(0, 0),
-	touchId = nil,
-}
-
-function JoystickController:UpdateVisual()
-	local magnitude = math.min(self.inputVector.Magnitude, 1)
-	local direction = self.inputVector.Unit
-	
-	if magnitude < MobileConfig.DeadZone then
-		magnitude = 0
-		direction = Vector2.new(0, 0)
+-- 📱 BETTER MOBILE DETECTION
+local function isMobileDevice()
+	-- Multiple detection methods for reliability
+	if UserInputService.TouchEnabled then
+		return true
 	end
 	
-	local offset = direction * magnitude * (MobileConfig.JoystickSize / 2 - MobileConfig.JoystickThumbSize / 2)
-	
-	TweenService:Create(joystickThumb, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
-		Position = UDim2.new(0.5, offset.X - MobileConfig.JoystickThumbSize/2, 0.5, offset.Y - MobileConfig.JoystickThumbSize/2)
-	}):Play()
-end
-
-function JoystickController:Reset()
-	self.active = false
-	self.inputVector = Vector2.new(0, 0)
-	self.touchId = nil
-	self:UpdateVisual()
-end
-
--- 🎯 MOBILE MOVEMENT INTEGRATION
-local MobileMovement = {
-	moveVector = Vector3.new(0, 0, 0),
-	isBoosting = false,
-}
-
-function MobileMovement:GetMoveVector()
-	if not JoystickController.active then
-		return Vector3.new(0, 0, 0)
+	-- Check platform
+	if GuiService:IsTenFootInterface() then
+		return false -- Console
 	end
 	
-	local input = JoystickController.inputVector
-	if input.Magnitude < MobileConfig.DeadZone then
-		return Vector3.new(0, 0, 0)
+	-- Check viewport size
+	local viewport = workspace.CurrentCamera.ViewportSize
+	local aspectRatio = viewport.X / viewport.Y
+	
+	-- Mobile devices typically have portrait or narrow landscape ratios
+	if viewport.X < 1024 or (aspectRatio < 1.5 and viewport.Y > viewport.X) then
+		return true
 	end
 	
-	-- Convert 2D joystick input to 3D movement
-	local moveX = input.X * MobileConfig.TouchSensitivity
-	local moveZ = -input.Y * MobileConfig.TouchSensitivity  -- Negative for correct direction
-	
-	return Vector3.new(moveX, 0, moveZ).Unit
-end
-
--- 📱 TOUCH HANDLERS
-local function handleTouch(input, gameProcessed)
-	if gameProcessed then return end
-	
-	local touchPos = input.Position
-	local joystickPos = joystickFrame.AbsolutePosition
-	local joystickSize = joystickFrame.AbsoluteSize
-	
-	-- Check if touch is within joystick
-	local relativePos = touchPos - joystickPos - joystickSize / 2
-	local distance = relativePos.Magnitude
-	
-	if distance <= joystickSize.X / 2 then
-		JoystickController.active = true
-		JoystickController.touchId = input.UserInputType
-		
-		local normalizedPos = relativePos / (joystickSize.X / 2)
-		JoystickController.inputVector = Vector2.new(normalizedPos.X, normalizedPos.Y)
-		JoystickController:UpdateVisual()
-		
+	-- Check for gyroscope (mobile-specific)
+	if UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled then
 		return true
 	end
 	
 	return false
 end
 
--- Input handlers
-UserInputService.TouchStarted:Connect(function(input, gameProcessed)
-	if not isMobile then return end
-	handleTouch(input, gameProcessed)
-end)
+-- Exit if not mobile
+if not isMobileDevice() then
+	print("Not a mobile device, MobileControls disabled")
+	return
+end
 
-UserInputService.TouchMoved:Connect(function(input, gameProcessed)
-	if not isMobile then return end
-	if JoystickController.touchId == input.UserInputType then
-		handleTouch(input, gameProcessed)
+print("Mobile device detected! Disabling default controls...")
+
+-- 🚫 DISABLE DEFAULT MOBILE CONTROLS
+pcall(function()
+	-- Disable all default mobile UI
+	StarterGui:SetCore("TouchGui", false)
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchGui, false)
+	UserInputService.ModalEnabled = false
+	
+	-- Disable default movement
+	local playerModule = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
+	if playerModule then
+		local controls = playerModule:GetControls()
+		if controls then
+			controls:Disable()
+		end
 	end
 end)
 
-UserInputService.TouchEnded:Connect(function(input)
-	if not isMobile then return end
-	if JoystickController.touchId == input.UserInputType then
-		JoystickController:Reset()
-	end
-end)
-
--- Boost button handlers
-boostButton.TouchLongPress:Connect(function()
-	MobileMovement.isBoosting = true
-end)
-
-boostButton.TouchEnded:Connect(function()
-	MobileMovement.isBoosting = false
-end)
-
--- Alternative boost handling for better responsiveness
-local boostActive = false
-boostButton.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		boostActive = true
-		MobileMovement.isBoosting = true
-		boostButton.BackgroundColor3 = Color3.fromRGB(255, 150, 150)
-	end
-end)
-
-boostButton.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		boostActive = false
-		MobileMovement.isBoosting = false
-		boostButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-	end
-end)
-
--- 🔄 EXPORT FOR SNAKE MOVEMENT
-_G.MobileControls = {
-	Enabled = isMobile,
-	GetMoveVector = function() return MobileMovement:GetMoveVector() end,
-	IsBoosting = function() return MobileMovement.isBoosting end,
-	UpdateCamera = function(rootPart) CameraController:Update(rootPart) end,
+-- 📐 MOBILE CONFIGURATION
+local MobileConfig = {
+	-- Touch sensitivity
+	TouchSensitivity = 1.2,
+	DeadZone = 0.1,
+	
+	-- Camera settings
+	CameraDistance = 30,
+	CameraHeight = 25,
+	CameraSmoothing = 0.85,
 }
 
--- 📱 SCREEN ORIENTATION HANDLER
-local function updateUIForOrientation()
-	local viewport = workspace.CurrentCamera.ViewportSize
-	local isLandscape = viewport.X > viewport.Y
-	
-	if isLandscape then
-		-- Landscape adjustments
-		joystickFrame.Position = UDim2.new(0, 20, 1, -150)
-		boostButton.Position = UDim2.new(1, -120, 1, -130)
-	else
-		-- Portrait adjustments
-		joystickFrame.Position = UDim2.new(0, 15, 1, -200)
-		boostButton.Position = UDim2.new(1, -100, 1, -180)
-	end
+-- Export config for other scripts
+_G.MobileConfig = MobileConfig
+_G.IsMobile = true
+
+-- 🎯 MOBILE OPTIMIZATIONS
+-- Reduce graphics for better performance
+if workspace:FindFirstChild("Terrain") then
+	workspace.Terrain.WaterTransparency = 0.5
+	workspace.Terrain.WaterWaveSize = 0.1
+	workspace.Terrain.WaterWaveSpeed = 5
 end
 
--- Update on orientation change
-workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateUIForOrientation)
-updateUIForOrientation()
+-- Set mobile graphics mode
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level04
+settings().Rendering.EnableFRM = true
 
--- 🎯 MOBILE HUD ELEMENTS
-local function createMobileHUD()
-	-- Mini map indicator (optional)
-	local miniMapFrame = Instance.new("Frame")
-	miniMapFrame.Size = UDim2.new(0, 100, 0, 100)
-	miniMapFrame.Position = UDim2.new(1, -110, 0, 10)
-	miniMapFrame.BackgroundTransparency = 0.5
-	miniMapFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-	miniMapFrame.BorderSizePixel = 2
-	miniMapFrame.BorderColor3 = Color3.fromRGB(100, 200, 100)
-	miniMapFrame.Visible = false  -- Enable if needed
-	miniMapFrame.Parent = screenGui
+-- 📱 MOBILE INPUT HANDLER
+local MobileInput = {
+	active = false,
+	touchPos = Vector2.new(),
+	direction = Vector2.new(),
+}
+
+-- Export for snake movement
+_G.MobileInput = MobileInput
+
+-- Handle character spawning
+player.CharacterAdded:Connect(function(character)
+	-- Ensure mobile settings persist
+	_G.IsMobile = true
 	
-	-- FPS counter for mobile optimization
-	local fpsLabel = Instance.new("TextLabel")
-	fpsLabel.Size = UDim2.new(0, 60, 0, 30)
-	fpsLabel.Position = UDim2.new(0, 10, 0, 10)
-	fpsLabel.BackgroundTransparency = 0.5
-	fpsLabel.BackgroundColor3 = Color3.new(0, 0, 0)
-	fpsLabel.TextColor3 = Color3.new(1, 1, 1)
-	fpsLabel.Font = Enum.Font.SourceSans
-	fpsLabel.TextScaled = true
-	fpsLabel.Text = "FPS: 60"
-	fpsLabel.Parent = screenGui
-	
-	-- Update FPS counter
-	local lastTime = tick()
-	local frameCount = 0
-	
-	RunService.Heartbeat:Connect(function()
-		frameCount = frameCount + 1
-		local currentTime = tick()
-		
-		if currentTime - lastTime >= 1 then
-			fpsLabel.Text = "FPS: " .. math.floor(frameCount / (currentTime - lastTime))
-			frameCount = 0
-			lastTime = currentTime
-		end
+	-- Re-disable default controls
+	task.wait(0.1)
+	pcall(function()
+		StarterGui:SetCore("TouchGui", false)
+		UserInputService.ModalEnabled = false
 	end)
-end
+end)
 
-if isMobile then
-	createMobileHUD()
-end
-
-print("📱 Mobile Controls Initialized - Device:", isMobile and "Mobile" or "Desktop")
-
-return _G.MobileControls
+print("Mobile controls initialized! Touch anywhere to move, use boost button to speed up.")

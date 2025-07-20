@@ -4,33 +4,98 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- 🔍 BETTER MOBILE DETECTION
+local function isMobileDevice()
+	-- Multiple detection methods for reliability
+	if UserInputService.TouchEnabled then
+		return true
+	end
+	
+	-- Check platform
+	if GuiService:IsTenFootInterface() then
+		return false -- Console
+	end
+	
+	-- Check viewport size (mobile devices typically have specific aspect ratios)
+	local viewport = workspace.CurrentCamera.ViewportSize
+	local aspectRatio = viewport.X / viewport.Y
+	
+	-- Mobile devices typically have portrait or narrow landscape ratios
+	if viewport.X < 1024 or (aspectRatio < 1.5 and viewport.Y > viewport.X) then
+		return true
+	end
+	
+	-- Check for gyroscope (mobile-specific)
+	if UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled then
+		return true
+	end
+	
+	return false
+end
+
 -- Only run on mobile
-if not (UserInputService.TouchEnabled and not UserInputService.MouseEnabled) then
+if not isMobileDevice() then
+	print("Not a mobile device, MobileHUD disabled")
 	return
 end
+
+print("Mobile device detected! Initializing MobileHUD...")
+
+-- 🚫 DISABLE DEFAULT MOBILE CONTROLS
+pcall(function()
+	StarterGui:SetCore("TouchGui", false)
+	UserInputService.ModalEnabled = false
+end)
 
 -- Create HUD
 local hudGui = Instance.new("ScreenGui")
 hudGui.Name = "MobileHUD"
 hudGui.ResetOnSpawn = false
 hudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+hudGui.IgnoreGuiInset = true -- Ensure full screen usage
 hudGui.Parent = playerGui
 
--- 📊 SCORE DISPLAY
+-- 🚀 BOOST BUTTON (Primary mobile control)
+local boostButton = Instance.new("ImageButton")
+boostButton.Name = "BoostButton"
+boostButton.Size = UDim2.new(0, 100, 0, 100)
+boostButton.Position = UDim2.new(1, -120, 1, -120)
+boostButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+boostButton.BackgroundTransparency = 0.3
+boostButton.Image = "rbxassetid://6034983856" -- Speed boost icon
+boostButton.ImageTransparency = 0.2
+boostButton.Parent = hudGui
+
+local boostCorner = Instance.new("UICorner")
+boostCorner.CornerRadius = UDim.new(0.5, 0)
+boostCorner.Parent = boostButton
+
+local boostStroke = Instance.new("UIStroke")
+boostStroke.Thickness = 3
+boostStroke.Color = Color3.new(1, 1, 1)
+boostStroke.Transparency = 0.5
+boostStroke.Parent = boostButton
+
+-- Boost visual feedback
+local isBoostPressed = false
+
+-- 📊 SIMPLE SCORE DISPLAY
 local scoreFrame = Instance.new("Frame")
-scoreFrame.Size = UDim2.new(0, 200, 0, 50)
-scoreFrame.Position = UDim2.new(0.5, -100, 0, 10)
+scoreFrame.Size = UDim2.new(0, 150, 0, 40)
+scoreFrame.Position = UDim2.new(0.5, -75, 0, 10)
 scoreFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-scoreFrame.BackgroundTransparency = 0.3
+scoreFrame.BackgroundTransparency = 0.5
 scoreFrame.BorderSizePixel = 0
 scoreFrame.Parent = hudGui
 
 local scoreCorner = Instance.new("UICorner")
-scoreCorner.CornerRadius = UDim.new(0, 12)
+scoreCorner.CornerRadius = UDim.new(0, 20)
 scoreCorner.Parent = scoreFrame
 
 local scoreLabel = Instance.new("TextLabel")
@@ -42,98 +107,54 @@ scoreLabel.Font = Enum.Font.SourceSansBold
 scoreLabel.TextScaled = true
 scoreLabel.Parent = scoreFrame
 
--- 🏆 LEADERBOARD (Compact for mobile)
-local leaderFrame = Instance.new("Frame")
-leaderFrame.Size = UDim2.new(0, 150, 0, 200)
-leaderFrame.Position = UDim2.new(1, -160, 0, 60)
-leaderFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-leaderFrame.BackgroundTransparency = 0.4
-leaderFrame.BorderSizePixel = 0
-leaderFrame.Parent = hudGui
+-- 🎮 BOOST BUTTON FUNCTIONALITY
+boostButton.MouseButton1Down:Connect(function()
+	if not isBoostPressed then
+		isBoostPressed = true
+		
+		-- Visual feedback
+		boostButton.BackgroundColor3 = Color3.fromRGB(255, 200, 100)
+		boostStroke.Color = Color3.fromRGB(255, 255, 100)
+		boostStroke.Thickness = 5
+		
+		-- Send boost signal
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			_G.PlayerSnakes[player].isBoosting = true
+		end
+		
+		-- Haptic feedback if available
+		if UserInputService.IsVibrationSupported then
+			UserInputService:SetMotor(Enum.VibrationMotor.Small, 0.5)
+			task.wait(0.1)
+			UserInputService:SetMotor(Enum.VibrationMotor.Small, 0)
+		end
+	end
+end)
 
-local leaderCorner = Instance.new("UICorner")
-leaderCorner.CornerRadius = UDim.new(0, 8)
-leaderCorner.Parent = leaderFrame
+boostButton.MouseButton1Up:Connect(function()
+	if isBoostPressed then
+		isBoostPressed = false
+		
+		-- Reset visual
+		boostButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+		boostStroke.Color = Color3.new(1, 1, 1)
+		boostStroke.Thickness = 3
+		
+		-- Stop boost
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			_G.PlayerSnakes[player].isBoosting = false
+		end
+	end
+end)
 
-local leaderTitle = Instance.new("TextLabel")
-leaderTitle.Size = UDim2.new(1, 0, 0, 30)
-leaderTitle.BackgroundTransparency = 1
-leaderTitle.Text = "Top Snakes"
-leaderTitle.TextColor3 = Color3.new(1, 1, 1)
-leaderTitle.Font = Enum.Font.SourceSansBold
-leaderTitle.TextScaled = true
-leaderTitle.Parent = leaderFrame
+-- Handle touch end outside button
+UserInputService.TouchEnded:Connect(function()
+	if isBoostPressed then
+		boostButton.MouseButton1Up:Fire()
+	end
+end)
 
-local leaderList = Instance.new("Frame")
-leaderList.Size = UDim2.new(1, -10, 1, -35)
-leaderList.Position = UDim2.new(0, 5, 0, 35)
-leaderList.BackgroundTransparency = 1
-leaderList.Parent = leaderFrame
-
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 5)
-listLayout.Parent = leaderList
-
--- 🎮 MINI MAP (Optional)
-local miniMapFrame = Instance.new("Frame")
-miniMapFrame.Size = UDim2.new(0, 120, 0, 120)
-miniMapFrame.Position = UDim2.new(0, 10, 0, 70)
-miniMapFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-miniMapFrame.BackgroundTransparency = 0.5
-miniMapFrame.BorderSizePixel = 2
-miniMapFrame.BorderColor3 = Color3.fromRGB(100, 200, 100)
-miniMapFrame.Visible = false  -- Disabled by default for performance
-miniMapFrame.Parent = hudGui
-
--- 🔔 NOTIFICATION SYSTEM
-local notificationFrame = Instance.new("Frame")
-notificationFrame.Size = UDim2.new(0, 300, 0, 0)
-notificationFrame.Position = UDim2.new(0.5, -150, 0.2, 0)
-notificationFrame.BackgroundTransparency = 1
-notificationFrame.Parent = hudGui
-
-local function showNotification(text, color)
-	local notification = Instance.new("Frame")
-	notification.Size = UDim2.new(1, 0, 0, 40)
-	notification.BackgroundColor3 = color or Color3.fromRGB(100, 200, 100)
-	notification.BackgroundTransparency = 0.2
-	notification.BorderSizePixel = 0
-	notification.Parent = notificationFrame
-	
-	local notifCorner = Instance.new("UICorner")
-	notifCorner.CornerRadius = UDim.new(0, 8)
-	notifCorner.Parent = notification
-	
-	local notifText = Instance.new("TextLabel")
-	notifText.Size = UDim2.new(1, 0, 1, 0)
-	notifText.BackgroundTransparency = 1
-	notifText.Text = text
-	notifText.TextColor3 = Color3.new(1, 1, 1)
-	notifText.Font = Enum.Font.SourceSansBold
-	notifText.TextScaled = true
-	notifText.Parent = notification
-	
-	-- Animate in
-	notification.Position = UDim2.new(0, 0, 0, -50)
-	local tweenIn = TweenService:Create(notification, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
-		Position = UDim2.new(0, 0, 0, 0)
-	})
-	tweenIn:Play()
-	
-	-- Fade out after delay
-	task.wait(2)
-	local tweenOut = TweenService:Create(notification, TweenInfo.new(0.3), {
-		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0, 50)
-	})
-	tweenOut:Play()
-	tweenOut.Completed:Connect(function()
-		notification:Destroy()
-	end)
-end
-
--- 📈 UPDATE FUNCTIONS
+-- 📈 UPDATE SCORE
 local function updateScore()
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 		local snake = _G.PlayerSnakes[player]
@@ -153,91 +174,28 @@ local function updateScore()
 	end
 end
 
-local function updateLeaderboard()
-	-- Clear old entries
-	for _, child in pairs(leaderList:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
-	end
-	
-	-- Mock leaderboard data (replace with actual data)
-	local leaders = {
-		{name = "BigSnake", length = 2500},
-		{name = "ProPlayer", length = 1800},
-		{name = "You", length = 500},
-		{name = "Noob123", length = 200},
-		{name = "Beginner", length = 50},
-	}
-	
-	for i, data in ipairs(leaders) do
-		local entry = Instance.new("Frame")
-		entry.Size = UDim2.new(1, 0, 0, 25)
-		entry.BackgroundTransparency = 1
-		entry.LayoutOrder = i
-		entry.Parent = leaderList
-		
-		local rankLabel = Instance.new("TextLabel")
-		rankLabel.Size = UDim2.new(0.2, 0, 1, 0)
-		rankLabel.BackgroundTransparency = 1
-		rankLabel.Text = "#" .. i
-		rankLabel.TextColor3 = Color3.new(1, 1, 1)
-		rankLabel.Font = Enum.Font.SourceSans
-		rankLabel.TextScaled = true
-		rankLabel.Parent = entry
-		
-		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
-		nameLabel.Position = UDim2.new(0.2, 0, 0, 0)
-		nameLabel.BackgroundTransparency = 1
-		nameLabel.Text = data.name
-		nameLabel.TextColor3 = data.name == "You" and Color3.fromRGB(100, 255, 100) or Color3.new(0.8, 0.8, 0.8)
-		nameLabel.Font = Enum.Font.SourceSans
-		nameLabel.TextScaled = true
-		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.Parent = entry
-		
-		local lengthLabel = Instance.new("TextLabel")
-		lengthLabel.Size = UDim2.new(0.3, 0, 1, 0)
-		lengthLabel.Position = UDim2.new(0.7, 0, 0, 0)
-		lengthLabel.BackgroundTransparency = 1
-		lengthLabel.Text = tostring(data.length)
-		lengthLabel.TextColor3 = Color3.new(1, 1, 1)
-		lengthLabel.Font = Enum.Font.SourceSans
-		lengthLabel.TextScaled = true
-		lengthLabel.Parent = entry
-	end
-end
+-- 🎯 MOVEMENT HINT (Optional)
+local movementHint = Instance.new("TextLabel")
+movementHint.Size = UDim2.new(0, 300, 0, 30)
+movementHint.Position = UDim2.new(0.5, -150, 1, -200)
+movementHint.BackgroundTransparency = 1
+movementHint.Text = "Drag anywhere to move"
+movementHint.TextColor3 = Color3.new(1, 1, 1)
+movementHint.TextTransparency = 0.5
+movementHint.Font = Enum.Font.SourceSans
+movementHint.TextScaled = true
+movementHint.Parent = hudGui
 
--- 🎯 MOBILE GESTURES
-local gestureFrame = Instance.new("Frame")
-gestureFrame.Size = UDim2.new(1, 0, 1, 0)
-gestureFrame.BackgroundTransparency = 1
-gestureFrame.ZIndex = -1
-gestureFrame.Parent = hudGui
-
-local touchStartPos = nil
-local touchStartTime = 0
-
-gestureFrame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		touchStartPos = input.Position
-		touchStartTime = tick()
-	end
-end)
-
-gestureFrame.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch and touchStartPos then
-		local swipeDistance = (input.Position - touchStartPos).Magnitude
-		local swipeTime = tick() - touchStartTime
-		
-		-- Double tap to boost
-		if swipeDistance < 50 and swipeTime < 0.3 then
-			showNotification("BOOST!", Color3.fromRGB(255, 200, 0))
-		end
-		
-		touchStartPos = nil
-	end
+-- Fade out hint after a few seconds
+task.spawn(function()
+	task.wait(5)
+	local fade = TweenService:Create(movementHint, TweenInfo.new(1), {
+		TextTransparency = 1
+	})
+	fade:Play()
+	fade.Completed:Connect(function()
+		movementHint:Destroy()
+	end)
 end)
 
 -- 🔄 UPDATE LOOP
@@ -245,21 +203,47 @@ RunService.Heartbeat:Connect(function()
 	updateScore()
 end)
 
--- Update leaderboard less frequently
-local leaderboardTimer = 0
-RunService.Heartbeat:Connect(function(dt)
-	leaderboardTimer = leaderboardTimer + dt
-	if leaderboardTimer > 5 then  -- Update every 5 seconds
-		leaderboardTimer = 0
-		updateLeaderboard()
+-- 📱 TOUCH-BASED MOVEMENT (Slither.io style)
+local touchGui = Instance.new("Frame")
+touchGui.Size = UDim2.new(1, 0, 1, 0)
+touchGui.BackgroundTransparency = 1
+touchGui.Parent = hudGui
+
+local isMoving = false
+local moveDirection = Vector2.new()
+
+touchGui.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		isMoving = true
+		local touchPos = Vector2.new(input.Position.X, input.Position.Y)
+		local center = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+		moveDirection = (touchPos - center).Unit
+		
+		-- Update snake movement
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			_G.PlayerSnakes[player].mobileInput = moveDirection
+		end
 	end
 end)
 
--- Initial updates
-updateScore()
-updateLeaderboard()
+touchGui.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch and isMoving then
+		local touchPos = Vector2.new(input.Position.X, input.Position.Y)
+		local center = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+		moveDirection = (touchPos - center).Unit
+		
+		-- Update snake movement
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			_G.PlayerSnakes[player].mobileInput = moveDirection
+		end
+	end
+end)
 
--- Export notification system
-_G.MobileNotification = showNotification
+touchGui.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		isMoving = false
+		-- Don't stop movement, let snake continue in last direction
+	end
+end)
 
-print("📱 Mobile HUD initialized!")
+print("MobileHUD initialized successfully!")

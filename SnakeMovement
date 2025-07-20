@@ -58,12 +58,9 @@ validateConfig()
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
--- 📱 MOBILE CONTROLS INTEGRATION
-local MobileControls = nil
-if _G.MobileControls and _G.MobileControls.Enabled then
-	MobileControls = _G.MobileControls
-	print("📱 Mobile controls detected and integrated!")
-end
+-- 📱 MOBILE SUPPORT
+-- Mobile detection and controls are handled through MobileHUD script
+-- Check _G.IsMobile flag and _G.PlayerSnakes for mobile input data
 
 -- 🎯 NETWORK-OPTIMIZED ZERO-GAP PATH SYSTEM
 local PathSystem = {}
@@ -566,18 +563,34 @@ local function initializeForCharacter(character)
 
 		-- Input handling (Mouse or Mobile)
 		if updateCounter % networkUpdateInterval == 0 then
-			if MobileControls then
-				-- MOBILE CONTROLS
-				local moveVector = MobileControls.GetMoveVector()
-				if moveVector.Magnitude > 0.1 then
-					State.targetDirection = moveVector
+			if _G.IsMobile and _G.PlayerSnakes and _G.PlayerSnakes[player] then
+				-- MOBILE CONTROLS (Touch-based like slither.io)
+				local snakeData = _G.PlayerSnakes[player]
+				
+				-- Handle mobile touch movement
+				if snakeData.mobileInput then
+					-- Convert 2D touch input to 3D world direction
+					local camera = workspace.CurrentCamera
+					local forward = camera.CFrame.LookVector
+					local right = camera.CFrame.RightVector
+					
+					-- Project camera vectors onto horizontal plane
+					forward = Vector3.new(forward.X, 0, forward.Z).Unit
+					right = Vector3.new(right.X, 0, right.Z).Unit
+					
+					-- Calculate movement direction based on touch input
+					local moveDirection = (right * snakeData.mobileInput.X + forward * -snakeData.mobileInput.Y)
+					
+					if moveDirection.Magnitude > 0.1 then
+						State.targetDirection = moveDirection.Unit
+					end
 				end
 				
-				-- Mobile boost handling
-				if MobileControls.IsBoosting() and not State.boosting then
+				-- Handle mobile boost
+				if snakeData.isBoosting and not State.boosting then
 					State.boosting = true
 					State.targetSpeed = Config.BoostSpeed
-				elseif not MobileControls.IsBoosting() and State.boosting then
+				elseif not snakeData.isBoosting and State.boosting then
 					State.boosting = false
 					State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
 				end
