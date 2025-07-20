@@ -603,6 +603,7 @@ function InventoryUI.getFilteredItems()
 				rarityColor = skinData.rarityColor,
 				description = skinData.description or "A snake skin",
 				value = skinData.value or 0,
+				equipped = skinData.equipped or false,
 			})
 		end
 		
@@ -630,6 +631,7 @@ function InventoryUI.getFilteredItems()
 				rarityColor = skinData.rarityColor,
 				description = skinData.description or "A snake skin",
 				value = skinData.value or 0,
+				equipped = skinData.equipped or false,
 			})
 		end
 	elseif InventoryUI.currentFilter == "Items" then
@@ -658,6 +660,7 @@ function InventoryUI.getFilteredItems()
 					rarityColor = skinData.rarityColor,
 					description = skinData.description or "A snake skin",
 					value = skinData.value or 0,
+					equipped = skinData.equipped or false,
 				})
 			end
 		end
@@ -960,6 +963,11 @@ function InventoryUI.loadInventoryData()
 			value = skinData and skinData.price or 0,
 			equipped = (skinName == currentSkin),
 		}
+		
+		-- Debug log
+		if skinName == currentSkin then
+			print("✅ Marked", skinName, "as equipped!")
+		end
 	end
 	
 	-- Items would be loaded from server in a real implementation
