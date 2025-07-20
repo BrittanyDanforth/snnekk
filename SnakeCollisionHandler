@@ -1026,16 +1026,16 @@ task.spawn(function()
 								end
 							end
 							
-							-- Method 7: Destroy player's actual model if it exists
-							if player.Name == "ballbladegoat2" then
-								-- Your specific case - look for your snake models
-								for _, container in ipairs(workspace:GetChildren()) do
-									if container:IsA("Folder") or container:IsA("Model") then
-										for _, child in ipairs(container:GetChildren()) do
-											if child.Name:match("ballbladegoat2") or 
-											   child.Name:match("AISnakeModel_table:.*ballbladegoat2") then
-												child:Destroy()
-											end
+							-- Method 7: Extra cleanup for any remaining models
+							-- This works for ALL players, not just specific usernames
+							for _, container in ipairs(workspace:GetChildren()) do
+								if container:IsA("Folder") or container:IsA("Model") then
+									for _, child in ipairs(container:GetChildren()) do
+										-- Check if this model belongs to the dead player
+										if child.Name:match(player.Name) or 
+										   child:GetAttribute("Owner") == player.Name or
+										   child:GetAttribute("PlayerName") == player.Name then
+											child:Destroy()
 										end
 									end
 								end
