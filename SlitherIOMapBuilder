@@ -76,8 +76,22 @@ local function createWalls()
         wall.CanQuery = true  -- Ensure raycasts work
         wall.Locked = true
         wall.Transparency = 1  -- Fully invisible
-        wall.Material = Enum.Material.SmoothPlastic
+        wall.Material = Enum.Material.ForceField  -- Better collision detection
         wall.Parent = Workspace
+        
+        -- Add invisible barrier below map to catch falling players
+        if name == "SlitherIOWall_Bottom" then
+            local floor = Instance.new("Part")
+            floor.Name = "SlitherIOFloor"
+            floor.Size = Vector3.new(MAP_SIZE + 100, 10, MAP_SIZE + 100)
+            floor.Position = Vector3.new(0, -20, 0)  -- Below the map
+            floor.Anchored = true
+            floor.CanCollide = true
+            floor.CanTouch = true
+            floor.CanQuery = true
+            floor.Transparency = 1
+            floor.Parent = Workspace
+        end
         
         return wall
     end
@@ -289,6 +303,40 @@ if rebuildEvent then
         buildMap()
     end)
 end
+
+-- === BOUNDARY CHECK SYSTEM ===
+local RunService = game:GetService("RunService")
+
+-- Function to check and reset players who fall off map
+local function checkPlayerBoundaries()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local pos = root.Position
+            
+            -- Check if player is outside map boundaries or fell below
+            local halfMap = MAP_SIZE / 2 + 50
+            if math.abs(pos.X) > halfMap or math.abs(pos.Z) > halfMap or pos.Y < -10 then
+                -- Teleport back to spawn
+                root.CFrame = CFrame.new(0, 10, 0)
+                root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                
+                -- Fire respawn if needed
+                if player.Character:FindFirstChild("Humanoid") then
+                    player.Character.Humanoid.Health = 0
+                end
+            end
+        end
+    end
+end
+
+-- Run boundary check periodically using task.spawn
+task.spawn(function()
+    while true do
+        task.wait(0.5) -- Check every half second
+        checkPlayerBoundaries()
+    end
+end)
 
 -- Initial build
 buildMap()
