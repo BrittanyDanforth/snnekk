@@ -200,9 +200,9 @@ function OrbUtils.removeOrb(orb)
 end
 
 -- Spawns an orb at a given position with a value, and attaches .Touched event
-function OrbUtils.spawnOrbAt(position, value, orbType)
+function OrbUtils.spawnOrbAt(position, value)
 	local orb = Instance.new("Part")
-	orb.Name = orbType or "Orb"  -- Can be "Orb", "DeathOrb", "UpgradeOrb"
+	orb.Name = "Orb"  -- ALL orbs are just "Orb" like in the old version
 	orb.Size = Vector3.new(1.5, 1.5, 1.5)
 	orb.Shape = Enum.PartType.Ball
 	orb.Anchored = true
@@ -210,16 +210,7 @@ function OrbUtils.spawnOrbAt(position, value, orbType)
 	orb.CanTouch = true  -- Important for touch detection
 	orb.CanQuery = true
 	orb.Material = Enum.Material.Neon
-	
-	-- Color based on type
-	if orbType == "DeathOrb" then
-		orb.Color = Color3.fromRGB(255, 50, 50)  -- Red for death orbs
-	elseif orbType == "UpgradeOrb" then
-		orb.Color = Color3.fromRGB(0, 200, 255)  -- Blue for upgrade orbs
-	else
-		orb.Color = Color3.fromHSV(math.random(), 0.7, 1)  -- Random for regular
-	end
-	
+	orb.Color = Color3.fromHSV(math.random(), 0.7, 1)
 	orb.Position = position
 	orb.TopSurface = Enum.SurfaceType.Smooth
 	orb.BottomSurface = Enum.SurfaceType.Smooth

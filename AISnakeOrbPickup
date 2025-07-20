@@ -60,17 +60,10 @@ RunService.Heartbeat:Connect(function()
     if not orbContainer then
                  -- Create a virtual container with all orbs
         local allOrbs = {}
-        local orbCounts = {Orb = 0, DeathOrb = 0, UpgradeOrb = 0}
         for _, obj in pairs(workspace:GetChildren()) do
-            if obj:IsA("BasePart") and (obj.Name == "Orb" or obj.Name == "DeathOrb" or obj.Name == "UpgradeOrb") then
+            if obj:IsA("BasePart") and obj.Name == "Orb" then
                 table.insert(allOrbs, obj)
-                orbCounts[obj.Name] = (orbCounts[obj.Name] or 0) + 1
             end
-        end
-        
-        -- Debug print every 60 frames
-        if math.random(1, 60) == 1 then
-            print("🔍 Orb counts - Regular:", orbCounts.Orb, "Death:", orbCounts.DeathOrb, "Upgrade:", orbCounts.UpgradeOrb)
         end
         
         -- Process each tracked snake
