@@ -1053,17 +1053,6 @@ function AISnake.new(startPosition)
 		obj:Destroy()
 	end
 
-	-- SPAWN PROTECTION
-	self.SpawnTime = tick()
-	self.SpawnProtectionDuration = 3 -- 3 seconds of invincibility
-	self.IsInvincible = true
-
-	-- Set invincibility timer
-	task.spawn(function()
-		task.wait(self.SpawnProtectionDuration)
-		self.IsInvincible = false
-	end)
-
 	self.RootPart = Instance.new("Part")
 	self.RootPart.Name = "AISnakeRoot"
 	self.RootPart.Size = Vector3new(2, 2, 2)
