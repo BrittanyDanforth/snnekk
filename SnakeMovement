@@ -544,8 +544,8 @@ local function initializeForCharacter(character)
 	local updateCounter = 0
 	local networkUpdateInterval = 1 -- Update EVERY frame for butter smooth movement
 
-				-- Use RenderStepped for smoother visual updates
-			heartbeatConnection = RunService.RenderStepped:Connect(function(dt)
+				-- Use Heartbeat for movement updates (works on both client and server)
+			heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
 		if not rootPart or not rootPart.Parent then
 			cleanupSnake()
 			return
