@@ -12,9 +12,17 @@ local Debris = game:GetService("Debris")
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
--- Import required modules
-local ShopUI = require(ReplicatedStorage:WaitForChild("ShopUI"))
-local SnakeSkins = require(ReplicatedStorage:WaitForChild("SnakeSkins"))
+-- Import required modules with error handling
+local ShopUI, SnakeSkins
+local success, err = pcall(function()
+	ShopUI = require(ReplicatedStorage:WaitForChild("ShopUI", 10))
+	SnakeSkins = require(ReplicatedStorage:WaitForChild("SnakeSkins", 10))
+end)
+
+if not success then
+	warn("❌ Failed to load required modules:", err)
+	return {}
+end
 
 -- UI Configuration matching ShopUI style
 local INVENTORY_CONFIG = {
@@ -149,12 +157,26 @@ end
 
 -- Create inventory item card
 local function createItemCard(itemData, index)
-	local card = Instance.new("TextButton")
-	card.Name = "ItemCard_" .. index
-	card.Size = UDim2.new(0, INVENTORY_CONFIG.ITEM_SIZE, 0, INVENTORY_CONFIG.ITEM_SIZE)
-	card.BackgroundColor3 = INVENTORY_CONFIG.COLORS.PRIMARY
-	card.Text = ""
-	card.AutoButtonColor = false
+	-- Validate input
+	if not itemData or type(itemData) ~= "table" then
+		warn("❌ Invalid item data for card", index)
+		return nil
+	end
+	
+	local success, card = pcall(function()
+		local card = Instance.new("TextButton")
+		card.Name = "ItemCard_" .. tostring(index)
+		card.Size = UDim2.new(0, INVENTORY_CONFIG.ITEM_SIZE, 0, INVENTORY_CONFIG.ITEM_SIZE)
+		card.BackgroundColor3 = INVENTORY_CONFIG.COLORS.PRIMARY
+		card.Text = ""
+		card.AutoButtonColor = false
+		return card
+	end)
+	
+	if not success then
+		warn("❌ Failed to create card:", card)
+		return nil
+	end
 	
 	-- Calculate grid position
 	local col = (index - 1) % INVENTORY_CONFIG.GRID_COLUMNS
@@ -177,13 +199,13 @@ local function createItemCard(itemData, index)
 	
 	createCorner(icon, 8)
 	
-	-- Item name
+	-- Item name (with validation)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "ItemName"
 	nameLabel.Size = UDim2.new(0.9, 0, 0.15, 0)
 	nameLabel.Position = UDim2.new(0.05, 0, 0.82, 0)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = itemData.name
+	nameLabel.Text = tostring(itemData.name or "Unknown")
 	nameLabel.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
 	nameLabel.TextScaled = true
 	nameLabel.Font = INVENTORY_CONFIG.FONTS.BODY
@@ -524,11 +546,24 @@ end
 
 -- Refresh inventory grid
 function InventoryUI.refreshGrid()
-	-- Clear existing items
-	for _, child in pairs(InventoryUI.uiElements.gridFrame:GetChildren()) do
-		if child:IsA("TextButton") then
-			child:Destroy()
+	-- Validate UI elements exist
+	if not InventoryUI.uiElements or not InventoryUI.uiElements.gridFrame then
+		warn("❌ Grid frame not ready for refresh")
+		return
+	end
+	
+	-- Clear existing items safely
+	local success, err = pcall(function()
+		for _, child in pairs(InventoryUI.uiElements.gridFrame:GetChildren()) do
+			if child:IsA("TextButton") then
+				child:Destroy()
+			end
 		end
+	end)
+	
+	if not success then
+		warn("❌ Failed to clear grid:", err)
+		return
 	end
 	
 	-- Get filtered items
@@ -537,10 +572,12 @@ function InventoryUI.refreshGrid()
 	-- Sort items
 	items = InventoryUI.sortItems(items)
 	
-	-- Create item cards
+	-- Create item cards with validation
 	for i, itemData in ipairs(items) do
 		local card = createItemCard(itemData, i)
-		card.Parent = InventoryUI.uiElements.gridFrame
+		if card then
+			card.Parent = InventoryUI.uiElements.gridFrame
+		end
 	end
 	
 	-- Update canvas size
@@ -707,22 +744,39 @@ end
 
 -- Equip selected item
 function InventoryUI.equipSelectedItem()
-	if not InventoryUI.selectedItem then return end
+	if not InventoryUI.selectedItem then 
+		warn("❌ No item selected to equip")
+		return 
+	end
 	
 	if InventoryUI.selectedItem.type == "Skin" then
 		-- Don't do anything if already equipped
 		if InventoryUI.selectedItem.equipped then
+			print("⚠️ Skin already equipped:", InventoryUI.selectedItem.name)
 			return
 		end
 		
 		-- Fire to server to equip skin
 		local selectSkinRemote = ReplicatedStorage:FindFirstChild("SelectSkin")
-		if selectSkinRemote then
+		if not selectSkinRemote then
+			warn("❌ SelectSkin remote not found!")
+			return
+		end
+		
+		-- Fire server event with error handling
+		local success, err = pcall(function()
 			selectSkinRemote:FireServer(InventoryUI.selectedItem.name)
-			
-			-- Update local data immediately
-			local ShopUI = require(ReplicatedStorage:WaitForChild("ShopUI"))
+		end)
+		
+		if not success then
+			warn("❌ Failed to fire SelectSkin remote:", err)
+			return
+		end
+		
+		-- Update local data immediately
+		if ShopUI and ShopUI.playerData then
 			ShopUI.playerData.currentSkin = InventoryUI.selectedItem.name
+		end
 			
 			-- Success feedback
 			local successText = InventoryUI.uiElements.itemName
@@ -757,28 +811,63 @@ end
 
 -- Open inventory
 function InventoryUI.open()
+	-- Create UI if it doesn't exist
 	if not InventoryUI.screenGui then
-		InventoryUI.createUI()
+		local success, err = pcall(function()
+			InventoryUI.createUI()
+		end)
+		
+		if not success then
+			warn("❌ Failed to create inventory UI:", err)
+			return
+		end
+	end
+	
+	-- Validate UI was created
+	if not InventoryUI.screenGui or not InventoryUI.uiElements or not InventoryUI.uiElements.mainWindow then
+		warn("❌ Inventory UI not properly initialized")
+		return
 	end
 	
 	InventoryUI.isOpen = true
 	InventoryUI.screenGui.Enabled = true
 	
-	-- Load inventory data (this should come from server)
-	InventoryUI.loadInventoryData()
+	-- Load inventory data with error handling
+	local loadSuccess, loadErr = pcall(function()
+		InventoryUI.loadInventoryData()
+	end)
 	
-	-- Refresh grid
-	InventoryUI.refreshGrid()
+	if not loadSuccess then
+		warn("❌ Failed to load inventory data:", loadErr)
+	end
 	
-	-- Animate opening
+	-- Refresh grid with error handling
+	local refreshSuccess, refreshErr = pcall(function()
+		InventoryUI.refreshGrid()
+	end)
+	
+	if not refreshSuccess then
+		warn("❌ Failed to refresh grid:", refreshErr)
+	end
+	
+	-- Animate opening with validation
 	local mainWindow = InventoryUI.uiElements.mainWindow
-	mainWindow.Size = UDim2.new(0, 0, 0, 0)
-	mainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	
-	TweenService:Create(mainWindow, TweenInfo.new(INVENTORY_CONFIG.TWEEN_TIME, Enum.EasingStyle.Back), {
-		Size = UDim2.new(0.85, 0, 0.85, 0),
-		Position = UDim2.new(0.075, 0, 0.075, 0)
-	}):Play()
+	if mainWindow and mainWindow.Parent then
+		mainWindow.Size = UDim2.new(0, 0, 0, 0)
+		mainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
+		
+		TweenService:Create(mainWindow, TweenInfo.new(INVENTORY_CONFIG.TWEEN_TIME, Enum.EasingStyle.Back), {
+			Size = UDim2.new(0.85, 0, 0.85, 0),
+			Position = UDim2.new(0.075, 0, 0.075, 0)
+		}):Play()
+	else
+		warn("❌ Main window not valid for animation")
+		-- Just show it without animation
+		if mainWindow then
+			mainWindow.Size = UDim2.new(0.85, 0, 0.85, 0)
+			mainWindow.Position = UDim2.new(0.075, 0, 0.075, 0)
+		end
+	end
 end
 
 -- Close inventory
@@ -799,25 +888,47 @@ end
 
 -- Load inventory data
 function InventoryUI.loadInventoryData()
-	-- Load actual player data from ShopUI
-	local ShopUI = require(ReplicatedStorage:WaitForChild("ShopUI"))
+	-- Validate ShopUI exists
+	if not ShopUI or not ShopUI.playerData then
+		warn("❌ ShopUI not ready, using defaults")
+		InventoryUI.inventory = {
+			skins = {["Default"] = {quantity = 1, rarity = "Common", equipped = true}},
+			items = {},
+			currency = {coins = 0, gems = 0}
+		}
+		return
+	end
 	
 	-- Clear existing inventory
 	InventoryUI.inventory = {
 		skins = {},
 		items = {},
 		currency = {
-			coins = ShopUI.playerData.coins or 0,
+			coins = tonumber(ShopUI.playerData.coins) or 0,
 			gems = 0,
 		}
 	}
 	
-	-- Load owned skins
-	local currentSkin = ShopUI.playerData.currentSkin
-	print("📦 Loading inventory - Current skin:", currentSkin)
-	print("📦 Owned skins:", table.concat(ShopUI.playerData.ownedSkins or {}, ", "))
+	-- Load owned skins with validation
+	local currentSkin = ShopUI.playerData.currentSkin or "Default"
+	local ownedSkins = ShopUI.playerData.ownedSkins or {"Default"}
 	
-	for _, skinName in ipairs(ShopUI.playerData.ownedSkins or {}) do
+	print("📦 Loading inventory - Current skin:", currentSkin)
+	print("📦 Owned skins:", table.concat(ownedSkins, ", "))
+	
+	-- Ensure Default is always owned
+	local hasDefault = false
+	for _, skin in ipairs(ownedSkins) do
+		if skin == "Default" then
+			hasDefault = true
+			break
+		end
+	end
+	if not hasDefault then
+		table.insert(ownedSkins, 1, "Default")
+	end
+	
+	for _, skinName in ipairs(ownedSkins) do
 		-- Determine rarity based on price
 		local skinData = ShopUI.SKIN_DATA[skinName]
 		local rarity = "Common"

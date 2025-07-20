@@ -2053,9 +2053,14 @@ local function createCategoryButton(category, index)
 		-- Hide/show preview based on category
 		local isGamepass = SKIN_CATEGORIES[index].name == "Gamepasses"
 		if isGamepass then
-			print("🎮 Switching to Gamepasses - clearing preview")
-			-- Clear the preview but don't hide the container
+			print("🎮 Switching to Gamepasses - hiding preview")
+			-- Clear the preview and hide the container
 			CharacterPreview.cleanup()
+			
+			-- Hide preview container for gamepasses
+			if ShopUI.uiElements.previewContainer then
+				ShopUI.uiElements.previewContainer.Visible = false
+			end
 			
 			-- Hide skin-specific UI elements
 			if ShopUI.uiElements.skinName then
@@ -2081,6 +2086,9 @@ local function createCategoryButton(category, index)
 			end
 		else
 			-- Show everything for skins
+			if ShopUI.uiElements.previewContainer then
+				ShopUI.uiElements.previewContainer.Visible = true
+			end
 			if ShopUI.uiElements.skinName then
 				ShopUI.uiElements.skinName.Visible = true
 			end
@@ -3133,8 +3141,11 @@ function ShopUI.init()
 		-- Check if we're starting on gamepasses and clear preview if so
 		local isGamepass = SKIN_CATEGORIES[uiState.currentCategory].name == "Gamepasses"
 		if isGamepass then
-			-- Clear preview for gamepasses but don't hide container
+			-- Clear preview and hide container for gamepasses
 			CharacterPreview.cleanup()
+			if ShopUI.uiElements.previewContainer then
+				ShopUI.uiElements.previewContainer.Visible = false
+			end
 			if ShopUI.uiElements.skinName then
 				ShopUI.uiElements.skinName.Visible = false
 			end
