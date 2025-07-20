@@ -661,9 +661,8 @@ task.spawn(function()
 										)
 
 										-- Spawn at segment position with small offset
-										-- Clamp Y position to prevent sky-high orbs
+										-- Keep at snake height for easy collection
 										local spawnPos = pos + offset
-										spawnPos = Vector3.new(spawnPos.X, math.min(spawnPos.Y + ORB_SPAWN_HEIGHT, 10), spawnPos.Z)
 
 										local success = pcall(function()
 											-- Just spawn regular orbs that AI can eat
@@ -683,7 +682,7 @@ task.spawn(function()
 								local firstSeg = segments[1]
 								if firstSeg and firstSeg.Parent and firstSeg.Position then
 									pcall(function()
-										spawnOrbDirect(firstSeg.Position + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), valuePerOrb)
+										spawnOrbDirect(firstSeg.Position, valuePerOrb)
 									end)
 								end
 							end
@@ -768,15 +767,8 @@ task.spawn(function()
 												(math.random() - 0.5) * 2
 											)
 
-											-- Ensure proper height (clamped to prevent sky-high orbs)
-											local yPos = math.max(groundY + ORB_SPAWN_HEIGHT, pos.Y)
-											yPos = math.min(yPos, 10) -- Max height of 10 studs
-
-											local spawnPos = Vector3.new(
-												pos.X + offset.X,
-												yPos,
-												pos.Z + offset.Z
-											)
+																						-- Spawn at snake segment height
+											local spawnPos = pos + offset
 
 											local success = pcall(function()
 												-- Just spawn regular orbs for AI deaths
@@ -796,12 +788,7 @@ task.spawn(function()
 									local firstSeg = segments[1]
 									if firstSeg and firstSeg.Parent and firstSeg.Position then
 										pcall(function()
-											local spawnPos = Vector3.new(
-												firstSeg.Position.X,
-												math.max(groundY + ORB_SPAWN_HEIGHT, firstSeg.Position.Y),
-												firstSeg.Position.Z
-											)
-											spawnOrbDirect(spawnPos, valuePerOrb)
+											spawnOrbDirect(firstSeg.Position, valuePerOrb)
 										end)
 									end
 								end
