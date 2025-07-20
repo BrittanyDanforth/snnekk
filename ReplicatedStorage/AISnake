@@ -1212,14 +1212,14 @@ function AISnake:Destroy()
 	local orbSpawnData = {}
 	if self.HeadParts and self.HeadParts.head and self.HeadParts.head.Parent then
 		local head = self.HeadParts.head
-		table.insert(orbSpawnData, {position = head.Position, size = 5, color = head.Color})
+		table.insert(orbSpawnData, {position = head.Position, size = 3.5, color = head.Color}) -- Smaller head orb
 	end
-	local ORB_SPAWN_DENSITY = 3
+	local ORB_SPAWN_DENSITY = 5 -- Reduced orb count for performance
 	for i = 1, #self.Segments do
 		if i % ORB_SPAWN_DENSITY == 1 then
 			local segment = self.Segments[i]
 			if segment and segment.Parent then
-				table.insert(orbSpawnData, {position = segment.Position, size = 2.5, color = segment.Color})
+				table.insert(orbSpawnData, {position = segment.Position, size = 1.8, color = segment.Color}) -- Smaller orbs
 			end
 		end
 	end
