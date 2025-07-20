@@ -567,21 +567,32 @@ local function initializeForCharacter(character)
 			-- MOBILE CONTROLS (Touch-based like slither.io)
 			local snakeData = _G.PlayerSnakes[player]
 			
-			-- Debug print once
-			if not State.mobilePrintDone then
-				print("Mobile controls active for player")
-				State.mobilePrintDone = true
-			end
+			-- Mobile controls are active
 				
-			-- Handle mobile touch movement
-			if snakeData.mobileInput and snakeData.mobileInput.Magnitude > 0 then
-				-- Since camera is top-down, we use simple X/Z mapping
-				-- Touch X maps to world X, Touch Y maps to world Z
-				local moveDirection = Vector3.new(snakeData.mobileInput.X, 0, snakeData.mobileInput.Y)
+			-- Handle mobile touch movement - Slither.io style
+			if snakeData.touchPosition then
+				-- Convert touch position to world position
+				local camera = workspace.CurrentCamera
+				local ray = camera:ScreenPointToRay(snakeData.touchPosition.X, snakeData.touchPosition.Y)
 				
-				if moveDirection.Magnitude > 0.1 then
-					State.targetDirection = moveDirection.Unit
-					print("Mobile movement applied:", State.targetDirection)
+				-- Project ray onto the snake's Y plane
+				local planeY = rootPart.Position.Y
+				local t = (planeY - ray.Origin.Y) / ray.Direction.Y
+				local worldTouchPos = ray.Origin + ray.Direction * t
+				
+				-- Calculate direction from snake to touch position
+				local toTouch = worldTouchPos - rootPart.Position
+				toTouch = Vector3.new(toTouch.X, 0, toTouch.Z) -- Keep only horizontal
+				
+				-- Only update direction if touch is far enough from snake
+				if toTouch.Magnitude > 5 then -- Minimum distance to avoid jittering
+					State.targetDirection = toTouch.Unit
+					
+					-- Smooth turning like slither.io - faster turn rate for mobile
+					Config.TurnSpeed = 8.0 -- Increased for mobile responsiveness
+				else
+					-- When touch is very close, maintain current direction
+					-- This prevents the snake from stopping when finger is on top of it
 				end
 			end
 			
@@ -625,13 +636,33 @@ local function initializeForCharacter(character)
 		end
 
 		-- BUTTERY smooth direction changes
-		local turnRate = Config.TurnSpeed * dt * 1.2 -- Slightly faster turning for responsiveness
-		local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
-		-- CRITICAL FIX: Normalize the direction vector after lerping.
-		-- Without this, the vector's length shrinks during turns, causing the snake
-		-- to slow down or stop completely, especially during sharp turns.
-		if newDirection.Magnitude > 0.001 then
-			State.currentDirection = newDirection.Unit
+		-- Use different turn rates for mobile vs PC
+		local baseTurnRate = _G.IsMobile and 12.0 or Config.TurnSpeed
+		local turnRate = baseTurnRate * dt * 1.2 -- Slightly faster turning for responsiveness
+		
+		-- For mobile, use smoother interpolation
+		if _G.IsMobile then
+			-- Calculate angle difference for smoother turning
+			local currentAngle = math.atan2(State.currentDirection.Z, State.currentDirection.X)
+			local targetAngle = math.atan2(State.targetDirection.Z, State.targetDirection.X)
+			
+			-- Handle angle wrapping
+			local angleDiff = targetAngle - currentAngle
+			if angleDiff > math.pi then
+				angleDiff = angleDiff - 2 * math.pi
+			elseif angleDiff < -math.pi then
+				angleDiff = angleDiff + 2 * math.pi
+			end
+			
+			-- Smooth angle interpolation
+			local newAngle = currentAngle + angleDiff * turnRate
+			State.currentDirection = Vector3.new(math.cos(newAngle), 0, math.sin(newAngle))
+		else
+			-- PC uses normal lerping
+			local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
+			if newDirection.Magnitude > 0.001 then
+				State.currentDirection = newDirection.Unit
+			end
 		end
 
 		-- BUTTERY smooth speed changes

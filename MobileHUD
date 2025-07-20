@@ -81,7 +81,7 @@ if not _G.PlayerSnakes then
 end
 if not _G.PlayerSnakes[player] then
 	_G.PlayerSnakes[player] = {
-		mobileInput = Vector2.new(),
+		touchPosition = nil, -- Store actual touch position instead of direction
 		isBoosting = false,
 		currentLength = 10
 	}
@@ -134,7 +134,6 @@ boostButton.MouseButton1Down:Connect(function()
 		-- Send boost signal
 		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 			_G.PlayerSnakes[player].isBoosting = true
-			print("Boost activated!")
 		end
 		
 		-- Haptic feedback if available
@@ -158,7 +157,6 @@ boostButton.MouseButton1Up:Connect(function()
 		-- Stop boost
 		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 			_G.PlayerSnakes[player].isBoosting = false
-			print("Boost deactivated!")
 		end
 	end
 end)
@@ -175,7 +173,7 @@ local movementHint = Instance.new("TextLabel")
 movementHint.Size = UDim2.new(0, 300, 0, 30)
 movementHint.Position = UDim2.new(0.5, -150, 1, -200)
 movementHint.BackgroundTransparency = 1
-movementHint.Text = "Drag anywhere to move"
+movementHint.Text = "Touch to move"
 movementHint.TextColor3 = Color3.new(1, 1, 1)
 movementHint.TextTransparency = 0.5
 movementHint.Font = Enum.Font.SourceSans
@@ -194,86 +192,92 @@ task.spawn(function()
 	end)
 end)
 
--- 📱 TOUCH-BASED MOVEMENT (Slither.io style)
-local touchGui = Instance.new("Frame")
-touchGui.Size = UDim2.new(1, 0, 1, 0)
-touchGui.BackgroundTransparency = 1
-touchGui.ZIndex = -1 -- Behind other elements
-touchGui.Parent = hudGui
+-- 📱 SLITHER.IO STYLE TOUCH MOVEMENT
+local touchActive = false
+local currentTouchId = nil
 
--- Debug indicator
-local debugIndicator = Instance.new("Frame")
-debugIndicator.Size = UDim2.new(0, 10, 0, 10)
-debugIndicator.Position = UDim2.new(0.5, -5, 0.5, -5)
-debugIndicator.BackgroundColor3 = Color3.new(1, 0, 0)
-debugIndicator.Visible = false
-debugIndicator.Parent = hudGui
+-- Visual touch indicator - smooth like slither.io
+local touchIndicator = Instance.new("ImageLabel")
+touchIndicator.Size = UDim2.new(0, 60, 0, 60)
+touchIndicator.BackgroundColor3 = Color3.new(1, 1, 1)
+touchIndicator.BackgroundTransparency = 0.8
+touchIndicator.BorderSizePixel = 0
+touchIndicator.Image = "rbxasset://textures/ui/LuaChat/icons/ic-circle.png"
+touchIndicator.ImageTransparency = 0.5
+touchIndicator.ImageColor3 = Color3.fromRGB(255, 255, 255)
+touchIndicator.Visible = false
+touchIndicator.Parent = hudGui
 
-local isMoving = false
-local moveDirection = Vector2.new()
-local touchStartPos = nil
+local touchCorner = Instance.new("UICorner")
+touchCorner.CornerRadius = UDim.new(0.5, 0)
+touchCorner.Parent = touchIndicator
 
--- Better touch handling
+-- Inner dot for better visibility
+local innerDot = Instance.new("Frame")
+innerDot.Size = UDim2.new(0, 10, 0, 10)
+innerDot.Position = UDim2.new(0.5, -5, 0.5, -5)
+innerDot.BackgroundColor3 = Color3.new(1, 1, 1)
+innerDot.BackgroundTransparency = 0.3
+innerDot.BorderSizePixel = 0
+innerDot.Parent = touchIndicator
+
+local innerCorner = Instance.new("UICorner")
+innerCorner.CornerRadius = UDim.new(0.5, 0)
+innerCorner.Parent = innerDot
+
+-- Touch handling - exactly like slither.io
 UserInputService.TouchStarted:Connect(function(input, gameProcessed)
-	-- Allow touch even if processed by UI (except for boost button)
+	-- Don't process if touching the boost button area
 	if gameProcessed and input.Position.X > workspace.CurrentCamera.ViewportSize.X - 200 and 
 	   input.Position.Y > workspace.CurrentCamera.ViewportSize.Y - 200 then
-		return -- This is likely the boost button area
+		return
 	end
 	
-	isMoving = true
-	touchStartPos = input.Position
-	local touchPos = Vector2.new(input.Position.X, input.Position.Y)
-	local center = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+	touchActive = true
+	currentTouchId = input.UserInputState
 	
-	-- Calculate direction from center
-	local delta = touchPos - center
-	if delta.Magnitude > 0 then
-		moveDirection = delta.Unit
-	else
-		moveDirection = Vector2.new(0, -1) -- Default forward
-	end
-	
-	-- Update snake movement
+	-- Store the touch position for the snake to follow
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
-		_G.PlayerSnakes[player].mobileInput = moveDirection
-		print("Touch started, direction:", moveDirection, "Delta:", delta)
+		_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
 		
-		-- Show debug indicator at touch position
-		debugIndicator.Position = UDim2.new(0, touchPos.X - 5, 0, touchPos.Y - 5)
-		debugIndicator.Visible = true
-	else
-		print("PlayerSnakes not found!")
+		-- Show touch indicator at position
+		touchIndicator.Position = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
+		touchIndicator.Visible = true
+		
+		-- Smooth fade in
+		touchIndicator.ImageTransparency = 0.8
+		innerDot.BackgroundTransparency = 0.6
+		TweenService:Create(touchIndicator, TweenInfo.new(0.2), {ImageTransparency = 0.5}):Play()
+		TweenService:Create(innerDot, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
 	end
 end)
 
 UserInputService.TouchMoved:Connect(function(input, gameProcessed)
-	if not isMoving then return end
+	if not touchActive or input.UserInputState ~= currentTouchId then return end
 	
-	local touchPos = Vector2.new(input.Position.X, input.Position.Y)
-	local center = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
-	
-	-- Calculate direction from center
-	local delta = touchPos - center
-	if delta.Magnitude > 0 then
-		moveDirection = delta.Unit
-	end
-	
-	-- Update snake movement
+	-- Update touch position continuously
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
-		_G.PlayerSnakes[player].mobileInput = moveDirection
-		print("Touch moved, direction:", moveDirection)
+		_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
+		
+		-- Update touch indicator smoothly
+		local targetPos = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
+		TweenService:Create(touchIndicator, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+			Position = targetPos
+		}):Play()
 	end
 end)
 
 UserInputService.TouchEnded:Connect(function(input)
-	if touchStartPos and (input.Position - touchStartPos).Magnitude < 10 then
-		-- It was a tap, not a drag - don't stop movement
-		return
+	if input.UserInputState == currentTouchId then
+		touchActive = false
+		currentTouchId = nil
+		
+		-- Keep last touch position so snake continues moving
+		-- Don't clear touchPosition - snake will continue towards last touch
+		
+		-- Hide touch indicator
+		touchIndicator.Visible = false
 	end
-	
-	isMoving = false
-	-- Don't reset direction - let snake continue in last direction
 end)
 
-print("MobileHUD initialized successfully!")
+print("MobileHUD initialized successfully - Slither.io style controls active!")
