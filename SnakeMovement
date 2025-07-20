@@ -590,9 +590,27 @@ local function initializeForCharacter(character)
 				if snakeData.isBoosting and not State.boosting then
 					State.boosting = true
 					State.targetSpeed = Config.BoostSpeed
+					
+					-- Add boost effect for mobile
+					local boostEffect = Instance.new("ParticleEmitter")
+					boostEffect.Name = "BoostEffect"
+					boostEffect.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+					boostEffect.Color = ColorSequence.new(Config.HeadColor)
+					boostEffect.Rate = 60
+					boostEffect.Lifetime = NumberRange.new(0.5)
+					boostEffect.Speed = NumberRange.new(6)
+					boostEffect.SpreadAngle = Vector2.new(35, 35)
+					boostEffect.Parent = rootPart
 				elseif not snakeData.isBoosting and State.boosting then
 					State.boosting = false
 					State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
+					
+					-- Remove boost effect
+					local boostEffect = rootPart:FindFirstChild("BoostEffect")
+					if boostEffect then
+						boostEffect.Enabled = false
+						Debris:AddItem(boostEffect, 0.8)
+					end
 				end
 			else
 				-- MOUSE CONTROLS (Desktop)

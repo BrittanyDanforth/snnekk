@@ -47,21 +47,30 @@ end
 
 print("Mobile device detected! Disabling default controls...")
 
--- 🚫 DISABLE DEFAULT MOBILE CONTROLS
-pcall(function()
-	-- Disable all default mobile UI
-	StarterGui:SetCore("TouchGui", false)
-	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchGui, false)
-	UserInputService.ModalEnabled = false
+-- 🚫 PROPERLY DISABLE DEFAULT MOBILE CONTROLS
+task.spawn(function()
+	-- Disable Core GUI mobile controls
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) -- Disable all CoreGui
+		-- Re-enable only what we need
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
+		
+		-- Specifically disable TouchGui
+		StarterGui:SetCore("TouchGui", false)
+	end)
 	
-	-- Disable default movement
-	local playerModule = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
-	if playerModule then
-		local controls = playerModule:GetControls()
-		if controls then
-			controls:Disable()
-		end
-	end
+	-- Wait for player scripts to load
+	local playerScripts = player:WaitForChild("PlayerScripts")
+	local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
+	local controls = playerModule:GetControls()
+	
+	-- Disable default movement controls completely
+	controls:Disable()
+	print("Default mobile controls disabled successfully!")
+	
+	-- Also set modal to false
+	UserInputService.ModalEnabled = false
 end)
 
 -- 📐 MOBILE CONFIGURATION
@@ -107,11 +116,22 @@ player.CharacterAdded:Connect(function(character)
 	-- Ensure mobile settings persist
 	_G.IsMobile = true
 	
-	-- Re-disable default controls
-	task.wait(0.1)
-	pcall(function()
-		StarterGui:SetCore("TouchGui", false)
-		UserInputService.ModalEnabled = false
+	-- Re-disable default controls after respawn
+	task.wait(0.5)
+	task.spawn(function()
+		pcall(function()
+			-- Re-disable TouchGui
+			StarterGui:SetCore("TouchGui", false)
+			UserInputService.ModalEnabled = false
+			
+			-- Re-disable player controls
+			local playerScripts = player:WaitForChild("PlayerScripts")
+			local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
+			local controls = playerModule:GetControls()
+			controls:Disable()
+			
+			print("Re-disabled controls after respawn")
+		end)
 	end)
 end)
 
