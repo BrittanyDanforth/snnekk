@@ -40,10 +40,11 @@ AISnake.__index = AISnake
 
 -- === OPTIMIZED SETTINGS ===
 local MAX_AI_SNAKES = 14
-local SPATIAL_GRID_UPDATE_RATE = 0.2
+local SPATIAL_GRID_UPDATE_RATE = 0.5  -- Increased from 0.2 (update less often)
 local BRAIN_UPDATES_PER_FRAME = 1
-local DEBUG_UPDATE_RATE = 1.0
+local DEBUG_UPDATE_RATE = 2.0  -- Increased from 1.0
 local AI_HEIGHT = 5
+local SEGMENT_UPDATE_SKIP = 2  -- Only update every 2nd segment for visuals
 
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
@@ -1343,10 +1344,16 @@ function AISnake:updateMovement(dt)
 		self:addToHistory({ position = self.Position, lookVector = self.Direction })
 	end
 
-	-- Segment following
+	-- Segment following (OPTIMIZED)
 	local followSpeed = self.IsBoosting and self.BoostFollowSpeed or self.FollowSpeed
-
-	for i = 1, self.CurrentLength do
+	
+	-- Initialize frame counter if needed
+	self._segmentUpdateFrame = (self._segmentUpdateFrame or 0) + 1
+	
+	-- Update different segments on different frames to spread the load
+	local updateOffset = self._segmentUpdateFrame % SEGMENT_UPDATE_SKIP
+	
+	for i = 1 + updateOffset, self.CurrentLength, SEGMENT_UPDATE_SKIP do
 		local segment = self.Segments[i]
 		if segment and segment.Parent then
 			local delay = mathFloor(i * 1.2)
@@ -1365,7 +1372,7 @@ function AISnake:updateMovement(dt)
 	if not myHead or not myHead.Parent then return end
 
 	self._collisionCheckFrame = (self._collisionCheckFrame or 0) + 1
-	if self._collisionCheckFrame % 3 ~= 0 then return end
+	if self._collisionCheckFrame % 4 ~= 0 then return end  -- Check less often
 
 	local searchRadius = 3.5
 	local nearbyEntities = SpatialGrid.QueryRadius(myHead.Position, searchRadius)
@@ -1410,8 +1417,8 @@ function AISnake:updateMovement(dt)
 		end
 	end
 
-	-- Debug display (simplified)
-	if self.HeadParts and self.HeadParts.debugLabel then
+	-- Debug display (DISABLED FOR PERFORMANCE)
+	if false and self.HeadParts and self.HeadParts.debugLabel then
 		local label = self.HeadParts.debugLabel
 
 		if not self._lastDebugUpdate or now - self._lastDebugUpdate > DEBUG_UPDATE_RATE then
