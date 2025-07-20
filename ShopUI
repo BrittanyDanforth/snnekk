@@ -1203,6 +1203,11 @@ local function loadPlayerData()
 	else
 		ShopUI.playerData.ownedSkins = {"Default"}
 	end
+	
+	-- Ensure Default is always owned
+	if not table.find(ShopUI.playerData.ownedSkins, "Default") then
+		table.insert(ShopUI.playerData.ownedSkins, 1, "Default")
+	end
 
 	local favoritesJson = localPlayer:GetAttribute("FavoritesJSON")
 	if favoritesJson then
@@ -2087,17 +2092,18 @@ local function createCategoryButton(category, index)
 			if ShopUI.uiElements.priceLabel then
 				ShopUI.uiElements.priceLabel.Visible = true
 			end
-			-- Don't force hide robux button - let updatePreviewForSkin handle it
+			
+			-- Recreate preview if it doesn't exist
+			if not CharacterPreview.currentModel and ShopUI.uiElements.viewport then
+				CharacterPreview.create(ShopUI.uiElements.viewport)
+			end
 			
 			-- Update preview and info when switching back to skins
 			if uiState.selectedSkin then
-				ShopUI.updatePreview()
-				ShopUI.updateInfo()
-			end
-			-- Refresh the current skin selection to update button states properly
-			if uiState.selectedSkin then
 				task.spawn(function()
-					task.wait(0.05) -- Small delay to let UI update
+					task.wait(0.05) -- Small delay to ensure preview is created
+					ShopUI.updatePreview()
+					ShopUI.updateInfo()
 					ShopUI.updatePreviewForSkin(uiState.selectedSkin)
 				end)
 			end
@@ -2482,10 +2488,6 @@ local function createSkinCard(skinName, index)
 
 		ShopUI.updatePreview()
 		ShopUI.updateInfo()
-		
-		-- Force update all cards to reflect current status
-		task.wait(0.1)
-		ShopUI.updateSkinGrid()
 	end)
 
 	return card
@@ -2532,8 +2534,11 @@ function ShopUI.updateSkinGrid()
 		-- Auto-select first skin if none selected
 		if not uiState.selectedSkin and #category.skins > 0 then
 			uiState.selectedSkin = category.skins[1]
-			ShopUI.updateInfo()
-			ShopUI.updatePreview()
+			task.spawn(function()
+				task.wait(0.1) -- Wait for UI to be ready
+				ShopUI.updateInfo()
+				ShopUI.updatePreview()
+			end)
 		end
 	end
 
@@ -2800,9 +2805,8 @@ function ShopUI.purchaseSkin(useRobux)
 			end
 		end)
 		
-		-- Force refresh the shop grid to update the card status
-		task.wait(0.1)
-		ShopUI.updateSkinGrid()
+		-- Update the current card immediately
+		ShopUI.updateInfo()
 	else
 		playSound("ERROR")
 
@@ -2884,9 +2888,8 @@ function ShopUI.applySkin()
 			end
 		end)
 		
-		-- Force refresh the shop grid to update equipped status
-		task.wait(0.1)
-		ShopUI.updateSkinGrid()
+		-- Update immediately
+		ShopUI.updateInfo()
 	else
 		playSound("ERROR")
 		print("❌ Cannot apply unowned skin:", uiState.selectedSkin)

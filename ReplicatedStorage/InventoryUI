@@ -814,6 +814,9 @@ function InventoryUI.loadInventoryData()
 	
 	-- Load owned skins
 	local currentSkin = ShopUI.playerData.currentSkin
+	print("📦 Loading inventory - Current skin:", currentSkin)
+	print("📦 Owned skins:", table.concat(ShopUI.playerData.ownedSkins or {}, ", "))
+	
 	for _, skinName in ipairs(ShopUI.playerData.ownedSkins or {}) do
 		-- Determine rarity based on price
 		local skinData = ShopUI.SKIN_DATA[skinName]
