@@ -46,7 +46,7 @@ local isProcessingDeaths = false
 local deadAISnakes = {} -- Track dead AI snakes to prevent double deaths
 local deadPlayers = {} -- Track dead players to prevent double deaths
 local recentCollisions = {} -- Track recent collisions to prevent double processing
-local collisionProcessing = {} -- Prevent simultaneous collision processing
+local headToHeadProcessing = {} -- Track active head-to-head collisions
 
 -- === INVINCIBILITY SYSTEM ===
 local INVINCIBILITY_DURATION = 5
@@ -1311,13 +1311,19 @@ end
 
 -- === IMPROVED HEAD-TO-HEAD COLLISION LOGIC ===
 local function determineHeadToHeadWinner(headA, headB, velA, velB)
+	-- Ensure we have valid velocities
+	if velA.Magnitude == 0 and velB.Magnitude == 0 then
+		-- Both stationary, random winner
+		return math.random() > 0.5 and "A" or "B"
+	end
+	
 	-- Calculate collision angle
 	local dirAB = (headB.Position - headA.Position).Unit
 	local dirBA = -dirAB
 
 	-- Calculate how directly each snake is moving toward the collision point
-	local dotA = velA.Unit:Dot(dirAB)
-	local dotB = velB.Unit:Dot(dirBA)
+	local dotA = velA.Magnitude > 0 and velA.Unit:Dot(dirAB) or 0
+	local dotB = velB.Magnitude > 0 and velB.Unit:Dot(dirBA) or 0
 
 	-- Calculate speeds
 	local speedA = velA.Magnitude
@@ -1330,23 +1336,24 @@ local function determineHeadToHeadWinner(headA, headB, velA, velB)
 		local aggressionA = speedA * dotA
 		local aggressionB = speedB * dotB
 
-		-- Add small randomness to break ties
-		aggressionA = aggressionA + math.random() * 0.1
-		aggressionB = aggressionB + math.random() * 0.1
-
-		if DEBUG_COLLISIONS then
-			print(string.format("[HEAD-TO-HEAD] Aggression - A: %.2f, B: %.2f", aggressionA, aggressionB))
+		-- Significant advantage wins, otherwise random
+		if math.abs(aggressionA - aggressionB) > 1 then
+			return aggressionA > aggressionB and "B" or "A"
+		else
+			-- Too close to call, random winner
+			return math.random() > 0.5 and "A" or "B"
 		end
-
-		return aggressionA > aggressionB and "B" or "A"
 	else
 		-- One hit the other from the side
-		if dotA > dotB then
+		if dotA > dotB + 0.1 then -- Need significant difference
 			-- A hit B from the side more directly
 			return "B"
-		else
+		elseif dotB > dotA + 0.1 then
 			-- B hit A from the side more directly
 			return "A"
+		else
+			-- Too close, random winner
+			return math.random() > 0.5 and "A" or "B"
 		end
 	end
 end
@@ -1625,6 +1632,25 @@ RunService.Stepped:Connect(function()
 			local dist = (headA.Position - headB.Position).Magnitude
 
 			if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
+				-- Create collision pair key
+				local pairKey = playerA.UserId < playerB.UserId and 
+					(tostring(playerA.UserId) .. "-" .. tostring(playerB.UserId)) or
+					(tostring(playerB.UserId) .. "-" .. tostring(playerA.UserId))
+				
+				-- Check if this collision is already being processed
+				if headToHeadProcessing[pairKey] then
+					continue -- Skip, already determining winner
+				end
+				
+				-- Mark as processing
+				headToHeadProcessing[pairKey] = tick()
+				
+				-- Clean up old processing entries
+				task.spawn(function()
+					task.wait(0.5)
+					headToHeadProcessing[pairKey] = nil
+				end)
+				
 				-- Get velocities
 				local velA = headA.AssemblyLinearVelocity or headA.Velocity or Vector3.zero
 				local velB = headB.AssemblyLinearVelocity or headB.Velocity or Vector3.zero
@@ -1632,6 +1658,7 @@ RunService.Stepped:Connect(function()
 				-- Check if they're actually moving
 				if velA.Magnitude < HEAD_TO_HEAD_SPEED_THRESHOLD and velB.Magnitude < HEAD_TO_HEAD_SPEED_THRESHOLD then
 					-- Both barely moving, skip collision
+					headToHeadProcessing[pairKey] = nil
 					continue
 				end
 
