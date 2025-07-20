@@ -58,11 +58,8 @@ local frameCount = 0
 RunService.Heartbeat:Connect(function()
     frameCount = frameCount + 1
     
-    -- First try to find orb container in workspace
-    local orbContainer = workspace:FindFirstChild("OrbContainer") or workspace:FindFirstChild("Orbs")
-    
-    -- If no container, check workspace directly
-    if not orbContainer then
+    -- ALWAYS check workspace directly for ALL orbs (including death orbs)
+    -- Death orbs spawn directly in workspace, not in containers!
          -- Create a virtual container with all orbs
         local allOrbs = {}
         for _, obj in pairs(workspace:GetChildren()) do
@@ -76,6 +73,15 @@ RunService.Heartbeat:Connect(function()
             local snakeCount = 0
             for _ in pairs(trackedSnakes) do snakeCount = snakeCount + 1 end
             print("🔍 AI Orb Pickup: Found", #allOrbs, "orbs in workspace, tracking", snakeCount, "AI snakes")
+            
+            -- Check if any orbs have Value child
+            local orbsWithValue = 0
+            for _, orb in pairs(allOrbs) do
+                if orb:FindFirstChild("Value") then
+                    orbsWithValue = orbsWithValue + 1
+                end
+            end
+            print("   Orbs with Value child:", orbsWithValue)
         end
         
         -- Process each tracked snake
@@ -87,15 +93,30 @@ RunService.Heartbeat:Connect(function()
                 for _, orb in pairs(allOrbs) do
                     if orb and orb.Parent then
                         local dist = (orb.Position - head.Position).Magnitude
+                        
+                        -- Debug for close orbs
+                        if dist <= ORB_PICKUP_RADIUS * 2 then
+                            print("🎯 AI snake near orb at distance", dist, "Orb pos:", orb.Position, "Head pos:", head.Position)
+                        end
+                        
                         if dist <= ORB_PICKUP_RADIUS then
+                            print("💥 AI snake SHOULD collect orb! Distance:", dist)
+                            
                             -- Get orb value
                             local valueObj = orb:FindFirstChild("Value")
                             local orbValue = valueObj and valueObj.Value or 1
+                            
+                            print("   Orb has Value?", valueObj ~= nil, "Value:", orbValue)
+                            print("   Snake has grow function?", snake.grow ~= nil)
+                            print("   Orb Parent:", orb.Parent)
+                            print("   Orb Anchored:", orb.Anchored, "CanCollide:", orb.CanCollide)
                             
                             -- Grow the snake
                             if snake.grow then
                                 snake:grow(orbValue)
                                 print("🍴 AI Snake collected", orb.Name, "worth", orbValue, "at position", orb.Position)
+                            else
+                                warn("❌ Snake has no grow function!")
                             end
                             
                             -- Destroy the orb
@@ -109,21 +130,6 @@ RunService.Heartbeat:Connect(function()
                 trackedSnakes[snake] = nil
             end
         end
-    else
-        -- Use the orb container
-        for snake, _ in pairs(trackedSnakes) do
-            if snake and snake.HeadParts and snake.HeadParts.head and snake.HeadParts.head.Parent then
-                local head = snake.HeadParts.head
-                local value = AISnakeOrbPickup.PickupNearbyOrbs(orbContainer, head, snake)
-                
-                if value > 0 and snake.grow then
-                    snake:grow(value)
-                end
-            else
-                trackedSnakes[snake] = nil
-            end
-        end
-    end
 end)
 
 return AISnakeOrbPickup

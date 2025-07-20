@@ -222,6 +222,9 @@ function OrbUtils.spawnOrbAt(position, value)
 
 	orb.Parent = Workspace
 	table.insert(OrbUtils.orbs, orb)
+	
+	-- Debug death orb properties
+	print("🔵 Created death orb - Name:", orb.Name, "Size:", orb.Size, "Position:", orb.Position, "CanTouch:", orb.CanTouch)
 
 	-- Attach .Touched event for collection
 	OrbUtils.attachOrbTouched(orb)
