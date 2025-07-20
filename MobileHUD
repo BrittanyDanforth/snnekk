@@ -1,0 +1,265 @@
+-- 📱 MOBILE HUD SYSTEM - Optimized for Slither.io
+-- Place in StarterPlayerScripts as LocalScript
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Only run on mobile
+if not (UserInputService.TouchEnabled and not UserInputService.MouseEnabled) then
+	return
+end
+
+-- Create HUD
+local hudGui = Instance.new("ScreenGui")
+hudGui.Name = "MobileHUD"
+hudGui.ResetOnSpawn = false
+hudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+hudGui.Parent = playerGui
+
+-- 📊 SCORE DISPLAY
+local scoreFrame = Instance.new("Frame")
+scoreFrame.Size = UDim2.new(0, 200, 0, 50)
+scoreFrame.Position = UDim2.new(0.5, -100, 0, 10)
+scoreFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+scoreFrame.BackgroundTransparency = 0.3
+scoreFrame.BorderSizePixel = 0
+scoreFrame.Parent = hudGui
+
+local scoreCorner = Instance.new("UICorner")
+scoreCorner.CornerRadius = UDim.new(0, 12)
+scoreCorner.Parent = scoreFrame
+
+local scoreLabel = Instance.new("TextLabel")
+scoreLabel.Size = UDim2.new(1, 0, 1, 0)
+scoreLabel.BackgroundTransparency = 1
+scoreLabel.Text = "Length: 10"
+scoreLabel.TextColor3 = Color3.new(1, 1, 1)
+scoreLabel.Font = Enum.Font.SourceSansBold
+scoreLabel.TextScaled = true
+scoreLabel.Parent = scoreFrame
+
+-- 🏆 LEADERBOARD (Compact for mobile)
+local leaderFrame = Instance.new("Frame")
+leaderFrame.Size = UDim2.new(0, 150, 0, 200)
+leaderFrame.Position = UDim2.new(1, -160, 0, 60)
+leaderFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+leaderFrame.BackgroundTransparency = 0.4
+leaderFrame.BorderSizePixel = 0
+leaderFrame.Parent = hudGui
+
+local leaderCorner = Instance.new("UICorner")
+leaderCorner.CornerRadius = UDim.new(0, 8)
+leaderCorner.Parent = leaderFrame
+
+local leaderTitle = Instance.new("TextLabel")
+leaderTitle.Size = UDim2.new(1, 0, 0, 30)
+leaderTitle.BackgroundTransparency = 1
+leaderTitle.Text = "Top Snakes"
+leaderTitle.TextColor3 = Color3.new(1, 1, 1)
+leaderTitle.Font = Enum.Font.SourceSansBold
+leaderTitle.TextScaled = true
+leaderTitle.Parent = leaderFrame
+
+local leaderList = Instance.new("Frame")
+leaderList.Size = UDim2.new(1, -10, 1, -35)
+leaderList.Position = UDim2.new(0, 5, 0, 35)
+leaderList.BackgroundTransparency = 1
+leaderList.Parent = leaderFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 5)
+listLayout.Parent = leaderList
+
+-- 🎮 MINI MAP (Optional)
+local miniMapFrame = Instance.new("Frame")
+miniMapFrame.Size = UDim2.new(0, 120, 0, 120)
+miniMapFrame.Position = UDim2.new(0, 10, 0, 70)
+miniMapFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+miniMapFrame.BackgroundTransparency = 0.5
+miniMapFrame.BorderSizePixel = 2
+miniMapFrame.BorderColor3 = Color3.fromRGB(100, 200, 100)
+miniMapFrame.Visible = false  -- Disabled by default for performance
+miniMapFrame.Parent = hudGui
+
+-- 🔔 NOTIFICATION SYSTEM
+local notificationFrame = Instance.new("Frame")
+notificationFrame.Size = UDim2.new(0, 300, 0, 0)
+notificationFrame.Position = UDim2.new(0.5, -150, 0.2, 0)
+notificationFrame.BackgroundTransparency = 1
+notificationFrame.Parent = hudGui
+
+local function showNotification(text, color)
+	local notification = Instance.new("Frame")
+	notification.Size = UDim2.new(1, 0, 0, 40)
+	notification.BackgroundColor3 = color or Color3.fromRGB(100, 200, 100)
+	notification.BackgroundTransparency = 0.2
+	notification.BorderSizePixel = 0
+	notification.Parent = notificationFrame
+	
+	local notifCorner = Instance.new("UICorner")
+	notifCorner.CornerRadius = UDim.new(0, 8)
+	notifCorner.Parent = notification
+	
+	local notifText = Instance.new("TextLabel")
+	notifText.Size = UDim2.new(1, 0, 1, 0)
+	notifText.BackgroundTransparency = 1
+	notifText.Text = text
+	notifText.TextColor3 = Color3.new(1, 1, 1)
+	notifText.Font = Enum.Font.SourceSansBold
+	notifText.TextScaled = true
+	notifText.Parent = notification
+	
+	-- Animate in
+	notification.Position = UDim2.new(0, 0, 0, -50)
+	local tweenIn = TweenService:Create(notification, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+		Position = UDim2.new(0, 0, 0, 0)
+	})
+	tweenIn:Play()
+	
+	-- Fade out after delay
+	task.wait(2)
+	local tweenOut = TweenService:Create(notification, TweenInfo.new(0.3), {
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 0, 0, 50)
+	})
+	tweenOut:Play()
+	tweenOut.Completed:Connect(function()
+		notification:Destroy()
+	end)
+end
+
+-- 📈 UPDATE FUNCTIONS
+local function updateScore()
+	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+		local snake = _G.PlayerSnakes[player]
+		local length = snake.currentLength or 10
+		scoreLabel.Text = "Length: " .. tostring(length)
+		
+		-- Color based on size
+		if length > 1000 then
+			scoreLabel.TextColor3 = Color3.fromRGB(255, 215, 0)  -- Gold
+		elseif length > 500 then
+			scoreLabel.TextColor3 = Color3.fromRGB(255, 100, 100)  -- Red
+		elseif length > 200 then
+			scoreLabel.TextColor3 = Color3.fromRGB(100, 200, 255)  -- Blue
+		else
+			scoreLabel.TextColor3 = Color3.new(1, 1, 1)  -- White
+		end
+	end
+end
+
+local function updateLeaderboard()
+	-- Clear old entries
+	for _, child in pairs(leaderList:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	
+	-- Mock leaderboard data (replace with actual data)
+	local leaders = {
+		{name = "BigSnake", length = 2500},
+		{name = "ProPlayer", length = 1800},
+		{name = "You", length = 500},
+		{name = "Noob123", length = 200},
+		{name = "Beginner", length = 50},
+	}
+	
+	for i, data in ipairs(leaders) do
+		local entry = Instance.new("Frame")
+		entry.Size = UDim2.new(1, 0, 0, 25)
+		entry.BackgroundTransparency = 1
+		entry.LayoutOrder = i
+		entry.Parent = leaderList
+		
+		local rankLabel = Instance.new("TextLabel")
+		rankLabel.Size = UDim2.new(0.2, 0, 1, 0)
+		rankLabel.BackgroundTransparency = 1
+		rankLabel.Text = "#" .. i
+		rankLabel.TextColor3 = Color3.new(1, 1, 1)
+		rankLabel.Font = Enum.Font.SourceSans
+		rankLabel.TextScaled = true
+		rankLabel.Parent = entry
+		
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
+		nameLabel.Position = UDim2.new(0.2, 0, 0, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Text = data.name
+		nameLabel.TextColor3 = data.name == "You" and Color3.fromRGB(100, 255, 100) or Color3.new(0.8, 0.8, 0.8)
+		nameLabel.Font = Enum.Font.SourceSans
+		nameLabel.TextScaled = true
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Parent = entry
+		
+		local lengthLabel = Instance.new("TextLabel")
+		lengthLabel.Size = UDim2.new(0.3, 0, 1, 0)
+		lengthLabel.Position = UDim2.new(0.7, 0, 0, 0)
+		lengthLabel.BackgroundTransparency = 1
+		lengthLabel.Text = tostring(data.length)
+		lengthLabel.TextColor3 = Color3.new(1, 1, 1)
+		lengthLabel.Font = Enum.Font.SourceSans
+		lengthLabel.TextScaled = true
+		lengthLabel.Parent = entry
+	end
+end
+
+-- 🎯 MOBILE GESTURES
+local gestureFrame = Instance.new("Frame")
+gestureFrame.Size = UDim2.new(1, 0, 1, 0)
+gestureFrame.BackgroundTransparency = 1
+gestureFrame.ZIndex = -1
+gestureFrame.Parent = hudGui
+
+local touchStartPos = nil
+local touchStartTime = 0
+
+gestureFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		touchStartPos = input.Position
+		touchStartTime = tick()
+	end
+end)
+
+gestureFrame.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch and touchStartPos then
+		local swipeDistance = (input.Position - touchStartPos).Magnitude
+		local swipeTime = tick() - touchStartTime
+		
+		-- Double tap to boost
+		if swipeDistance < 50 and swipeTime < 0.3 then
+			showNotification("BOOST!", Color3.fromRGB(255, 200, 0))
+		end
+		
+		touchStartPos = nil
+	end
+end)
+
+-- 🔄 UPDATE LOOP
+RunService.Heartbeat:Connect(function()
+	updateScore()
+end)
+
+-- Update leaderboard less frequently
+local leaderboardTimer = 0
+RunService.Heartbeat:Connect(function(dt)
+	leaderboardTimer = leaderboardTimer + dt
+	if leaderboardTimer > 5 then  -- Update every 5 seconds
+		leaderboardTimer = 0
+		updateLeaderboard()
+	end
+end)
+
+-- Initial updates
+updateScore()
+updateLeaderboard()
+
+-- Export notification system
+_G.MobileNotification = showNotification
+
+print("📱 Mobile HUD initialized!")

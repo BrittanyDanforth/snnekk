@@ -58,6 +58,13 @@ validateConfig()
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
+-- 📱 MOBILE CONTROLS INTEGRATION
+local MobileControls = nil
+if _G.MobileControls and _G.MobileControls.Enabled then
+	MobileControls = _G.MobileControls
+	print("📱 Mobile controls detected and integrated!")
+end
+
 -- 🎯 NETWORK-OPTIMIZED ZERO-GAP PATH SYSTEM
 local PathSystem = {}
 PathSystem.__index = PathSystem
@@ -557,14 +564,32 @@ local function initializeForCharacter(character)
 			fpsCounter.lastUpdate = tick()
 		end
 
-		-- Mouse targeting (throttled)
+		-- Input handling (Mouse or Mobile)
 		if updateCounter % networkUpdateInterval == 0 then
-			local mousePos = getMouseWorldPosition()
-			local delta = mousePos - rootPart.Position
-			delta = Vector3.new(delta.X, 0, delta.Z)
+			if MobileControls then
+				-- MOBILE CONTROLS
+				local moveVector = MobileControls.GetMoveVector()
+				if moveVector.Magnitude > 0.1 then
+					State.targetDirection = moveVector
+				end
+				
+				-- Mobile boost handling
+				if MobileControls.IsBoosting() and not State.boosting then
+					State.boosting = true
+					State.targetSpeed = Config.BoostSpeed
+				elseif not MobileControls.IsBoosting() and State.boosting then
+					State.boosting = false
+					State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
+				end
+			else
+				-- MOUSE CONTROLS (Desktop)
+				local mousePos = getMouseWorldPosition()
+				local delta = mousePos - rootPart.Position
+				delta = Vector3.new(delta.X, 0, delta.Z)
 
-			if delta.Magnitude > 1.0 then -- Reduced for more responsive control
-				State.targetDirection = delta.Unit
+				if delta.Magnitude > 1.0 then -- Reduced for more responsive control
+					State.targetDirection = delta.Unit
+				end
 			end
 		end
 

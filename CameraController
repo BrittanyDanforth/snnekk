@@ -1,13 +1,19 @@
--- CameraController: Smooth top-down view
+-- CameraController: Smooth top-down view with Mobile Support
 -- LOCALSCRIPT INSIDE STARTERPLAYERSCRIPTS
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
 
-local HEIGHT = 50
-local SMOOTHNESS = 0.05
+-- Detect mobile
+local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+
+-- Mobile-optimized settings
+local HEIGHT = isMobile and 60 or 50  -- Higher on mobile for better view
+local SMOOTHNESS = isMobile and 0.08 or 0.05  -- Smoother on mobile
+local FOV = isMobile and 80 or 70  -- Wider FOV on mobile
 
 camera.CameraType = Enum.CameraType.Scriptable
 
@@ -18,12 +24,17 @@ RunService.RenderStepped:Connect(function()
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 
-	-- Smooth camera follow
-	local targetCFrame = CFrame.new(
-		rootPart.Position + Vector3.new(0, HEIGHT, 0),
-		rootPart.Position
-	)
+	-- Use mobile camera update if available
+	if _G.MobileControls and _G.MobileControls.UpdateCamera then
+		_G.MobileControls.UpdateCamera(rootPart)
+	else
+		-- Default camera behavior
+		local targetCFrame = CFrame.new(
+			rootPart.Position + Vector3.new(0, HEIGHT, 0),
+			rootPart.Position
+		)
 
-	camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
-	camera.FieldOfView = 70
+		camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
+		camera.FieldOfView = FOV
+	end
 end)
