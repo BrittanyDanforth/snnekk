@@ -1,8 +1,7 @@
 -- THIS IS INSIDE ServerScriptService as a script
--- SnakeCollisionHandler V7.0: SUPREME SCALE COLLISION SYSTEM
--- Zero-lag collision detection with network compensation
--- Surgical fixes for attachment errors and death delays
--- FIXED: Orb spawning positions for AI snakes
+-- SnakeCollisionHandler V8.0: PRECISION COLLISION SYSTEM
+-- Fixed: Random deaths, improved hitbox accuracy, proper head-to-head logic
+-- Fixed: Always spawn orbs on death, better angle detection
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -14,25 +13,27 @@ local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
--- OrbSpawner not needed - using regular orbs for death drops
-
 -- === SUPREME PERFORMANCE CONSTANTS ===
-local SEGMENT_CHUNK_SIZE = 64 -- Doubled for better cache coherency
-local COLLISION_GRID_SIZE = 100 -- Larger cells = fewer lookups
+local SEGMENT_CHUNK_SIZE = 64
+local COLLISION_GRID_SIZE = 100
 local ADAPTIVE_LOD_THRESHOLD = 100
 local EXTREME_LENGTH_THRESHOLD = 500
-local CACHE_EXPIRY = 1.0 -- 10x longer cache life
-local YIELD_INTERVAL = 100 -- 4x less yielding
--- === COLLISION SETTINGS ===
-local COLLISION_FRAME_SKIP = 4 -- Process every 4 frames to reduce lag
-local BODY_COLLISION_DISTANCE = 2.8 -- Slightly reduced for accuracy
-local HEAD_COLLISION_DISTANCE = 3.2 -- Reduced from 3.5 for better accuracy
-local MIN_COLLISION_DISTANCE = 2.0 -- Minimum collision distance
-local COLLISION_BUFFER = 0.5 -- Additional buffer for network compensation
-local NETWORK_COMPENSATION = 0.3 -- Reduced from higher value
-local SPAWN_PROTECTION_TIME = 5 -- 5 seconds spawn protection for AI (increased)
+local CACHE_EXPIRY = 1.0
+local YIELD_INTERVAL = 100
+
+-- === IMPROVED COLLISION SETTINGS ===
+local COLLISION_FRAME_SKIP = 4 -- Process every 4 frames
+local BODY_COLLISION_DISTANCE = 2.5 -- More precise body collision
+local HEAD_COLLISION_DISTANCE = 3.0 -- More precise head collision
+local MIN_COLLISION_DISTANCE = 1.8 -- Minimum distance for any collision
+local COLLISION_BUFFER = 0.3 -- Reduced buffer for accuracy
+local NETWORK_COMPENSATION = 0.2 -- Reduced compensation
+local SPAWN_PROTECTION_TIME = 5 -- 5 seconds spawn protection for AI
 local MIN_AI_SPAWN_DISTANCE = 50 -- Minimum distance between AI spawn points
 
+-- === HEAD-TO-HEAD SETTINGS ===
+local HEAD_TO_HEAD_ANGLE_THRESHOLD = 0.5 -- Dot product threshold for frontal collision
+local HEAD_TO_HEAD_SPEED_THRESHOLD = 5 -- Minimum speed for collision to count
 
 -- === DEBUG SYSTEM ===
 local DEBUG_COLLISIONS = false -- Set to true to enable collision debugging
@@ -44,8 +45,9 @@ local orbSpawnQueue = {}
 local isProcessingDeaths = false
 local deadAISnakes = {} -- Track dead AI snakes to prevent double deaths
 local deadPlayers = {} -- Track dead players to prevent double deaths
+local recentCollisions = {} -- Track recent collisions to prevent double processing
 
--- === INVINCIBILITY SYSTEM (UNCHANGED) ===
+-- === INVINCIBILITY SYSTEM ===
 local INVINCIBILITY_DURATION = 5
 local invinciblePlayers = {}
 local spawnProtectedAI = {} -- Track AI spawn protection
@@ -189,16 +191,27 @@ local CollisionCache = {
 -- === FIXED ORB SPAWNING SYSTEM ===
 local ORB_SPAWN_HEIGHT = 5 -- Match AI snake height for proper collection
 local MIN_ORB_SPACING = 3 -- Minimum distance between spawned orbs
+local GUARANTEED_ORB_COUNT = 5 -- Minimum orbs to spawn on death
 
 local function spawnOrbDirect(position, value)
 	-- Direct spawn with minimal processing
 	local success, err = pcall(function()
-		OrbUtils.spawnOrbAt(position, value)  -- Just spawn regular orbs like the old version
+		-- Ensure position is valid
+		if not position or position ~= position then -- NaN check
+			position = Vector3.new(0, ORB_SPAWN_HEIGHT, 0)
+		end
+		
+		-- Clamp value to reasonable range
+		value = math.clamp(value or 1, 1, 50)
+		
+		OrbUtils.spawnOrbAt(position, value)
 	end)
 
 	if not success then
-		warn("Orb spawn failed:", err)
+		warn("Orb spawn failed:", err, "at position:", position)
 	end
+	
+	return success
 end
 
 -- === OPTIMIZED HEAD RETRIEVAL ===
@@ -522,12 +535,50 @@ local function getAISnakeSegments(snake)
 	return cacheData
 end
 
+-- === COLLISION VALIDATION ===
+local function validateCollision(posA, posB, expectedDistance)
+	-- Extra validation to prevent phantom collisions
+	if not posA or not posB then return false end
+	
+	local dist = (posA - posB).Magnitude
+	
+	-- Check if distance is reasonable
+	if dist > expectedDistance * 2 then
+		return false
+	end
+	
+	-- Check for NaN
+	if dist ~= dist then
+		return false
+	end
+	
+	return true
+end
+
 -- === DEATH HANDLERS (QUEUE-BASED) ===
 local function queuePlayerDeath(player)
 	-- Additional safety checks to prevent random deaths
 	if not player or not player.Parent then
 		if DEBUG_COLLISIONS then
 			print(string.format("[SAFETY] Blocked death - invalid player object"))
+		end
+		return
+	end
+	
+	-- Check if player has valid character
+	local character = player.Character
+	if not character then
+		if DEBUG_COLLISIONS then
+			print(string.format("[SAFETY] Blocked death - no character for %s", player.Name))
+		end
+		return
+	end
+	
+	-- Check if player is actually in the game
+	local humanoid = character:FindFirstChild("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then
+		if DEBUG_COLLISIONS then
+			print(string.format("[SAFETY] Blocked death - player already dead: %s", player.Name))
 		end
 		return
 	end
@@ -678,18 +729,30 @@ task.spawn(function()
 							end
 
 							-- Ensure at least some orbs spawn
-							if spawnedOrbs == 0 and totalLength > 0 then
-								local firstSeg = segments[1]
-								if firstSeg and firstSeg.Parent and firstSeg.Position then
-									pcall(function()
+							if spawnedOrbs < GUARANTEED_ORB_COUNT then
+								-- Spawn remaining orbs at death location
+								local deathPos = humanoid.RootPart and humanoid.RootPart.Position or (segments[1] and segments[1].Position)
+								if deathPos then
+									for i = spawnedOrbs + 1, GUARANTEED_ORB_COUNT do
+										local angle = (i / GUARANTEED_ORB_COUNT) * math.pi * 2
+										local radius = 5 + (i * 2)
 										local spawnPos = Vector3.new(
-											firstSeg.Position.X,
+											deathPos.X + math.cos(angle) * radius,
 											ORB_SPAWN_HEIGHT,
-											firstSeg.Position.Z
+											deathPos.Z + math.sin(angle) * radius
 										)
-										spawnOrbDirect(spawnPos, valuePerOrb)
-									end)
+										
+										local success = spawnOrbDirect(spawnPos, valuePerOrb)
+										if success then
+											spawnedOrbs = spawnedOrbs + 1
+										end
+									end
 								end
+							end
+							
+							-- Log orb spawning for debugging
+							if DEBUG_COLLISIONS then
+								print(string.format("[ORBS] Spawned %d orbs for %s (length: %d)", spawnedOrbs, player.Name, totalLength))
 							end
 						end
 
@@ -793,18 +856,30 @@ task.spawn(function()
 								end
 
 								-- Ensure at least some orbs spawn
-								if spawnedOrbs == 0 and totalLength > 0 then
-									local firstSeg = segments[1]
-									if firstSeg and firstSeg.Parent and firstSeg.Position then
-										pcall(function()
+								if spawnedOrbs < GUARANTEED_ORB_COUNT then
+									-- Spawn remaining orbs at death location
+									local deathPos = head.Position
+									if deathPos then
+										for i = spawnedOrbs + 1, GUARANTEED_ORB_COUNT do
+											local angle = (i / GUARANTEED_ORB_COUNT) * math.pi * 2
+											local radius = 5 + (i * 2)
 											local spawnPos = Vector3.new(
-												firstSeg.Position.X,
+												deathPos.X + math.cos(angle) * radius,
 												groundY + ORB_SPAWN_HEIGHT,
-												firstSeg.Position.Z
+												deathPos.Z + math.sin(angle) * radius
 											)
-											spawnOrbDirect(spawnPos, valuePerOrb)
-										end)
+											
+											local success = spawnOrbDirect(spawnPos, valuePerOrb)
+											if success then
+												spawnedOrbs = spawnedOrbs + 1
+											end
+										end
 									end
+								end
+								
+								-- Log orb spawning for debugging
+								if DEBUG_COLLISIONS then
+									print(string.format("[ORBS] Spawned %d orbs for AI snake (length: %d)", spawnedOrbs, totalLength))
 								end
 							end
 
@@ -928,6 +1003,77 @@ local function findCollisionInSegments(headPos, segments, collisionDist, useGrid
 			end
 		end
 	end
+	return false
+end
+
+-- === IMPROVED HEAD-TO-HEAD COLLISION LOGIC ===
+local function determineHeadToHeadWinner(headA, headB, velA, velB)
+	-- Calculate collision angle
+	local dirAB = (headB.Position - headA.Position).Unit
+	local dirBA = -dirAB
+	
+	-- Calculate how directly each snake is moving toward the collision point
+	local dotA = velA.Unit:Dot(dirAB)
+	local dotB = velB.Unit:Dot(dirBA)
+	
+	-- Calculate speeds
+	local speedA = velA.Magnitude
+	local speedB = velB.Magnitude
+	
+	-- Check if both are moving toward each other (true head-on)
+	if dotA > HEAD_TO_HEAD_ANGLE_THRESHOLD and dotB > HEAD_TO_HEAD_ANGLE_THRESHOLD then
+		-- True head-on collision
+		-- Winner is determined by aggression score (speed * directness)
+		local aggressionA = speedA * dotA
+		local aggressionB = speedB * dotB
+		
+		-- Add small randomness to break ties
+		aggressionA = aggressionA + math.random() * 0.1
+		aggressionB = aggressionB + math.random() * 0.1
+		
+		if DEBUG_COLLISIONS then
+			print(string.format("[HEAD-TO-HEAD] Aggression - A: %.2f, B: %.2f", aggressionA, aggressionB))
+		end
+		
+		return aggressionA > aggressionB and "B" or "A"
+	else
+		-- One hit the other from the side
+		if dotA > dotB then
+			-- A hit B from the side more directly
+			return "B"
+		else
+			-- B hit A from the side more directly
+			return "A"
+		end
+	end
+end
+
+-- === COLLISION DETECTION WITH RECENT TRACKING ===
+local function isRecentCollision(entityA, entityB)
+	local key = tostring(entityA) .. "-" .. tostring(entityB)
+	local reverseKey = tostring(entityB) .. "-" .. tostring(entityA)
+	
+	local currentTime = tick()
+	
+	-- Check both directions
+	if recentCollisions[key] and currentTime - recentCollisions[key] < 0.5 then
+		return true
+	end
+	if recentCollisions[reverseKey] and currentTime - recentCollisions[reverseKey] < 0.5 then
+		return true
+	end
+	
+	-- Mark as recent
+	recentCollisions[key] = currentTime
+	recentCollisions[reverseKey] = currentTime
+	
+	-- Clean old entries
+	for k, time in pairs(recentCollisions) do
+		if currentTime - time > 1 then
+			recentCollisions[k] = nil
+		end
+	end
+	
 	return false
 end
 
@@ -1107,12 +1253,11 @@ RunService.Stepped:Connect(function()
 			local playerB = dataB.player
 			local headB = dataB.part
 
-			-- Check invincibility for both players - skip if either is invincible
+			-- Check invincibility for both players
 			local playerAInvincible = isPlayerInvincible(playerA)
 			local playerBInvincible = isPlayerInvincible(playerB)
 
 			if playerAInvincible or playerBInvincible then
-				-- Debug: Log when invincibility prevents collision
 				if DEBUG_COLLISIONS then
 					print(string.format("[INVINCIBILITY] Skipping collision - PlayerA: %s (invincible: %s), PlayerB: %s (invincible: %s)", 
 						playerA.Name, tostring(playerAInvincible), playerB.Name, tostring(playerBInvincible)))
@@ -1120,23 +1265,33 @@ RunService.Stepped:Connect(function()
 				continue
 			end
 
-			-- Additional safety checks
+			-- Safety checks
 			if not headA or not headA.Parent or not headB or not headB.Parent then
+				continue
+			end
+			
+			-- Check if already processed recently
+			if isRecentCollision(playerA, playerB) then
 				continue
 			end
 
 			local dist = (headA.Position - headB.Position).Magnitude
 
-			-- Debug: Log when collision is detected
-			if DEBUG_COLLISIONS then
-				print(string.format("[COLLISION] Head-to-head detected - PlayerA: %s, PlayerB: %s, Distance: %.2f", 
-					playerA.Name, playerB.Name, dist))
-			end
 			if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
-				-- Real slither.io logic: check if either head hit the other's body
+				-- Get velocities
+				local velA = headA.AssemblyLinearVelocity or headA.Velocity or Vector3.zero
+				local velB = headB.AssemblyLinearVelocity or headB.Velocity or Vector3.zero
+				
+				-- Check if they're actually moving
+				if velA.Magnitude < HEAD_TO_HEAD_SPEED_THRESHOLD and velB.Magnitude < HEAD_TO_HEAD_SPEED_THRESHOLD then
+					-- Both barely moving, skip collision
+					continue
+				end
+				
+				-- Check for body collisions first
 				local playerADies = false
 				local playerBDies = false
-
+				
 				-- Check if Player A's head is touching Player B's body
 				local segDataB = getPlayerSegments(playerB)
 				if segDataB and segDataB.segments and #segDataB.segments > 3 then
@@ -1146,6 +1301,9 @@ RunService.Stepped:Connect(function()
 							local segPos = seg.Position
 							if (headA.Position - segPos).Magnitude < BODY_COLLISION_DISTANCE then
 								playerADies = true
+								if DEBUG_COLLISIONS then
+									print(string.format("[COLLISION] %s hit %s's body at segment %d", playerA.Name, playerB.Name, i))
+								end
 								break
 							end
 						end
@@ -1161,68 +1319,55 @@ RunService.Stepped:Connect(function()
 							local segPos = seg.Position
 							if (headB.Position - segPos).Magnitude < BODY_COLLISION_DISTANCE then
 								playerBDies = true
+								if DEBUG_COLLISIONS then
+									print(string.format("[COLLISION] %s hit %s's body at segment %d", playerB.Name, playerA.Name, i))
+								end
 								break
 							end
 						end
 					end
 				end
 
-				-- Apply deaths based on who hit what
+				-- Process deaths
 				if playerADies and playerBDies then
-					-- Both hit each other's bodies simultaneously (very rare)
-					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] Both die (mutual body hit): %s and %s", 
-							playerA.Name, playerB.Name))
-					end
-					queuePlayerDeath(playerA)
-					queuePlayerDeath(playerB)
-				elseif playerADies then
-					-- Player A's head hit B's body - A dies
-					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] %s dies (hit %s's body)", 
-							playerA.Name, playerB.Name))
-					end
-					queuePlayerDeath(playerA)
-				elseif playerBDies then
-					-- Player B's head hit A's body - B dies
-					if DEBUG_COLLISIONS then
-						print(string.format("[DEATH] %s dies (hit %s's body)", 
-							playerB.Name, playerA.Name))
-					end
-					queuePlayerDeath(playerB)
-				else
-					-- Pure head-to-head collision - only ONE dies
-					local velA = headA.AssemblyLinearVelocity or headA.Velocity
-					local velB = headB.AssemblyLinearVelocity or headB.Velocity
-					local dirAB = (headB.Position - headA.Position).Unit
-					local dirBA = -dirAB
-
-					local dotA = velA:Dot(dirAB)
-					local dotB = velB:Dot(dirBA)
-
-					-- Also check if they're actually moving (not just sitting there)
-					local speedA = velA.Magnitude
-					local speedB = velB.Magnitude
-
-					-- Determine winner based on who's more aggressive
-					local scoreA = dotA * speedA
-					local scoreB = dotB * speedB
-
-					if scoreA > scoreB then
-						-- A is more aggressive, B dies
+					-- Both hit bodies - determine winner based on who hit first/harder
+					local winner = determineHeadToHeadWinner(headA, headB, velA, velB)
+					if winner == "A" then
 						if DEBUG_COLLISIONS then
-							print(string.format("[DEATH] %s dies (less aggressive, score %.1f < %.1f)", 
-								playerB.Name, scoreB, scoreA))
+							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerB.Name))
 						end
 						queuePlayerDeath(playerB)
 					else
-						-- B is more aggressive or equal, A dies
-						-- In case of tie, we just pick one (A)
 						if DEBUG_COLLISIONS then
-							print(string.format("[DEATH] %s dies (less aggressive, score %.1f <= %.1f)", 
-								playerA.Name, scoreA, scoreB))
+							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerA.Name))
 						end
 						queuePlayerDeath(playerA)
+					end
+				elseif playerADies then
+					-- Only A hit B's body
+					if DEBUG_COLLISIONS then
+						print(string.format("[DEATH] %s dies (hit %s's body)", playerA.Name, playerB.Name))
+					end
+					queuePlayerDeath(playerA)
+				elseif playerBDies then
+					-- Only B hit A's body
+					if DEBUG_COLLISIONS then
+						print(string.format("[DEATH] %s dies (hit %s's body)", playerB.Name, playerA.Name))
+					end
+					queuePlayerDeath(playerB)
+				else
+					-- Pure head-to-head collision
+					local loser = determineHeadToHeadWinner(headA, headB, velA, velB)
+					if loser == "A" then
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (head-to-head collision)", playerA.Name))
+						end
+						queuePlayerDeath(playerA)
+					else
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (head-to-head collision)", playerB.Name))
+						end
+						queuePlayerDeath(playerB)
 					end
 				end
 				break
