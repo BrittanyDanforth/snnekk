@@ -657,9 +657,12 @@ task.spawn(function()
 											(math.random() - 0.5) * 2
 										)
 
-										-- Spawn at segment position with small offset
-										-- Keep at snake height for easy collection
-										local spawnPos = pos + offset
+										-- Spawn at proper height so AI can collect
+										local spawnPos = Vector3.new(
+											pos.X + offset.X,
+											ORB_SPAWN_HEIGHT,  -- Use standard orb height!
+											pos.Z + offset.Z
+										)
 
 										local success = pcall(function()
 											-- Just spawn regular orbs that AI can eat
@@ -679,7 +682,12 @@ task.spawn(function()
 								local firstSeg = segments[1]
 								if firstSeg and firstSeg.Parent and firstSeg.Position then
 									pcall(function()
-										spawnOrbDirect(firstSeg.Position, valuePerOrb)
+										local spawnPos = Vector3.new(
+											firstSeg.Position.X,
+											ORB_SPAWN_HEIGHT,
+											firstSeg.Position.Z
+										)
+										spawnOrbDirect(spawnPos, valuePerOrb)
 									end)
 								end
 							end
@@ -764,8 +772,12 @@ task.spawn(function()
 												(math.random() - 0.5) * 2
 											)
 
-																						-- Spawn at snake segment height
-											local spawnPos = pos + offset
+																						-- Ensure proper height
+											local spawnPos = Vector3.new(
+												pos.X + offset.X,
+												groundY + ORB_SPAWN_HEIGHT,  -- Use proper height!
+												pos.Z + offset.Z
+											)
 
 											local success = pcall(function()
 												-- Just spawn regular orbs for AI deaths
@@ -785,7 +797,12 @@ task.spawn(function()
 									local firstSeg = segments[1]
 									if firstSeg and firstSeg.Parent and firstSeg.Position then
 										pcall(function()
-											spawnOrbDirect(firstSeg.Position, valuePerOrb)
+											local spawnPos = Vector3.new(
+												firstSeg.Position.X,
+												groundY + ORB_SPAWN_HEIGHT,
+												firstSeg.Position.Z
+											)
+											spawnOrbDirect(spawnPos, valuePerOrb)
 										end)
 									end
 								end
