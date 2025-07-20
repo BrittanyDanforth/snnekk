@@ -885,31 +885,33 @@ task.spawn(function()
 
 						humanoid.Health = 0
 
-						-- Handle character cleanup
-						task.spawn(function()
-							task.wait(0.2) -- Small delay for orb spawning
-
-							if character and character.Parent then
-								-- Option 1: Move character far away (safer than destroying)
-								local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
-								if root then
-									root.CFrame = CFrame.new(0, -500, 0) -- Move below the map
+						-- IMMEDIATE character cleanup to prevent collision bugs
+						if character and character.Parent then
+							-- Disable all collision IMMEDIATELY
+							for _, part in ipairs(character:GetDescendants()) do
+								if part:IsA("BasePart") then
+									part.CanCollide = false
+									part.CanTouch = false
+									part.CanQuery = false
+									part.Transparency = 1
 								end
-
-								-- Option 2: Make character invisible
-								for _, part in ipairs(character:GetDescendants()) do
-									if part:IsA("BasePart") or part:IsA("Decal") then
-										part.Transparency = 1
-									end
-									if part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
-										part.Enabled = false
-									end
-								end
-
-								-- Option 3: Remove from workspace but don't destroy (let Roblox handle it)
-								character.Parent = game:GetService("ServerStorage")
 							end
-						end)
+							
+							-- Move character away IMMEDIATELY
+							local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+							if root then
+								root.CFrame = CFrame.new(10000, -1000, 10000) -- Far away
+								root.Anchored = true -- Prevent it from falling
+							end
+							
+							-- Schedule full cleanup
+							task.spawn(function()
+								task.wait(0.5) -- Wait for orbs to spawn
+								if character and character.Parent then
+									character:Destroy() -- Just destroy it, player will respawn with new character
+								end
+							end)
+						end
 
 						-- Clear dead flag after respawn time
 						task.spawn(function()
