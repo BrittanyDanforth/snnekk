@@ -14,7 +14,6 @@ local MIN_SPAWN_RADIUS = 100    -- minimum distance from center
 local SPAWN_HEIGHT = 5
 local SPAWN_CENTER = Vector3.new(0, SPAWN_HEIGHT, 0)
 local MIN_PLAYER_DISTANCE = 80  -- minimum distance from any player
-local SPAWN_PROTECTION_TIME = 5 -- seconds of invulnerability after spawn
 
 -- === HELPER FUNCTIONS ===
 local function isPositionSafeFromPlayers(position)
@@ -67,44 +66,15 @@ end
 
 -- === AI SNAKE MANAGEMENT ===
 local aiSnakes = {}
-local spawnProtection = {}
 
--- Function to spawn a snake with protection
-local function spawnSnakeWithProtection(index)
+-- Function to spawn a snake
+local function spawnSnake(index)
 	local position = getRandomSpawnPosition()
 	local snake = AISnake.new(position)
 	
 	if snake then
 		aiSnakes[index] = snake
-		
-		-- Add spawn protection
-		spawnProtection[snake] = tick() + SPAWN_PROTECTION_TIME
-		snake.SpawnProtected = true
-		
-		-- Make snake temporarily invulnerable
-		if snake.HeadParts and snake.HeadParts.head then
-			-- Visual indicator of protection (optional)
-			local protectionIndicator = Instance.new("SelectionBox")
-			protectionIndicator.Name = "SpawnProtection"
-			protectionIndicator.Adornee = snake.HeadParts.head
-			protectionIndicator.Color3 = Color3.fromRGB(100, 255, 100)
-			protectionIndicator.LineThickness = 0.15
-			protectionIndicator.Transparency = 0.3
-			protectionIndicator.Parent = snake.HeadParts.head
-			
-			-- Remove protection after time expires
-			task.delay(SPAWN_PROTECTION_TIME, function()
-				if protectionIndicator and protectionIndicator.Parent then
-					protectionIndicator:Destroy()
-				end
-				if snake then
-					snake.SpawnProtected = false
-				end
-				spawnProtection[snake] = nil
-			end)
-		end
-		
-		print("🐍 Spawned AI snake", index, "at", position, "with", SPAWN_PROTECTION_TIME, "seconds protection")
+		print("🐍 Spawned AI snake", index, "at", position)
 	end
 	
 	return snake
@@ -113,7 +83,7 @@ end
 -- Initial spawn with random positions
 for i = 1, NUM_SNAKES do
 	task.wait(0.2) -- Small delay between spawns
-	spawnSnakeWithProtection(i)
+	spawnSnake(i)
 end
 
 -- Respawn timer to prevent instant respawning
@@ -130,13 +100,8 @@ RunService.Stepped:Connect(function()
 		if not snake or not snake._active or not snake.RootPart or not snake.RootPart.Parent then
 			-- Check respawn cooldown
 			if not respawnCooldowns[i] or currentTime > respawnCooldowns[i] then
-				-- Clear old snake reference
-				if snake then
-					spawnProtection[snake] = nil
-				end
-				
 				-- Spawn new snake
-				spawnSnakeWithProtection(i)
+				spawnSnake(i)
 				
 				-- Set respawn cooldown (2-4 seconds)
 				respawnCooldowns[i] = currentTime + math.random(2, 4)
@@ -144,6 +109,3 @@ RunService.Stepped:Connect(function()
 		end
 	end
 end)
-
--- Export spawn protection check for collision system
-_G.AISnakeSpawnProtection = spawnProtection

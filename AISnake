@@ -1391,12 +1391,9 @@ function AISnake:updateMovement(dt)
 		end
 	end
 
-	-- Collision detection with spawn protection
+	-- Collision detection (handled by SnakeCollisionHandler)
 	local myHead = self.HeadParts and self.HeadParts.head
 	if not myHead or not myHead.Parent then return end
-
-	-- Skip collision if spawn protected
-	if self.SpawnProtected then return end
 
 	self._collisionCheckFrame = (self._collisionCheckFrame or 0) + 1
 	if self._collisionCheckFrame % 3 ~= 0 then return end
@@ -1412,11 +1409,6 @@ function AISnake:updateMovement(dt)
 			local otherOwner = data.owner
 
 			if data.type == "AI_HEAD" then
-				-- Check if either snake is spawn protected
-				if otherOwner.SpawnProtected then
-					return -- Other snake is protected, ignore collision
-				end
-				
 				if tostring(self) < tostring(otherOwner) then
 					if self.CurrentLength > otherOwner.CurrentLength then
 						otherOwner:Destroy()
@@ -1432,10 +1424,6 @@ function AISnake:updateMovement(dt)
 				return
 			elseif data.type == "AI_SEGMENT" then
 				if otherOwner ~= self then
-					-- Check if the other snake is spawn protected
-					if otherOwner.SpawnProtected then
-						return -- Other snake is protected, ignore collision
-					end
 					self:Destroy()
 					otherOwner:setConfidenceBuff()
 					return

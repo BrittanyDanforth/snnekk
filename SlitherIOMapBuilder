@@ -63,7 +63,7 @@ local function createGround()
     texture.Parent = ground
 end
 
--- Helper: Create invisible boundary walls
+-- Helper: Create invisible boundary walls with better collision
 local function createWalls()
     local function createWall(name, size, position)
         local wall = Instance.new("Part")
@@ -72,10 +72,22 @@ local function createWalls()
         wall.Position = position
         wall.Anchored = true
         wall.CanCollide = true
+        wall.CanTouch = true  -- Ensure touch detection works
+        wall.CanQuery = true  -- Ensure raycasts work
         wall.Locked = true
-        wall.Transparency = 1
-        wall.Material = Enum.Material.SmoothPlastic  -- Fully invisible
+        wall.Transparency = 0.95  -- Slightly visible for debugging (change to 1 for fully invisible)
+        wall.Material = Enum.Material.ForceField  -- ForceField for subtle visibility
+        wall.Color = Color3.fromRGB(255, 50, 50)  -- Red tint for debugging
         wall.Parent = Workspace
+        
+        -- Add a collision box to ensure detection
+        local selectionBox = Instance.new("SelectionBox")
+        selectionBox.Adornee = wall
+        selectionBox.Color3 = Color3.fromRGB(255, 0, 0)
+        selectionBox.LineThickness = 0.1
+        selectionBox.Transparency = 0.8
+        selectionBox.Parent = wall
+        
         return wall
     end
     local half = MAP_SIZE/2
