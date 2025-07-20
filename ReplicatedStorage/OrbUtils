@@ -13,11 +13,65 @@ OrbUtils.orbs = {}
 -- Debounce table to prevent double-collection (shared for all orbs)
 local orbDebounce = {}
 
+-- Clean up debounce table periodically to prevent memory leaks
+task.spawn(function()
+	while true do
+		task.wait(30) -- Clean every 30 seconds
+		local now = tick()
+		for key, timestamp in pairs(orbDebounce) do
+			if now - timestamp > 5 then -- Remove entries older than 5 seconds
+				orbDebounce[key] = nil
+			end
+		end
+	end
+end)
+
+-- Batch registration system for performance
+local pendingRegistrations = {}
+local registrationTimer = nil
+local BATCH_REGISTRATION_DELAY = 0.1 -- Register orbs in batches
+
 -- Forward declaration for attachOrbTouched (set by OrbSpawner)
 OrbUtils.attachOrbTouched = nil
 
 -- Callback for orb removal, for AI snakes to clear orb targets
 OrbUtils.onOrbRemoved = nil
+
+-- Batch registration function
+local function processPendingRegistrations()
+	if #pendingRegistrations == 0 then
+		registrationTimer = nil
+		return
+	end
+	
+	-- Get OrbSpawner
+	local OrbSpawner
+	if _G.OrbSpawner then
+		OrbSpawner = _G.OrbSpawner
+	else
+		local success, result = pcall(function()
+			return require(game.ServerScriptService:WaitForChild("OrbSpawner", 1))
+		end)
+		if success then
+			OrbSpawner = result
+		end
+	end
+	
+	if OrbSpawner and OrbSpawner.registerExternalOrb then
+		-- Register all pending orbs at once
+		for _, orb in ipairs(pendingRegistrations) do
+			if orb and orb.Parent then
+				pcall(function()
+					OrbSpawner.registerExternalOrb(orb)
+				end)
+			end
+		end
+	end
+	
+	-- Clear the pending list
+	pendingRegistrations = {}
+	registrationTimer = nil
+end
 
 -- Helper: Get all AI snake heads
 local function getAISnakeHeads()
@@ -226,55 +280,19 @@ function OrbUtils.spawnOrbAt(position, value)
 	orb.Parent = Workspace
 	table.insert(OrbUtils.orbs, orb)
 	
-	-- Debug death orb properties
-	print("🔵 Created death orb - Name:", orb.Name, "Size:", orb.Size, "Position:", orb.Position, "CanTouch:", orb.CanTouch, "Original Y:", position.Y)
+	-- Debug removed for performance
 
 	-- Attach .Touched event for collection
 	OrbUtils.attachOrbTouched(orb)
 	
-	-- CRITICAL: Register with OrbSpawner so AI can find it!
-	-- Delay registration attempt to avoid circular dependency issues
-	task.defer(function()
-		local registered = false
-		local attempts = 0
-		
-		-- Try multiple times with small delays
-		while not registered and attempts < 5 do
-			attempts = attempts + 1
-			
-			local OrbSpawner
-			
-			-- First try global OrbSpawner (fastest)
-			if _G.OrbSpawner then
-				OrbSpawner = _G.OrbSpawner
-			else
-				-- Try ServerScriptService (where it should be)
-				local success, result = pcall(function()
-					return require(game.ServerScriptService:WaitForChild("OrbSpawner", 1))
-				end)
-				if success then
-					OrbSpawner = result
-				end
-			end
-			
-			if OrbSpawner and OrbSpawner.registerExternalOrb then
-				pcall(function()
-					OrbSpawner.registerExternalOrb(orb)
-					registered = true
-					print("✅ Death orb registered with OrbSpawner grid at position", orb.Position)
-				end)
-			else
-				if attempts == 1 then
-					print("⏳ Waiting for OrbSpawner to initialize...")
-				end
-				task.wait(0.1)
-			end
-		end
-		
-		if not registered then
-			warn("⚠️ Death orb NOT registered with spatial grid - AI may not find it!")
-		end
-	end)
+	-- Queue for batch registration (optimized)
+	table.insert(pendingRegistrations, orb)
+	
+	-- Start batch timer if not already running
+	if not registrationTimer then
+		registrationTimer = task.wait(BATCH_REGISTRATION_DELAY)
+		task.spawn(processPendingRegistrations)
+	end
 
 	return orb
 end
