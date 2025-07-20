@@ -188,7 +188,7 @@ local CollisionCache = {
 }
 
 -- === FIXED ORB SPAWNING SYSTEM ===
-local ORB_SPAWN_HEIGHT = 2 -- Standard height above ground for orbs
+local ORB_SPAWN_HEIGHT = 5 -- Match AI snake height for proper collection
 local MIN_ORB_SPACING = 3 -- Minimum distance between spawned orbs
 
 local function spawnOrbDirect(position, value)
@@ -200,7 +200,7 @@ local function spawnOrbDirect(position, value)
 			-- Make sure it's visible and at proper height
 			orb.Size = Vector3.new(1.5, 1.5, 1.5)
 			orb.Transparency = 0
-			local yPos = math.max(3, position.Y)
+			local yPos = math.max(ORB_SPAWN_HEIGHT, position.Y)
 			orb.Position = Vector3.new(position.X, yPos, position.Z)
 		end
 	end)

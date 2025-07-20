@@ -93,10 +93,13 @@ RunService.Heartbeat:Connect(function()
                 for _, orb in pairs(allOrbs) do
                     if orb and orb.Parent then
                         local dist = (orb.Position - head.Position).Magnitude
+                        local horizontalDist = ((orb.Position - head.Position) * Vector3.new(1, 0, 1)).Magnitude
+                        local heightDiff = math.abs(orb.Position.Y - head.Position.Y)
                         
                         -- Debug for close orbs
                         if dist <= ORB_PICKUP_RADIUS * 2 then
-                            print("🎯 AI snake near orb at distance", dist, "Orb pos:", orb.Position, "Head pos:", head.Position)
+                            print("🎯 AI snake near orb - Total dist:", dist, "Horizontal:", horizontalDist, "Height diff:", heightDiff)
+                            print("   Orb Y:", orb.Position.Y, "Head Y:", head.Position.Y)
                         end
                         
                         if dist <= ORB_PICKUP_RADIUS then
