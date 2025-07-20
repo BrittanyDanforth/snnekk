@@ -777,30 +777,29 @@ function InventoryUI.equipSelectedItem()
 		if ShopUI and ShopUI.playerData then
 			ShopUI.playerData.currentSkin = InventoryUI.selectedItem.name
 		end
-			
-			-- Success feedback
-			local successText = InventoryUI.uiElements.itemName
-			local originalText = successText.Text
-			successText.Text = "✅ EQUIPPED!"
-			successText.TextColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
-			
-			-- Refresh inventory to update equipped status
-			task.wait(0.5)
-			InventoryUI.loadInventoryData()
-			InventoryUI.refreshGrid()
-			
-			-- Update shop if it's open
-			pcall(function()
-				if ShopUI then
-					ShopUI.updateSkinGrid()
-					ShopUI.updateInfo()
-				end
-			end)
-			
-			task.wait(1)
-			successText.Text = originalText
-			successText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
-		end
+		
+		-- Success feedback
+		local successText = InventoryUI.uiElements.itemName
+		local originalText = successText.Text
+		successText.Text = "✅ EQUIPPED!"
+		successText.TextColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
+		
+		-- Refresh inventory to update equipped status
+		task.wait(0.5)
+		InventoryUI.loadInventoryData()
+		InventoryUI.refreshGrid()
+		
+		-- Update shop if it's open
+		pcall(function()
+			if ShopUI then
+				ShopUI.updateSkinGrid()
+				ShopUI.updateInfo()
+			end
+		end)
+		
+		task.wait(1)
+		successText.Text = originalText
+		successText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
 	else
 		-- Handle other item types
 		print("Using item:", InventoryUI.selectedItem.name)

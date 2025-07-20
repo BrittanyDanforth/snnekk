@@ -2305,6 +2305,12 @@ end
 
 -- Create skin card
 local function createSkinCard(skinName, index)
+	-- Validate skin name
+	if not skinName or type(skinName) ~= "string" or skinName == "" then
+		warn("Invalid skin name:", tostring(skinName))
+		return
+	end
+	
 	local skinData = ShopUI.SKIN_DATA[skinName]
 	if not skinData then
 		warn("No skin data found for:", skinName)
@@ -2425,7 +2431,7 @@ local function createSkinCard(skinName, index)
 		end
 	else
 		-- Show both coin and Robux price if available
-		if skinData.robux then
+		if skinData and skinData.robux then
 			-- Create two price labels side by side
 			statusLabel.Size = UDim2.new(0.45, 0, 1, 0)
 			statusLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -2443,7 +2449,7 @@ local function createSkinCard(skinName, index)
 			robuxLabel.Size = UDim2.new(0.45, 0, 1, 0)
 			robuxLabel.Position = UDim2.new(0.55, 0, 0, 0)
 			robuxLabel.BackgroundTransparency = 1
-			robuxLabel.Text = "R$ "..tostring(skinData.robux)
+			robuxLabel.Text = "R$ "..tostring(skinData and skinData.robux or 0)
 			robuxLabel.TextColor3 = Color3.fromRGB(0, 255, 127) -- Robux green
 			robuxLabel.TextScaled = true
 			robuxLabel.Font = SHOP_CONFIG.FONTS.PRICE
@@ -2460,7 +2466,7 @@ local function createSkinCard(skinName, index)
 			orLabel.Font = SHOP_CONFIG.FONTS.BUTTON
 			orLabel.Parent = statusFrame
 		else
-			if skinData.price and skinData.price > 0 then
+			if skinData and skinData.price and skinData.price > 0 then
 				statusLabel.Text = "$"..tostring(skinData.price)
 				statusLabel.TextColor3 = SHOP_CONFIG.COLORS.WARNING
 			else
@@ -2472,7 +2478,7 @@ local function createSkinCard(skinName, index)
 	end
 
 	-- Badges
-	if skinData.tag then
+	if skinData and skinData.tag then
 		local badge = Instance.new("Frame")
 		badge.Name = "Badge"
 		badge.Size = UDim2.new(0.28, 0, 0.07, 0)
@@ -3071,12 +3077,20 @@ function ShopUI.init()
 	end)
 	
 	ShopUI.uiElements.inventoryBtn.MouseButton1Click:Connect(function()
-		-- Open inventory
-		local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
-		if InventoryUI then
-			ShopUI.close()
-			task.wait(0.2)
-			InventoryUI.open()
+		-- Open inventory with error handling
+		local success, err = pcall(function()
+			local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
+			if InventoryUI then
+				ShopUI.close()
+				task.wait(0.2)
+				InventoryUI.open()
+			else
+				warn("❌ InventoryUI module not found!")
+			end
+		end)
+		
+		if not success then
+			warn("❌ Failed to open inventory:", err)
 		end
 	end)
 
