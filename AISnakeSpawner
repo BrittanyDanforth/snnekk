@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace         = game:GetService("Workspace")
 local RunService        = game:GetService("RunService")
 
-local AISnake = require(ReplicatedStorage:WaitForChild("AISnake"))
+local AISnake = require(workspace:WaitForChild("AISnake"))
 
 -- === CONFIGURATION ===
 local NUM_SNAKES   = 5          -- total AI snakes
