@@ -2088,6 +2088,12 @@ local function createCategoryButton(category, index)
 				ShopUI.uiElements.priceLabel.Visible = true
 			end
 			-- Don't force hide robux button - let updatePreviewForSkin handle it
+			
+			-- Update preview and info when switching back to skins
+			if uiState.selectedSkin then
+				ShopUI.updatePreview()
+				ShopUI.updateInfo()
+			end
 			-- Refresh the current skin selection to update button states properly
 			if uiState.selectedSkin then
 				task.spawn(function()
@@ -2476,6 +2482,10 @@ local function createSkinCard(skinName, index)
 
 		ShopUI.updatePreview()
 		ShopUI.updateInfo()
+		
+		-- Force update all cards to reflect current status
+		task.wait(0.1)
+		ShopUI.updateSkinGrid()
 	end)
 
 	return card
@@ -2789,6 +2799,10 @@ function ShopUI.purchaseSkin(useRobux)
 				InventoryUI.refreshGrid()
 			end
 		end)
+		
+		-- Force refresh the shop grid to update the card status
+		task.wait(0.1)
+		ShopUI.updateSkinGrid()
 	else
 		playSound("ERROR")
 
@@ -2860,6 +2874,19 @@ function ShopUI.applySkin()
 		ShopUI.updateInfo()
 
 		print("✅ Applied skin:", uiState.selectedSkin)
+		
+		-- Update inventory if it's open
+		pcall(function()
+			local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
+			if InventoryUI and InventoryUI.isOpen then
+				InventoryUI.loadInventoryData()
+				InventoryUI.refreshGrid()
+			end
+		end)
+		
+		-- Force refresh the shop grid to update equipped status
+		task.wait(0.1)
+		ShopUI.updateSkinGrid()
 	else
 		playSound("ERROR")
 		print("❌ Cannot apply unowned skin:", uiState.selectedSkin)

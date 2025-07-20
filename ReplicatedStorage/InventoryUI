@@ -189,6 +189,27 @@ local function createItemCard(itemData, index)
 	nameLabel.Font = INVENTORY_CONFIG.FONTS.BODY
 	nameLabel.Parent = card
 	
+	-- Equipped indicator
+	if itemData.equipped then
+		local equippedBadge = Instance.new("Frame")
+		equippedBadge.Name = "EquippedBadge"
+		equippedBadge.Size = UDim2.new(0.9, 0, 0.2, 0)
+		equippedBadge.Position = UDim2.new(0.05, 0, 0.02, 0)
+		equippedBadge.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
+		equippedBadge.Parent = card
+		
+		createCorner(equippedBadge, 4)
+		
+		local equippedText = Instance.new("TextLabel")
+		equippedText.Size = UDim2.new(1, 0, 1, 0)
+		equippedText.BackgroundTransparency = 1
+		equippedText.Text = "EQUIPPED"
+		equippedText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
+		equippedText.TextScaled = true
+		equippedText.Font = INVENTORY_CONFIG.FONTS.BUTTON
+		equippedText.Parent = equippedBadge
+	end
+	
 	-- Quantity badge (if applicable)
 	if itemData.quantity and itemData.quantity > 1 then
 		local quantityBadge = Instance.new("Frame")
@@ -458,24 +479,12 @@ function InventoryUI.createUI()
 	
 	createCorner(equipBtn, 8)
 	
-	local sellBtn = Instance.new("TextButton")
-	sellBtn.Name = "SellButton"
-	sellBtn.Size = UDim2.new(0.9, 0, 0.1, 0)
-	sellBtn.Position = UDim2.new(0.05, 0, 0.82, 0)
-	sellBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.WARNING
-	sellBtn.Text = "SELL"
-	sellBtn.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
-	sellBtn.TextScaled = true
-	sellBtn.Font = INVENTORY_CONFIG.FONTS.BUTTON
-	sellBtn.Parent = detailsPanel
-	
-	createCorner(sellBtn, 8)
+	-- Removed sell button as requested
 	
 	InventoryUI.uiElements.detailsPanel = detailsPanel
 	InventoryUI.uiElements.itemName = itemName
 	InventoryUI.uiElements.itemDescription = itemDescription
 	InventoryUI.uiElements.equipBtn = equipBtn
-	InventoryUI.uiElements.sellBtn = sellBtn
 	
 	-- Set up button handlers
 	closeBtn.MouseButton1Click:Connect(function()
@@ -484,10 +493,6 @@ function InventoryUI.createUI()
 	
 	equipBtn.MouseButton1Click:Connect(function()
 		InventoryUI.equipSelectedItem()
-	end)
-	
-	sellBtn.MouseButton1Click:Connect(function()
-		InventoryUI.sellSelectedItem()
 	end)
 end
 
@@ -674,10 +679,17 @@ function InventoryUI.selectItem(itemData, card)
 	-- Update button states
 	if itemData.type == "Skin" then
 		InventoryUI.uiElements.equipBtn.Visible = true
-		InventoryUI.uiElements.equipBtn.Text = "EQUIP SKIN"
+		if itemData.equipped then
+			InventoryUI.uiElements.equipBtn.Text = "EQUIPPED"
+			InventoryUI.uiElements.equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
+		else
+			InventoryUI.uiElements.equipBtn.Text = "EQUIP SKIN"
+			InventoryUI.uiElements.equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
+		end
 	else
 		InventoryUI.uiElements.equipBtn.Visible = true
 		InventoryUI.uiElements.equipBtn.Text = "USE ITEM"
+		InventoryUI.uiElements.equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
 	end
 	
 	-- Highlight selected card
@@ -698,10 +710,19 @@ function InventoryUI.equipSelectedItem()
 	if not InventoryUI.selectedItem then return end
 	
 	if InventoryUI.selectedItem.type == "Skin" then
+		-- Don't do anything if already equipped
+		if InventoryUI.selectedItem.equipped then
+			return
+		end
+		
 		-- Fire to server to equip skin
 		local selectSkinRemote = ReplicatedStorage:FindFirstChild("SelectSkin")
 		if selectSkinRemote then
 			selectSkinRemote:FireServer(InventoryUI.selectedItem.name)
+			
+			-- Update local data immediately
+			local ShopUI = require(ReplicatedStorage:WaitForChild("ShopUI"))
+			ShopUI.playerData.currentSkin = InventoryUI.selectedItem.name
 			
 			-- Success feedback
 			local successText = InventoryUI.uiElements.itemName
@@ -709,7 +730,20 @@ function InventoryUI.equipSelectedItem()
 			successText.Text = "✅ EQUIPPED!"
 			successText.TextColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
 			
-			task.wait(1.5)
+			-- Refresh inventory to update equipped status
+			task.wait(0.5)
+			InventoryUI.loadInventoryData()
+			InventoryUI.refreshGrid()
+			
+			-- Update shop if it's open
+			pcall(function()
+				if ShopUI then
+					ShopUI.updateSkinGrid()
+					ShopUI.updateInfo()
+				end
+			end)
+			
+			task.wait(1)
 			successText.Text = originalText
 			successText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
 		end
@@ -719,43 +753,7 @@ function InventoryUI.equipSelectedItem()
 	end
 end
 
--- Sell selected item
-function InventoryUI.sellSelectedItem()
-	if not InventoryUI.selectedItem then return end
-	
-	-- Confirmation dialog
-	local confirmText = InventoryUI.uiElements.itemDescription
-	local originalText = confirmText.Text
-	confirmText.Text = "Are you sure you want to sell this item?"
-	confirmText.TextColor3 = INVENTORY_CONFIG.COLORS.WARNING
-	
-	InventoryUI.uiElements.sellBtn.Text = "CONFIRM SELL"
-	InventoryUI.uiElements.sellBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.ERROR
-	
-	local connection
-	connection = InventoryUI.uiElements.sellBtn.MouseButton1Click:Connect(function()
-		connection:Disconnect()
-		
-		-- Sell the item (implement server communication here)
-		print("Selling item:", InventoryUI.selectedItem.name)
-		
-		-- Reset UI
-		confirmText.Text = originalText
-		confirmText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_SECONDARY
-		InventoryUI.uiElements.sellBtn.Text = "SELL"
-		InventoryUI.uiElements.sellBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.WARNING
-		
-		-- Remove from inventory and refresh
-		if InventoryUI.selectedItem.type == "Skin" then
-			InventoryUI.inventory.skins[InventoryUI.selectedItem.name] = nil
-		else
-			InventoryUI.inventory.items[InventoryUI.selectedItem.name] = nil
-		end
-		
-		InventoryUI.selectedItem = nil
-		InventoryUI.refreshGrid()
-	end)
-end
+-- Removed sell functionality as requested
 
 -- Open inventory
 function InventoryUI.open()
@@ -815,6 +813,7 @@ function InventoryUI.loadInventoryData()
 	}
 	
 	-- Load owned skins
+	local currentSkin = ShopUI.playerData.currentSkin
 	for _, skinName in ipairs(ShopUI.playerData.ownedSkins or {}) do
 		-- Determine rarity based on price
 		local skinData = ShopUI.SKIN_DATA[skinName]
@@ -846,6 +845,7 @@ function InventoryUI.loadInventoryData()
 			rarityColor = rarityColor,
 			description = "A " .. rarity:lower() .. " snake skin",
 			value = skinData and skinData.price or 0,
+			equipped = (skinName == currentSkin),
 		}
 	end
 	
