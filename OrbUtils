@@ -211,7 +211,9 @@ function OrbUtils.spawnOrbAt(position, value)
 	orb.CanQuery = true
 	orb.Material = Enum.Material.Neon
 	orb.Color = Color3.fromHSV(math.random(), 0.7, 1)
-	orb.Position = position
+	-- Ensure orbs spawn at AI snake height (Y=5) for proper collection
+	local fixedY = math.max(5, position.Y)
+	orb.Position = Vector3.new(position.X, fixedY, position.Z)
 	orb.TopSurface = Enum.SurfaceType.Smooth
 	orb.BottomSurface = Enum.SurfaceType.Smooth
 
@@ -224,7 +226,7 @@ function OrbUtils.spawnOrbAt(position, value)
 	table.insert(OrbUtils.orbs, orb)
 	
 	-- Debug death orb properties
-	print("🔵 Created death orb - Name:", orb.Name, "Size:", orb.Size, "Position:", orb.Position, "CanTouch:", orb.CanTouch)
+	print("🔵 Created death orb - Name:", orb.Name, "Size:", orb.Size, "Position:", orb.Position, "CanTouch:", orb.CanTouch, "Original Y:", position.Y)
 
 	-- Attach .Touched event for collection
 	OrbUtils.attachOrbTouched(orb)
