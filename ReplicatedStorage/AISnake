@@ -960,7 +960,22 @@ function AISnake:_determineAction()
 		end
 		if self.TargetOrb and self.TargetOrb.Parent then
 			state = "SEEK_ORB"
-			steer = (self.TargetOrb.Position - headPos).Unit
+			local toOrb = self.TargetOrb.Position - headPos
+			local orbDist = toOrb.Magnitude
+			
+			-- Smart orb approach - predict where to aim based on distance
+			if orbDist < 15 then
+				-- Very close - aim directly at orb
+				steer = toOrb.Unit
+			elseif orbDist < 30 then
+				-- Medium distance - aim slightly ahead of current direction for smoother approach
+				local predictedPos = self.TargetOrb.Position + self.Direction * 2
+				steer = (predictedPos - headPos).Unit
+			else
+				-- Far away - just head towards it
+				steer = toOrb.Unit
+			end
+			
 			-- Clear any combat targets when seeking orbs
 			self.TargetSnake = nil
 		end
@@ -1038,7 +1053,7 @@ function AISnake.new(startPosition)
 	self.Speed = self.Config.BaseSpeed or 10
 	self.NormalSpeed = self.Config.BaseSpeed or 10
 	self.BoostSpeed = self.Config.BoostSpeed or 24
-	self.TurnSpeed = self.Config.TurnSpeed or 0.8 -- Same as players, no unfair sharp turns
+	self.TurnSpeed = self.Config.TurnSpeed or 1.8 -- Better turning for orb collection
 	self.RandomTurnInterval = 1.5
 	self.LastTurn = tick()
 	self.TargetYaw = 0
@@ -1259,20 +1274,31 @@ function AISnake:updateMovement(dt)
 	local desiredYaw = self.CurrentYaw + angle
 	self.TargetYaw = desiredYaw
 
-	-- FAIR TURN SPEED - Same as players, no sharp turns that look like slowing
+	-- BALANCED TURN SPEED - Good for orb collection but still fair
 	local turnSpeed = self.TurnSpeed
 	
-	-- NO EXTRA TURN SPEED MULTIPLIERS - Keep it fair like players
-	-- Players can't suddenly turn sharper, neither should AI
+	-- Special case for orb seeking - need better turning to actually collect them!
+	if state == "SEEK_ORB" and self.TargetOrb then
+		-- Calculate angle to orb
+		local toOrb = (self.TargetOrb.Position - self.Position)
+		local dist = toOrb.Magnitude
+		if dist < 20 then
+			-- Close to orb - allow sharper turns to grab it
+			turnSpeed = turnSpeed * 1.5
+		end
+	elseif state == "AVOID_WALL" then
+		-- Still need to avoid walls effectively
+		turnSpeed = turnSpeed * 1.3
+	end
 	
 	-- When boosting, turn slightly slower like players do
 	if self.Boosting then
-		turnSpeed = turnSpeed * 0.85 -- Slightly reduced turning when boosting
+		turnSpeed = turnSpeed * 0.85
 	end
 
 	local yawDiff = self.TargetYaw - self.CurrentYaw
-	-- Limit turn rate to prevent sharp turns that look like slowing
-	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.3) -- Much lower cap for realistic turns
+	-- Better turn rate cap for effective orb collection
+	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.5)
 
 	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
 	self.Direction = cf.LookVector
