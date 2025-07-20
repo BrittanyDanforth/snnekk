@@ -692,12 +692,12 @@ local function createOrb()
 	else
 		orb = OrbUtils.spawnOrbAt(randomPosition(), 1)  -- REDUCED from 10 to 1
 		if orb then
-			-- Make sure new orbs from OrbUtils also start hidden
-			orb.Transparency = 1
-			orb.Size = Vector3.new(0.1, 0.1, 0.1)
-			orbStates[orb] = {state = "hidden", fade = 0}
+			-- Start orbs visible instead of hidden for LOD
+			orb.Transparency = 0
+			-- Don't override size - let OrbUtils handle it
+			orbStates[orb] = {state = "full", fade = 1}
 			local light = orb:FindFirstChild("PointLight")
-			if light then light.Enabled = false end
+			if light then light.Enabled = true end
 			addOrbToGrid(orb) -- Add to grid
 		end
 	end
