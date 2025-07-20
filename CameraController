@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
@@ -44,7 +45,53 @@ local FOV = isMobile and 85 or 70  -- Wider FOV on mobile
 local MOBILE_HEIGHT_MULTIPLIER = 1.2  -- Extra height based on snake size
 local MOBILE_DYNAMIC_FOV = true  -- Adjust FOV based on snake speed
 
+-- 🔒 LOCK CAMERA COMPLETELY (like slither.io)
 camera.CameraType = Enum.CameraType.Scriptable
+
+-- Disable ALL camera manipulation
+UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+
+-- Prevent zoom
+player.CameraMinZoomDistance = 0.5
+player.CameraMaxZoomDistance = 0.5
+player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+-- Override camera settings every frame to prevent ANY manipulation
+local function lockCamera()
+	camera.CameraType = Enum.CameraType.Scriptable
+	-- Force camera subject to nil to prevent any default behavior
+	camera.CameraSubject = nil
+end
+
+-- Connect to multiple events to ensure camera stays locked
+camera:GetPropertyChangedSignal("CameraType"):Connect(lockCamera)
+camera:GetPropertyChangedSignal("CameraSubject"):Connect(function()
+	camera.CameraSubject = nil
+end)
+
+-- Disable zoom on mouse wheel
+UserInputService.InputChanged:Connect(function(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.MouseWheel then
+		-- Do nothing, prevent zoom
+		return
+	end
+end)
+
+-- For mobile, disable camera pan/rotation from touch
+if isMobile then
+	-- Disable all touch camera controls
+	UserInputService.TouchPan:Connect(function(touchPositions, totalTranslation, velocity, state)
+		-- Do nothing, prevent camera pan
+	end)
+	
+	UserInputService.TouchRotate:Connect(function(touchPositions, rotation, velocity, state)
+		-- Do nothing, prevent camera rotation
+	end)
+	
+	UserInputService.TouchPinch:Connect(function(touchPositions, scale, velocity, state)
+		-- Do nothing, prevent camera zoom
+	end)
+end
 
 -- Update mobile status on screen size change
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
@@ -54,6 +101,7 @@ workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(functio
 	FOV = isMobile and 85 or 70
 end)
 
+-- Main camera update loop
 RunService.RenderStepped:Connect(function()
 	local character = player.Character
 	if not character then return end
@@ -83,12 +131,21 @@ RunService.RenderStepped:Connect(function()
 		end
 	end
 
-	-- Smooth camera position
-	local targetCFrame = CFrame.new(
-		rootPart.Position + Vector3.new(0, currentHeight, 0),
-		rootPart.Position
-	)
-
-	camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
+	-- Force camera to exact position (no lerping on position, only on FOV)
+	-- This gives the locked feel like slither.io
+	local targetPosition = rootPart.Position + Vector3.new(0, currentHeight, 0)
+	local targetLookAt = rootPart.Position
+	
+	-- Set camera directly for that locked feel
+	camera.CFrame = CFrame.lookAt(targetPosition, targetLookAt)
+	
+	-- Smooth FOV changes only
 	camera.FieldOfView = camera.FieldOfView + (currentFOV - camera.FieldOfView) * 0.1
+	
+	-- Force camera type to stay scriptable
+	camera.CameraType = Enum.CameraType.Scriptable
 end)
+
+-- Initial camera lock
+lockCamera()
+print("Camera Controller initialized - Camera locked like slither.io!")
