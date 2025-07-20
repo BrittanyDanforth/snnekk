@@ -2053,11 +2053,11 @@ local function createCategoryButton(category, index)
 		-- Hide/show preview based on category
 		local isGamepass = SKIN_CATEGORIES[index].name == "Gamepasses"
 		if isGamepass then
-			print("🎮 Switching to Gamepasses - hiding preview")
-			-- Hide everything for gamepasses
-			if ShopUI.uiElements.previewContainer then
-				ShopUI.uiElements.previewContainer.Visible = false
-			end
+			print("🎮 Switching to Gamepasses - clearing preview")
+			-- Clear the preview but don't hide the container
+			CharacterPreview.cleanup()
+			
+			-- Hide skin-specific UI elements
 			if ShopUI.uiElements.skinName then
 				ShopUI.uiElements.skinName.Visible = false
 			end
@@ -2080,10 +2080,7 @@ local function createCategoryButton(category, index)
 				ShopUI.uiElements.favoriteBtn.Visible = false
 			end
 		else
-			-- Show everything for skins and let updatePreviewForSkin handle specific visibility
-			if ShopUI.uiElements.previewContainer then
-				ShopUI.uiElements.previewContainer.Visible = true
-			end
+			-- Show everything for skins
 			if ShopUI.uiElements.skinName then
 				ShopUI.uiElements.skinName.Visible = true
 			end
@@ -2116,17 +2113,37 @@ local function createCategoryButton(category, index)
 			
 			-- Always recreate preview when switching back to skins
 			if ShopUI.uiElements.viewport then
-				print("🎬 Recreating preview...")
-				CharacterPreview.create(ShopUI.uiElements.viewport)
+				print("🎬 Recreating preview for viewport:", ShopUI.uiElements.viewport)
+				local success, err = pcall(function()
+					CharacterPreview.create(ShopUI.uiElements.viewport)
+				end)
+				if not success then
+					warn("❌ Failed to create preview:", err)
+				end
+			else
+				warn("❌ No viewport found!")
 			end
 			
 			-- Update preview and info
 			task.spawn(function()
-				task.wait(0.1) -- Wait for preview creation
+				task.wait(0.2) -- Give more time for preview creation
 				if uiState.selectedSkin then
 					print("🔄 Updating preview for skin:", uiState.selectedSkin)
-					ShopUI.updatePreview()
-					ShopUI.updateInfo()
+					local success, err = pcall(function()
+						ShopUI.updatePreview()
+						ShopUI.updateInfo()
+					end)
+					if not success then
+						warn("❌ Failed to update preview:", err)
+					end
+				else
+					-- No skin selected, select first one
+					local category = SKIN_CATEGORIES[uiState.currentCategory]
+					if category and category.skins and #category.skins > 0 then
+						uiState.selectedSkin = category.skins[1]
+						ShopUI.updatePreview()
+						ShopUI.updateInfo()
+					end
 				end
 			end)
 		end
@@ -2569,10 +2586,32 @@ end
 
 -- Update preview
 function ShopUI.updatePreview()
-	if uiState.selectedSkin and ShopUI.uiElements and ShopUI.uiElements.viewport then
-		print("🔄 Updating preview for:", uiState.selectedSkin)
-		CharacterPreview.update(uiState.selectedSkin)
+	if not uiState.selectedSkin then
+		warn("❌ No skin selected for preview")
+		return
 	end
+	
+	if not ShopUI.uiElements or not ShopUI.uiElements.viewport then
+		warn("❌ UI elements or viewport not ready")
+		return
+	end
+	
+	-- Check if viewport is still valid
+	if not ShopUI.uiElements.viewport.Parent then
+		warn("❌ Viewport has no parent!")
+		return
+	end
+	
+	print("🔄 Updating preview for:", uiState.selectedSkin)
+	
+	-- If no model exists, create it first
+	if not CharacterPreview.currentModel then
+		print("📦 No preview model, creating one...")
+		CharacterPreview.create(ShopUI.uiElements.viewport)
+		task.wait(0.1)
+	end
+	
+	CharacterPreview.update(uiState.selectedSkin)
 end
 
 -- Update preview for selected skin (with full UI update)
@@ -2814,17 +2853,21 @@ function ShopUI.purchaseSkin(useRobux)
 			end
 		end)
 
+		-- Update coin display immediately
+		coinDisplay.Text = ShopUI.formatNumber(ShopUI.playerData.coins)
+		
 		-- Coin animation
 		local startTime = tick()
-		local coinConnection
-		coinConnection = RunService.Heartbeat:Connect(function()
+		local targetCoins = ShopUI.playerData.coins
+		local animConnection
+		animConnection = RunService.Heartbeat:Connect(function()
 			local elapsed = tick() - startTime
 			local progress = math.min(elapsed / 0.4, 1)
-			local currentCoins = math.floor(oldCoins - (oldCoins - ShopUI.playerData.coins) * progress)
+			local currentCoins = math.floor(oldCoins - (oldCoins - targetCoins) * progress)
 			coinDisplay.Text = ShopUI.formatNumber(currentCoins)
 			if progress >= 1 then
-				coinConnection:Disconnect()
-				coinDisplay.Text = ShopUI.formatNumber(ShopUI.playerData.coins)
+				animConnection:Disconnect()
+				coinDisplay.Text = ShopUI.formatNumber(targetCoins)
 			end
 		end)
 
@@ -3087,12 +3130,11 @@ function ShopUI.init()
 		-- Update grid
 		ShopUI.updateSkinGrid()
 
-		-- Check if we're starting on gamepasses and hide preview if so
+		-- Check if we're starting on gamepasses and clear preview if so
 		local isGamepass = SKIN_CATEGORIES[uiState.currentCategory].name == "Gamepasses"
 		if isGamepass then
-			if ShopUI.uiElements.previewContainer then
-				ShopUI.uiElements.previewContainer.Visible = false
-			end
+			-- Clear preview for gamepasses but don't hide container
+			CharacterPreview.cleanup()
 			if ShopUI.uiElements.skinName then
 				ShopUI.uiElements.skinName.Visible = false
 			end
