@@ -11,10 +11,7 @@ local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 -- Load the orb pickup module
 local AISnakeOrbPickup
 pcall(function()
-	-- Try multiple locations
-	AISnakeOrbPickup = require(workspace:WaitForChild("AISnakeOrbPickup", 2))
-		or require(game.ServerScriptService:FindFirstChild("AISnakeOrbPickup"))
-		or require(ReplicatedStorage:FindFirstChild("AISnakeOrbPickup"))
+	AISnakeOrbPickup = require(game.ServerScriptService:WaitForChild("AISnakeOrbPickup"))
 end)
 
 local Vector3new = Vector3.new
