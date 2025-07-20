@@ -196,34 +196,7 @@ end)
 local activeTouches = {} -- Track multiple touches
 local primaryTouch = nil -- The main touch controlling movement
 
--- Visual touch indicator - smooth like slither.io
-local touchIndicator = Instance.new("ImageLabel")
-touchIndicator.Size = UDim2.new(0, 60, 0, 60)
-touchIndicator.BackgroundColor3 = Color3.new(1, 1, 1)
-touchIndicator.BackgroundTransparency = 0.8
-touchIndicator.BorderSizePixel = 0
-touchIndicator.Image = "rbxasset://textures/ui/LuaChat/icons/ic-circle.png"
-touchIndicator.ImageTransparency = 0.5
-touchIndicator.ImageColor3 = Color3.fromRGB(255, 255, 255)
-touchIndicator.Visible = false
-touchIndicator.Parent = hudGui
-
-local touchCorner = Instance.new("UICorner")
-touchCorner.CornerRadius = UDim.new(0.5, 0)
-touchCorner.Parent = touchIndicator
-
--- Inner dot for better visibility
-local innerDot = Instance.new("Frame")
-innerDot.Size = UDim2.new(0, 10, 0, 10)
-innerDot.Position = UDim2.new(0.5, -5, 0.5, -5)
-innerDot.BackgroundColor3 = Color3.new(1, 1, 1)
-innerDot.BackgroundTransparency = 0.3
-innerDot.BorderSizePixel = 0
-innerDot.Parent = touchIndicator
-
-local innerCorner = Instance.new("UICorner")
-innerCorner.CornerRadius = UDim.new(0.5, 0)
-innerCorner.Parent = innerDot
+-- Remove visual indicators - we'll use the debug part only
 
 -- Better touch handling for hold and drag
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -244,16 +217,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 			-- Store the touch position for the snake to follow
 			if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 				_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
-				
-				-- Show touch indicator at position
-				touchIndicator.Position = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
-				touchIndicator.Visible = true
-				
-				-- Smooth fade in
-				touchIndicator.ImageTransparency = 0.8
-				innerDot.BackgroundTransparency = 0.6
-				TweenService:Create(touchIndicator, TweenInfo.new(0.2), {ImageTransparency = 0.5}):Play()
-				TweenService:Create(innerDot, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
 			end
 		end
 	end
@@ -264,9 +227,6 @@ UserInputService.InputChanged:Connect(function(input, gameProcessed)
 		-- Update touch position continuously as finger moves
 		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 			_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
-			
-			-- Update touch indicator position immediately (no tween for responsiveness)
-			touchIndicator.Position = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
 		end
 	end
 end)
@@ -282,13 +242,6 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
 			
 			-- Keep last touch position so snake continues moving
 			-- Don't clear touchPosition - snake will continue towards last touch
-			
-			-- Hide touch indicator with fade
-			TweenService:Create(touchIndicator, TweenInfo.new(0.2), {ImageTransparency = 1}):Play()
-			TweenService:Create(innerDot, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
-			
-			task.wait(0.2)
-			touchIndicator.Visible = false
 		end
 	end
 end)
