@@ -3,7 +3,7 @@
 
 print("🚀 OrbSpawnerInit starting...")
 
-local OrbSpawner = require(game.Workspace:WaitForChild("OrbSpawner"))
+local OrbSpawner = require(game.ServerScriptService:WaitForChild("OrbSpawner"))
 
 -- Initialize the spawner
 if OrbSpawner.start then

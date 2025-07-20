@@ -245,9 +245,9 @@ function OrbUtils.spawnOrbAt(position, value)
 			if _G.OrbSpawner then
 				OrbSpawner = _G.OrbSpawner
 			else
-				-- Try workspace root (current location)
+				-- Try ServerScriptService (where it should be)
 				local success, result = pcall(function()
-					return require(game.Workspace:WaitForChild("OrbSpawner", 1))
+					return require(game.ServerScriptService:WaitForChild("OrbSpawner", 1))
 				end)
 				if success then
 					OrbSpawner = result
