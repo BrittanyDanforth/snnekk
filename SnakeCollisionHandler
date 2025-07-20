@@ -606,6 +606,9 @@ local function queuePlayerDeath(player)
 		end
 	end
 
+	-- IMMEDIATELY mark as dead to prevent mutual deaths
+	deadPlayers[player] = true
+	
 	if DEBUG_COLLISIONS then
 		print(string.format("[QUEUE] Adding death to queue for player: %s", player.Name))
 	end
@@ -657,6 +660,12 @@ task.spawn(function()
 
 			if death.type == "player" then
 				local player = death.target
+				
+				-- Skip if player disconnected
+				if not player.Parent then
+					continue
+				end
+				
 				local character = player.Character
 				if character then
 					local humanoid = character:FindFirstChild("Humanoid")
@@ -756,9 +765,8 @@ task.spawn(function()
 							end
 						end
 
-						-- Mark player as dead
-						deadPlayers[player] = true
-
+						-- Player already marked as dead in queuePlayerDeath
+						
 						humanoid.Health = 0
 
 						-- Clear dead flag after respawn time
@@ -1055,11 +1063,11 @@ local function isRecentCollision(entityA, entityB)
 	
 	local currentTime = tick()
 	
-	-- Check both directions
-	if recentCollisions[key] and currentTime - recentCollisions[key] < 0.5 then
+	-- Check both directions with longer cooldown
+	if recentCollisions[key] and currentTime - recentCollisions[key] < 1.0 then -- Increased from 0.5 to 1.0
 		return true
 	end
-	if recentCollisions[reverseKey] and currentTime - recentCollisions[reverseKey] < 0.5 then
+	if recentCollisions[reverseKey] and currentTime - recentCollisions[reverseKey] < 1.0 then
 		return true
 	end
 	
@@ -1069,9 +1077,48 @@ local function isRecentCollision(entityA, entityB)
 	
 	-- Clean old entries
 	for k, time in pairs(recentCollisions) do
-		if currentTime - time > 1 then
+		if currentTime - time > 2 then -- Increased from 1 to 2
 			recentCollisions[k] = nil
 		end
+	end
+	
+	return false
+end
+
+-- === DEATH EXCLUSION CHECK ===
+local function isEitherDead(entityA, entityB)
+	-- Check if either entity is already marked as dead
+	if type(entityA) == "userdata" and entityA:IsA("Player") then
+		if deadPlayers[entityA] then
+			return true
+		end
+		-- Also check death queue
+		for _, death in ipairs(deathQueue) do
+			if death.type == "player" and death.target == entityA then
+				return true
+			end
+		end
+	end
+	
+	if type(entityB) == "userdata" and entityB:IsA("Player") then
+		if deadPlayers[entityB] then
+			return true
+		end
+		-- Also check death queue
+		for _, death in ipairs(deathQueue) do
+			if death.type == "player" and death.target == entityB then
+				return true
+			end
+		end
+	end
+	
+	-- Check AI deaths
+	if type(entityA) ~= "userdata" and deadAISnakes[entityA] then
+		return true
+	end
+	
+	if type(entityB) ~= "userdata" and deadAISnakes[entityB] then
+		return true
 	end
 	
 	return false
@@ -1272,6 +1319,11 @@ RunService.Stepped:Connect(function()
 			
 			-- Check if already processed recently
 			if isRecentCollision(playerA, playerB) then
+				continue
+			end
+			
+			-- Check if either player is already dead
+			if isEitherDead(playerA, playerB) then
 				continue
 			end
 
