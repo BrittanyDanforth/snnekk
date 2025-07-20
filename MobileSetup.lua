@@ -10,7 +10,7 @@ StarterPlayer.DevTouchMovementMode = Enum.DevTouchMovementMode.Scriptable
 
 -- Camera settings to prevent manipulation
 -- Camera movement mode handled by CameraController script instead
-StarterPlayer.DevTouchCameraMovementMode = Enum.DevTouchCameraMovementMode.Scriptable
+-- Touch camera mode handled by CameraController script
 
 -- Disable camera occlusion (no transparency when objects are between camera and character)
 StarterPlayer.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam

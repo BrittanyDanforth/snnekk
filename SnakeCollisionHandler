@@ -14,6 +14,12 @@ local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
+-- Get OrbSpawner module
+local OrbSpawnerModule
+pcall(function()
+	OrbSpawnerModule = require(game.ServerScriptService:WaitForChild("OrbSpawner", 5))
+end)
+
 -- === SUPREME PERFORMANCE CONSTANTS ===
 local SEGMENT_CHUNK_SIZE = 64 -- Doubled for better cache coherency
 local COLLISION_GRID_SIZE = 100 -- Larger cells = fewer lookups
@@ -661,7 +667,14 @@ task.spawn(function()
 										spawnPos = Vector3.new(spawnPos.X, math.min(spawnPos.Y + ORB_SPAWN_HEIGHT, 10), spawnPos.Z)
 
 										local success = pcall(function()
-											spawnOrbDirect(spawnPos, valuePerOrb)
+											-- Spawn death orb instead of regular orb
+											if OrbSpawnerModule and OrbSpawnerModule.spawnDeathOrbsForSnake then
+												-- Spawn a single death orb
+												OrbSpawnerModule.spawnDeathOrbsForSnake(spawnPos, 1)
+											else
+												-- Fallback to regular orb
+												spawnOrbDirect(spawnPos, valuePerOrb)
+											end
 											spawnedOrbs = spawnedOrbs + 1
 										end)
 
@@ -677,7 +690,11 @@ task.spawn(function()
 								local firstSeg = segments[1]
 								if firstSeg and firstSeg.Parent and firstSeg.Position then
 									pcall(function()
-										spawnOrbDirect(firstSeg.Position + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), valuePerOrb)
+										if OrbSpawnerModule and OrbSpawnerModule.spawnDeathOrbsForSnake then
+											OrbSpawnerModule.spawnDeathOrbsForSnake(firstSeg.Position + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), 1)
+										else
+											spawnOrbDirect(firstSeg.Position + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), valuePerOrb)
+										end
 									end)
 								end
 							end
@@ -773,7 +790,12 @@ task.spawn(function()
 											)
 
 											local success = pcall(function()
-												spawnOrbDirect(spawnPos, valuePerOrb)
+												-- Spawn death orb for AI deaths too
+												if OrbSpawnerModule and OrbSpawnerModule.spawnDeathOrbsForSnake then
+													OrbSpawnerModule.spawnDeathOrbsForSnake(spawnPos, 1)
+												else
+													spawnOrbDirect(spawnPos, valuePerOrb)
+												end
 												spawnedOrbs = spawnedOrbs + 1
 											end)
 
@@ -794,7 +816,11 @@ task.spawn(function()
 												math.max(groundY + ORB_SPAWN_HEIGHT, firstSeg.Position.Y),
 												firstSeg.Position.Z
 											)
-											spawnOrbDirect(spawnPos, valuePerOrb)
+											if OrbSpawnerModule and OrbSpawnerModule.spawnDeathOrbsForSnake then
+												OrbSpawnerModule.spawnDeathOrbsForSnake(spawnPos, 1)
+											else
+												spawnOrbDirect(spawnPos, valuePerOrb)
+											end
 										end)
 									end
 								end
