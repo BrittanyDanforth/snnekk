@@ -45,7 +45,7 @@ local INVENTORY_CONFIG = {
 		HEADING = Enum.Font.Gotham,
 		BODY = Enum.Font.Gotham,
 		BUTTON = Enum.Font.GothamBold,
-		PRICE = Enum.Font.GothamSemibold,
+		PRICE = Enum.Font.GothamMedium,
 	},
 	
 	-- Grid layout
@@ -211,25 +211,51 @@ local function createItemCard(itemData, index)
 	nameLabel.Font = INVENTORY_CONFIG.FONTS.BODY
 	nameLabel.Parent = card
 	
-	-- Equipped indicator
+	-- Equipped indicator - modern minimalist style
 	if itemData.equipped then
+		-- Outer glow effect
+		local glowFrame = Instance.new("Frame")
+		glowFrame.Name = "EquippedGlow"
+		glowFrame.Size = UDim2.new(1.05, 0, 1.05, 0)
+		glowFrame.Position = UDim2.new(-0.025, 0, -0.025, 0)
+		glowFrame.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
+		glowFrame.BackgroundTransparency = 0.7
+		glowFrame.ZIndex = card.ZIndex - 1
+		glowFrame.Parent = card
+		createCorner(glowFrame, 14)
+		
+		-- Small corner badge
 		local equippedBadge = Instance.new("Frame")
 		equippedBadge.Name = "EquippedBadge"
-		equippedBadge.Size = UDim2.new(0.9, 0, 0.2, 0)
-		equippedBadge.Position = UDim2.new(0.05, 0, 0.02, 0)
+		equippedBadge.Size = UDim2.new(0.35, 0, 0.12, 0)
+		equippedBadge.Position = UDim2.new(0.62, 0, 0.02, 0)
 		equippedBadge.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
 		equippedBadge.Parent = card
 		
-		createCorner(equippedBadge, 4)
+		createCorner(equippedBadge, 6)
 		
 		local equippedText = Instance.new("TextLabel")
 		equippedText.Size = UDim2.new(1, 0, 1, 0)
 		equippedText.BackgroundTransparency = 1
-		equippedText.Text = "EQUIPPED"
-		equippedText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
+		equippedText.Text = "✓"
+		equippedText.TextColor3 = Color3.fromRGB(255, 255, 255)
 		equippedText.TextScaled = true
 		equippedText.Font = INVENTORY_CONFIG.FONTS.BUTTON
 		equippedText.Parent = equippedBadge
+		
+		-- Add a subtle animation
+		task.spawn(function()
+			while equippedBadge.Parent do
+				TweenService:Create(glowFrame, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					BackgroundTransparency = 0.85
+				}):Play()
+				task.wait(2)
+				TweenService:Create(glowFrame, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					BackgroundTransparency = 0.7
+				}):Play()
+				task.wait(2)
+			end
+		end)
 	end
 	
 	-- Quantity badge (if applicable)
@@ -781,16 +807,28 @@ function InventoryUI.equipSelectedItem()
 			ShopUI.playerData.currentSkin = InventoryUI.selectedItem.name
 		end
 		
+		-- Update equipped status immediately in the current inventory
+		local previousEquipped = nil
+		for skinName, skinData in pairs(InventoryUI.inventory.skins) do
+			if skinData.equipped then
+				previousEquipped = skinName
+				skinData.equipped = false
+			end
+		end
+		
+		-- Set the new equipped skin
+		if InventoryUI.inventory.skins[InventoryUI.selectedItem.name] then
+			InventoryUI.inventory.skins[InventoryUI.selectedItem.name].equipped = true
+		end
+		
+		-- Refresh grid immediately for instant visual update
+		InventoryUI.refreshGrid()
+		
 		-- Success feedback
 		local successText = InventoryUI.uiElements.itemName
 		local originalText = successText.Text
 		successText.Text = "✅ EQUIPPED!"
 		successText.TextColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
-		
-		-- Refresh inventory to update equipped status
-		task.wait(0.5)
-		InventoryUI.loadInventoryData()
-		InventoryUI.refreshGrid()
 		
 		-- Update shop if it's open
 		pcall(function()
@@ -800,9 +838,14 @@ function InventoryUI.equipSelectedItem()
 			end
 		end)
 		
-		task.wait(1)
-		successText.Text = originalText
-		successText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
+		-- Reset text after delay
+		task.spawn(function()
+			task.wait(1)
+			if successText and successText.Parent then
+				successText.Text = originalText
+				successText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
+			end
+		end)
 	else
 		-- Handle other item types
 		print("Using item:", InventoryUI.selectedItem.name)
