@@ -107,8 +107,10 @@ Players.PlayerRemoving:Connect(function(player)
 	deadPlayers[player] = nil
 	invinciblePlayers[player] = nil
 
-	-- Clean from collision cache
-	CollisionCache.playerSegments[player] = nil
+	-- Clean from collision cache (if it exists)
+	if CollisionCache and CollisionCache.playerSegments then
+		CollisionCache.playerSegments[player] = nil
+	end
 
 	-- Clean any remaining segments
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
