@@ -2113,47 +2113,20 @@ local function createCategoryButton(category, index)
 				ShopUI.uiElements.favoriteBtn.Visible = true
 			end
 			
-			-- Debug logging
-			print("🔍 Switching back to skins category")
-			print("🔍 Current model exists?", CharacterPreview.currentModel ~= nil)
-			print("🔍 Viewport exists?", ShopUI.uiElements.viewport ~= nil)
-			print("🔍 Selected skin:", uiState.selectedSkin)
-			
-			-- Always recreate preview when switching back to skins
-			if ShopUI.uiElements.viewport then
-				print("🎬 Recreating preview for viewport:", ShopUI.uiElements.viewport)
-				local success, err = pcall(function()
-					CharacterPreview.create(ShopUI.uiElements.viewport)
-				end)
-				if not success then
-					warn("❌ Failed to create preview:", err)
-				end
+			-- Update preview if needed
+			if uiState.selectedSkin then
+				ShopUI.updatePreview()
+				ShopUI.updateInfo()
 			else
-				warn("❌ No viewport found!")
-			end
-			
-			-- Update preview and info
-			task.spawn(function()
-				task.wait(0.2) -- Give more time for preview creation
-				if uiState.selectedSkin then
-					print("🔄 Updating preview for skin:", uiState.selectedSkin)
-					local success, err = pcall(function()
-						ShopUI.updatePreview()
-						ShopUI.updateInfo()
-					end)
-					if not success then
-						warn("❌ Failed to update preview:", err)
-					end
-				else
-					-- No skin selected, select first one
-					local category = SKIN_CATEGORIES[uiState.currentCategory]
-					if category and category.skins and #category.skins > 0 then
-						uiState.selectedSkin = category.skins[1]
-						ShopUI.updatePreview()
-						ShopUI.updateInfo()
-					end
+				-- No skin selected, select first one
+				local category = SKIN_CATEGORIES[uiState.currentCategory]
+				if category and category.skins and #category.skins > 0 then
+					uiState.selectedSkin = category.skins[1]
+					ShopUI.updatePreview()
+					ShopUI.updateInfo()
 				end
-			end)
+			end
+		end
 		end
 
 		-- Update indicators
