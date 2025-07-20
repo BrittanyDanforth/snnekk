@@ -192,12 +192,15 @@ local MIN_ORB_SPACING = 3 -- Minimum distance between spawned orbs
 
 local function spawnOrbDirect(position, value)
 	-- Direct spawn with minimal processing
+	print("🔵 Spawning orb at:", position, "with value:", value)
 	local success, err = pcall(function()
 		OrbUtils.spawnOrbAt(position, value)
 	end)
 
 	if not success then
 		warn("Orb spawn failed:", err)
+	else
+		print("✅ Orb spawned successfully")
 	end
 end
 

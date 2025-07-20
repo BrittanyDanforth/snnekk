@@ -22,7 +22,8 @@ OrbUtils.onOrbRemoved = nil
 -- Helper: Get all AI snake heads
 local function getAISnakeHeads()
 	local heads = {}
-	for _, obj in Workspace:GetChildren() do
+	-- Look for AI snake heads in all descendants
+	for _, obj in Workspace:GetDescendants() do
 		if obj:IsA("BasePart") and obj.Name == "AISnakeHead" then
 			table.insert(heads, obj)
 		end
@@ -100,6 +101,12 @@ function OrbUtils.attachOrbTouched(orb)
 	orb.Touched:Connect(function(hit)
 		if not orb or not orb.Parent then return end
 		if orbDebounce[orb] then return end
+		
+		-- Debug what's touching
+		if hit.Name == "AISnakeHead" or hit.Parent and hit.Parent.Name:match("AISnake") then
+			print("🔴 DEATH ORB TOUCHED BY AI:", hit.Name, "Parent:", hit.Parent and hit.Parent.Name)
+		end
+		
 		orbDebounce[orb] = true
 
 		-- Check if touched by player snake head
@@ -144,6 +151,7 @@ function OrbUtils.attachOrbTouched(orb)
 
 		-- Check if touched by AI snake head
 		if isAISnakeHead(hit) then
+			print("🤖 AI Snake collecting orb! Head:", hit.Name)
 			playOrbCollectVFX(orb.Position)
 			if orb.Name == "UpgradeOrb" then
 				local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
@@ -201,6 +209,8 @@ function OrbUtils.spawnOrbAt(position, value)
 	orb.Shape = Enum.PartType.Ball
 	orb.Anchored = true
 	orb.CanCollide = false
+	orb.CanTouch = true  -- Important for touch detection
+	orb.CanQuery = true
 	orb.Material = Enum.Material.Neon
 	orb.Color = Color3.fromHSV(math.random(), 0.7, 1)
 	orb.Position = position
