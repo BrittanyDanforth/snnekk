@@ -227,7 +227,13 @@ local function applyOrbLOD(orb, state, fadeValue)
 	end
 
 	-- Calculate target properties
-	local targetSize = Vector3.new(1,1,1) * (MIN_ORB_SIZE + (MAX_ORB_SIZE - MIN_ORB_SIZE) * fadeValue)
+	local targetSize
+	if orb.Name == "DeathOrb" then
+		-- Death orbs stay bigger for better collision
+		targetSize = Vector3.new(2.5, 2.5, 2.5) * fadeValue
+	else
+		targetSize = Vector3.new(1,1,1) * (MIN_ORB_SIZE + (MAX_ORB_SIZE - MIN_ORB_SIZE) * fadeValue)
+	end
 	local targetTransparency = 1 - fadeValue
 
 	-- Apply based on state
@@ -410,6 +416,15 @@ local function spawnDeathOrbs(pos, count)
 		local angle, dist = math.random() * math.pi * 2, math.random(3, 8)
 		local off = Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
 		local orb = createSafeOrb(pos + off, 2, "DeathOrb", Color3.fromRGB(255, 100, 100))  -- REDUCED from 10 to 2
+		
+		-- Make death orbs bigger for better collision detection
+		if orb then
+			orb.Size = Vector3.new(2.5, 2.5, 2.5) -- Bigger than normal orbs
+			-- Ensure they're at snake height
+			local yPos = math.max(4, pos.Y)
+			orb.Position = Vector3.new(orb.Position.X, yPos, orb.Position.Z)
+		end
+		
 		table.insert(orbs, orb)
 		table.insert(spawned, orb)
 		attachOrbTouched(orb)
@@ -558,6 +573,11 @@ attachOrbTouched = function(orb)
 	orb.Touched:Connect(function(hit)
 		if not orb or not orb.Parent or orbDebounce[orb] then return end
 
+		-- Debug death orb collection
+		if orb.Name == "DeathOrb" then
+			print("Death orb touched by:", hit.Name, "Parent:", hit.Parent and hit.Parent.Name)
+		end
+
 		local player = getPlayerFromTouchedPart(hit)
 		if player then
 			atomicCollectOrb(orb, "player", player)
@@ -566,9 +586,14 @@ attachOrbTouched = function(orb)
 
 		local aiHead = getAISnakeHeadFromPart(hit)
 		if aiHead then
+			if orb.Name == "DeathOrb" then
+				print("AI collecting death orb! Head:", aiHead.Name)
+			end
 			atomicCollectOrb(orb, "ai", aiHead)
 			return
 		end
+		
+		-- Clear debounce if no valid collector
 		orbDebounce[orb] = nil
 	end)
 end

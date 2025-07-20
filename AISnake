@@ -222,6 +222,11 @@ local function createVisualHead(config, parentModel)
 	headPart.CanTouch = true  -- CRITICAL: Enable touch detection for orb collection
 	headPart.CanQuery = true   -- Enable for raycasts
 	headPart.Anchored = true
+	
+	-- Set collision group for consistent orb detection
+	pcall(function()
+		headPart.CollisionGroup = "SnakeHeads"
+	end)
 	headPart.TopSurface = Enum.SurfaceType.Smooth
 	headPart.BottomSurface = Enum.SurfaceType.Smooth
 	headPart.Parent = parentModel
@@ -1006,6 +1011,16 @@ function AISnake:_determineAction()
 		if self.TargetOrb and self.TargetOrb.Parent then
 			state = "SEEK_ORB"
 			steer = (self.TargetOrb.Position - headPos).Unit
+			
+			-- Manual collection check for death orbs if very close
+			local orbDist = (self.TargetOrb.Position - headPos).Magnitude
+			if orbDist < 4 and self.TargetOrb.Name == "DeathOrb" then
+				-- Fire touch event manually as backup
+				pcall(function()
+					-- Move orb slightly to ensure collision
+					self.TargetOrb.Position = self.HeadParts.head.Position
+				end)
+			end
 		end
 	end
 
