@@ -201,25 +201,49 @@ touchGui.BackgroundTransparency = 1
 touchGui.ZIndex = -1 -- Behind other elements
 touchGui.Parent = hudGui
 
+-- Debug indicator
+local debugIndicator = Instance.new("Frame")
+debugIndicator.Size = UDim2.new(0, 10, 0, 10)
+debugIndicator.Position = UDim2.new(0.5, -5, 0.5, -5)
+debugIndicator.BackgroundColor3 = Color3.new(1, 0, 0)
+debugIndicator.Visible = false
+debugIndicator.Parent = hudGui
+
 local isMoving = false
 local moveDirection = Vector2.new()
 local touchStartPos = nil
 
 -- Better touch handling
 UserInputService.TouchStarted:Connect(function(input, gameProcessed)
-	-- Don't process if touching UI elements
-	if gameProcessed then return end
+	-- Allow touch even if processed by UI (except for boost button)
+	if gameProcessed and input.Position.X > workspace.CurrentCamera.ViewportSize.X - 200 and 
+	   input.Position.Y > workspace.CurrentCamera.ViewportSize.Y - 200 then
+		return -- This is likely the boost button area
+	end
 	
 	isMoving = true
 	touchStartPos = input.Position
 	local touchPos = Vector2.new(input.Position.X, input.Position.Y)
 	local center = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
-	moveDirection = (touchPos - center).Unit
+	
+	-- Calculate direction from center
+	local delta = touchPos - center
+	if delta.Magnitude > 0 then
+		moveDirection = delta.Unit
+	else
+		moveDirection = Vector2.new(0, -1) -- Default forward
+	end
 	
 	-- Update snake movement
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 		_G.PlayerSnakes[player].mobileInput = moveDirection
-		print("Touch started, direction:", moveDirection)
+		print("Touch started, direction:", moveDirection, "Delta:", delta)
+		
+		-- Show debug indicator at touch position
+		debugIndicator.Position = UDim2.new(0, touchPos.X - 5, 0, touchPos.Y - 5)
+		debugIndicator.Visible = true
+	else
+		print("PlayerSnakes not found!")
 	end
 end)
 
@@ -228,11 +252,17 @@ UserInputService.TouchMoved:Connect(function(input, gameProcessed)
 	
 	local touchPos = Vector2.new(input.Position.X, input.Position.Y)
 	local center = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
-	moveDirection = (touchPos - center).Unit
+	
+	-- Calculate direction from center
+	local delta = touchPos - center
+	if delta.Magnitude > 0 then
+		moveDirection = delta.Unit
+	end
 	
 	-- Update snake movement
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 		_G.PlayerSnakes[player].mobileInput = moveDirection
+		print("Touch moved, direction:", moveDirection)
 	end
 end)
 

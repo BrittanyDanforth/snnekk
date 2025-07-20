@@ -561,59 +561,59 @@ local function initializeForCharacter(character)
 			fpsCounter.lastUpdate = tick()
 		end
 
-		-- Input handling (Mouse or Mobile)
-		if updateCounter % networkUpdateInterval == 0 then
-			if _G.IsMobile and _G.PlayerSnakes and _G.PlayerSnakes[player] then
-				-- MOBILE CONTROLS (Touch-based like slither.io)
-				local snakeData = _G.PlayerSnakes[player]
+				-- Input handling (Mouse or Mobile)
+		-- Mobile input should be processed EVERY frame for smooth control
+		if _G.IsMobile and _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			-- MOBILE CONTROLS (Touch-based like slither.io)
+			local snakeData = _G.PlayerSnakes[player]
+			
+			-- Debug print once
+			if not State.mobilePrintDone then
+				print("Mobile controls active for player")
+				State.mobilePrintDone = true
+			end
 				
-				-- Handle mobile touch movement
-				if snakeData.mobileInput then
-					-- Convert 2D touch input to 3D world direction
-					local camera = workspace.CurrentCamera
-					local forward = camera.CFrame.LookVector
-					local right = camera.CFrame.RightVector
-					
-					-- Project camera vectors onto horizontal plane
-					forward = Vector3.new(forward.X, 0, forward.Z).Unit
-					right = Vector3.new(right.X, 0, right.Z).Unit
-					
-					-- Calculate movement direction based on touch input
-					local moveDirection = (right * snakeData.mobileInput.X + forward * -snakeData.mobileInput.Y)
-					
-					if moveDirection.Magnitude > 0.1 then
-						State.targetDirection = moveDirection.Unit
-					end
-				end
+			-- Handle mobile touch movement
+			if snakeData.mobileInput and snakeData.mobileInput.Magnitude > 0 then
+				-- Since camera is top-down, we use simple X/Z mapping
+				-- Touch X maps to world X, Touch Y maps to world Z
+				local moveDirection = Vector3.new(snakeData.mobileInput.X, 0, snakeData.mobileInput.Y)
 				
-				-- Handle mobile boost
-				if snakeData.isBoosting and not State.boosting then
-					State.boosting = true
-					State.targetSpeed = Config.BoostSpeed
-					
-					-- Add boost effect for mobile
-					local boostEffect = Instance.new("ParticleEmitter")
-					boostEffect.Name = "BoostEffect"
-					boostEffect.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-					boostEffect.Color = ColorSequence.new(Config.HeadColor)
-					boostEffect.Rate = 60
-					boostEffect.Lifetime = NumberRange.new(0.5)
-					boostEffect.Speed = NumberRange.new(6)
-					boostEffect.SpreadAngle = Vector2.new(35, 35)
-					boostEffect.Parent = rootPart
-				elseif not snakeData.isBoosting and State.boosting then
-					State.boosting = false
-					State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
-					
-					-- Remove boost effect
-					local boostEffect = rootPart:FindFirstChild("BoostEffect")
-					if boostEffect then
-						boostEffect.Enabled = false
-						Debris:AddItem(boostEffect, 0.8)
-					end
+				if moveDirection.Magnitude > 0.1 then
+					State.targetDirection = moveDirection.Unit
+					print("Mobile movement applied:", State.targetDirection)
 				end
-			else
-				-- MOUSE CONTROLS (Desktop)
+			end
+			
+			-- Handle mobile boost
+			if snakeData.isBoosting and not State.boosting then
+				State.boosting = true
+				State.targetSpeed = Config.BoostSpeed
+				
+				-- Add boost effect for mobile
+				local boostEffect = Instance.new("ParticleEmitter")
+				boostEffect.Name = "BoostEffect"
+				boostEffect.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+				boostEffect.Color = ColorSequence.new(Config.HeadColor)
+				boostEffect.Rate = 60
+				boostEffect.Lifetime = NumberRange.new(0.5)
+				boostEffect.Speed = NumberRange.new(6)
+				boostEffect.SpreadAngle = Vector2.new(35, 35)
+				boostEffect.Parent = rootPart
+			elseif not snakeData.isBoosting and State.boosting then
+				State.boosting = false
+				State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
+				
+				-- Remove boost effect
+				local boostEffect = rootPart:FindFirstChild("BoostEffect")
+				if boostEffect then
+					boostEffect.Enabled = false
+					Debris:AddItem(boostEffect, 0.8)
+				end
+			end
+		else
+			-- MOUSE CONTROLS (Desktop) - only update on network interval
+			if updateCounter % networkUpdateInterval == 0 then
 				local mousePos = getMouseWorldPosition()
 				local delta = mousePos - rootPart.Position
 				delta = Vector3.new(delta.X, 0, delta.Z)

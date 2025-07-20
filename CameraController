@@ -77,21 +77,8 @@ UserInputService.InputChanged:Connect(function(input, gameProcessed)
 	end
 end)
 
--- For mobile, disable camera pan/rotation from touch
-if isMobile then
-	-- Disable all touch camera controls
-	UserInputService.TouchPan:Connect(function(touchPositions, totalTranslation, velocity, state)
-		-- Do nothing, prevent camera pan
-	end)
-	
-	UserInputService.TouchRotate:Connect(function(touchPositions, rotation, velocity, state)
-		-- Do nothing, prevent camera rotation
-	end)
-	
-	UserInputService.TouchPinch:Connect(function(touchPositions, scale, velocity, state)
-		-- Do nothing, prevent camera zoom
-	end)
-end
+-- For mobile, we don't need to block these as camera is already scriptable
+-- Removing these connections to avoid interfering with touch input
 
 -- Update mobile status on screen size change
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
