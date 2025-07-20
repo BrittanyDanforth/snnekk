@@ -1,0 +1,29 @@
+-- CameraController: Smooth top-down view
+-- LOCALSCRIPT INSIDE STARTERPLAYERSCRIPTS
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local camera = workspace.CurrentCamera
+local player = Players.LocalPlayer
+
+local HEIGHT = 50
+local SMOOTHNESS = 0.05
+
+camera.CameraType = Enum.CameraType.Scriptable
+
+RunService.RenderStepped:Connect(function()
+	local character = player.Character
+	if not character then return end
+
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if not rootPart then return end
+
+	-- Smooth camera follow
+	local targetCFrame = CFrame.new(
+		rootPart.Position + Vector3.new(0, HEIGHT, 0),
+		rootPart.Position
+	)
+
+	camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
+	camera.FieldOfView = 70
+end)
