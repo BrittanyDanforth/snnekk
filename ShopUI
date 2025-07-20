@@ -2127,7 +2127,6 @@ local function createCategoryButton(category, index)
 				end
 			end
 		end
-		end
 
 		-- Update indicators
 		for _, child in pairs(ShopUI.uiElements.sidebar:GetChildren()) do
