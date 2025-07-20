@@ -581,6 +581,20 @@ AISnake.PersonalityDefinitions = {
 }
 
 -- === AI METHODS ===
+
+-- MANUAL ORB COLLECTION - Because touch events don't work reliably with anchored parts
+function AISnake:collectNearbyOrbs()
+	if not self.HeadParts or not self.HeadParts.head then return end
+	
+	local head = self.HeadParts.head
+	
+	-- Use OrbUtils backup collection method
+	local OrbUtils = require(game.ReplicatedStorage:WaitForChild("OrbUtils"))
+	if OrbUtils and OrbUtils.checkAISnakeHeadPickup then
+		OrbUtils.checkAISnakeHeadPickup(head)
+	end
+end
+
 function AISnake:findBestOrb()
 	local minDist = self.Personality.OrbSeekRadius or 50
 	local nearest = nil
@@ -1380,6 +1394,11 @@ function AISnake:updateMovement(dt)
 
 	-- Set velocity for collision detection
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
+	
+	-- PROXIMITY ORB COLLECTION - Check for nearby orbs every few frames
+	if self.UpdateCounter % 3 == 0 then -- Check every 3 frames
+		self:collectNearbyOrbs()
+	end
 
 	-- History management
 	local lastHistoryPoint = self:getFromHistory(1)
