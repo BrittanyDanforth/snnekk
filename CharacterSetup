@@ -594,7 +594,7 @@ local function createUltraSmoothSnake(character)
 		end
 		obj:Destroy()
 	end
-	
+
 	-- Don't clean up heads here - it's too aggressive
 
 	-- Don't create visual parts yet
@@ -677,21 +677,7 @@ local function createUltraSmoothSnake(character)
 				local colorIndex = ((currentLength - 1) % #bodyColors) + 1
 				local color = bodyColors[colorIndex]
 				local lastSegment = segments[#segments]
-				-- Ensure proper positioning for new segments
-				local newPos
-				if lastSegment and lastSegment.Parent then
-					-- Get the direction from previous segment
-					local prevSegment = segments[#segments - 1]
-					if prevSegment and prevSegment.Parent then
-						local dir = (lastSegment.Position - prevSegment.Position).Unit
-						newPos = lastSegment.Position + dir * activeConfig.SegmentSpacing
-					else
-						-- Fallback: position behind last segment
-						newPos = lastSegment.Position - rootPart.CFrame.LookVector * activeConfig.SegmentSpacing
-					end
-				else
-					newPos = rootPart.Position - rootPart.CFrame.LookVector * activeConfig.SegmentSpacing
-				end
+				local newPos = lastSegment and lastSegment.Position or rootPart.Position
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel, currentLength)
 				segments[currentLength] = segment
 
@@ -757,7 +743,7 @@ local function createUltraSmoothSnake(character)
 			if headParts.head and headParts.head.Parent then
 				headParts.head:Destroy()
 			end
-			
+
 			-- Then clean up all other parts
 			for name, part in pairs(headParts) do
 				if typeof(part) == "Instance" and part.Parent then
@@ -871,13 +857,13 @@ local function createUltraSmoothSnake(character)
 			if headParts.leftEye and headParts.rightEye and updateCounter % 30 == 0 then  -- Less frequent for performance
 				local headSize = headParts.head.Size.X
 				local baseHeadSize = activeConfig.HeadSize.X
-				
+
 				-- PROPORTIONAL SCALING - keep exact same look at all sizes
 				-- These ratios make eyes look perfect on small snake
 				local eyeSpacingRatio = 0.6 / baseHeadSize  -- Side spacing as ratio of head
 				local eyeUpRatio = 0.55 / baseHeadSize      -- Height as ratio of head  
 				local eyeForwardRatio = 1.1 / baseHeadSize  -- Forward as ratio of head
-				
+
 				-- Apply ratios to current head size - maintains EXACT proportions
 				local eyeSpacing = headSize * eyeSpacingRatio
 				local eyeUp = headSize * eyeUpRatio
@@ -886,7 +872,7 @@ local function createUltraSmoothSnake(character)
 				-- Update positions - eyes stay proportional to head
 				headParts.leftEye.CFrame = headParts.head.CFrame * CFramenew(-eyeSpacing, eyeUp, eyeForward)
 				headParts.rightEye.CFrame = headParts.head.CFrame * CFramenew(eyeSpacing, eyeUp, eyeForward)
-				
+
 				-- Scale eyes slightly with head too for better look
 				local eyeScale = headSize / baseHeadSize * 0.8  -- Eyes grow but not as fast as head
 				headParts.leftEye.Size = Vector3new(0.8, 0.8, 0.8) * eyeScale
@@ -957,10 +943,6 @@ local function createUltraSmoothSnake(character)
 				end
 			end
 			addToHistory({ position = currentPos, lookVector = lookVector })
-		elseif dist > 0.02 then
-			-- CRITICAL FIX: Still update position when skipping to prevent gaps
-			-- This ensures continuous history even when reducing update frequency
-			addToHistory({ position = currentPos, lookVector = lookVector })
 		end
 
 		local currentTime = tick()
@@ -1014,31 +996,14 @@ local function createUltraSmoothSnake(character)
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
 						local currentSegmentPos = segment.Position
 
-						-- Enhanced anti-gap check - always check, not just when boosting
-						if i > 1 then
+						-- Simple anti-gap check when boosting
+						if isBoosting and i > 1 then
 							local prevSegment = segments[i - 1]
 							if prevSegment and prevSegment.Parent then
 								local gap = (currentSegmentPos - prevSegment.Position).Magnitude
-								-- More aggressive gap prevention
-								if gap > activeConfig.SegmentSpacing * 1.2 then
+								if gap > activeConfig.SegmentSpacing * 1.5 then
 									-- Too far, pull it closer
 									local dir = (prevSegment.Position - currentSegmentPos).Unit
-									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
-									-- Also update the history position to prevent future gaps
-									targetData.position = segmentPos
-								end
-							end
-						end
-						
-						-- Additional check for newly grown segments
-						if i == currentLength and i > 1 then
-							-- Ensure new segments attach properly
-							local prevSegment = segments[i - 1]
-							if prevSegment and prevSegment.Parent then
-								local gap = (segmentPos - prevSegment.Position).Magnitude
-								if gap > activeConfig.SegmentSpacing * 1.5 then
-									-- Force new segment to attach properly
-									local dir = (prevSegment.Position - segmentPos).Unit
 									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
 								end
 							end
@@ -1245,7 +1210,7 @@ task.spawn(function()
 				end
 			end
 		end
-		
+
 		-- Removed aggressive head cleanup - it was deleting active heads!
 	end
 end)
