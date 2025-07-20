@@ -123,6 +123,39 @@ Players.PlayerRemoving:Connect(function(player)
 		_G.PlayerSnakes[player] = nil
 	end
 	
+	-- Clean up any snake models in workspace
+	for _, container in ipairs(workspace:GetChildren()) do
+		if container.Name == "AISegmentContainer" or container.Name == "SegmentContainer" then
+			for _, model in ipairs(container:GetChildren()) do
+				if model:IsA("Model") then
+					local shouldDestroy = false
+					
+					-- Check if model belongs to leaving player
+					if model.Name:find(player.Name) or
+					   model:GetAttribute("PlayerName") == player.Name or
+					   model:GetAttribute("Owner") == player.Name then
+						shouldDestroy = true
+					end
+					
+					-- Check AISnakeModel pattern
+					if model.Name:match("AISnakeModel_table:") then
+						-- Check if any parts reference the player
+						for _, desc in ipairs(model:GetDescendants()) do
+							if desc:IsA("ObjectValue") and desc.Value == player then
+								shouldDestroy = true
+								break
+							end
+						end
+					end
+					
+					if shouldDestroy then
+						model:Destroy()
+					end
+				end
+			end
+		end
+	end
+	
 	-- Clean from recent collisions
 	for key, _ in pairs(recentCollisions) do
 		if key:find(tostring(player)) then
@@ -867,7 +900,7 @@ task.spawn(function()
 							end
 						end)
 						
-						-- Force clear all invisible segments
+						-- Force clear all snake parts and model
 						task.spawn(function()
 							-- Wait a tiny bit to ensure orbs spawn first
 							task.wait(0.1)
@@ -894,6 +927,92 @@ task.spawn(function()
 							local segmentFolder = character and character:FindFirstChild("Segments")
 							if segmentFolder then
 								segmentFolder:Destroy()
+							end
+							
+							-- Method 4: Clear from workspace containers
+							local segmentContainer = workspace:FindFirstChild("SegmentContainer")
+							if segmentContainer then
+								for _, child in ipairs(segmentContainer:GetChildren()) do
+									if child.Name:find(player.Name) or (child:GetAttribute("Owner") == player.Name) then
+										child:Destroy()
+									end
+								end
+							end
+							
+							-- Method 5: Look for AI snake models with player name
+							local aiSegmentContainer = workspace:FindFirstChild("AISegmentContainer")
+							if aiSegmentContainer then
+								for _, model in ipairs(aiSegmentContainer:GetChildren()) do
+									if model.Name:find(player.Name) or (model:GetAttribute("Owner") == player.Name) then
+										model:Destroy()
+									end
+								end
+							end
+							
+							-- Method 6: Clear the actual snake model structure
+							-- Look for models that match "AISnakeModel_table:" pattern
+							for _, container in ipairs(workspace:GetChildren()) do
+								if container.Name == "AISegmentContainer" or container.Name == "SegmentContainer" then
+									for _, model in ipairs(container:GetChildren()) do
+										-- Check if this is a player's snake model
+										if model:IsA("Model") then
+											local shouldDestroy = false
+											
+											-- Check various patterns
+											if model.Name:find(player.Name) then
+												shouldDestroy = true
+											elseif model.Name:match("AISnakeModel_table:") then
+												-- This might be a player snake with a weird name
+												-- Check if it belongs to this player
+												local hasPlayerSegments = false
+												for _, part in ipairs(model:GetDescendants()) do
+													if part:IsA("BasePart") then
+														-- Check if part position matches player position
+														if character and character:FindFirstChild("HumanoidRootPart") then
+															local dist = (part.Position - character.HumanoidRootPart.Position).Magnitude
+															if dist < 100 then
+																hasPlayerSegments = true
+																break
+															end
+														end
+													end
+												end
+												if hasPlayerSegments then
+													shouldDestroy = true
+												end
+											end
+											
+											-- Additional checks
+											if model:GetAttribute("PlayerName") == player.Name then
+												shouldDestroy = true
+											elseif model:GetAttribute("Owner") == player.Name then
+												shouldDestroy = true
+											end
+											
+											if shouldDestroy then
+												if DEBUG_COLLISIONS then
+													print("[CLEANUP] Destroying snake model:", model.Name)
+												end
+												model:Destroy()
+											end
+										end
+									end
+								end
+							end
+							
+							-- Method 7: Destroy player's actual model if it exists
+							if player.Name == "ballbladegoat2" then
+								-- Your specific case - look for your snake models
+								for _, container in ipairs(workspace:GetChildren()) do
+									if container:IsA("Folder") or container:IsA("Model") then
+										for _, child in ipairs(container:GetChildren()) do
+											if child.Name:match("ballbladegoat2") or 
+											   child.Name:match("AISnakeModel_table:.*ballbladegoat2") then
+												child:Destroy()
+											end
+										end
+									end
+								end
 							end
 							
 							-- Clear from global tracking
