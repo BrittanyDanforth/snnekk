@@ -1038,7 +1038,7 @@ function AISnake.new(startPosition)
 	self.Speed = self.Config.BaseSpeed or 10
 	self.NormalSpeed = self.Config.BaseSpeed or 10
 	self.BoostSpeed = self.Config.BoostSpeed or 24
-	self.TurnSpeed = self.Config.TurnSpeed or 1.2 -- REDUCED for smoother turning
+	self.TurnSpeed = self.Config.TurnSpeed or 0.8 -- Same as players, no unfair sharp turns
 	self.RandomTurnInterval = 1.5
 	self.LastTurn = tick()
 	self.TargetYaw = 0
@@ -1259,23 +1259,20 @@ function AISnake:updateMovement(dt)
 	local desiredYaw = self.CurrentYaw + angle
 	self.TargetYaw = desiredYaw
 
-	-- MUCH smoother turn speed
+	-- FAIR TURN SPEED - Same as players, no sharp turns that look like slowing
 	local turnSpeed = self.TurnSpeed
-	if state == "AVOID_WALL" then
-		turnSpeed = turnSpeed * 3.0 -- REDUCED from 5.0
-	elseif state == "FLEE" then
-		turnSpeed = turnSpeed * 1.8 -- REDUCED from 2.2
-	elseif state == "CIRCLE" then
-		turnSpeed = turnSpeed * 1.5 -- REDUCED from 2.5
-	end
-
-	-- SMOOTHER boost turning
+	
+	-- NO EXTRA TURN SPEED MULTIPLIERS - Keep it fair like players
+	-- Players can't suddenly turn sharper, neither should AI
+	
+	-- When boosting, turn slightly slower like players do
 	if self.Boosting then
-		turnSpeed = turnSpeed * 0.7 -- INCREASED from 0.5
+		turnSpeed = turnSpeed * 0.85 -- Slightly reduced turning when boosting
 	end
 
 	local yawDiff = self.TargetYaw - self.CurrentYaw
-	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.8) -- CAPPED at 0.8
+	-- Limit turn rate to prevent sharp turns that look like slowing
+	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.3) -- Much lower cap for realistic turns
 
 	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
 	self.Direction = cf.LookVector
