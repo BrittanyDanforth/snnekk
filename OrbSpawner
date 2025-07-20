@@ -428,6 +428,9 @@ local function spawnDeathOrbs(pos, count)
 		table.insert(orbs, orb)
 		table.insert(spawned, orb)
 		attachOrbTouched(orb)
+		
+		-- CRITICAL: Add death orbs to spatial grid so AI can find them!
+		addOrbToGrid(orb)
 
 		-- Death orbs should be immediately visible where they spawn
 		applyOrbLOD(orb, "full", 1.0)
