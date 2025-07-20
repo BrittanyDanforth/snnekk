@@ -46,6 +46,7 @@ local isProcessingDeaths = false
 local deadAISnakes = {} -- Track dead AI snakes to prevent double deaths
 local deadPlayers = {} -- Track dead players to prevent double deaths
 local recentCollisions = {} -- Track recent collisions to prevent double processing
+local collisionProcessing = {} -- Prevent simultaneous collision processing
 
 -- === INVINCIBILITY SYSTEM ===
 local INVINCIBILITY_DURATION = 5
@@ -724,6 +725,26 @@ local function queuePlayerDeath(player)
 
 	-- IMMEDIATELY mark as dead to prevent mutual deaths (with timestamp)
 	deadPlayers[player] = tick()
+	
+	-- IMMEDIATELY clean up character to prevent collision
+	local character = player.Character
+	if character and character.Parent then
+		-- Disable all collision RIGHT NOW
+		for _, part in ipairs(character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+				part.CanTouch = false
+				part.CanQuery = false
+			end
+		end
+		
+		-- Move away RIGHT NOW
+		local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+		if root then
+			root.CFrame = CFrame.new(10000, -1000, 10000)
+			root.Anchored = true
+		end
+	end
 
 	if DEBUG_COLLISIONS then
 		print(string.format("[QUEUE] Adding death to queue for player: %s", player.Name))
@@ -1654,49 +1675,66 @@ RunService.Stepped:Connect(function()
 					end
 				end
 
-				-- Process deaths
+				-- Process deaths - ONLY ONE CAN DIE
 				if playerADies and playerBDies then
-					-- Both hit bodies - determine winner based on who hit first/harder
+					-- Both hit bodies - determine winner
 					local winner = determineHeadToHeadWinner(headA, headB, velA, velB)
+					
+					-- IMMEDIATELY mark one as dead before queuing
 					if winner == "A" then
+						deadPlayers[playerB] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerB.Name))
 						end
 						queuePlayerDeath(playerB)
 					else
+						deadPlayers[playerA] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerA.Name))
 						end
 						queuePlayerDeath(playerA)
 					end
+					break -- Exit immediately
 				elseif playerADies then
 					-- Only A hit B's body
 					if DEBUG_COLLISIONS then
 						print(string.format("[DEATH] %s dies (hit %s's body)", playerA.Name, playerB.Name))
 					end
 					queuePlayerDeath(playerA)
+					break
 				elseif playerBDies then
 					-- Only B hit A's body
 					if DEBUG_COLLISIONS then
 						print(string.format("[DEATH] %s dies (hit %s's body)", playerB.Name, playerA.Name))
 					end
 					queuePlayerDeath(playerB)
+					break
 				else
-					-- Pure head-to-head collision
+					-- Pure head-to-head collision - PREVENT DOUBLE DEATH
+					-- Check one more time if either is already dead
+					if deadPlayers[playerA] or deadPlayers[playerB] then
+						break
+					end
+					
+					-- Determine loser
 					local loser = determineHeadToHeadWinner(headA, headB, velA, velB)
+					
+					-- IMMEDIATELY mark the loser as dead
 					if loser == "A" then
+						deadPlayers[playerA] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (head-to-head collision)", playerA.Name))
 						end
 						queuePlayerDeath(playerA)
 					else
+						deadPlayers[playerB] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (head-to-head collision)", playerB.Name))
 						end
 						queuePlayerDeath(playerB)
 					end
+					break -- Exit immediately
 				end
-				break
 			end
 		end
 	end
