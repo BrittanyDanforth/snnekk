@@ -595,33 +595,49 @@ local function initializeForCharacter(character)
 					
 					-- Only turn if finger is far enough from head (same as PC mouse)
 					if toFinger.Magnitude > 1.0 then -- Same threshold as PC
-						State.targetDirection = toFinger.Unit
+						local newTargetDir = toFinger.Unit
+						
+						-- ANTI-ZIGZAG: Prevent instant 180-degree turns (same as PC should have)
+						local dotProduct = State.currentDirection:Dot(newTargetDir)
+						
+						-- If trying to turn more than 120 degrees instantly, limit it
+						if dotProduct < -0.5 then -- cos(120°) = -0.5
+							-- Calculate the maximum allowed turn angle
+							local rightVector = State.currentDirection:Cross(Vector3.new(0, 1, 0))
+							local crossProduct = rightVector:Dot(newTargetDir)
+							
+							-- Limit to 120 degree turn
+							local maxTurnAngle = math.rad(120)
+							local turnDirection = crossProduct > 0 and 1 or -1
+							
+							-- Create limited direction vector
+							local limitedAngle = math.atan2(State.currentDirection.Z, State.currentDirection.X) + (maxTurnAngle * turnDirection)
+							newTargetDir = Vector3.new(math.cos(limitedAngle), 0, math.sin(limitedAngle)).Unit
+						end
+						
+						State.targetDirection = newTargetDir
 					end
 				
 					-- Debug: Show where the touch is in world (red part shows finger position)
 					if not _G.TouchDebugPart then
 						_G.TouchDebugPart = Instance.new("Part")
-						_G.TouchDebugPart.Size = Vector3.new(2, 0.3, 2) -- Smaller size
+						_G.TouchDebugPart.Size = Vector3.new(1, 0.2, 1) -- Even smaller
 						_G.TouchDebugPart.Material = Enum.Material.Neon
 						_G.TouchDebugPart.BrickColor = BrickColor.new("Really red")
 						_G.TouchDebugPart.CanCollide = false
 						_G.TouchDebugPart.Anchored = true
-						_G.TouchDebugPart.Transparency = 0.3
+						_G.TouchDebugPart.Transparency = 0.5
 						_G.TouchDebugPart.Parent = workspace
-						
-						-- Add a small sphere in the center for better visibility
-						local sphere = Instance.new("Part")
-						sphere.Name = "Center"
-						sphere.Shape = Enum.PartType.Ball
-						sphere.Size = Vector3.new(0.5, 0.5, 0.5)
-						sphere.Material = Enum.Material.Neon
-						sphere.BrickColor = BrickColor.new("White")
-						sphere.CanCollide = false
-						sphere.Anchored = true
-						sphere.Transparency = 0
-						sphere.Parent = _G.TouchDebugPart
 					end
+					
+					-- Only show debug part when actively touching
 					_G.TouchDebugPart.Position = worldTouchPosition
+					_G.TouchDebugPart.Transparency = 0.5
+				else
+					-- Hide debug part when not touching
+					if _G.TouchDebugPart then
+						_G.TouchDebugPart.Transparency = 1 -- Fully invisible
+					end
 				end
 			
 				-- Handle mobile boost
@@ -657,13 +673,33 @@ local function initializeForCharacter(character)
 				delta = Vector3.new(delta.X, 0, delta.Z)
 
 				if delta.Magnitude > 1.0 then -- Reduced for more responsive control
-					State.targetDirection = delta.Unit
+					local newTargetDir = delta.Unit
+					
+					-- ANTI-ZIGZAG: Same turn limiting as mobile
+					local dotProduct = State.currentDirection:Dot(newTargetDir)
+					
+					-- If trying to turn more than 120 degrees instantly, limit it
+					if dotProduct < -0.5 then -- cos(120°) = -0.5
+						-- Calculate the maximum allowed turn angle
+						local rightVector = State.currentDirection:Cross(Vector3.new(0, 1, 0))
+						local crossProduct = rightVector:Dot(newTargetDir)
+						
+						-- Limit to 120 degree turn
+						local maxTurnAngle = math.rad(120)
+						local turnDirection = crossProduct > 0 and 1 or -1
+						
+						-- Create limited direction vector
+						local limitedAngle = math.atan2(State.currentDirection.Z, State.currentDirection.X) + (maxTurnAngle * turnDirection)
+						newTargetDir = Vector3.new(math.cos(limitedAngle), 0, math.sin(limitedAngle)).Unit
+					end
+					
+					State.targetDirection = newTargetDir
 				end
 			end
 		end
 
 		-- BUTTERY smooth direction changes (same for mobile and PC)
-		local turnRate = Config.TurnSpeed * dt * 1.2 -- Same turn rate for both
+		local turnRate = Config.TurnSpeed * dt * 0.9 -- Slightly slower for more realistic movement
 		
 		-- Normalize the direction vector after lerping to prevent slowdown
 		local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
