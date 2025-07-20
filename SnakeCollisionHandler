@@ -884,6 +884,32 @@ task.spawn(function()
 						-- Player already marked as dead in queuePlayerDeath
 						
 						humanoid.Health = 0
+						
+						-- Handle character cleanup
+						task.spawn(function()
+							task.wait(0.2) -- Small delay for orb spawning
+							
+							if character and character.Parent then
+								-- Option 1: Move character far away (safer than destroying)
+								local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
+								if root then
+									root.CFrame = CFrame.new(0, -500, 0) -- Move below the map
+								end
+								
+								-- Option 2: Make character invisible
+								for _, part in ipairs(character:GetDescendants()) do
+									if part:IsA("BasePart") or part:IsA("Decal") then
+										part.Transparency = 1
+									end
+									if part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
+										part.Enabled = false
+									end
+								end
+								
+								-- Option 3: Remove from workspace but don't destroy (let Roblox handle it)
+								character.Parent = game:GetService("ServerStorage")
+							end
+						end)
 
 						-- Clear dead flag after respawn time
 						task.spawn(function()
