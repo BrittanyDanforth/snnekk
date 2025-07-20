@@ -32,9 +32,8 @@ local SPAWN_PROTECTION_TIME = 5 -- 5 seconds spawn protection for AI
 local MIN_AI_SPAWN_DISTANCE = 50 -- Minimum distance between AI spawn points
 
 -- === HEAD-TO-HEAD SETTINGS ===
-local HEAD_TO_HEAD_ANGLE_THRESHOLD = 0.7 -- Increased for more accurate frontal detection
+local HEAD_TO_HEAD_ANGLE_THRESHOLD = 0.5 -- Dot product threshold for frontal collision
 local HEAD_TO_HEAD_SPEED_THRESHOLD = 5 -- Minimum speed for collision to count
-local HEAD_TO_HEAD_DECISION_DELAY = 0.05 -- Small delay to ensure only one dies
 
 -- === DEBUG SYSTEM ===
 local DEBUG_COLLISIONS = false -- Set to true to enable collision debugging
@@ -47,7 +46,6 @@ local isProcessingDeaths = false
 local deadAISnakes = {} -- Track dead AI snakes to prevent double deaths
 local deadPlayers = {} -- Track dead players to prevent double deaths
 local recentCollisions = {} -- Track recent collisions to prevent double processing
-local collisionMutex = {} -- Prevent simultaneous death processing
 
 -- === INVINCIBILITY SYSTEM ===
 local INVINCIBILITY_DURATION = 5
@@ -59,7 +57,7 @@ local spawnProtectedAI = {} -- Track AI spawn protection
 task.spawn(function()
 	while true do
 		task.wait(10) -- Check every 10 seconds
-		
+
 		-- Clean up disconnected players
 		for player, _ in pairs(deadPlayers) do
 			if not player.Parent then
@@ -69,7 +67,7 @@ task.spawn(function()
 				end
 			end
 		end
-		
+
 		-- Clean up players who have respawned
 		for player, _ in pairs(deadPlayers) do
 			if player.Parent and player.Character then
@@ -82,14 +80,14 @@ task.spawn(function()
 				end
 			end
 		end
-		
+
 		-- Clean up old AI snake references
 		for head, timestamp in pairs(deadAISnakes) do
 			if not head.Parent or (type(timestamp) == "number" and tick() - timestamp > 30) then
 				deadAISnakes[head] = nil
 			end
 		end
-		
+
 		-- Clean up old death marks (failsafe - max 30 seconds)
 		local currentTime = tick()
 		for player, timestamp in pairs(deadPlayers) do
@@ -108,10 +106,10 @@ Players.PlayerRemoving:Connect(function(player)
 	-- Clean all death tracking
 	deadPlayers[player] = nil
 	invinciblePlayers[player] = nil
-	
+
 	-- Clean from collision cache
 	CollisionCache.playerSegments[player] = nil
-	
+
 	-- Clean any remaining segments
 	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 		local snake = _G.PlayerSnakes[player]
@@ -124,21 +122,21 @@ Players.PlayerRemoving:Connect(function(player)
 		end
 		_G.PlayerSnakes[player] = nil
 	end
-	
+
 	-- Clean up any snake models in workspace
 	for _, container in ipairs(workspace:GetChildren()) do
 		if container.Name == "AISegmentContainer" or container.Name == "SegmentContainer" then
 			for _, model in ipairs(container:GetChildren()) do
 				if model:IsA("Model") then
 					local shouldDestroy = false
-					
+
 					-- Check if model belongs to leaving player
 					if model.Name:find(player.Name) or
-					   model:GetAttribute("PlayerName") == player.Name or
-					   model:GetAttribute("Owner") == player.Name then
+						model:GetAttribute("PlayerName") == player.Name or
+						model:GetAttribute("Owner") == player.Name then
 						shouldDestroy = true
 					end
-					
+
 					-- Check AISnakeModel pattern
 					if model.Name:match("AISnakeModel_table:") then
 						-- Check if any parts reference the player
@@ -149,7 +147,7 @@ Players.PlayerRemoving:Connect(function(player)
 							end
 						end
 					end
-					
+
 					if shouldDestroy then
 						model:Destroy()
 					end
@@ -157,14 +155,14 @@ Players.PlayerRemoving:Connect(function(player)
 			end
 		end
 	end
-	
+
 	-- Clean from recent collisions
 	for key, _ in pairs(recentCollisions) do
 		if key:find(tostring(player)) then
 			recentCollisions[key] = nil
 		end
 	end
-	
+
 	if DEBUG_COLLISIONS then
 		print("[CLEANUP] Player removed, cleaned all references:", player.Name)
 	end
@@ -318,17 +316,17 @@ local function spawnOrbDirect(position, value)
 		if not position or position ~= position then -- NaN check
 			position = Vector3.new(0, ORB_SPAWN_HEIGHT, 0)
 		end
-		
+
 		-- Clamp value to reasonable range
 		value = math.clamp(value or 1, 1, 50)
-		
+
 		OrbUtils.spawnOrbAt(position, value)
 	end)
 
 	if not success then
 		warn("Orb spawn failed:", err, "at position:", position)
 	end
-	
+
 	return success
 end
 
@@ -657,19 +655,19 @@ end
 local function validateCollision(posA, posB, expectedDistance)
 	-- Extra validation to prevent phantom collisions
 	if not posA or not posB then return false end
-	
+
 	local dist = (posA - posB).Magnitude
-	
+
 	-- Check if distance is reasonable
 	if dist > expectedDistance * 2 then
 		return false
 	end
-	
+
 	-- Check for NaN
 	if dist ~= dist then
 		return false
 	end
-	
+
 	return true
 end
 
@@ -682,7 +680,7 @@ local function queuePlayerDeath(player)
 		end
 		return
 	end
-	
+
 	-- Check if player has valid character
 	local character = player.Character
 	if not character then
@@ -691,7 +689,7 @@ local function queuePlayerDeath(player)
 		end
 		return
 	end
-	
+
 	-- Check if player is actually in the game
 	local humanoid = character:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then
@@ -726,7 +724,7 @@ local function queuePlayerDeath(player)
 
 	-- IMMEDIATELY mark as dead to prevent mutual deaths (with timestamp)
 	deadPlayers[player] = tick()
-	
+
 	if DEBUG_COLLISIONS then
 		print(string.format("[QUEUE] Adding death to queue for player: %s", player.Name))
 	end
@@ -778,12 +776,12 @@ task.spawn(function()
 
 			if death.type == "player" then
 				local player = death.target
-				
+
 				-- Skip if player disconnected
 				if not player.Parent then
 					continue
 				end
-				
+
 				local character = player.Character
 				if character then
 					local humanoid = character:FindFirstChild("Humanoid")
@@ -868,7 +866,7 @@ task.spawn(function()
 											ORB_SPAWN_HEIGHT,
 											deathPos.Z + math.sin(angle) * radius
 										)
-										
+
 										local success = spawnOrbDirect(spawnPos, valuePerOrb)
 										if success then
 											spawnedOrbs = spawnedOrbs + 1
@@ -876,7 +874,7 @@ task.spawn(function()
 									end
 								end
 							end
-							
+
 							-- Log orb spawning for debugging
 							if DEBUG_COLLISIONS then
 								print(string.format("[ORBS] Spawned %d orbs for %s (length: %d)", spawnedOrbs, player.Name, totalLength))
@@ -884,43 +882,41 @@ task.spawn(function()
 						end
 
 						-- Player already marked as dead in queuePlayerDeath
-						
+
 						humanoid.Health = 0
-						
-						-- IMMEDIATE character cleanup to prevent collision bugs
-						if character and character.Parent then
-							-- Disable all collision IMMEDIATELY
-							for _, part in ipairs(character:GetDescendants()) do
-								if part:IsA("BasePart") then
-									part.CanCollide = false
-									part.CanTouch = false
-									part.CanQuery = false
-									part.Transparency = 1
+
+						-- Handle character cleanup
+						task.spawn(function()
+							task.wait(0.2) -- Small delay for orb spawning
+
+							if character and character.Parent then
+								-- Option 1: Move character far away (safer than destroying)
+								local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
+								if root then
+									root.CFrame = CFrame.new(0, -500, 0) -- Move below the map
 								end
-							end
-							
-							-- Move character away IMMEDIATELY
-							local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
-							if root then
-								root.CFrame = CFrame.new(10000, -1000, 10000) -- Far away
-								root.Anchored = true -- Prevent it from falling
-							end
-							
-							-- Schedule full cleanup
-							task.spawn(function()
-								task.wait(0.5) -- Wait for orbs to spawn
-								if character and character.Parent then
-									character:Destroy() -- Just destroy it, player will respawn with new character
+
+								-- Option 2: Make character invisible
+								for _, part in ipairs(character:GetDescendants()) do
+									if part:IsA("BasePart") or part:IsA("Decal") then
+										part.Transparency = 1
+									end
+									if part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
+										part.Enabled = false
+									end
 								end
-							end)
-						end
+
+								-- Option 3: Remove from workspace but don't destroy (let Roblox handle it)
+								character.Parent = game:GetService("ServerStorage")
+							end
+						end)
 
 						-- Clear dead flag after respawn time
 						task.spawn(function()
 							task.wait(5)
 							deadPlayers[player] = nil
 						end)
-						
+
 						-- Also clear on CharacterAdded to prevent permanent death
 						local connection
 						connection = player.CharacterAdded:Connect(function()
@@ -929,12 +925,12 @@ task.spawn(function()
 								connection:Disconnect()
 							end
 						end)
-						
+
 						-- Force clear all snake parts and model
 						task.spawn(function()
 							-- Wait a tiny bit to ensure orbs spawn first
 							task.wait(0.1)
-							
+
 							-- Method 1: Clear from snake instance
 							if snakeInstance and snakeInstance.segments then
 								for _, segment in ipairs(snakeInstance.segments) do
@@ -943,7 +939,7 @@ task.spawn(function()
 									end
 								end
 							end
-							
+
 							-- Method 2: Clear any segments in character
 							if character then
 								for _, child in ipairs(character:GetDescendants()) do
@@ -952,13 +948,13 @@ task.spawn(function()
 									end
 								end
 							end
-							
+
 							-- Method 3: Clear by finding segment folder
 							local segmentFolder = character and character:FindFirstChild("Segments")
 							if segmentFolder then
 								segmentFolder:Destroy()
 							end
-							
+
 							-- Method 4: Clear from workspace containers
 							local segmentContainer = workspace:FindFirstChild("SegmentContainer")
 							if segmentContainer then
@@ -968,7 +964,7 @@ task.spawn(function()
 									end
 								end
 							end
-							
+
 							-- Method 5: Look for AI snake models with player name
 							local aiSegmentContainer = workspace:FindFirstChild("AISegmentContainer")
 							if aiSegmentContainer then
@@ -978,7 +974,7 @@ task.spawn(function()
 									end
 								end
 							end
-							
+
 							-- Method 6: Clear the actual snake model structure
 							-- Look for models that match "AISnakeModel_table:" pattern
 							for _, container in ipairs(workspace:GetChildren()) do
@@ -987,7 +983,7 @@ task.spawn(function()
 										-- Check if this is a player's snake model
 										if model:IsA("Model") then
 											local shouldDestroy = false
-											
+
 											-- Check various patterns
 											if model.Name:find(player.Name) then
 												shouldDestroy = true
@@ -1011,14 +1007,14 @@ task.spawn(function()
 													shouldDestroy = true
 												end
 											end
-											
+
 											-- Additional checks
 											if model:GetAttribute("PlayerName") == player.Name then
 												shouldDestroy = true
 											elseif model:GetAttribute("Owner") == player.Name then
 												shouldDestroy = true
 											end
-											
+
 											if shouldDestroy then
 												if DEBUG_COLLISIONS then
 													print("[CLEANUP] Destroying snake model:", model.Name)
@@ -1029,7 +1025,7 @@ task.spawn(function()
 									end
 								end
 							end
-							
+
 							-- Method 7: Extra cleanup for any remaining models
 							-- This works for ALL players, not just specific usernames
 							for _, container in ipairs(workspace:GetChildren()) do
@@ -1037,14 +1033,14 @@ task.spawn(function()
 									for _, child in ipairs(container:GetChildren()) do
 										-- Check if this model belongs to the dead player
 										if child.Name:match(player.Name) or 
-										   child:GetAttribute("Owner") == player.Name or
-										   child:GetAttribute("PlayerName") == player.Name then
+											child:GetAttribute("Owner") == player.Name or
+											child:GetAttribute("PlayerName") == player.Name then
 											child:Destroy()
 										end
 									end
 								end
 							end
-							
+
 							-- Clear from global tracking
 							if _G.PlayerSnakes then
 								_G.PlayerSnakes[player] = nil
@@ -1119,7 +1115,7 @@ task.spawn(function()
 												(math.random() - 0.5) * 2
 											)
 
-																						-- Ensure proper height
+											-- Ensure proper height
 											local spawnPos = Vector3.new(
 												pos.X + offset.X,
 												groundY + ORB_SPAWN_HEIGHT,  -- Use proper height!
@@ -1152,7 +1148,7 @@ task.spawn(function()
 												groundY + ORB_SPAWN_HEIGHT,
 												deathPos.Z + math.sin(angle) * radius
 											)
-											
+
 											local success = spawnOrbDirect(spawnPos, valuePerOrb)
 											if success then
 												spawnedOrbs = spawnedOrbs + 1
@@ -1160,7 +1156,7 @@ task.spawn(function()
 										end
 									end
 								end
-								
+
 								-- Log orb spawning for debugging
 								if DEBUG_COLLISIONS then
 									print(string.format("[ORBS] Spawned %d orbs for AI snake (length: %d)", spawnedOrbs, totalLength))
@@ -1295,30 +1291,30 @@ local function determineHeadToHeadWinner(headA, headB, velA, velB)
 	-- Calculate collision angle
 	local dirAB = (headB.Position - headA.Position).Unit
 	local dirBA = -dirAB
-	
+
 	-- Calculate how directly each snake is moving toward the collision point
 	local dotA = velA.Unit:Dot(dirAB)
 	local dotB = velB.Unit:Dot(dirBA)
-	
+
 	-- Calculate speeds
 	local speedA = velA.Magnitude
 	local speedB = velB.Magnitude
-	
+
 	-- Check if both are moving toward each other (true head-on)
 	if dotA > HEAD_TO_HEAD_ANGLE_THRESHOLD and dotB > HEAD_TO_HEAD_ANGLE_THRESHOLD then
 		-- True head-on collision
 		-- Winner is determined by aggression score (speed * directness)
 		local aggressionA = speedA * dotA
 		local aggressionB = speedB * dotB
-		
+
 		-- Add small randomness to break ties
 		aggressionA = aggressionA + math.random() * 0.1
 		aggressionB = aggressionB + math.random() * 0.1
-		
+
 		if DEBUG_COLLISIONS then
 			print(string.format("[HEAD-TO-HEAD] Aggression - A: %.2f, B: %.2f", aggressionA, aggressionB))
 		end
-		
+
 		return aggressionA > aggressionB and "B" or "A"
 	else
 		-- One hit the other from the side
@@ -1336,9 +1332,9 @@ end
 local function isRecentCollision(entityA, entityB)
 	local key = tostring(entityA) .. "-" .. tostring(entityB)
 	local reverseKey = tostring(entityB) .. "-" .. tostring(entityA)
-	
+
 	local currentTime = tick()
-	
+
 	-- Check both directions with longer cooldown
 	if recentCollisions[key] and currentTime - recentCollisions[key] < 1.0 then -- Increased from 0.5 to 1.0
 		return true
@@ -1346,18 +1342,18 @@ local function isRecentCollision(entityA, entityB)
 	if recentCollisions[reverseKey] and currentTime - recentCollisions[reverseKey] < 1.0 then
 		return true
 	end
-	
+
 	-- Mark as recent
 	recentCollisions[key] = currentTime
 	recentCollisions[reverseKey] = currentTime
-	
+
 	-- Clean old entries
 	for k, time in pairs(recentCollisions) do
 		if currentTime - time > 2 then -- Increased from 1 to 2
 			recentCollisions[k] = nil
 		end
 	end
-	
+
 	return false
 end
 
@@ -1375,7 +1371,7 @@ local function isEitherDead(entityA, entityB)
 			end
 		end
 	end
-	
+
 	if type(entityB) == "userdata" and entityB:IsA("Player") then
 		if deadPlayers[entityB] then
 			return true
@@ -1387,16 +1383,16 @@ local function isEitherDead(entityA, entityB)
 			end
 		end
 	end
-	
+
 	-- Check AI deaths
 	if type(entityA) ~= "userdata" and deadAISnakes[entityA] then
 		return true
 	end
-	
+
 	if type(entityB) ~= "userdata" and deadAISnakes[entityB] then
 		return true
 	end
-	
+
 	return false
 end
 
@@ -1592,12 +1588,12 @@ RunService.Stepped:Connect(function()
 			if not headA or not headA.Parent or not headB or not headB.Parent then
 				continue
 			end
-			
+
 			-- Check if already processed recently
 			if isRecentCollision(playerA, playerB) then
 				continue
 			end
-			
+
 			-- Check if either player is already dead
 			if isEitherDead(playerA, playerB) then
 				continue
@@ -1609,17 +1605,17 @@ RunService.Stepped:Connect(function()
 				-- Get velocities
 				local velA = headA.AssemblyLinearVelocity or headA.Velocity or Vector3.zero
 				local velB = headB.AssemblyLinearVelocity or headB.Velocity or Vector3.zero
-				
+
 				-- Check if they're actually moving
 				if velA.Magnitude < HEAD_TO_HEAD_SPEED_THRESHOLD and velB.Magnitude < HEAD_TO_HEAD_SPEED_THRESHOLD then
 					-- Both barely moving, skip collision
 					continue
 				end
-				
+
 				-- Check for body collisions first
 				local playerADies = false
 				local playerBDies = false
-				
+
 				-- Check if Player A's head is touching Player B's body
 				local segDataB = getPlayerSegments(playerB)
 				if segDataB and segDataB.segments and #segDataB.segments > 3 then
@@ -1656,28 +1652,21 @@ RunService.Stepped:Connect(function()
 					end
 				end
 
-				-- Process deaths - ONLY ONE CAN DIE
+				-- Process deaths
 				if playerADies and playerBDies then
 					-- Both hit bodies - determine winner based on who hit first/harder
 					local winner = determineHeadToHeadWinner(headA, headB, velA, velB)
-					
-					-- CRITICAL: Mark one as dead BEFORE queuing to prevent double death
 					if winner == "A" then
-						deadPlayers[playerB] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerB.Name))
 						end
 						queuePlayerDeath(playerB)
 					else
-						deadPlayers[playerA] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerA.Name))
 						end
 						queuePlayerDeath(playerA)
 					end
-					
-					-- CRITICAL: Break out immediately to prevent any further processing
-					break
 				elseif playerADies then
 					-- Only A hit B's body
 					if DEBUG_COLLISIONS then
@@ -1691,55 +1680,19 @@ RunService.Stepped:Connect(function()
 					end
 					queuePlayerDeath(playerB)
 				else
-					-- Pure head-to-head collision - CREATE MUTEX
-					local mutexKey = tostring(playerA) .. "-" .. tostring(playerB)
-					local reverseMutexKey = tostring(playerB) .. "-" .. tostring(playerA)
-					
-					-- Check if collision is already being processed
-					if collisionMutex[mutexKey] or collisionMutex[reverseMutexKey] then
-						continue -- Skip, already being processed
-					end
-					
-					-- Lock the mutex
-					collisionMutex[mutexKey] = tick()
-					collisionMutex[reverseMutexKey] = tick()
-					
-					-- Small delay to ensure no race condition
-					task.wait(HEAD_TO_HEAD_DECISION_DELAY)
-					
-					-- Check again if either is dead (they might have died in the delay)
-					if isEitherDead(playerA, playerB) then
-						collisionMutex[mutexKey] = nil
-						collisionMutex[reverseMutexKey] = nil
-						continue
-					end
-					
-					-- Determine loser
+					-- Pure head-to-head collision
 					local loser = determineHeadToHeadWinner(headA, headB, velA, velB)
 					if loser == "A" then
-						-- Double check playerA isn't already dead
-						if not deadPlayers[playerA] then
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] %s dies (head-to-head collision)", playerA.Name))
-							end
-							queuePlayerDeath(playerA)
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (head-to-head collision)", playerA.Name))
 						end
+						queuePlayerDeath(playerA)
 					else
-						-- Double check playerB isn't already dead
-						if not deadPlayers[playerB] then
-							if DEBUG_COLLISIONS then
-								print(string.format("[DEATH] %s dies (head-to-head collision)", playerB.Name))
-							end
-							queuePlayerDeath(playerB)
+						if DEBUG_COLLISIONS then
+							print(string.format("[DEATH] %s dies (head-to-head collision)", playerB.Name))
 						end
+						queuePlayerDeath(playerB)
 					end
-					
-					-- Clean up mutex after a delay
-					task.spawn(function()
-						task.wait(1)
-						collisionMutex[mutexKey] = nil
-						collisionMutex[reverseMutexKey] = nil
-					end)
 				end
 				break
 			end
