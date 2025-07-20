@@ -222,11 +222,6 @@ local function createVisualHead(config, parentModel)
 	headPart.CanTouch = true  -- CRITICAL: Enable touch detection for orb collection
 	headPart.CanQuery = true   -- Enable for raycasts
 	headPart.Anchored = true
-	
-	-- Set collision group for consistent orb detection
-	pcall(function()
-		headPart.CollisionGroup = "SnakeHeads"
-	end)
 	headPart.TopSurface = Enum.SurfaceType.Smooth
 	headPart.BottomSurface = Enum.SurfaceType.Smooth
 	headPart.Parent = parentModel
@@ -581,20 +576,6 @@ AISnake.PersonalityDefinitions = {
 }
 
 -- === AI METHODS ===
-
--- MANUAL ORB COLLECTION - Because touch events don't work reliably with anchored parts
-function AISnake:collectNearbyOrbs()
-	if not self.HeadParts or not self.HeadParts.head then return end
-	
-	local head = self.HeadParts.head
-	
-	-- Use OrbUtils backup collection method
-	local OrbUtils = require(game.ReplicatedStorage:WaitForChild("OrbUtils"))
-	if OrbUtils and OrbUtils.checkAISnakeHeadPickup then
-		OrbUtils.checkAISnakeHeadPickup(head)
-	end
-end
-
 function AISnake:findBestOrb()
 	local minDist = self.Personality.OrbSeekRadius or 50
 	local nearest = nil
@@ -611,18 +592,11 @@ function AISnake:findBestOrb()
 		end
 	end
 
-	-- First pass: prioritize death orbs (they're more valuable!)
 	for _, entity in nearbyEntities do
 		if entity.type == "ORB" and not targetedOrbs[entity.part] then
 			local dist = (entity.part.Position - headPos).Magnitude
-			-- Death orbs have 2x priority (effectively double the seek radius)
-			local effectiveDist = dist
-			if entity.part.Name == "DeathOrb" then
-				effectiveDist = dist * 0.5 -- Make them seem closer
-			end
-
-			if effectiveDist < minDist then
-				minDist = effectiveDist
+			if dist < minDist then
+				minDist = dist
 				nearest = entity.part
 			end
 		end
@@ -633,14 +607,8 @@ function AISnake:findBestOrb()
 		for _, entity in nearbyEntities do
 			if entity.type == "ORB" then
 				local dist = (entity.part.Position - headPos).Magnitude
-				-- Death orbs still get priority even if targeted
-				local effectiveDist = dist
-				if entity.part.Name == "DeathOrb" then
-					effectiveDist = dist * 0.5 -- Make them seem closer
-				end
-
-				if effectiveDist < minDist then
-					minDist = effectiveDist
+				if dist < minDist then
+					minDist = dist
 					nearest = entity.part
 				end
 			end
@@ -1000,41 +968,19 @@ function AISnake:_determineAction()
 		end
 	end
 
-	-- Priority 5: Orb seeking (IMPROVED - prioritize death orbs!)
-	if (state == "WANDER" or state == "PATROL") and p.TargetOrbs then
+	-- Priority 5: Orb seeking (IMPROVED)
+	if state == "WANDER" and p.TargetOrbs then
 		if not self.TargetOrb then
 			local orb, dist = self:findBestOrb()
-			-- Death orbs get extra priority - seek from further away
-			local seekRadius = p.OrbSeekRadius
-			if orb and orb.Name == "DeathOrb" then
-				seekRadius = seekRadius * 1.5 -- 50% extra range for death orbs
-			end
-
-			if orb and dist < seekRadius then
+			if orb and dist < p.OrbSeekRadius then
 				self.TargetOrb = orb
 				self.TargetOrbExpire = now + mathRandom(30, 60) / 10 -- LONGER targeting
 				AISnake._orbTargets[self] = orb
-
-				-- If it's a death orb, immediately prioritize it
-				if orb.Name == "DeathOrb" then
-					state = "SEEK_ORB"
-					steer = (orb.Position - headPos).Unit
-				end
 			end
 		end
 		if self.TargetOrb and self.TargetOrb.Parent then
 			state = "SEEK_ORB"
 			steer = (self.TargetOrb.Position - headPos).Unit
-			
-			-- Manual collection check for death orbs if very close
-			local orbDist = (self.TargetOrb.Position - headPos).Magnitude
-			if orbDist < 4 and self.TargetOrb.Name == "DeathOrb" then
-				-- Fire touch event manually as backup
-				pcall(function()
-					-- Move orb slightly to ensure collision
-					self.TargetOrb.Position = self.HeadParts.head.Position
-				end)
-			end
 		end
 	end
 
@@ -1394,11 +1340,6 @@ function AISnake:updateMovement(dt)
 
 	-- Set velocity for collision detection
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
-	
-	-- PROXIMITY ORB COLLECTION - Check for nearby orbs every few frames
-	if self.UpdateCounter % 3 == 0 then -- Check every 3 frames
-		self:collectNearbyOrbs()
-	end
 
 	-- History management
 	local lastHistoryPoint = self:getFromHistory(1)
