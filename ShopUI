@@ -1120,6 +1120,14 @@ ShopUI.SKIN_DATA = {
 	["Lightning"] = {price = 4500, robux = 85, tag = "Electric"},
 	["Quantum"] = {price = 25000, robux = 249, tag = "Special"},
 	["Prismatic"] = {price = 30000, robux = 299, tag = "Special"},
+	
+	-- ADDITIONAL SKINS FROM SERVER
+	["Ocean Blue"] = {price = 2500, robux = 55, tag = "Cool"},
+	["Rainbow Prism"] = {price = 12000, robux = 175, tag = "Rare"},
+	["Electric Purple"] = {price = 6000, robux = 95, tag = "Shocking"},
+	["VIP Cosmic"] = {price = 0, robux = 499, tag = "VIP"},
+	["Dragon Lord"] = {price = 50000, robux = 999, tag = "Ultimate"},
+	["Cyberpunk"] = {price = 18000, robux = 225, tag = "Futuristic"},
 }
 
 -- Gamepass data
@@ -1864,6 +1872,9 @@ local function createMainShop()
 	purchaseBtn.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	purchaseBtn.TextScaled = true
 	purchaseBtn.Font = SHOP_CONFIG.FONTS.BUTTON
+	purchaseBtn.Visible = true
+	purchaseBtn.Active = true
+	purchaseBtn.AutoButtonColor = true
 	purchaseBtn.Parent = buttonContainer
 
 	createCorner(purchaseBtn, 8)
@@ -1894,6 +1905,9 @@ local function createMainShop()
 	applyBtn.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	applyBtn.TextScaled = true
 	applyBtn.Font = SHOP_CONFIG.FONTS.BUTTON
+	applyBtn.Visible = false  -- Initially hidden until a skin is selected
+	applyBtn.Active = true
+	applyBtn.AutoButtonColor = true
 	applyBtn.Parent = buttonContainer
 
 	createCorner(applyBtn, 8)
@@ -2233,6 +2247,10 @@ end
 -- Create skin card
 local function createSkinCard(skinName, index)
 	local skinData = ShopUI.SKIN_DATA[skinName]
+	if not skinData then
+		warn("No skin data found for:", skinName)
+		return
+	end
 	local isOwned = table.find(ShopUI.playerData.ownedSkins, skinName) ~= nil
 	local isCurrent = ShopUI.playerData.currentSkin == skinName
 
@@ -2500,6 +2518,13 @@ function ShopUI.updateSkinGrid()
 			local rows = math.ceil(i / 5)
 			totalHeight = rows * (SHOP_CONFIG.CARD_HEIGHT + SHOP_CONFIG.GRID_SPACING) + 25
 		end
+		
+		-- Auto-select first skin if none selected
+		if not uiState.selectedSkin and #category.skins > 0 then
+			uiState.selectedSkin = category.skins[1]
+			ShopUI.updateInfo()
+			ShopUI.updatePreview()
+		end
 	end
 
 	ShopUI.uiElements.gridScroll.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
@@ -2618,10 +2643,14 @@ function ShopUI.updateInfo()
 	if isOwned then
 		ShopUI.uiElements.purchaseBtn.Text = "OWNED"
 		ShopUI.uiElements.purchaseBtn.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
+		ShopUI.uiElements.purchaseBtn.Active = false  -- Disable button
+		ShopUI.uiElements.purchaseBtn.AutoButtonColor = false  -- Disable hover effect
 		ShopUI.uiElements.robuxBtn.Visible = false
 	else
 		ShopUI.uiElements.purchaseBtn.Text = "BUY WITH COINS"
 		ShopUI.uiElements.purchaseBtn.Visible = true -- FORCE VISIBLE
+		ShopUI.uiElements.purchaseBtn.Active = true  -- Enable button
+		ShopUI.uiElements.purchaseBtn.AutoButtonColor = true  -- Enable hover effect
 		if ShopUI.playerData.coins >= skinData.price then
 			ShopUI.uiElements.purchaseBtn.BackgroundColor3 = SHOP_CONFIG.COLORS.ACCENT
 		else
@@ -2751,6 +2780,15 @@ function ShopUI.purchaseSkin(useRobux)
 		ShopUI.updateInfo()
 
 		print("🎉 Purchased skin:", uiState.selectedSkin, "for", skinData.price, "coins!")
+		
+		-- Update inventory if it's open
+		pcall(function()
+			local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
+			if InventoryUI and InventoryUI.isOpen then
+				InventoryUI.loadInventoryData()
+				InventoryUI.refreshGrid()
+			end
+		end)
 	else
 		playSound("ERROR")
 
@@ -2879,6 +2917,11 @@ function ShopUI.init()
 	end)
 
 	ShopUI.uiElements.purchaseBtn.MouseButton1Click:Connect(function()
+		print("💰 Purchase button clicked! Selected skin:", uiState.selectedSkin)
+		if not uiState.selectedSkin then
+			warn("❌ No skin selected!")
+			return
+		end
 		ShopUI.purchaseSkin(false) -- Purchase with coins
 	end)
 
@@ -2887,6 +2930,11 @@ function ShopUI.init()
 	end)
 
 	ShopUI.uiElements.applyBtn.MouseButton1Click:Connect(function()
+		print("🎨 Apply/Equip button clicked! Selected skin:", uiState.selectedSkin)
+		if not uiState.selectedSkin then
+			warn("❌ No skin selected!")
+			return
+		end
 		ShopUI.applySkin()
 	end)
 

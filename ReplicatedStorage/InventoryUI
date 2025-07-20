@@ -801,35 +801,58 @@ end
 
 -- Load inventory data
 function InventoryUI.loadInventoryData()
-	-- This should be loaded from server
-	-- For now, using test data
+	-- Load actual player data from ShopUI
+	local ShopUI = require(ReplicatedStorage:WaitForChild("ShopUI"))
+	
+	-- Clear existing inventory
 	InventoryUI.inventory = {
-		skins = {
-			["Default"] = {quantity = 1, rarity = "Common"},
-			["Plasma"] = {quantity = 1, rarity = "Rare", rarityColor = Color3.fromRGB(150, 100, 255)},
-			["VIP Diamond"] = {quantity = 1, rarity = "Legendary", rarityColor = Color3.fromRGB(255, 215, 0)},
-		},
-		items = {
-			["Speed Boost"] = {
-				quantity = 5,
-				color = Color3.fromRGB(100, 200, 255),
-				description = "Increases movement speed for 30 seconds",
-				value = 50,
-			},
-			["Shield"] = {
-				quantity = 2,
-				color = Color3.fromRGB(100, 255, 100),
-				description = "Protects from one collision",
-				value = 100,
-				rarity = "Rare",
-				rarityColor = Color3.fromRGB(100, 255, 150),
-			},
-		},
+		skins = {},
+		items = {},
 		currency = {
-			coins = 500,
-			gems = 50,
+			coins = ShopUI.playerData.coins or 0,
+			gems = 0,
 		}
 	}
+	
+	-- Load owned skins
+	for _, skinName in ipairs(ShopUI.playerData.ownedSkins or {}) do
+		-- Determine rarity based on price
+		local skinData = ShopUI.SKIN_DATA[skinName]
+		local rarity = "Common"
+		local rarityColor = Color3.fromRGB(150, 150, 150)
+		
+		if skinData then
+			if skinData.tag == "VIP" then
+				rarity = "Legendary"
+				rarityColor = Color3.fromRGB(255, 215, 0)
+			elseif skinData.tag == "Ultimate" then
+				rarity = "Mythic"
+				rarityColor = Color3.fromRGB(255, 100, 255)
+			elseif skinData.robux and skinData.robux >= 200 then
+				rarity = "Epic"
+				rarityColor = Color3.fromRGB(200, 100, 255)
+			elseif skinData.robux and skinData.robux >= 100 then
+				rarity = "Rare"
+				rarityColor = Color3.fromRGB(100, 150, 255)
+			elseif skinData.price and skinData.price >= 5000 then
+				rarity = "Uncommon"
+				rarityColor = Color3.fromRGB(100, 200, 100)
+			end
+		end
+		
+		InventoryUI.inventory.skins[skinName] = {
+			quantity = 1,
+			rarity = rarity,
+			rarityColor = rarityColor,
+			description = "A " .. rarity:lower() .. " snake skin",
+			value = skinData and skinData.price or 0,
+		}
+	end
+	
+	-- Items would be loaded from server in a real implementation
+	-- For now, no items unless the player actually has them
+	
+	print("📦 Loaded inventory with", #ShopUI.playerData.ownedSkins, "skins and", ShopUI.playerData.coins, "coins")
 end
 
 -- Toggle inventory (for keybind)
