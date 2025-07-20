@@ -547,7 +547,8 @@ local function atomicCollectOrb(orb, collType, collObj)
 		if orb.Name == "UpgradeOrb" then
 			giveUpgradeToPlayerSnake(p)
 		else
-			local val = (orb:FindFirstChild("Value") and orb.Value.Value) or 10
+			local valObj = orb:FindFirstChild("Value")
+			local val = (valObj and valObj.Value) or 10
 			growPlayerSnake(p, val)
 		end
 	else -- "ai"
@@ -555,7 +556,8 @@ local function atomicCollectOrb(orb, collType, collObj)
 		if orb.Name == "UpgradeOrb" then
 			giveUpgradeToAISnake(head)
 		else
-			local val = (orb:FindFirstChild("Value") and orb.Value.Value) or 10
+			local valObj = orb:FindFirstChild("Value")
+			local val = (valObj and valObj.Value) or 10
 			growAISnake(head, val)
 		end
 	end
