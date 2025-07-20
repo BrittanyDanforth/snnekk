@@ -573,10 +573,7 @@ attachOrbTouched = function(orb)
 	orb.Touched:Connect(function(hit)
 		if not orb or not orb.Parent or orbDebounce[orb] then return end
 
-		-- Debug death orb collection
-		if orb.Name == "DeathOrb" then
-			print("Death orb touched by:", hit.Name, "Parent:", hit.Parent and hit.Parent.Name)
-		end
+
 
 		local player = getPlayerFromTouchedPart(hit)
 		if player then
@@ -586,9 +583,7 @@ attachOrbTouched = function(orb)
 
 		local aiHead = getAISnakeHeadFromPart(hit)
 		if aiHead then
-			if orb.Name == "DeathOrb" then
-				print("AI collecting death orb! Head:", aiHead.Name)
-			end
+
 			atomicCollectOrb(orb, "ai", aiHead)
 			return
 		end
