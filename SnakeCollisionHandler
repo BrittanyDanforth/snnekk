@@ -32,8 +32,9 @@ local SPAWN_PROTECTION_TIME = 5 -- 5 seconds spawn protection for AI
 local MIN_AI_SPAWN_DISTANCE = 50 -- Minimum distance between AI spawn points
 
 -- === HEAD-TO-HEAD SETTINGS ===
-local HEAD_TO_HEAD_ANGLE_THRESHOLD = 0.5 -- Dot product threshold for frontal collision
+local HEAD_TO_HEAD_ANGLE_THRESHOLD = 0.7 -- Increased for more accurate frontal detection
 local HEAD_TO_HEAD_SPEED_THRESHOLD = 5 -- Minimum speed for collision to count
+local HEAD_TO_HEAD_DECISION_DELAY = 0.05 -- Small delay to ensure only one dies
 
 -- === DEBUG SYSTEM ===
 local DEBUG_COLLISIONS = false -- Set to true to enable collision debugging
@@ -46,6 +47,7 @@ local isProcessingDeaths = false
 local deadAISnakes = {} -- Track dead AI snakes to prevent double deaths
 local deadPlayers = {} -- Track dead players to prevent double deaths
 local recentCollisions = {} -- Track recent collisions to prevent double processing
+local collisionMutex = {} -- Prevent simultaneous death processing
 
 -- === INVINCIBILITY SYSTEM ===
 local INVINCIBILITY_DURATION = 5
@@ -885,31 +887,33 @@ task.spawn(function()
 						
 						humanoid.Health = 0
 						
-						-- Handle character cleanup
-						task.spawn(function()
-							task.wait(0.2) -- Small delay for orb spawning
-							
-							if character and character.Parent then
-								-- Option 1: Move character far away (safer than destroying)
-								local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
-								if root then
-									root.CFrame = CFrame.new(0, -500, 0) -- Move below the map
+						-- IMMEDIATE character cleanup to prevent collision bugs
+						if character and character.Parent then
+							-- Disable all collision IMMEDIATELY
+							for _, part in ipairs(character:GetDescendants()) do
+								if part:IsA("BasePart") then
+									part.CanCollide = false
+									part.CanTouch = false
+									part.CanQuery = false
+									part.Transparency = 1
 								end
-								
-								-- Option 2: Make character invisible
-								for _, part in ipairs(character:GetDescendants()) do
-									if part:IsA("BasePart") or part:IsA("Decal") then
-										part.Transparency = 1
-									end
-									if part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
-										part.Enabled = false
-									end
-								end
-								
-								-- Option 3: Remove from workspace but don't destroy (let Roblox handle it)
-								character.Parent = game:GetService("ServerStorage")
 							end
-						end)
+							
+							-- Move character away IMMEDIATELY
+							local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+							if root then
+								root.CFrame = CFrame.new(10000, -1000, 10000) -- Far away
+								root.Anchored = true -- Prevent it from falling
+							end
+							
+							-- Schedule full cleanup
+							task.spawn(function()
+								task.wait(0.5) -- Wait for orbs to spawn
+								if character and character.Parent then
+									character:Destroy() -- Just destroy it, player will respawn with new character
+								end
+							end)
+						end
 
 						-- Clear dead flag after respawn time
 						task.spawn(function()
@@ -1652,21 +1656,28 @@ RunService.Stepped:Connect(function()
 					end
 				end
 
-				-- Process deaths
+				-- Process deaths - ONLY ONE CAN DIE
 				if playerADies and playerBDies then
 					-- Both hit bodies - determine winner based on who hit first/harder
 					local winner = determineHeadToHeadWinner(headA, headB, velA, velB)
+					
+					-- CRITICAL: Mark one as dead BEFORE queuing to prevent double death
 					if winner == "A" then
+						deadPlayers[playerB] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerB.Name))
 						end
 						queuePlayerDeath(playerB)
 					else
+						deadPlayers[playerA] = tick()
 						if DEBUG_COLLISIONS then
 							print(string.format("[DEATH] %s dies (mutual collision, lost)", playerA.Name))
 						end
 						queuePlayerDeath(playerA)
 					end
+					
+					-- CRITICAL: Break out immediately to prevent any further processing
+					break
 				elseif playerADies then
 					-- Only A hit B's body
 					if DEBUG_COLLISIONS then
@@ -1680,19 +1691,55 @@ RunService.Stepped:Connect(function()
 					end
 					queuePlayerDeath(playerB)
 				else
-					-- Pure head-to-head collision
+					-- Pure head-to-head collision - CREATE MUTEX
+					local mutexKey = tostring(playerA) .. "-" .. tostring(playerB)
+					local reverseMutexKey = tostring(playerB) .. "-" .. tostring(playerA)
+					
+					-- Check if collision is already being processed
+					if collisionMutex[mutexKey] or collisionMutex[reverseMutexKey] then
+						continue -- Skip, already being processed
+					end
+					
+					-- Lock the mutex
+					collisionMutex[mutexKey] = tick()
+					collisionMutex[reverseMutexKey] = tick()
+					
+					-- Small delay to ensure no race condition
+					task.wait(HEAD_TO_HEAD_DECISION_DELAY)
+					
+					-- Check again if either is dead (they might have died in the delay)
+					if isEitherDead(playerA, playerB) then
+						collisionMutex[mutexKey] = nil
+						collisionMutex[reverseMutexKey] = nil
+						continue
+					end
+					
+					-- Determine loser
 					local loser = determineHeadToHeadWinner(headA, headB, velA, velB)
 					if loser == "A" then
-						if DEBUG_COLLISIONS then
-							print(string.format("[DEATH] %s dies (head-to-head collision)", playerA.Name))
+						-- Double check playerA isn't already dead
+						if not deadPlayers[playerA] then
+							if DEBUG_COLLISIONS then
+								print(string.format("[DEATH] %s dies (head-to-head collision)", playerA.Name))
+							end
+							queuePlayerDeath(playerA)
 						end
-						queuePlayerDeath(playerA)
 					else
-						if DEBUG_COLLISIONS then
-							print(string.format("[DEATH] %s dies (head-to-head collision)", playerB.Name))
+						-- Double check playerB isn't already dead
+						if not deadPlayers[playerB] then
+							if DEBUG_COLLISIONS then
+								print(string.format("[DEATH] %s dies (head-to-head collision)", playerB.Name))
+							end
+							queuePlayerDeath(playerB)
 						end
-						queuePlayerDeath(playerB)
 					end
+					
+					-- Clean up mutex after a delay
+					task.spawn(function()
+						task.wait(1)
+						collisionMutex[mutexKey] = nil
+						collisionMutex[reverseMutexKey] = nil
+					end)
 				end
 				break
 			end
