@@ -52,6 +52,89 @@ local INVINCIBILITY_DURATION = 5
 local invinciblePlayers = {}
 local spawnProtectedAI = {} -- Track AI spawn protection
 
+-- === DEATH CLEANUP SYSTEM ===
+-- Periodically clean up dead player marks to prevent permanent death
+task.spawn(function()
+	while true do
+		task.wait(10) -- Check every 10 seconds
+		
+		-- Clean up disconnected players
+		for player, _ in pairs(deadPlayers) do
+			if not player.Parent then
+				deadPlayers[player] = nil
+				if DEBUG_COLLISIONS then
+					print("[CLEANUP] Removed disconnected player from dead list")
+				end
+			end
+		end
+		
+		-- Clean up players who have respawned
+		for player, _ in pairs(deadPlayers) do
+			if player.Parent and player.Character then
+				local humanoid = player.Character:FindFirstChild("Humanoid")
+				if humanoid and humanoid.Health > 0 then
+					deadPlayers[player] = nil
+					if DEBUG_COLLISIONS then
+						print("[CLEANUP] Removed respawned player from dead list:", player.Name)
+					end
+				end
+			end
+		end
+		
+		-- Clean up old AI snake references
+		for head, timestamp in pairs(deadAISnakes) do
+			if not head.Parent or (type(timestamp) == "number" and tick() - timestamp > 30) then
+				deadAISnakes[head] = nil
+			end
+		end
+		
+		-- Clean up old death marks (failsafe - max 30 seconds)
+		local currentTime = tick()
+		for player, timestamp in pairs(deadPlayers) do
+			if type(timestamp) == "number" and currentTime - timestamp > 30 then
+				deadPlayers[player] = nil
+				if DEBUG_COLLISIONS then
+					print("[CLEANUP] Removed old death mark for:", player.Name)
+				end
+			end
+		end
+	end
+end)
+
+-- Clean up when player leaves
+Players.PlayerRemoving:Connect(function(player)
+	-- Clean all death tracking
+	deadPlayers[player] = nil
+	invinciblePlayers[player] = nil
+	
+	-- Clean from collision cache
+	CollisionCache.playerSegments[player] = nil
+	
+	-- Clean any remaining segments
+	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+		local snake = _G.PlayerSnakes[player]
+		if snake.segments then
+			for _, segment in ipairs(snake.segments) do
+				if segment and segment.Parent then
+					segment:Destroy()
+				end
+			end
+		end
+		_G.PlayerSnakes[player] = nil
+	end
+	
+	-- Clean from recent collisions
+	for key, _ in pairs(recentCollisions) do
+		if key:find(tostring(player)) then
+			recentCollisions[key] = nil
+		end
+	end
+	
+	if DEBUG_COLLISIONS then
+		print("[CLEANUP] Player removed, cleaned all references:", player.Name)
+	end
+end)
+
 local function setPlayerInvincible(player)
 	invinciblePlayers[player] = os.clock() + INVINCIBILITY_DURATION
 end
@@ -606,8 +689,8 @@ local function queuePlayerDeath(player)
 		end
 	end
 
-	-- IMMEDIATELY mark as dead to prevent mutual deaths
-	deadPlayers[player] = true
+	-- IMMEDIATELY mark as dead to prevent mutual deaths (with timestamp)
+	deadPlayers[player] = tick()
 	
 	if DEBUG_COLLISIONS then
 		print(string.format("[QUEUE] Adding death to queue for player: %s", player.Name))
@@ -633,8 +716,8 @@ local function queueAIDeath(head)
 		end
 	end
 
-	-- Mark this AI as dead immediately
-	deadAISnakes[head] = true
+	-- Mark this AI as dead immediately (with timestamp)
+	deadAISnakes[head] = tick()
 
 	table.insert(deathQueue, {
 		type = "ai",
@@ -773,6 +856,50 @@ task.spawn(function()
 						task.spawn(function()
 							task.wait(5)
 							deadPlayers[player] = nil
+						end)
+						
+						-- Also clear on CharacterAdded to prevent permanent death
+						local connection
+						connection = player.CharacterAdded:Connect(function()
+							deadPlayers[player] = nil
+							if connection then
+								connection:Disconnect()
+							end
+						end)
+						
+						-- Force clear all invisible segments
+						task.spawn(function()
+							-- Wait a tiny bit to ensure orbs spawn first
+							task.wait(0.1)
+							
+							-- Method 1: Clear from snake instance
+							if snakeInstance and snakeInstance.segments then
+								for _, segment in ipairs(snakeInstance.segments) do
+									if segment and segment.Parent then
+										segment:Destroy()
+									end
+								end
+							end
+							
+							-- Method 2: Clear any segments in character
+							if character then
+								for _, child in ipairs(character:GetDescendants()) do
+									if child:IsA("BasePart") and (child.Name:match("Segment") or child.Name:match("segment")) then
+										child:Destroy()
+									end
+								end
+							end
+							
+							-- Method 3: Clear by finding segment folder
+							local segmentFolder = character and character:FindFirstChild("Segments")
+							if segmentFolder then
+								segmentFolder:Destroy()
+							end
+							
+							-- Clear from global tracking
+							if _G.PlayerSnakes then
+								_G.PlayerSnakes[player] = nil
+							end
 						end)
 					end
 				end
