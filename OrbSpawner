@@ -732,9 +732,29 @@ end)
 ---------------------------------------------------------------------
 -- Module exports
 ---------------------------------------------------------------------
+-- Function to register orbs created outside of OrbSpawner
+local function registerExternalOrb(orb)
+	if not orb or not orb.Parent then return end
+	
+	-- Add to orbs table
+	table.insert(orbs, orb)
+	
+	-- Add to spatial grid
+	addOrbToGrid(orb)
+	
+	-- Initialize state
+	orbStates[orb] = {state = "full", fade = 1}
+	
+	-- Attach our touch handler if not already attached
+	if not orbDebounce[orb] then
+		attachOrbTouched(orb)
+	end
+end
+
 local OrbSpawner = {
 	spawnDeathOrbsForSnake = spawnDeathOrbsForSnake,
 	createSafeOrb = createSafeOrb,
+	registerExternalOrb = registerExternalOrb,
 	-- New exports for LOD control
 	setRenderDistance = function(dist) RENDER_DISTANCE = dist end,
 	setFadeDistance = function(dist) FADE_DISTANCE = dist end,

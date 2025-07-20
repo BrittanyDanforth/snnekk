@@ -225,6 +225,14 @@ function OrbUtils.spawnOrbAt(position, value)
 
 	-- Attach .Touched event for collection
 	OrbUtils.attachOrbTouched(orb)
+	
+	-- CRITICAL: Register with OrbSpawner so AI can find it!
+	pcall(function()
+		local OrbSpawner = require(game.ServerScriptService:WaitForChild("OrbSpawner"))
+		if OrbSpawner and OrbSpawner.registerExternalOrb then
+			OrbSpawner.registerExternalOrb(orb)
+		end
+	end)
 
 	return orb
 end
