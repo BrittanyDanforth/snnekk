@@ -1309,7 +1309,7 @@ function AISnake:updateMovement(dt)
 		self.IsBoosting = false
 	end
 
-	-- REDUCED boost frequency
+	-- SMART boost usage - less boosting when collecting orbs
 	if not self.Boosting and now > self.BoostCooldown then
 		local shouldBoost = false
 		local boostDuration = 1.2
@@ -1317,8 +1317,23 @@ function AISnake:updateMovement(dt)
 		if state == "AVOID_WALL" then
 			shouldBoost = true
 			boostDuration = 0.8
-		elseif mathRandom() < (p.BoostChance or 0) * 0.5 then -- HALVED boost chance
-			shouldBoost = true
+		elseif state == "SEEK_ORB" then
+			-- RARELY boost when seeking orbs - they need control, not speed
+			if mathRandom() < 0.02 then -- Only 2% chance when orb seeking
+				shouldBoost = true
+				boostDuration = 0.5 -- Very short boost
+			end
+		elseif state == "FLEE" then
+			-- Higher chance to boost when fleeing
+			if mathRandom() < 0.3 then
+				shouldBoost = true
+				boostDuration = 1.5
+			end
+		else
+			-- Normal wandering/hunting boost chance
+			if mathRandom() < (p.BoostChance or 0) * 0.3 then -- Reduced general boost chance
+				shouldBoost = true
+			end
 		end
 
 		if shouldBoost then
@@ -1329,9 +1344,7 @@ function AISnake:updateMovement(dt)
 	-- Speed calculation - NO SLOWING DOWN!
 	local speedMultiplier = p.SpeedMultiplier or 1
 
-	if state == "SEEK_ORB" then
-		speedMultiplier = speedMultiplier * 1.15  -- Faster when seeking orbs
-	end
+	-- No speed boost for orb seeking - they need control, not extra speed
 
 	-- Always maintain at least normal speed
 	if self.Boosting then
