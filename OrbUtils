@@ -230,21 +230,48 @@ function OrbUtils.spawnOrbAt(position, value)
 	OrbUtils.attachOrbTouched(orb)
 	
 	-- CRITICAL: Register with OrbSpawner so AI can find it!
-	local registered = false
-	pcall(function()
-		local OrbSpawner = require(game.ServerScriptService:WaitForChild("OrbSpawner"))
-		if OrbSpawner and OrbSpawner.registerExternalOrb then
-			OrbSpawner.registerExternalOrb(orb)
-			registered = true
-			print("✅ Death orb registered with OrbSpawner grid")
-		else
-			warn("❌ OrbSpawner.registerExternalOrb not found!")
+	-- Delay registration attempt to avoid circular dependency issues
+	task.defer(function()
+		local registered = false
+		local attempts = 0
+		
+		-- Try multiple times with small delays
+		while not registered and attempts < 5 do
+			attempts = attempts + 1
+			
+			local OrbSpawner
+			
+			-- First try global OrbSpawner (fastest)
+			if _G.OrbSpawner then
+				OrbSpawner = _G.OrbSpawner
+			else
+				-- Try workspace root (current location)
+				local success, result = pcall(function()
+					return require(game.Workspace:WaitForChild("OrbSpawner", 1))
+				end)
+				if success then
+					OrbSpawner = result
+				end
+			end
+			
+			if OrbSpawner and OrbSpawner.registerExternalOrb then
+				pcall(function()
+					OrbSpawner.registerExternalOrb(orb)
+					registered = true
+					print("✅ Death orb registered with OrbSpawner grid at position", orb.Position)
+				end)
+			else
+				if attempts == 1 then
+					print("⏳ Waiting for OrbSpawner to initialize...")
+				end
+				task.wait(0.1)
+			end
+		end
+		
+		if not registered then
+			warn("⚠️ Death orb NOT registered with spatial grid - AI may not find it!")
 		end
 	end)
-	
-	if not registered then
-		warn("⚠️ Death orb NOT registered with spatial grid - AI may not find it!")
-	end
 
 	return orb
 end
