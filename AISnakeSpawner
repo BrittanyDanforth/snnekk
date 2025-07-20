@@ -1,111 +1,44 @@
 -- This goes into Workspace and is a script
--- Spawns and manages multiple AI snakes with smart positioning and spawn protection
+-- Spawns and manages multiple AI snakes in the Workspace
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace         = game:GetService("Workspace")
 local RunService        = game:GetService("RunService")
-local Players           = game:GetService("Players")
 
 local AISnake = require(ReplicatedStorage:WaitForChild("AISnake"))
 
 -- === CONFIGURATION ===
 local NUM_SNAKES   = 6          -- total AI snakes
-local SPAWN_RADIUS = 300        -- increased spawn radius
-local MIN_SPAWN_RADIUS = 100    -- minimum distance from center
+local SPAWN_RADIUS = 200        -- spread them out more
 local SPAWN_HEIGHT = 5
 local SPAWN_CENTER = Vector3.new(0, SPAWN_HEIGHT, 0)
-local MIN_PLAYER_DISTANCE = 80  -- minimum distance from any player
-
--- === HELPER FUNCTIONS ===
-local function isPositionSafeFromPlayers(position)
-	for _, player in pairs(Players:GetPlayers()) do
-		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-			local playerPos = player.Character.HumanoidRootPart.Position
-			local distance = (position - playerPos).Magnitude
-			if distance < MIN_PLAYER_DISTANCE then
-				return false
-			end
-		end
-	end
-	return true
-end
-
-local function getRandomSpawnPosition()
-	local maxAttempts = 50
-	local attempts = 0
-	
-	while attempts < maxAttempts do
-		attempts = attempts + 1
-		
-		-- Generate random position in a ring (not too close to center, not too far)
-		local angle = math.random() * 2 * math.pi
-		local radius = math.random(MIN_SPAWN_RADIUS, SPAWN_RADIUS)
-		
-		local x = SPAWN_CENTER.X + radius * math.cos(angle)
-		local z = SPAWN_CENTER.Z + radius * math.sin(angle)
-		
-		-- Add some random variation
-		x = x + math.random(-20, 20)
-		z = z + math.random(-20, 20)
-		
-		local position = Vector3.new(x, SPAWN_HEIGHT, z)
-		
-		-- Check if position is safe from players
-		if isPositionSafeFromPlayers(position) then
-			return position
-		end
-	end
-	
-	-- Fallback: spawn at edge of map if no safe spot found
-	local fallbackAngle = math.random() * 2 * math.pi
-	return Vector3.new(
-		SPAWN_CENTER.X + SPAWN_RADIUS * math.cos(fallbackAngle),
-		SPAWN_HEIGHT,
-		SPAWN_CENTER.Z + SPAWN_RADIUS * math.sin(fallbackAngle)
-	)
-end
 
 -- === AI SNAKE MANAGEMENT ===
 local aiSnakes = {}
 
--- Function to spawn a snake
-local function spawnSnake(index)
-	local position = getRandomSpawnPosition()
-	local snake = AISnake.new(position)
-	
-	if snake then
-		aiSnakes[index] = snake
-		print("🐍 Spawned AI snake", index, "at", position)
-	end
-	
-	return snake
+-- Function to get random spawn position
+local function getRandomSpawnPosition()
+	local angle = math.random() * 2 * math.pi
+	local radius = math.random(50, SPAWN_RADIUS)
+	local x = SPAWN_CENTER.X + radius * math.cos(angle)
+	local z = SPAWN_CENTER.Z + radius * math.sin(angle)
+	return Vector3.new(x, SPAWN_HEIGHT, z)
 end
 
--- Initial spawn with random positions
+-- Initial spawn
 for i = 1, NUM_SNAKES do
-	task.wait(0.2) -- Small delay between spawns
-	spawnSnake(i)
+	local pos = getRandomSpawnPosition()
+	aiSnakes[i] = AISnake.new(pos)
+	task.wait(0.1) -- Small delay between spawns
 end
-
--- Respawn timer to prevent instant respawning
-local respawnCooldowns = {}
 
 -- Auto-respawn any snake that dies/disappears
 RunService.Stepped:Connect(function()
-	local currentTime = tick()
-	
 	for i = 1, NUM_SNAKES do
 		local snake = aiSnakes[i]
-		
-		-- Check if snake needs respawning
 		if not snake or not snake._active or not snake.RootPart or not snake.RootPart.Parent then
-			-- Check respawn cooldown
-			if not respawnCooldowns[i] or currentTime > respawnCooldowns[i] then
-				-- Spawn new snake
-				spawnSnake(i)
-				
-				-- Set respawn cooldown (2-4 seconds)
-				respawnCooldowns[i] = currentTime + math.random(2, 4)
-			end
+			-- Respawn with random position
+			local pos = getRandomSpawnPosition()
+			aiSnakes[i] = AISnake.new(pos)
 		end
 	end
 end)
