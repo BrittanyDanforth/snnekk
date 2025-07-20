@@ -103,6 +103,8 @@ SEGMENT_PARENT.Name = "AISegmentContainer"
 local function resetSegment(segment, config)
 	segment.Anchored = true
 	segment.CanCollide = false
+	segment.CanTouch = false  -- Only head needs touch
+	segment.CanQuery = false  -- Segments don't need query
 	segment.Transparency = 0
 	segment.Size = config.SegmentSize
 	segment.Material = config.BodyMaterial
@@ -217,6 +219,8 @@ local function createVisualHead(config, parentModel)
 	headPart.Color = config.HeadColor
 	headPart.Shape = Enum.PartType.Ball
 	headPart.CanCollide = false
+	headPart.CanTouch = true  -- CRITICAL: Enable touch detection for orb collection
+	headPart.CanQuery = true   -- Enable for raycasts
 	headPart.Anchored = true
 	headPart.TopSurface = Enum.SurfaceType.Smooth
 	headPart.BottomSurface = Enum.SurfaceType.Smooth
