@@ -24,28 +24,38 @@ if not success then
 	return {}
 end
 
--- UI Configuration matching ShopUI style
+-- Modern 2025 UI Configuration
 local INVENTORY_CONFIG = {
 	COLORS = {
-		-- Glass morphism palette
-		BACKGROUND = Color3.fromRGB(10, 12, 20),
-		PRIMARY = Color3.fromRGB(25, 30, 45),
-		SECONDARY = Color3.fromRGB(35, 40, 60),
-		ACCENT = Color3.fromRGB(100, 150, 255),
-		SUCCESS = Color3.fromRGB(100, 255, 150),
-		WARNING = Color3.fromRGB(255, 200, 100),
-		ERROR = Color3.fromRGB(255, 100, 100),
-		TEXT_PRIMARY = Color3.fromRGB(240, 240, 255),
-		TEXT_SECONDARY = Color3.fromRGB(180, 180, 200),
+		-- Modern gradient-friendly palette
+		BACKGROUND = Color3.fromRGB(8, 10, 18),
+		PRIMARY = Color3.fromRGB(18, 22, 36),
+		SECONDARY = Color3.fromRGB(28, 32, 48),
+		TERTIARY = Color3.fromRGB(38, 42, 58),
+		ACCENT = Color3.fromRGB(110, 220, 255),
+		ACCENT_DARK = Color3.fromRGB(80, 180, 220),
+		SUCCESS = Color3.fromRGB(80, 255, 150),
+		WARNING = Color3.fromRGB(255, 180, 80),
+		ERROR = Color3.fromRGB(255, 90, 90),
+		TEXT_PRIMARY = Color3.fromRGB(255, 255, 255),
+		TEXT_SECONDARY = Color3.fromRGB(220, 220, 230),
+		TEXT_MUTED = Color3.fromRGB(160, 160, 180),
 		GLASS_TINT = Color3.fromRGB(255, 255, 255),
-		GLOW = Color3.fromRGB(120, 180, 255),
+		GLOW = Color3.fromRGB(150, 230, 255),
+		-- Rarity colors
+		COMMON = Color3.fromRGB(180, 180, 180),
+		UNCOMMON = Color3.fromRGB(100, 200, 100),
+		RARE = Color3.fromRGB(100, 150, 255),
+		EPIC = Color3.fromRGB(200, 100, 255),
+		LEGENDARY = Color3.fromRGB(255, 215, 0),
+		MYTHIC = Color3.fromRGB(255, 100, 130),
 	},
 	
 	FONTS = {
-		HEADING = Enum.Font.Gotham,
+		HEADING = Enum.Font.Montserrat,
 		BODY = Enum.Font.Gotham,
 		BUTTON = Enum.Font.GothamBold,
-		PRICE = Enum.Font.GothamMedium,
+		PRICE = Enum.Font.Gotham,
 	},
 	
 	-- Grid layout
@@ -82,6 +92,24 @@ local function createCorner(parent, radius)
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, radius)
 	corner.Parent = parent
+end
+
+-- Modern shadow effect
+local function createShadow(parent, transparency, size)
+	local shadow = Instance.new("Frame")
+	shadow.Name = "Shadow"
+	shadow.Size = UDim2.new(1, size or 10, 1, size or 10)
+	shadow.Position = UDim2.new(0, -(size or 10)/2, 0, -(size or 10)/2)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = transparency or 0.7
+	shadow.ZIndex = parent.ZIndex - 1
+	shadow.Parent = parent.Parent
+	parent.Parent = shadow.Parent
+	shadow.Parent = parent.Parent
+	
+	createCorner(shadow, parent:FindFirstChild("UICorner") and parent.UICorner.CornerRadius.Offset or 12)
+	
+	return shadow
 end
 
 local function createGlassPanel(parent, transparency)
@@ -170,6 +198,7 @@ local function createItemCard(itemData, index)
 		card.BackgroundColor3 = INVENTORY_CONFIG.COLORS.PRIMARY
 		card.Text = ""
 		card.AutoButtonColor = false
+		card.ZIndex = 2
 		return card
 	end)
 	
@@ -189,7 +218,19 @@ local function createItemCard(itemData, index)
 	createCorner(card, 12)
 	createGlassPanel(card, 0.8)
 	
-	-- Item icon/preview
+	-- Add rarity border
+	local rarityColor = itemData.rarityColor or INVENTORY_CONFIG.COLORS[string.upper(itemData.rarity or "COMMON")] or INVENTORY_CONFIG.COLORS.COMMON
+	local rarityStroke = Instance.new("UIStroke")
+	rarityStroke.Name = "RarityBorder"
+	rarityStroke.Color = rarityColor
+	rarityStroke.Thickness = 2
+	rarityStroke.Transparency = 0.3
+	rarityStroke.Parent = card
+	
+	-- Add subtle shadow
+	createShadow(card, 0.8, 6)
+	
+	-- Item icon/preview with gradient
 	local icon = Instance.new("Frame")
 	icon.Name = "Icon"
 	icon.Size = UDim2.new(0.7, 0, 0.7, 0)
@@ -198,6 +239,46 @@ local function createItemCard(itemData, index)
 	icon.Parent = card
 	
 	createCorner(icon, 8)
+	
+	-- Add gradient to icon
+	local iconGradient = Instance.new("UIGradient")
+	iconGradient.Rotation = 45
+	iconGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
+	})
+	iconGradient.Parent = icon
+	
+	-- Add shimmer effect for rare+ items
+	if itemData.rarity and (itemData.rarity == "Rare" or itemData.rarity == "Epic" or itemData.rarity == "Legendary" or itemData.rarity == "Mythic") then
+		local shimmer = Instance.new("Frame")
+		shimmer.Name = "Shimmer"
+		shimmer.Size = UDim2.new(0.5, 0, 2, 0)
+		shimmer.Position = UDim2.new(-0.5, 0, -0.5, 0)
+		shimmer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		shimmer.BackgroundTransparency = 0.7
+		shimmer.Rotation = 45
+		shimmer.Parent = icon
+		
+		local shimmerGradient = Instance.new("UIGradient")
+		shimmerGradient.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.5, 0.5),
+			NumberSequenceKeypoint.new(1, 1)
+		})
+		shimmerGradient.Parent = shimmer
+		
+		-- Animate shimmer
+		task.spawn(function()
+			while shimmer.Parent do
+				shimmer.Position = UDim2.new(-0.5, 0, -0.5, 0)
+				TweenService:Create(shimmer, TweenInfo.new(3, Enum.EasingStyle.Linear), {
+					Position = UDim2.new(1, 0, -0.5, 0)
+				}):Play()
+				task.wait(3)
+			end
+		end)
+	end
 	
 	-- Item name (with validation)
 	local nameLabel = Instance.new("TextLabel")
@@ -293,11 +374,25 @@ local function createItemCard(itemData, index)
 		rarityGlow.Parent = card
 	end
 	
-	-- Hover effects
+	-- Modern hover effects
 	card.MouseEnter:Connect(function()
-		TweenService:Create(card, TweenInfo.new(INVENTORY_CONFIG.HOVER_TIME), {
-			Size = UDim2.new(0, INVENTORY_CONFIG.ITEM_SIZE * 1.05, 0, INVENTORY_CONFIG.ITEM_SIZE * 1.05),
-			Position = card.Position - UDim2.new(0, INVENTORY_CONFIG.ITEM_SIZE * 0.025, 0, INVENTORY_CONFIG.ITEM_SIZE * 0.025)
+		-- Scale up with spring animation
+		TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, INVENTORY_CONFIG.ITEM_SIZE * 1.08, 0, INVENTORY_CONFIG.ITEM_SIZE * 1.08),
+			BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
+		}):Play()
+		
+		-- Enhance glow
+		if rarityStroke then
+			TweenService:Create(rarityStroke, TweenInfo.new(0.3), {
+				Transparency = 0,
+				Thickness = 3
+			}):Play()
+		end
+		
+		-- Show hover info
+		TweenService:Create(nameLabel, TweenInfo.new(0.2), {
+			TextColor3 = rarityColor
 		}):Play()
 		
 		if itemData.rarity then
@@ -308,16 +403,31 @@ local function createItemCard(itemData, index)
 	end)
 	
 	card.MouseLeave:Connect(function()
-		TweenService:Create(card, TweenInfo.new(INVENTORY_CONFIG.HOVER_TIME), {
+		-- Reset with smooth animation
+		TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Size = UDim2.new(0, INVENTORY_CONFIG.ITEM_SIZE, 0, INVENTORY_CONFIG.ITEM_SIZE),
-			Position = UDim2.new(
+			Position = card:GetAttribute("OriginalPosition") or UDim2.new(
 				0, col * (INVENTORY_CONFIG.ITEM_SIZE + INVENTORY_CONFIG.ITEM_SPACING) + 20,
 				0, row * (INVENTORY_CONFIG.ITEM_SIZE + INVENTORY_CONFIG.ITEM_SPACING) + 20
-			)
+			),
+			BackgroundColor3 = INVENTORY_CONFIG.COLORS.PRIMARY
 		}):Play()
 		
-		if itemData.rarity then
-			TweenService:Create(card.RarityGlow, TweenInfo.new(INVENTORY_CONFIG.HOVER_TIME), {
+		-- Reset glow
+		if rarityStroke then
+			TweenService:Create(rarityStroke, TweenInfo.new(0.3), {
+				Transparency = 0.3,
+				Thickness = 2
+			}):Play()
+		end
+		
+		-- Reset text color
+		TweenService:Create(nameLabel, TweenInfo.new(0.2), {
+			TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
+		}):Play()
+		
+		if itemData.rarity and card:FindFirstChild("RarityGlow") then
+			TweenService:Create(card.RarityGlow, TweenInfo.new(0.3), {
 				ImageTransparency = 0.7
 			}):Play()
 		end
@@ -412,42 +522,157 @@ function InventoryUI.createUI()
 	filterBar.BackgroundTransparency = 1
 	filterBar.Parent = mainWindow
 	
-	-- Filter buttons
-	local filters = {"All", "Skins", "Items", "Special"}
-	for i, filterName in ipairs(filters) do
+	-- Modern filter buttons with icons
+	local filters = {
+		{name = "All", icon = "🏠"},
+		{name = "Skins", icon = "🎨"},
+		{name = "Items", icon = "🎒"},
+		{name = "Special", icon = "✨"}
+	}
+	
+	for i, filterData in ipairs(filters) do
 		local filterBtn = Instance.new("TextButton")
-		filterBtn.Name = "Filter_" .. filterName
-		filterBtn.Size = UDim2.new(0.15, 0, 1, 0)
+		filterBtn.Name = "Filter_" .. filterData.name
+		filterBtn.Size = UDim2.new(0.15, -5, 1, 0)
 		filterBtn.Position = UDim2.new(0.02 + (i-1) * 0.16, 0, 0, 0)
 		filterBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
-		filterBtn.Text = filterName
-		filterBtn.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_SECONDARY
-		filterBtn.TextScaled = true
-		filterBtn.Font = INVENTORY_CONFIG.FONTS.BODY
+		filterBtn.Text = ""
+		filterBtn.AutoButtonColor = false
 		filterBtn.Parent = filterBar
 		
-		createCorner(filterBtn, 8)
-		createGlassPanel(filterBtn, 0.8)
+		createCorner(filterBtn, 12)
+		createGlassPanel(filterBtn, 0.9)
+		
+		-- Modern hover effect
+		local isSelected = i == 1
+		if isSelected then
+			filterBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.ACCENT
+			createShadow(filterBtn, 0.6, 8)
+		end
+		
+		-- Icon
+		local icon = Instance.new("TextLabel")
+		icon.Name = "Icon"
+		icon.Size = UDim2.new(0.3, 0, 0.6, 0)
+		icon.Position = UDim2.new(0.1, 0, 0.2, 0)
+		icon.BackgroundTransparency = 1
+		icon.Text = filterData.icon
+		icon.TextScaled = true
+		icon.TextColor3 = isSelected and INVENTORY_CONFIG.COLORS.TEXT_PRIMARY or INVENTORY_CONFIG.COLORS.TEXT_MUTED
+		icon.Font = INVENTORY_CONFIG.FONTS.BODY
+		icon.Parent = filterBtn
+		
+		-- Text
+		local text = Instance.new("TextLabel")
+		text.Name = "Text"
+		text.Size = UDim2.new(0.55, 0, 0.6, 0)
+		text.Position = UDim2.new(0.4, 0, 0.2, 0)
+		text.BackgroundTransparency = 1
+		text.Text = filterData.name
+		text.TextScaled = true
+		text.TextColor3 = isSelected and INVENTORY_CONFIG.COLORS.TEXT_PRIMARY or INVENTORY_CONFIG.COLORS.TEXT_SECONDARY
+		text.Font = INVENTORY_CONFIG.FONTS.BUTTON
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.Parent = filterBtn
+		
+		-- Hover effects
+		filterBtn.MouseEnter:Connect(function()
+			if not isSelected then
+				TweenService:Create(filterBtn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+					BackgroundColor3 = INVENTORY_CONFIG.COLORS.TERTIARY
+				}):Play()
+			end
+		end)
+		
+		filterBtn.MouseLeave:Connect(function()
+			if not isSelected then
+				TweenService:Create(filterBtn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+					BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
+				}):Play()
+			end
+		end)
 		
 		filterBtn.MouseButton1Click:Connect(function()
-			InventoryUI.setFilter(filterName)
+			InventoryUI.setFilter(filterData.name)
+			
+			-- Update all filter button states
+			for _, btn in pairs(filterBar:GetChildren()) do
+				if btn:IsA("TextButton") then
+					local btnIcon = btn:FindFirstChild("Icon")
+					local btnText = btn:FindFirstChild("Text")
+					if btn == filterBtn then
+						btn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.ACCENT
+						if btnIcon then btnIcon.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY end
+						if btnText then btnText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY end
+						createShadow(btn, 0.6, 8)
+					else
+						btn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
+						if btnIcon then btnIcon.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_MUTED end
+						if btnText then btnText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_SECONDARY end
+						local shadow = btn.Parent:FindFirstChild("Shadow")
+						if shadow then shadow:Destroy() end
+					end
+				end
+			end
 		end)
 	end
 	
-	-- Sort dropdown
+	-- Modern sort dropdown
 	local sortBtn = Instance.new("TextButton")
 	sortBtn.Name = "SortButton"
 	sortBtn.Size = UDim2.new(0.15, 0, 1, 0)
 	sortBtn.Position = UDim2.new(0.83, 0, 0, 0)
 	sortBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
-	sortBtn.Text = "Sort: Newest"
-	sortBtn.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_SECONDARY
-	sortBtn.TextScaled = true
-	sortBtn.Font = INVENTORY_CONFIG.FONTS.BODY
+	sortBtn.Text = ""
+	sortBtn.AutoButtonColor = false
 	sortBtn.Parent = filterBar
 	
-	createCorner(sortBtn, 8)
-	createGlassPanel(sortBtn, 0.8)
+	createCorner(sortBtn, 12)
+	createGlassPanel(sortBtn, 0.9)
+	
+	-- Sort icon
+	local sortIcon = Instance.new("TextLabel")
+	sortIcon.Name = "Icon"
+	sortIcon.Size = UDim2.new(0.25, 0, 0.6, 0)
+	sortIcon.Position = UDim2.new(0.05, 0, 0.2, 0)
+	sortIcon.BackgroundTransparency = 1
+	sortIcon.Text = "↕"
+	sortIcon.TextScaled = true
+	sortIcon.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_MUTED
+	sortIcon.Font = INVENTORY_CONFIG.FONTS.BODY
+	sortIcon.Parent = sortBtn
+	
+	-- Sort text
+	local sortText = Instance.new("TextLabel")
+	sortText.Name = "Text"
+	sortText.Size = UDim2.new(0.65, 0, 0.6, 0)
+	sortText.Position = UDim2.new(0.3, 0, 0.2, 0)
+	sortText.BackgroundTransparency = 1
+	sortText.Text = "Newest"
+	sortText.TextScaled = true
+	sortText.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_SECONDARY
+	sortText.Font = INVENTORY_CONFIG.FONTS.BODY
+	sortText.TextXAlignment = Enum.TextXAlignment.Left
+	sortText.Parent = sortBtn
+	
+	-- Hover effect
+	sortBtn.MouseEnter:Connect(function()
+		TweenService:Create(sortBtn, TweenInfo.new(0.2), {
+			BackgroundColor3 = INVENTORY_CONFIG.COLORS.TERTIARY
+		}):Play()
+		TweenService:Create(sortIcon, TweenInfo.new(0.2), {
+			TextColor3 = INVENTORY_CONFIG.COLORS.ACCENT
+		}):Play()
+	end)
+	
+	sortBtn.MouseLeave:Connect(function()
+		TweenService:Create(sortBtn, TweenInfo.new(0.2), {
+			BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
+		}):Play()
+		TweenService:Create(sortIcon, TweenInfo.new(0.2), {
+			TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_MUTED
+		}):Play()
+	end)
 	
 	InventoryUI.uiElements.sortBtn = sortBtn
 	
@@ -513,19 +738,77 @@ function InventoryUI.createUI()
 	itemDescription.TextSize = 14
 	itemDescription.Parent = detailsPanel
 	
-	-- Action buttons
+	-- Modern action button
 	local equipBtn = Instance.new("TextButton")
 	equipBtn.Name = "EquipButton"
-	equipBtn.Size = UDim2.new(0.9, 0, 0.1, 0)
+	equipBtn.Size = UDim2.new(0.9, 0, 0.12, 0)
 	equipBtn.Position = UDim2.new(0.05, 0, 0.7, 0)
 	equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
-	equipBtn.Text = "EQUIP"
-	equipBtn.TextColor3 = INVENTORY_CONFIG.COLORS.TEXT_PRIMARY
-	equipBtn.TextScaled = true
-	equipBtn.Font = INVENTORY_CONFIG.FONTS.BUTTON
+	equipBtn.Text = ""
+	equipBtn.AutoButtonColor = false
 	equipBtn.Parent = detailsPanel
 	
-	createCorner(equipBtn, 8)
+	createCorner(equipBtn, 12)
+	createShadow(equipBtn, 0.6, 8)
+	
+	-- Button gradient
+	local btnGradient = Instance.new("UIGradient")
+	btnGradient.Rotation = 90
+	btnGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 230, 230))
+	})
+	btnGradient.Parent = equipBtn
+	
+	-- Button text with icon
+	local btnContent = Instance.new("Frame")
+	btnContent.Name = "Content"
+	btnContent.Size = UDim2.new(1, 0, 1, 0)
+	btnContent.BackgroundTransparency = 1
+	btnContent.Parent = equipBtn
+	
+	local btnIcon = Instance.new("TextLabel")
+	btnIcon.Name = "Icon"
+	btnIcon.Size = UDim2.new(0.2, 0, 0.6, 0)
+	btnIcon.Position = UDim2.new(0.2, 0, 0.2, 0)
+	btnIcon.BackgroundTransparency = 1
+	btnIcon.Text = "⚡"
+	btnIcon.TextScaled = true
+	btnIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btnIcon.Font = INVENTORY_CONFIG.FONTS.BODY
+	btnIcon.Parent = btnContent
+	
+	local btnText = Instance.new("TextLabel")
+	btnText.Name = "Text"
+	btnText.Size = UDim2.new(0.5, 0, 0.6, 0)
+	btnText.Position = UDim2.new(0.35, 0, 0.2, 0)
+	btnText.BackgroundTransparency = 1
+	btnText.Text = "EQUIP"
+	btnText.TextScaled = true
+	btnText.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btnText.Font = INVENTORY_CONFIG.FONTS.BUTTON
+	btnText.Parent = btnContent
+	
+	-- Hover effects
+	equipBtn.MouseEnter:Connect(function()
+		TweenService:Create(equipBtn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+			Size = UDim2.new(0.92, 0, 0.125, 0),
+			Position = UDim2.new(0.04, 0, 0.695, 0)
+		}):Play()
+		TweenService:Create(btnIcon, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+			Rotation = 15
+		}):Play()
+	end)
+	
+	equipBtn.MouseLeave:Connect(function()
+		TweenService:Create(equipBtn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+			Size = UDim2.new(0.9, 0, 0.12, 0),
+			Position = UDim2.new(0.05, 0, 0.7, 0)
+		}):Play()
+		TweenService:Create(btnIcon, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+			Rotation = 0
+		}):Play()
+	end)
 	
 	-- Removed sell button as requested
 	
@@ -743,18 +1026,24 @@ function InventoryUI.selectItem(itemData, card)
 	previewFrame.BackgroundColor3 = itemData.color or INVENTORY_CONFIG.COLORS.ACCENT
 	
 	-- Update button states
+	local btnText = InventoryUI.uiElements.equipBtn:FindFirstChild("Content") and InventoryUI.uiElements.equipBtn.Content:FindFirstChild("Text")
+	local btnIcon = InventoryUI.uiElements.equipBtn:FindFirstChild("Content") and InventoryUI.uiElements.equipBtn.Content:FindFirstChild("Icon")
+	
 	if itemData.type == "Skin" then
 		InventoryUI.uiElements.equipBtn.Visible = true
 		if itemData.equipped then
-			InventoryUI.uiElements.equipBtn.Text = "EQUIPPED"
+			if btnText then btnText.Text = "EQUIPPED" end
+			if btnIcon then btnIcon.Text = "✓" end
 			InventoryUI.uiElements.equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SECONDARY
 		else
-			InventoryUI.uiElements.equipBtn.Text = "EQUIP SKIN"
+			if btnText then btnText.Text = "EQUIP" end
+			if btnIcon then btnIcon.Text = "⚡" end
 			InventoryUI.uiElements.equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
 		end
 	else
 		InventoryUI.uiElements.equipBtn.Visible = true
-		InventoryUI.uiElements.equipBtn.Text = "USE ITEM"
+		if btnText then btnText.Text = "USE" end
+		if btnIcon then btnIcon.Text = "🎯" end
 		InventoryUI.uiElements.equipBtn.BackgroundColor3 = INVENTORY_CONFIG.COLORS.SUCCESS
 	end
 	
