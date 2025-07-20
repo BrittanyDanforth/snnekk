@@ -1118,9 +1118,9 @@ function AISnake.new(startPosition)
 
 	self.HeadParts = createVisualHead(self.Config, self.Model)
 	
-	-- Register head with orb pickup system
-	if AISnakeOrbPickup and self.HeadParts and self.HeadParts.head then
-		AISnakeOrbPickup.TrackHead(self.HeadParts.head)
+	-- Register snake with orb pickup system
+	if AISnakeOrbPickup then
+		AISnakeOrbPickup.TrackSnake(self)
 	end
 
 	self.Segments = {}
@@ -1215,9 +1215,9 @@ function AISnake:Destroy()
 	if not self._active then return end
 	self._active = false
 	
-	-- Untrack head from orb pickup system
-	if AISnakeOrbPickup and self.HeadParts and self.HeadParts.head then
-		AISnakeOrbPickup.UntrackHead(self.HeadParts.head)
+	-- Untrack snake from orb pickup system
+	if AISnakeOrbPickup then
+		AISnakeOrbPickup.UntrackSnake(self)
 	end
 
 	for i = #AISnake._activeSnakes, 1, -1 do

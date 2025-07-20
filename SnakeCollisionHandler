@@ -190,10 +190,10 @@ local CollisionCache = {
 local ORB_SPAWN_HEIGHT = 2 -- Standard height above ground for orbs
 local MIN_ORB_SPACING = 3 -- Minimum distance between spawned orbs
 
-local function spawnOrbDirect(position, value)
+local function spawnOrbDirect(position, value, orbType)
 	-- Direct spawn with minimal processing
 	local success, err = pcall(function()
-		OrbUtils.spawnOrbAt(position, value)
+		OrbUtils.spawnOrbAt(position, value, orbType or "DeathOrb")  -- Default to DeathOrb for snake deaths
 	end)
 
 	if not success then
