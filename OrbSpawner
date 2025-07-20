@@ -677,8 +677,50 @@ end)
 ---------------------------------------------------------------------
 -- Orb spawning helpers
 ---------------------------------------------------------------------
+-- Smart position finding - prefers areas with fewer orbs (fills gaps)
 local function randomPosition()
 	local a = getOrbSpawnArea()
+	
+	-- Try to find a gap area (up to 5 attempts)
+	for attempt = 1, 5 do
+		local testX = math.random(a.minX, a.maxX)
+		local testZ = math.random(a.minZ, a.maxZ)
+		local testPos = Vector3.new(testX, a.y, testZ)
+		
+		-- Check how many orbs are nearby
+		local nearbyOrbs = 0
+		local checkRadius = 30 -- Check within 30 studs
+		
+		-- Quick spatial grid check
+		local cellX = math.floor((testX - a.minX) / GRID_CELL_SIZE)
+		local cellZ = math.floor((testZ - a.minZ) / GRID_CELL_SIZE)
+		
+		-- Check surrounding cells
+		for dx = -1, 1 do
+			for dz = -1, 1 do
+				local checkX, checkZ = cellX + dx, cellZ + dz
+				if spatialGrid[checkX] and spatialGrid[checkX][checkZ] then
+					for orb in pairs(spatialGrid[checkX][checkZ]) do
+						if orb.Parent and (orb.Position - testPos).Magnitude < checkRadius then
+							nearbyOrbs = nearbyOrbs + 1
+						end
+					end
+				end
+			end
+		end
+		
+		-- If this area has few orbs, use it (fills gaps)
+		if nearbyOrbs < 3 then
+			return testPos
+		end
+		
+		-- Also prefer areas near recent collections (attempt 3-5)
+		if attempt >= 3 and nearbyOrbs < 5 then
+			return testPos
+		end
+	end
+	
+	-- Fallback to random position if no good gap found
 	return Vector3.new(math.random(a.minX, a.maxX), a.y, math.random(a.minZ, a.maxZ))
 end
 
