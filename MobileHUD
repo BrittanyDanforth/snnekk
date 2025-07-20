@@ -51,6 +51,13 @@ print("Mobile device detected! Initializing MobileHUD...")
 
 -- 🚫 PROPERLY DISABLE DEFAULT MOBILE CONTROLS
 task.spawn(function()
+	-- Immediate removal of any existing touch UI
+	for _, gui in pairs(playerGui:GetChildren()) do
+		if gui.Name == "TouchGui" or gui.Name == "ControlGui" or gui.Name == "TouchControlFrame" then
+			gui:Destroy()
+		end
+	end
+	
 	-- Wait for player scripts to load
 	local playerScripts = player:WaitForChild("PlayerScripts")
 	local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
@@ -63,6 +70,7 @@ task.spawn(function()
 	-- Also disable CoreGui mobile controls
 	pcall(function()
 		StarterGui:SetCore("TouchGui", false)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchGui, false)
 		UserInputService.ModalEnabled = false
 	end)
 end)
@@ -197,6 +205,39 @@ local activeTouches = {} -- Track multiple touches
 local primaryTouch = nil -- The main touch controlling movement
 
 -- Remove visual indicators - we'll use the debug part only
+
+-- Aggressively remove any default Roblox touch UI
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		
+		-- Remove any default touch control UI
+		for _, gui in pairs(playerGui:GetDescendants()) do
+			if gui:IsA("GuiObject") then
+				local name = gui.Name:lower()
+				-- Remove any touch-related UI that's not ours
+				if (name:find("touch") or name:find("thumbstick") or name:find("control") or 
+					name:find("jump") or name:find("dpad")) and 
+					gui.Parent ~= hudGui and gui ~= boostButton then
+					gui.Visible = false
+					gui.Parent = nil
+				end
+			end
+		end
+		
+		-- Also remove TouchGui at root level
+		local touchGui = playerGui:FindFirstChild("TouchGui")
+		if touchGui then
+			touchGui:Destroy()
+		end
+		
+		-- Remove mobile control frame
+		local controlFrame = playerGui:FindFirstChild("TouchControlFrame")
+		if controlFrame then
+			controlFrame:Destroy()
+		end
+	end
+end)
 
 -- Better touch handling for hold and drag
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
