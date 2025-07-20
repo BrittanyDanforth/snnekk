@@ -51,19 +51,31 @@ function AISnakeOrbPickup.PickupNearbyOrbs(orbFolder, snakeHead, aiSnakeId)
     return 0
 end
 
+-- Debug counter
+local frameCount = 0
+
 -- Heartbeat loop to check all tracked AI snakes
 RunService.Heartbeat:Connect(function()
+    frameCount = frameCount + 1
+    
     -- First try to find orb container in workspace
     local orbContainer = workspace:FindFirstChild("OrbContainer") or workspace:FindFirstChild("Orbs")
     
     -- If no container, check workspace directly
     if not orbContainer then
-                 -- Create a virtual container with all orbs
+         -- Create a virtual container with all orbs
         local allOrbs = {}
         for _, obj in pairs(workspace:GetChildren()) do
             if obj:IsA("BasePart") and obj.Name == "Orb" then
                 table.insert(allOrbs, obj)
             end
+        end
+        
+        -- Debug print every 60 frames (1 second)
+        if frameCount % 60 == 0 then
+            local snakeCount = 0
+            for _ in pairs(trackedSnakes) do snakeCount = snakeCount + 1 end
+            print("🔍 AI Orb Pickup: Found", #allOrbs, "orbs in workspace, tracking", snakeCount, "AI snakes")
         end
         
         -- Process each tracked snake
@@ -83,7 +95,7 @@ RunService.Heartbeat:Connect(function()
                             -- Grow the snake
                             if snake.grow then
                                 snake:grow(orbValue)
-                                print("🍴 AI Snake collected", orb.Name, "worth", orbValue)
+                                print("🍴 AI Snake collected", orb.Name, "worth", orbValue, "at position", orb.Position)
                             end
                             
                             -- Destroy the orb

@@ -227,12 +227,21 @@ function OrbUtils.spawnOrbAt(position, value)
 	OrbUtils.attachOrbTouched(orb)
 	
 	-- CRITICAL: Register with OrbSpawner so AI can find it!
+	local registered = false
 	pcall(function()
 		local OrbSpawner = require(game.ServerScriptService:WaitForChild("OrbSpawner"))
 		if OrbSpawner and OrbSpawner.registerExternalOrb then
 			OrbSpawner.registerExternalOrb(orb)
+			registered = true
+			print("✅ Death orb registered with OrbSpawner grid")
+		else
+			warn("❌ OrbSpawner.registerExternalOrb not found!")
 		end
 	end)
+	
+	if not registered then
+		warn("⚠️ Death orb NOT registered with spatial grid - AI may not find it!")
+	end
 
 	return orb
 end

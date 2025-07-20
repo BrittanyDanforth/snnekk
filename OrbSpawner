@@ -742,8 +742,12 @@ local function registerExternalOrb(orb)
 	-- Add to spatial grid
 	addOrbToGrid(orb)
 	
-	-- Initialize state
+	-- Initialize state - death orbs should be visible immediately
 	orbStates[orb] = {state = "full", fade = 1}
+	orb.Transparency = 0
+	orb.Size = orb.Size or Vector3.new(1.5, 1.5, 1.5)
+	local light = orb:FindFirstChild("PointLight")
+	if light then light.Enabled = true end
 	
 	-- Attach our touch handler if not already attached
 	if not orbDebounce[orb] then
