@@ -59,8 +59,21 @@ task.spawn(function()
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
 		
-		-- Specifically disable TouchGui
+		-- Specifically disable TouchGui and TouchControlFrame
 		StarterGui:SetCore("TouchGui", false)
+		
+		-- Extra aggressive removal of touch controls
+		local touchGui = playerGui:FindFirstChild("TouchGui")
+		if touchGui then
+			touchGui:Destroy()
+		end
+		
+		-- Remove TouchControlFrame if it exists
+		for _, gui in pairs(playerGui:GetChildren()) do
+			if gui.Name == "TouchGui" or gui.Name == "ControlGui" or gui.Name == "TouchControlFrame" then
+				gui:Destroy()
+			end
+		end
 	end)
 	
 	-- Wait for player scripts to load
@@ -133,9 +146,47 @@ player.CharacterAdded:Connect(function(character)
 			local controls = playerModule:GetControls()
 			controls:Disable()
 			
+			-- Remove any touch UI that spawned
+			for _, gui in pairs(playerGui:GetChildren()) do
+				if gui.Name == "TouchGui" or gui.Name == "ControlGui" or gui.Name == "TouchControlFrame" then
+					gui:Destroy()
+				end
+			end
+			
 			print("Re-disabled controls after respawn")
 		end)
 	end)
 end)
 
 print("Mobile controls initialized! Touch anywhere to move, use boost button to speed up.")
+
+-- Continuously remove any default touch UI that might appear
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		
+		-- Remove any touch control UI
+		for _, gui in pairs(playerGui:GetDescendants()) do
+			if gui:IsA("GuiObject") then
+				local name = gui.Name:lower()
+				if name:find("touch") or name:find("thumbstick") or name:find("dpad") or name:find("jump") then
+					-- Check if it's not part of our MobileHUD
+					if gui.Parent and gui.Parent.Name ~= "MobileHUD" then
+						gui.Visible = false
+						gui:Destroy()
+					end
+				end
+			end
+		end
+		
+		-- Also check workspace for any touch visualizers
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj:IsA("SurfaceGui") or obj:IsA("BillboardGui") then
+				local name = obj.Name:lower()
+				if name:find("touch") or name:find("control") then
+					obj:Destroy()
+				end
+			end
+		end
+	end
+end)
