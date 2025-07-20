@@ -562,98 +562,96 @@ local function initializeForCharacter(character)
 		end
 
 				-- Input handling (Mouse or Mobile)
-		-- Mobile input should be processed EVERY frame for smooth control
-		if _G.IsMobile and _G.PlayerSnakes and _G.PlayerSnakes[player] then
-			-- MOBILE CONTROLS (Touch-based like slither.io)
-			local snakeData = _G.PlayerSnakes[player]
-			
-			-- Mobile controls are active
+		-- Process input at network update rate (same as PC)
+		if updateCounter % networkUpdateInterval == 0 then
+			if _G.IsMobile and _G.PlayerSnakes and _G.PlayerSnakes[player] then
+				-- MOBILE CONTROLS (Touch-based like slither.io)
+				local snakeData = _G.PlayerSnakes[player]
 				
-			-- Handle mobile touch movement - Slither.io style
-			if snakeData.touchPosition then
-				-- Convert touch position to world position ACCURATELY
-				local camera = workspace.CurrentCamera
-				local touchX = snakeData.touchPosition.X
-				local touchY = snakeData.touchPosition.Y
-				
-				-- Create a ray from camera through touch point
-				local unitRay = camera:ScreenPointToRay(touchX, touchY)
-				
-				-- Since our camera is looking down, we need to find where the ray hits the ground plane
-				local rayOrigin = unitRay.Origin
-				local rayDirection = unitRay.Direction
-				
-				-- Find intersection with the Y plane at snake's height
-				local planeY = rootPart.Position.Y
-				local t = (planeY - rayOrigin.Y) / rayDirection.Y
-				
-				-- Calculate the actual world position where finger is pointing
-				local worldTouchPosition = rayOrigin + rayDirection * t
-				
-				-- Calculate direction from snake head to finger position
-				local toFinger = worldTouchPosition - rootPart.Position
-				toFinger = Vector3.new(toFinger.X, 0, toFinger.Z)
-				
-				-- Only turn if finger is far enough from head (prevents jittering)
-				if toFinger.Magnitude > 3 then
-					State.targetDirection = toFinger.Unit
-				end
-				
-				-- Debug: Show where the touch is in world (red part shows finger position)
-				if not _G.TouchDebugPart then
-					_G.TouchDebugPart = Instance.new("Part")
-					_G.TouchDebugPart.Size = Vector3.new(2, 0.3, 2) -- Smaller size
-					_G.TouchDebugPart.Material = Enum.Material.Neon
-					_G.TouchDebugPart.BrickColor = BrickColor.new("Really red")
-					_G.TouchDebugPart.CanCollide = false
-					_G.TouchDebugPart.Anchored = true
-					_G.TouchDebugPart.Transparency = 0.3
-					_G.TouchDebugPart.Parent = workspace
+				-- Handle mobile touch movement - Slither.io style
+				if snakeData.touchPosition then
+					-- Convert touch position to world position ACCURATELY
+					local camera = workspace.CurrentCamera
+					local touchX = snakeData.touchPosition.X
+					local touchY = snakeData.touchPosition.Y
 					
-					-- Add a small sphere in the center for better visibility
-					local sphere = Instance.new("Part")
-					sphere.Name = "Center"
-					sphere.Shape = Enum.PartType.Ball
-					sphere.Size = Vector3.new(0.5, 0.5, 0.5)
-					sphere.Material = Enum.Material.Neon
-					sphere.BrickColor = BrickColor.new("White")
-					sphere.CanCollide = false
-					sphere.Anchored = true
-					sphere.Transparency = 0
-					sphere.Parent = _G.TouchDebugPart
+					-- Create a ray from camera through touch point
+					local unitRay = camera:ScreenPointToRay(touchX, touchY)
+					
+					-- Since our camera is looking down, we need to find where the ray hits the ground plane
+					local rayOrigin = unitRay.Origin
+					local rayDirection = unitRay.Direction
+					
+					-- Find intersection with the Y plane at snake's height
+					local planeY = rootPart.Position.Y
+					local t = (planeY - rayOrigin.Y) / rayDirection.Y
+					
+					-- Calculate the actual world position where finger is pointing
+					local worldTouchPosition = rayOrigin + rayDirection * t
+					
+					-- Calculate direction from snake head to finger position
+					local toFinger = worldTouchPosition - rootPart.Position
+					toFinger = Vector3.new(toFinger.X, 0, toFinger.Z)
+					
+					-- Only turn if finger is far enough from head (same as PC mouse)
+					if toFinger.Magnitude > 1.0 then -- Same threshold as PC
+						State.targetDirection = toFinger.Unit
+					end
+				
+					-- Debug: Show where the touch is in world (red part shows finger position)
+					if not _G.TouchDebugPart then
+						_G.TouchDebugPart = Instance.new("Part")
+						_G.TouchDebugPart.Size = Vector3.new(2, 0.3, 2) -- Smaller size
+						_G.TouchDebugPart.Material = Enum.Material.Neon
+						_G.TouchDebugPart.BrickColor = BrickColor.new("Really red")
+						_G.TouchDebugPart.CanCollide = false
+						_G.TouchDebugPart.Anchored = true
+						_G.TouchDebugPart.Transparency = 0.3
+						_G.TouchDebugPart.Parent = workspace
+						
+						-- Add a small sphere in the center for better visibility
+						local sphere = Instance.new("Part")
+						sphere.Name = "Center"
+						sphere.Shape = Enum.PartType.Ball
+						sphere.Size = Vector3.new(0.5, 0.5, 0.5)
+						sphere.Material = Enum.Material.Neon
+						sphere.BrickColor = BrickColor.new("White")
+						sphere.CanCollide = false
+						sphere.Anchored = true
+						sphere.Transparency = 0
+						sphere.Parent = _G.TouchDebugPart
+					end
+					_G.TouchDebugPart.Position = worldTouchPosition
 				end
-				_G.TouchDebugPart.Position = worldTouchPosition
-			end
 			
-			-- Handle mobile boost
-			if snakeData.isBoosting and not State.boosting then
-				State.boosting = true
-				State.targetSpeed = Config.BoostSpeed
-				
-				-- Add boost effect for mobile
-				local boostEffect = Instance.new("ParticleEmitter")
-				boostEffect.Name = "BoostEffect"
-				boostEffect.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-				boostEffect.Color = ColorSequence.new(Config.HeadColor)
-				boostEffect.Rate = 60
-				boostEffect.Lifetime = NumberRange.new(0.5)
-				boostEffect.Speed = NumberRange.new(6)
-				boostEffect.SpreadAngle = Vector2.new(35, 35)
-				boostEffect.Parent = rootPart
-			elseif not snakeData.isBoosting and State.boosting then
-				State.boosting = false
-				State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
-				
-				-- Remove boost effect
-				local boostEffect = rootPart:FindFirstChild("BoostEffect")
-				if boostEffect then
-					boostEffect.Enabled = false
-					Debris:AddItem(boostEffect, 0.8)
+				-- Handle mobile boost
+				if snakeData.isBoosting and not State.boosting then
+					State.boosting = true
+					State.targetSpeed = Config.BoostSpeed
+					
+					-- Add boost effect for mobile
+					local boostEffect = Instance.new("ParticleEmitter")
+					boostEffect.Name = "BoostEffect"
+					boostEffect.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+					boostEffect.Color = ColorSequence.new(Config.HeadColor)
+					boostEffect.Rate = 60
+					boostEffect.Lifetime = NumberRange.new(0.5)
+					boostEffect.Speed = NumberRange.new(6)
+					boostEffect.SpreadAngle = Vector2.new(35, 35)
+					boostEffect.Parent = rootPart
+				elseif not snakeData.isBoosting and State.boosting then
+					State.boosting = false
+					State.targetSpeed = speedModes[State.speedMode] or Config.BaseSpeed
+					
+					-- Remove boost effect
+					local boostEffect = rootPart:FindFirstChild("BoostEffect")
+					if boostEffect then
+						boostEffect.Enabled = false
+						Debris:AddItem(boostEffect, 0.8)
+					end
 				end
-			end
-		else
-			-- MOUSE CONTROLS (Desktop) - only update on network interval
-			if updateCounter % networkUpdateInterval == 0 then
+			else
+				-- MOUSE CONTROLS (Desktop)
 				local mousePos = getMouseWorldPosition()
 				local delta = mousePos - rootPart.Position
 				delta = Vector3.new(delta.X, 0, delta.Z)
@@ -664,46 +662,16 @@ local function initializeForCharacter(character)
 			end
 		end
 
-		-- BUTTERY smooth direction changes
-		-- Use different turn rates for mobile vs PC
-		local baseTurnRate = _G.IsMobile and 30.0 or Config.TurnSpeed -- Super responsive for mobile
-		local turnRate = baseTurnRate * dt
+		-- BUTTERY smooth direction changes (same for mobile and PC)
+		local turnRate = Config.TurnSpeed * dt * 1.2 -- Same turn rate for both
 		
-		-- Clamp turn rate to prevent overshooting
-		turnRate = math.min(turnRate, 1.0)
-		
-		-- Slither.io style turn limiting
-		if State.lastDirection then
-			-- Check if trying to do a sharp reversal
-			local reversalDot = State.currentDirection:Dot(State.targetDirection)
-			
-			-- If trying to reverse direction (more than 90 degrees), limit it
-			if reversalDot < -0.2 then
-				-- Calculate the maximum allowed turn (perpendicular to current direction)
-				local rightVector = Vector3.new(-State.currentDirection.Z, 0, State.currentDirection.X)
-				local leftVector = Vector3.new(State.currentDirection.Z, 0, -State.currentDirection.X)
-				
-				-- Choose the direction closer to where player wants to go
-				local rightDot = rightVector:Dot(State.targetDirection)
-				local leftDot = leftVector:Dot(State.targetDirection)
-				
-				-- Set target to the perpendicular direction (90 degree max turn)
-				if rightDot > leftDot then
-					State.targetDirection = rightVector
-				else
-					State.targetDirection = leftVector
-				end
-			end
-		end
-		
-		-- Normal turning (no speed penalties)
+		-- Normalize the direction vector after lerping to prevent slowdown
 		local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
+		
+		-- CRITICAL FIX: Normalize the direction vector after lerping
 		if newDirection.Magnitude > 0.001 then
 			State.currentDirection = newDirection.Unit
 		end
-		
-		-- Store last direction
-		State.lastDirection = State.currentDirection
 
 		-- BUTTERY smooth speed changes
 		local speedRate = 15 * dt -- Consistent smooth acceleration
