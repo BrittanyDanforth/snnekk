@@ -872,10 +872,11 @@ function AISnake:_determineAction()
 		return "FLEE", fleeVec
 	end
 
-	-- Priority 3: Target acquisition (LESS aggressive)
+	-- Priority 3: Target acquisition (ONLY if no orbs nearby)
 	local nearestSnake, nearestDist = self:findNearestSnakeHead()
 
-	if nearestSnake and nearestDist < (p.CombatRadius or 60) then
+	-- Only target snakes if we're not actively seeking orbs
+	if nearestSnake and nearestDist < (p.CombatRadius or 60) and not self.TargetOrb then
 		self.TargetSnake = nearestSnake
 	else
 		self.TargetSnake = nil
@@ -895,49 +896,17 @@ function AISnake:_determineAction()
 		local targetPos = self.TargetSnake.part.Position
 		local decision = "WANDER"
 
-		-- SIMPLIFIED personality decisions
-		if p.Type == "Aggressor" then
-			if lengthAdvantage > 10 then
-				decision = nearestDist < 30 and "CIRCLE" or "HUNT"
-			elseif lengthAdvantage > -10 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
-
-		elseif p.Type == "Hunter" then
-			if lengthAdvantage > 15 then
-				decision = "CIRCLE"
-			elseif lengthAdvantage > 0 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
-
-		elseif p.Type == "Scavenger" then
-			if lengthAdvantage > 40 then
-				decision = "HUNT"
-			else
-				decision = "SCAVENGE_WANDER"
-				self.scavengerWanderTime = (self.scavengerWanderTime or 0) + 0.016
-			end
-
-		elseif p.Type == "Coward" then
-			local braveryBonus = self.killCount * 10
-			if lengthAdvantage + braveryBonus > 30 then
-				decision = "CIRCLE"
-			else
-				decision = "FLEE"
-			end
-
-		else -- Trickster, Trapper, Assassin
-			if lengthAdvantage > 5 then
-				decision = nearestDist < 25 and "CIRCLE" or "HUNT"
-			elseif lengthAdvantage > -15 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
+		-- SUPER SIMPLIFIED decisions - focus on orbs!
+		if lengthAdvantage > 20 and nearestDist < 20 then
+			-- Only attack if we're much bigger and very close
+			decision = "HUNT"
+		elseif lengthAdvantage < -10 then
+			-- Flee if they're bigger
+			decision = "FLEE"
+		else
+			-- Otherwise just wander and look for orbs
+			decision = "WANDER"
+			self.TargetSnake = nil
 		end
 
 		-- Execute decisions (SIMPLIFIED)
@@ -946,20 +915,9 @@ function AISnake:_determineAction()
 			steer = (targetPos - headPos).Unit
 
 		elseif decision == "CIRCLE" then
-			state = "CIRCLE"
-			self.circleAngle = self.circleAngle + 2.0 * 0.016 -- SLOWER circling
-			local radius = mathMax(25, nearestDist * 0.9)
-			local circlePoint = targetPos + Vector3new(
-				mathCos(self.circleAngle) * radius,
-				0,
-				mathSin(self.circleAngle) * radius
-			)
-			steer = (circlePoint - headPos).Unit
-
-			-- REDUCED boost chance
-			if mathRandom() < 0.05 then
-				self:startBoost(0.8)
-			end
+			-- Just convert circling to hunting for simplicity
+			state = "HUNT"
+			steer = (targetPos - headPos).Unit
 
 		elseif decision == "FLEE" then
 			state = "FLEE"
@@ -974,19 +932,21 @@ function AISnake:_determineAction()
 		end
 	end
 
-	-- Priority 5: Orb seeking (IMPROVED)
-	if state == "WANDER" and p.TargetOrbs then
+	-- Priority 5: Orb seeking (TOP PRIORITY!)
+	if p.TargetOrbs then
 		if not self.TargetOrb then
 			local orb, dist = self:findBestOrb()
-			if orb and dist < p.OrbSeekRadius then
+			if orb and dist < p.OrbSeekRadius * 1.5 then  -- Increased range
 				self.TargetOrb = orb
-				self.TargetOrbExpire = now + mathRandom(30, 60) / 10 -- LONGER targeting
+				self.TargetOrbExpire = now + mathRandom(50, 80) / 10 -- Even longer targeting
 				AISnake._orbTargets[self] = orb
 			end
 		end
 		if self.TargetOrb and self.TargetOrb.Parent then
 			state = "SEEK_ORB"
 			steer = (self.TargetOrb.Position - headPos).Unit
+			-- Clear any combat targets when seeking orbs
+			self.TargetSnake = nil
 		end
 	end
 
@@ -1334,17 +1294,18 @@ function AISnake:updateMovement(dt)
 		end
 	end
 
-	-- Speed calculation
+	-- Speed calculation - NO SLOWING DOWN!
 	local speedMultiplier = p.SpeedMultiplier or 1
 
 	if state == "SEEK_ORB" then
-		speedMultiplier = speedMultiplier * 1.1
+		speedMultiplier = speedMultiplier * 1.15  -- Faster when seeking orbs
 	end
 
+	-- Always maintain at least normal speed
 	if self.Boosting then
 		self.Speed = self.BoostSpeed * speedMultiplier
 	else
-		self.Speed = self.NormalSpeed * speedMultiplier
+		self.Speed = mathMax(self.NormalSpeed, self.NormalSpeed * speedMultiplier)
 	end
 
 	self.Position = self.Position + self.Direction * self.Speed * dt
