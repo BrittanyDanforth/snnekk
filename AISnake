@@ -601,7 +601,7 @@ function AISnake:findBestOrb()
 			if entity.part.Name == "DeathOrb" then
 				effectiveDist = dist * 0.5 -- Make them seem closer
 			end
-			
+
 			if effectiveDist < minDist then
 				minDist = effectiveDist
 				nearest = entity.part
@@ -619,7 +619,7 @@ function AISnake:findBestOrb()
 				if entity.part.Name == "DeathOrb" then
 					effectiveDist = dist * 0.5 -- Make them seem closer
 				end
-				
+
 				if effectiveDist < minDist then
 					minDist = effectiveDist
 					nearest = entity.part
@@ -990,12 +990,12 @@ function AISnake:_determineAction()
 			if orb and orb.Name == "DeathOrb" then
 				seekRadius = seekRadius * 1.5 -- 50% extra range for death orbs
 			end
-			
+
 			if orb and dist < seekRadius then
 				self.TargetOrb = orb
 				self.TargetOrbExpire = now + mathRandom(30, 60) / 10 -- LONGER targeting
 				AISnake._orbTargets[self] = orb
-				
+
 				-- If it's a death orb, immediately prioritize it
 				if orb.Name == "DeathOrb" then
 					state = "SEEK_ORB"
