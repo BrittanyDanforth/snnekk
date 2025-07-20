@@ -40,6 +40,7 @@ local MAX_AI_SNAKES = 14
 local SPATIAL_GRID_UPDATE_RATE = 0.2
 local BRAIN_UPDATES_PER_FRAME = 1
 local DEBUG_UPDATE_RATE = 1.0
+local AI_HEIGHT = 5
 
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
@@ -468,9 +469,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.2,
 		TurnBias = 0.05, -- REDUCED from 0.1
 		BoostChance = 0.08, -- REDUCED from 0.15
-		CombatRadius = 70, -- REDUCED from 80
-		RandomTurnInterval = 3.0, -- INCREASED from 1.5
-		OrbSeekRadius = 50, -- INCREASED from 40
+		CombatRadius = 40, -- MUCH REDUCED
+		RandomTurnInterval = 4.0, -- INCREASED
+		OrbSeekRadius = 120, -- MUCH INCREASED
 		Description = "Aggressive but controlled hunter",
 		Erratic = false,
 		PackHunter = false,
@@ -485,9 +486,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.1, -- INCREASED from 1.0
 		TurnBias = 0.1, -- REDUCED from 0.2
 		BoostChance = 0.05, -- REDUCED from 0.1
-		CombatRadius = 50, -- REDUCED from 60
-		RandomTurnInterval = 4.0, -- INCREASED from 2.0
-		OrbSeekRadius = 100, -- INCREASED from 80
+		CombatRadius = 30, -- MUCH REDUCED  
+		RandomTurnInterval = 5.0, -- INCREASED
+		OrbSeekRadius = 150, -- MUCH INCREASED
 		Description = "Orb-focused with smooth movement",
 		Erratic = false,
 		PackHunter = false,
@@ -872,11 +873,11 @@ function AISnake:_determineAction()
 		return "FLEE", fleeVec
 	end
 
-	-- Priority 3: Target acquisition (ONLY if no orbs nearby)
+	-- Priority 3: Target acquisition (ONLY if no orbs nearby AND very close)
 	local nearestSnake, nearestDist = self:findNearestSnakeHead()
 
-	-- Only target snakes if we're not actively seeking orbs
-	if nearestSnake and nearestDist < (p.CombatRadius or 60) and not self.TargetOrb then
+	-- Only target snakes if VERY close and no orbs
+	if nearestSnake and nearestDist < 25 and not self.TargetOrb then
 		self.TargetSnake = nearestSnake
 	else
 		self.TargetSnake = nil
@@ -1007,7 +1008,7 @@ function AISnake.new(startPosition)
 	self.Config.HeadColor = combo.HeadColor
 	self.Config.BodyColors = combo.BodyColors
 
-	self.Position = startPosition or Vector3new(0, 5, 0)
+	self.Position = startPosition or Vector3new(0, AI_HEIGHT, 0)
 	self.Direction = Vector3new(0, 0, 1)
 	self.Speed = self.Config.BaseSpeed or 10
 	self.NormalSpeed = self.Config.BaseSpeed or 10
@@ -1048,6 +1049,9 @@ function AISnake.new(startPosition)
 	self._personalityType = pType
 
 	self.Model = getOrCreateSnakeModel(tostring(self) .. "_" .. mathRandom(100000,999999))
+	for _, obj in self.Model:GetChildren() do
+		obj:Destroy()
+	end
 
 	-- SPAWN PROTECTION
 	self.SpawnTime = tick()
@@ -1059,10 +1063,6 @@ function AISnake.new(startPosition)
 		task.wait(self.SpawnProtectionDuration)
 		self.IsInvincible = false
 	end)
-
-	for _, obj in self.Model:GetChildren() do
-		obj:Destroy()
-	end
 
 	self.RootPart = Instance.new("Part")
 	self.RootPart.Name = "AISnakeRoot"
@@ -1104,7 +1104,7 @@ function AISnake.new(startPosition)
 	end
 
 	for i = 1, self.CurrentLength do
-		local pos = self.Position - self.Direction * (i * self.Config.SegmentSpacing)
+		local pos = self.Position - self.Direction * (i * self.SegmentSpacing)
 		local colorIndex = ((i - 1) % #self.Config.BodyColors) + 1
 		local color = self.Config.BodyColors[colorIndex]
 		local segment = createSegment(i, pos, color, self.Config, self.Model)
