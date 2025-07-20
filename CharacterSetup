@@ -677,7 +677,21 @@ local function createUltraSmoothSnake(character)
 				local colorIndex = ((currentLength - 1) % #bodyColors) + 1
 				local color = bodyColors[colorIndex]
 				local lastSegment = segments[#segments]
-				local newPos = lastSegment and lastSegment.Position or rootPart.Position
+				-- Ensure proper positioning for new segments
+				local newPos
+				if lastSegment and lastSegment.Parent then
+					-- Get the direction from previous segment
+					local prevSegment = segments[#segments - 1]
+					if prevSegment and prevSegment.Parent then
+						local dir = (lastSegment.Position - prevSegment.Position).Unit
+						newPos = lastSegment.Position + dir * activeConfig.SegmentSpacing
+					else
+						-- Fallback: position behind last segment
+						newPos = lastSegment.Position - rootPart.CFrame.LookVector * activeConfig.SegmentSpacing
+					end
+				else
+					newPos = rootPart.Position - rootPart.CFrame.LookVector * activeConfig.SegmentSpacing
+				end
 				local segment = createSegment(currentLength, newPos, color, activeConfig, snakeModel, currentLength)
 				segments[currentLength] = segment
 
@@ -943,6 +957,10 @@ local function createUltraSmoothSnake(character)
 				end
 			end
 			addToHistory({ position = currentPos, lookVector = lookVector })
+		elseif dist > 0.02 then
+			-- CRITICAL FIX: Still update position when skipping to prevent gaps
+			-- This ensures continuous history even when reducing update frequency
+			addToHistory({ position = currentPos, lookVector = lookVector })
 		end
 
 		local currentTime = tick()
@@ -996,14 +1014,31 @@ local function createUltraSmoothSnake(character)
 						local segmentPos = targetData.position - targetData.lookVector * (activeConfig.SegmentSpacing * spacingMultiplier)
 						local currentSegmentPos = segment.Position
 
-						-- Simple anti-gap check when boosting
-						if isBoosting and i > 1 then
+						-- Enhanced anti-gap check - always check, not just when boosting
+						if i > 1 then
 							local prevSegment = segments[i - 1]
 							if prevSegment and prevSegment.Parent then
 								local gap = (currentSegmentPos - prevSegment.Position).Magnitude
-								if gap > activeConfig.SegmentSpacing * 1.5 then
+								-- More aggressive gap prevention
+								if gap > activeConfig.SegmentSpacing * 1.2 then
 									-- Too far, pull it closer
 									local dir = (prevSegment.Position - currentSegmentPos).Unit
+									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
+									-- Also update the history position to prevent future gaps
+									targetData.position = segmentPos
+								end
+							end
+						end
+						
+						-- Additional check for newly grown segments
+						if i == currentLength and i > 1 then
+							-- Ensure new segments attach properly
+							local prevSegment = segments[i - 1]
+							if prevSegment and prevSegment.Parent then
+								local gap = (segmentPos - prevSegment.Position).Magnitude
+								if gap > activeConfig.SegmentSpacing * 1.5 then
+									-- Force new segment to attach properly
+									local dir = (prevSegment.Position - segmentPos).Unit
 									segmentPos = prevSegment.Position - dir * activeConfig.SegmentSpacing
 								end
 							end
