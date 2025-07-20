@@ -28,7 +28,12 @@ player.CharacterAdded:Connect(function(character)
 	local cameraController = playerModule:GetCameras()
 	if cameraController then
 		-- Disable all default camera behavior
-		cameraController:SetCameraType(Enum.CameraType.Scriptable)
+		pcall(function()
+			-- Try to set camera type if method exists
+			if cameraController.SetCameraType then
+				cameraController:SetCameraType(Enum.CameraType.Scriptable)
+			end
+		end)
 		
 		-- Override camera update function
 		if cameraController.Update then

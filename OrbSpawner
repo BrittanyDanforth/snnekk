@@ -389,6 +389,14 @@ local function createSafeOrb(position, value, name, color, material)
 	-- Initialize as hidden
 	orbStates[orb] = {state = "hidden", fade = 0}
 	addOrbToGrid(orb) -- Add to grid
+	
+	-- Register with SpatialGrid for AI detection
+	pcall(function()
+		local SpatialGrid = require(game.ServerScriptService:FindFirstChild("SpatialGrid"))
+		if SpatialGrid then
+			SpatialGrid.RegisterEntity(orb, "ORB")
+		end
+	end)
 
 	return orb
 end
@@ -425,6 +433,14 @@ local function removeOrb(orb)
 	orbDebounce[orb] = nil
 	orbStates[orb] = nil
 	removeOrbFromGrid(orb) -- Remove from grid
+	
+	-- Unregister from SpatialGrid
+	pcall(function()
+		local SpatialGrid = require(game.ServerScriptService:FindFirstChild("SpatialGrid"))
+		if SpatialGrid then
+			SpatialGrid.UnregisterEntity(orb)
+		end
+	end)
 	if orbTweens[orb] then
 		orbTweens[orb]:Cancel()
 		orbTweens[orb] = nil

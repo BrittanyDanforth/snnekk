@@ -113,9 +113,7 @@ if workspace:FindFirstChild("Terrain") then
 	workspace.Terrain.WaterWaveSpeed = 5
 end
 
--- Set mobile graphics mode
-settings().Rendering.QualityLevel = Enum.QualityLevel.Level04
-settings().Rendering.EnableFRM = true
+-- Graphics settings removed (client scripts can't access settings())
 
 -- 📱 MOBILE INPUT HANDLER
 local MobileInput = {
