@@ -2053,6 +2053,7 @@ local function createCategoryButton(category, index)
 		-- Hide/show preview based on category
 		local isGamepass = SKIN_CATEGORIES[index].name == "Gamepasses"
 		if isGamepass then
+			print("🎮 Switching to Gamepasses - hiding preview")
 			-- Hide everything for gamepasses
 			if ShopUI.uiElements.previewContainer then
 				ShopUI.uiElements.previewContainer.Visible = false
@@ -2093,20 +2094,41 @@ local function createCategoryButton(category, index)
 				ShopUI.uiElements.priceLabel.Visible = true
 			end
 			
-			-- Recreate preview if it doesn't exist
-			if not CharacterPreview.currentModel and ShopUI.uiElements.viewport then
+			-- Force show all UI elements for skins
+			if ShopUI.uiElements.purchaseBtn then
+				ShopUI.uiElements.purchaseBtn.Visible = true
+			end
+			if ShopUI.uiElements.robuxBtn then
+				ShopUI.uiElements.robuxBtn.Visible = true
+			end
+			if ShopUI.uiElements.applyBtn then
+				ShopUI.uiElements.applyBtn.Visible = true
+			end
+			if ShopUI.uiElements.favoriteBtn then
+				ShopUI.uiElements.favoriteBtn.Visible = true
+			end
+			
+			-- Debug logging
+			print("🔍 Switching back to skins category")
+			print("🔍 Current model exists?", CharacterPreview.currentModel ~= nil)
+			print("🔍 Viewport exists?", ShopUI.uiElements.viewport ~= nil)
+			print("🔍 Selected skin:", uiState.selectedSkin)
+			
+			-- Always recreate preview when switching back to skins
+			if ShopUI.uiElements.viewport then
+				print("🎬 Recreating preview...")
 				CharacterPreview.create(ShopUI.uiElements.viewport)
 			end
 			
-			-- Update preview and info when switching back to skins
-			if uiState.selectedSkin then
-				task.spawn(function()
-					task.wait(0.05) -- Small delay to ensure preview is created
+			-- Update preview and info
+			task.spawn(function()
+				task.wait(0.1) -- Wait for preview creation
+				if uiState.selectedSkin then
+					print("🔄 Updating preview for skin:", uiState.selectedSkin)
 					ShopUI.updatePreview()
 					ShopUI.updateInfo()
-					ShopUI.updatePreviewForSkin(uiState.selectedSkin)
-				end)
-			end
+				end
+			end)
 		end
 
 		-- Update indicators
@@ -2764,6 +2786,33 @@ function ShopUI.purchaseSkin(useRobux)
 
 		-- Sync with attributes
 		syncPlayerData()
+		
+		-- Update the UI immediately
+		ShopUI.updateInfo()
+		
+		-- Update the specific card that was purchased
+		task.spawn(function()
+			local cards = ShopUI.uiElements.gridScroll:GetChildren()
+			for _, card in pairs(cards) do
+				if card:IsA("TextButton") and card.Name == "SkinCard_"..uiState.selectedSkin then
+					-- Update the card's status text
+					local statusFrame = card:FindFirstChild("StatusFrame")
+					if statusFrame then
+						local statusLabel = statusFrame:FindFirstChild("Status")
+						if statusLabel then
+							statusLabel.Text = "✓ OWNED"
+							statusLabel.TextColor3 = SHOP_CONFIG.COLORS.ACCENT
+						end
+					end
+					-- Update card stroke
+					local cardStroke = card:FindFirstChild("CardStroke") or card:FindFirstChildOfClass("UIStroke")
+					if cardStroke then
+						cardStroke.Transparency = 0.8
+					end
+					break
+				end
+			end
+		end)
 
 		-- Coin animation
 		local startTime = tick()
@@ -2874,8 +2923,42 @@ function ShopUI.applySkin()
 
 		Debris:AddItem(successFrame, 0.4)
 
-		ShopUI.updateSkinGrid()
 		ShopUI.updateInfo()
+		
+		-- Update all cards to show equipped status
+		task.spawn(function()
+			local cards = ShopUI.uiElements.gridScroll:GetChildren()
+			for _, card in pairs(cards) do
+				if card:IsA("TextButton") then
+					local skinName = card.Name:gsub("SkinCard_", "")
+					local statusFrame = card:FindFirstChild("StatusFrame")
+					if statusFrame then
+						local statusLabel = statusFrame:FindFirstChild("Status")
+						if statusLabel then
+							if skinName == uiState.selectedSkin then
+								statusLabel.Text = "✅ EQUIPPED"
+								statusLabel.TextColor3 = SHOP_CONFIG.COLORS.SUCCESS
+								-- Update stroke for equipped
+								local cardStroke = card:FindFirstChild("CardStroke") or card:FindFirstChildOfClass("UIStroke")
+								if cardStroke then
+									cardStroke.Color = SHOP_CONFIG.COLORS.SUCCESS
+									cardStroke.Transparency = 0.5
+								end
+							elseif table.find(ShopUI.playerData.ownedSkins, skinName) then
+								statusLabel.Text = "✓ OWNED"
+								statusLabel.TextColor3 = SHOP_CONFIG.COLORS.ACCENT
+								-- Reset stroke for owned
+								local cardStroke = card:FindFirstChild("CardStroke") or card:FindFirstChildOfClass("UIStroke")
+								if cardStroke then
+									cardStroke.Color = SHOP_CONFIG.COLORS.PRIMARY
+									cardStroke.Transparency = 0.8
+								end
+							end
+						end
+					end
+				end
+			end
+		end)
 
 		print("✅ Applied skin:", uiState.selectedSkin)
 		
