@@ -124,7 +124,8 @@ RunService.RenderStepped:Connect(function()
 	local targetLookAt = rootPart.Position
 	
 	-- Set camera directly for that locked feel
-	camera.CFrame = CFrame.lookAt(targetPosition, targetLookAt)
+	-- Make sure camera is looking STRAIGHT DOWN
+	camera.CFrame = CFrame.new(targetPosition, targetLookAt)
 	
 	-- Smooth FOV changes only
 	camera.FieldOfView = camera.FieldOfView + (currentFOV - camera.FieldOfView) * 0.1
