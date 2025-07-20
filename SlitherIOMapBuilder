@@ -75,18 +75,9 @@ local function createWalls()
         wall.CanTouch = true  -- Ensure touch detection works
         wall.CanQuery = true  -- Ensure raycasts work
         wall.Locked = true
-        wall.Transparency = 0.95  -- Slightly visible for debugging (change to 1 for fully invisible)
-        wall.Material = Enum.Material.ForceField  -- ForceField for subtle visibility
-        wall.Color = Color3.fromRGB(255, 50, 50)  -- Red tint for debugging
+        wall.Transparency = 1  -- Fully invisible
+        wall.Material = Enum.Material.SmoothPlastic
         wall.Parent = Workspace
-        
-        -- Add a collision box to ensure detection
-        local selectionBox = Instance.new("SelectionBox")
-        selectionBox.Adornee = wall
-        selectionBox.Color3 = Color3.fromRGB(255, 0, 0)
-        selectionBox.LineThickness = 0.1
-        selectionBox.Transparency = 0.8
-        selectionBox.Parent = wall
         
         return wall
     end
