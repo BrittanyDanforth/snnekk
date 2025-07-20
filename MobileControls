@@ -10,29 +10,31 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- 📱 BETTER MOBILE DETECTION
+-- 📱 STRICT MOBILE DETECTION
 local function isMobileDevice()
-	-- Multiple detection methods for reliability
-	if UserInputService.TouchEnabled then
+	-- Check if we have touch but NO mouse (most reliable)
+	if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
 		return true
 	end
 	
-	-- Check platform
-	if GuiService:IsTenFootInterface() then
-		return false -- Console
-	end
-	
-	-- Check viewport size
-	local viewport = workspace.CurrentCamera.ViewportSize
-	local aspectRatio = viewport.X / viewport.Y
-	
-	-- Mobile devices typically have portrait or narrow landscape ratios
-	if viewport.X < 1024 or (aspectRatio < 1.5 and viewport.Y > viewport.X) then
-		return true
-	end
-	
-	-- Check for gyroscope (mobile-specific)
+	-- Check for mobile-specific sensors
 	if UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled then
+		return true
+	end
+	
+	-- Check if on console (not mobile)
+	if GuiService:IsTenFootInterface() then
+		return false
+	end
+	
+	-- Additional check for touch-only devices
+	local hasMouse = UserInputService.MouseEnabled
+	local hasKeyboard = UserInputService.KeyboardEnabled
+	local hasTouch = UserInputService.TouchEnabled
+	local hasGamepad = UserInputService.GamepadEnabled
+	
+	-- If we only have touch and nothing else, it's likely mobile
+	if hasTouch and not hasMouse and not hasKeyboard and not hasGamepad then
 		return true
 	end
 	
@@ -41,7 +43,8 @@ end
 
 -- Exit if not mobile
 if not isMobileDevice() then
-	print("Not a mobile device, MobileControls disabled")
+	print("Not a mobile device (PC detected), MobileControls disabled")
+	_G.IsMobile = false -- Explicitly set to false for PC
 	return
 end
 
