@@ -14,8 +14,7 @@ local AISnakeModule = require(ReplicatedStorage:WaitForChild("AISnake"))
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
--- Load OrbSpawner for proper death orb spawning with spatial grid registration
-local OrbSpawner = require(game.ServerScriptService:WaitForChild("OrbSpawner"))
+-- OrbSpawner not needed - using regular orbs for death drops
 
 -- === SUPREME PERFORMANCE CONSTANTS ===
 local SEGMENT_CHUNK_SIZE = 64 -- Doubled for better cache coherency
@@ -192,21 +191,13 @@ local ORB_SPAWN_HEIGHT = 5 -- Match AI snake height for proper collection
 local MIN_ORB_SPACING = 3 -- Minimum distance between spawned orbs
 
 local function spawnOrbDirect(position, value)
-	-- Use OrbSpawner to create death orbs that are properly registered with spatial grid
+	-- Direct spawn with minimal processing
 	local success, err = pcall(function()
-		-- Create a death orb using OrbSpawner's system (which adds to spatial grid)
-		local orb = OrbSpawner.createSafeOrb(position, value, "Orb", Color3.fromHSV(math.random(), 0.7, 1))
-		if orb then
-			-- Make sure it's visible and at proper height
-			orb.Size = Vector3.new(1.5, 1.5, 1.5)
-			orb.Transparency = 0
-			local yPos = math.max(ORB_SPAWN_HEIGHT, position.Y)
-			orb.Position = Vector3.new(position.X, yPos, position.Z)
-		end
+		OrbUtils.spawnOrbAt(position, value)  -- Just spawn regular orbs like the old version
 	end)
 
 	if not success then
-		warn("Death orb spawn failed:", err)
+		warn("Orb spawn failed:", err)
 	end
 end
 
