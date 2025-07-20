@@ -199,6 +199,47 @@ local function spawnOrbDirect(position, value)
 	end
 end
 
+local function spawnDeathOrbDirect(position, value)
+	-- Spawn death orb specifically
+	local success, err = pcall(function()
+		if OrbSpawnerModule and OrbSpawnerModule.spawnDeathOrbsForSnake then
+			-- Spawn a single death orb at the position
+			local orb = Instance.new("Part")
+			orb.Name = "DeathOrb"
+			orb.Shape = Enum.PartType.Ball
+			orb.Size = Vector3.new(2, 2, 2)
+			orb.Material = Enum.Material.Neon
+			orb.Color = Color3.fromRGB(255, 100, 100) -- Red death orb
+			orb.Position = position
+			orb.Anchored = true
+			orb.CanCollide = false
+			orb.CanTouch = true
+			orb.CanQuery = true
+			orb.Parent = workspace
+			
+			-- Add value
+			local val = Instance.new("NumberValue")
+			val.Name = "Value"
+			val.Value = value or 2
+			val.Parent = orb
+			
+			-- Add to OrbUtils tracking
+			if OrbUtils.orbs then
+				table.insert(OrbUtils.orbs, orb)
+			end
+			
+			-- Attach touch handler
+			if OrbUtils.attachOrbTouched then
+				OrbUtils.attachOrbTouched(orb)
+			end
+		end
+	end)
+
+	if not success then
+		warn("Death orb spawn failed:", err)
+	end
+end
+
 -- === OPTIMIZED HEAD RETRIEVAL ===
 local headCache = {
 	players = {},
@@ -661,7 +702,7 @@ task.spawn(function()
 										spawnPos = Vector3.new(spawnPos.X, math.min(spawnPos.Y + ORB_SPAWN_HEIGHT, 10), spawnPos.Z)
 										
 										local success = pcall(function()
-											spawnOrbDirect(spawnPos, valuePerOrb)
+											spawnDeathOrbDirect(spawnPos, valuePerOrb)
 											spawnedOrbs = spawnedOrbs + 1
 										end)
 
@@ -677,7 +718,7 @@ task.spawn(function()
 								local firstSeg = segments[1]
 								if firstSeg and firstSeg.Parent and firstSeg.Position then
 									pcall(function()
-										spawnOrbDirect(firstSeg.Position + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), valuePerOrb)
+										spawnDeathOrbDirect(firstSeg.Position + Vector3.new(0, ORB_SPAWN_HEIGHT, 0), valuePerOrb)
 									end)
 								end
 							end
@@ -773,7 +814,7 @@ task.spawn(function()
 											)
 
 											local success = pcall(function()
-												spawnOrbDirect(spawnPos, valuePerOrb)
+												spawnDeathOrbDirect(spawnPos, valuePerOrb)
 												spawnedOrbs = spawnedOrbs + 1
 											end)
 
@@ -794,7 +835,7 @@ task.spawn(function()
 												math.max(groundY + ORB_SPAWN_HEIGHT, firstSeg.Position.Y),
 												firstSeg.Position.Z
 											)
-											spawnOrbDirect(spawnPos, valuePerOrb)
+											spawnDeathOrbDirect(spawnPos, valuePerOrb)
 										end)
 									end
 								end

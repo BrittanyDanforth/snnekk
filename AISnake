@@ -592,11 +592,18 @@ function AISnake:findBestOrb()
 		end
 	end
 
+	-- First pass: prioritize death orbs (they're more valuable!)
 	for _, entity in nearbyEntities do
 		if entity.type == "ORB" and not targetedOrbs[entity.part] then
 			local dist = (entity.part.Position - headPos).Magnitude
-			if dist < minDist then
-				minDist = dist
+			-- Death orbs have 2x priority (effectively double the seek radius)
+			local effectiveDist = dist
+			if entity.part.Name == "DeathOrb" then
+				effectiveDist = dist * 0.5 -- Make them seem closer
+			end
+			
+			if effectiveDist < minDist then
+				minDist = effectiveDist
 				nearest = entity.part
 			end
 		end
@@ -607,8 +614,14 @@ function AISnake:findBestOrb()
 		for _, entity in nearbyEntities do
 			if entity.type == "ORB" then
 				local dist = (entity.part.Position - headPos).Magnitude
-				if dist < minDist then
-					minDist = dist
+				-- Death orbs still get priority even if targeted
+				local effectiveDist = dist
+				if entity.part.Name == "DeathOrb" then
+					effectiveDist = dist * 0.5 -- Make them seem closer
+				end
+				
+				if effectiveDist < minDist then
+					minDist = effectiveDist
 					nearest = entity.part
 				end
 			end
@@ -968,14 +981,26 @@ function AISnake:_determineAction()
 		end
 	end
 
-	-- Priority 5: Orb seeking (IMPROVED)
-	if state == "WANDER" and p.TargetOrbs then
+	-- Priority 5: Orb seeking (IMPROVED - prioritize death orbs!)
+	if (state == "WANDER" or state == "PATROL") and p.TargetOrbs then
 		if not self.TargetOrb then
 			local orb, dist = self:findBestOrb()
-			if orb and dist < p.OrbSeekRadius then
+			-- Death orbs get extra priority - seek from further away
+			local seekRadius = p.OrbSeekRadius
+			if orb and orb.Name == "DeathOrb" then
+				seekRadius = seekRadius * 1.5 -- 50% extra range for death orbs
+			end
+			
+			if orb and dist < seekRadius then
 				self.TargetOrb = orb
 				self.TargetOrbExpire = now + mathRandom(30, 60) / 10 -- LONGER targeting
 				AISnake._orbTargets[self] = orb
+				
+				-- If it's a death orb, immediately prioritize it
+				if orb.Name == "DeathOrb" then
+					state = "SEEK_ORB"
+					steer = (orb.Position - headPos).Unit
+				end
 			end
 		end
 		if self.TargetOrb and self.TargetOrb.Parent then
