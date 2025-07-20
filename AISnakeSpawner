@@ -7,8 +7,8 @@ local RunService        = game:GetService("RunService")
 local AISnake = require(ReplicatedStorage:WaitForChild("AISnake"))
 
 -- === CONFIGURATION ===
-local NUM_SNAKES   = 6          -- total AI snakes
-local SPAWN_RADIUS = 200        -- spread them out more
+local NUM_SNAKES   = 5          -- total AI snakes
+local SPAWN_RADIUS = 250        -- ↑ bump this up to spread them out
 local SPAWN_HEIGHT = 5
 local SPAWN_CENTER = Vector3.new(0, SPAWN_HEIGHT, 0)
 
@@ -18,9 +18,14 @@ local aiSnakes = {}
 -- Function to get random spawn position
 local function getRandomSpawnPosition()
 	local angle = math.random() * 2 * math.pi
-	local radius = math.random(50, SPAWN_RADIUS)
+	local radius = math.random(100, SPAWN_RADIUS)
 	local x = SPAWN_CENTER.X + radius * math.cos(angle)
 	local z = SPAWN_CENTER.Z + radius * math.sin(angle)
+	
+	-- Add some random offset
+	x = x + math.random(-20, 20)
+	z = z + math.random(-20, 20)
+	
 	return Vector3.new(x, SPAWN_HEIGHT, z)
 end
 
@@ -35,8 +40,8 @@ end
 RunService.Stepped:Connect(function()
 	for i = 1, NUM_SNAKES do
 		local snake = aiSnakes[i]
-		if not snake or not snake._active or not snake.RootPart or not snake.RootPart.Parent then
-			-- Respawn with random position
+		if not snake or not snake.RootPart or not snake.RootPart.Parent then
+			-- Respawn at random position
 			local pos = getRandomSpawnPosition()
 			aiSnakes[i] = AISnake.new(pos)
 		end
