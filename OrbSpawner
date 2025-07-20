@@ -49,8 +49,8 @@ if not OrbCollectedEvent then
 	OrbCollectedEvent.Parent = ReplicatedStorage
 end
 
-local ORB_SPAWN_INTERVAL  = 0.5
-local ORB_MAX             = 850
+local ORB_SPAWN_INTERVAL  = 0.2  -- Faster orb respawn!
+local ORB_MAX             = 950  -- More orbs available!
 local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
