@@ -1,10 +1,11 @@
--- CameraController: Smooth top-down view with Mobile Support
+-- CameraController: Smooth top-down view with Enhanced Mobile Support
 -- LOCALSCRIPT INSIDE STARTERPLAYERSCRIPTS
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local StarterPlayer = game:GetService("StarterPlayer")
+local TweenService = game:GetService("TweenService")
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
@@ -37,13 +38,24 @@ end
 local isMobile = isMobileDevice()
 
 -- Mobile-optimized settings
-local HEIGHT = isMobile and 65 or 50  -- Higher on mobile for better view
-local SMOOTHNESS = isMobile and 0.1 or 0.05  -- Smoother on mobile
-local FOV = isMobile and 85 or 70  -- Wider FOV on mobile
+local BASE_HEIGHT = isMobile and 80 or 50  -- Higher on mobile for better view
+local MAX_HEIGHT = isMobile and 150 or 100  -- Maximum height when zoomed out
+local SMOOTHNESS = isMobile and 0.12 or 0.05  -- Slightly smoother on mobile
+local FOV = isMobile and 70 or 70  -- Same base FOV
+local MAX_FOV = isMobile and 90 or 80  -- Wider max FOV on mobile
 
--- Additional mobile settings
-local MOBILE_HEIGHT_MULTIPLIER = 1.2  -- Extra height based on snake size
-local MOBILE_DYNAMIC_FOV = true  -- Adjust FOV based on snake speed
+-- Mobile-specific features
+local MOBILE_OFFSET_FORWARD = 10  -- Look slightly ahead of snake on mobile
+local MOBILE_DYNAMIC_HEIGHT = true  -- Adjust height based on speed
+local MOBILE_SMOOTH_ROTATION = true  -- Smooth camera rotation on turns
+local MOBILE_EDGE_PADDING = 0.15  -- Keep snake away from screen edges (15%)
+
+-- Camera state
+local currentHeight = BASE_HEIGHT
+local currentFOV = FOV
+local cameraOffset = Vector3.new(0, 0, 0)
+local smoothedLookAt = nil
+local lastSnakeDirection = nil
 
 -- 🔒 LOCK CAMERA COMPLETELY (like slither.io)
 camera.CameraType = Enum.CameraType.Scriptable
@@ -77,57 +89,143 @@ UserInputService.InputChanged:Connect(function(input, gameProcessed)
 	end
 end)
 
--- For mobile, we don't need to block these as camera is already scriptable
--- Removing these connections to avoid interfering with touch input
-
 -- Update mobile status on screen size change
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 	isMobile = isMobileDevice()
-	HEIGHT = isMobile and 65 or 50
-	SMOOTHNESS = isMobile and 0.1 or 0.05
-	FOV = isMobile and 85 or 70
+	BASE_HEIGHT = isMobile and 80 or 50
+	MAX_HEIGHT = isMobile and 150 or 100
+	SMOOTHNESS = isMobile and 0.12 or 0.05
+	FOV = isMobile and 70 or 70
+	MAX_FOV = isMobile and 90 or 80
 end)
 
 -- Main camera update loop
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function(dt)
 	local character = player.Character
 	if not character then return end
 
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 
-	-- Dynamic camera adjustments for mobile
-	local currentHeight = HEIGHT
-	local currentFOV = FOV
+	-- Get snake data for dynamic adjustments
+	local snakeData = _G.PlayerSnakes and _G.PlayerSnakes[player]
+	local snakeLength = 10
+	local isBoosting = false
+	local snakeSpeed = 0
 	
-	if isMobile then
-		-- Adjust height based on snake length if available
-		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
-			local snake = _G.PlayerSnakes[player]
-			local length = snake.currentLength or 10
-			
-			-- Scale height with snake size on mobile
-			if length > 100 then
-				currentHeight = HEIGHT * (1 + math.min((length - 100) / 1000, 0.5))
-			end
-			
-			-- Dynamic FOV based on boost
-			if MOBILE_DYNAMIC_FOV and snake.isBoosting then
-				currentFOV = FOV + 10  -- Wider FOV when boosting
-			end
+	if snakeData then
+		snakeLength = snakeData.currentLength or 10
+		isBoosting = snakeData.isBoosting or false
+		
+		-- Calculate speed from position change
+		if snakeData.lastPosition then
+			local displacement = (rootPart.Position - snakeData.lastPosition).Magnitude
+			snakeSpeed = displacement / dt
 		end
+		snakeData.lastPosition = rootPart.Position
 	end
 
-	-- Force camera to exact position (no lerping on position, only on FOV)
-	-- This gives the locked feel like slither.io
-	local targetPosition = rootPart.Position + Vector3.new(0, currentHeight, 0)
-	local targetLookAt = rootPart.Position
+	-- Mobile-specific camera enhancements
+	if isMobile then
+		-- Dynamic height based on snake length and speed
+		if MOBILE_DYNAMIC_HEIGHT then
+			-- Base height increases with snake size
+			local lengthMultiplier = 1 + math.min((snakeLength - 10) / 500, 1) -- Up to 2x at 510 length
+			
+			-- Speed affects height (faster = higher view)
+			local speedMultiplier = 1 + math.min(snakeSpeed / 100, 0.3) -- Up to 1.3x at high speed
+			
+			-- Boost gives extra height
+			local boostMultiplier = isBoosting and 1.2 or 1.0
+			
+			currentHeight = BASE_HEIGHT * lengthMultiplier * speedMultiplier * boostMultiplier
+			currentHeight = math.min(currentHeight, MAX_HEIGHT)
+		else
+			currentHeight = BASE_HEIGHT
+		end
+		
+		-- Dynamic FOV for mobile
+		if isBoosting then
+			currentFOV = FOV + 15 -- Wider FOV when boosting
+		else
+			-- FOV based on snake length
+			local fovBonus = math.min((snakeLength - 10) / 100, 20) -- Up to +20 FOV
+			currentFOV = FOV + fovBonus
+		end
+		currentFOV = math.min(currentFOV, MAX_FOV)
+		
+		-- Look ahead of snake based on movement direction
+		if MOBILE_OFFSET_FORWARD then
+			-- Get snake's movement direction
+			local moveDirection = rootPart.CFrame.LookVector
+			
+			-- Smooth direction changes
+			if lastSnakeDirection then
+				moveDirection = lastSnakeDirection:Lerp(moveDirection, 0.1)
+			end
+			lastSnakeDirection = moveDirection
+			
+			-- Calculate forward offset (more when boosting)
+			local forwardOffset = MOBILE_OFFSET_FORWARD * (isBoosting and 1.5 or 1.0)
+			cameraOffset = moveDirection * forwardOffset
+		end
+		
+		-- Edge padding - ensure snake stays within comfortable viewing area
+		if MOBILE_EDGE_PADDING > 0 then
+			local viewport = camera.ViewportSize
+			local worldPos = camera:WorldToViewportPoint(rootPart.Position)
+			
+			-- Check if snake is near edges
+			local edgeX = math.min(worldPos.X, viewport.X - worldPos.X) / viewport.X
+			local edgeY = math.min(worldPos.Y, viewport.Y - worldPos.Y) / viewport.Y
+			
+			-- Adjust camera if too close to edge
+			if edgeX < MOBILE_EDGE_PADDING then
+				local adjustment = (MOBILE_EDGE_PADDING - edgeX) * 50
+				if worldPos.X < viewport.X / 2 then
+					cameraOffset = cameraOffset + Vector3.new(adjustment, 0, 0)
+				else
+					cameraOffset = cameraOffset + Vector3.new(-adjustment, 0, 0)
+				end
+			end
+			
+			if edgeY < MOBILE_EDGE_PADDING then
+				local adjustment = (MOBILE_EDGE_PADDING - edgeY) * 50
+				if worldPos.Y < viewport.Y / 2 then
+					cameraOffset = cameraOffset + Vector3.new(0, 0, adjustment)
+				else
+					cameraOffset = cameraOffset + Vector3.new(0, 0, -adjustment)
+				end
+			end
+		end
+	else
+		-- PC camera (simpler)
+		currentHeight = BASE_HEIGHT
+		currentFOV = FOV
+		cameraOffset = Vector3.new(0, 0, 0)
+	end
+
+	-- Calculate camera position
+	local targetPosition = rootPart.Position + Vector3.new(0, currentHeight, 0) + cameraOffset
+	local targetLookAt = rootPart.Position + cameraOffset
 	
-	-- Set camera directly for that locked feel
-	-- Make sure camera is looking STRAIGHT DOWN
-	camera.CFrame = CFrame.new(targetPosition, targetLookAt)
+	-- Smooth look-at position for mobile
+	if isMobile and MOBILE_SMOOTH_ROTATION then
+		if not smoothedLookAt then
+			smoothedLookAt = targetLookAt
+		end
+		smoothedLookAt = smoothedLookAt:Lerp(targetLookAt, SMOOTHNESS * 2)
+		targetLookAt = smoothedLookAt
+	end
 	
-	-- Smooth FOV changes only
+	-- Apply camera position with smoothing
+	local currentPos = camera.CFrame.Position
+	local smoothedPosition = currentPos:Lerp(targetPosition, SMOOTHNESS)
+	
+	-- Set camera
+	camera.CFrame = CFrame.lookAt(smoothedPosition, targetLookAt)
+	
+	-- Smooth FOV changes
 	camera.FieldOfView = camera.FieldOfView + (currentFOV - camera.FieldOfView) * 0.1
 	
 	-- Force camera type to stay scriptable
@@ -136,4 +234,14 @@ end)
 
 -- Initial camera lock
 lockCamera()
-print("Camera Controller initialized - Camera locked like slither.io!")
+
+-- Mobile-specific initialization
+if isMobile then
+	print("📱 Mobile Camera Controller initialized with enhanced features!")
+	print("- Dynamic height based on snake size and speed")
+	print("- Look-ahead camera for better visibility")
+	print("- Edge padding to keep snake centered")
+	print("- Smooth rotation and FOV adjustments")
+else
+	print("💻 Camera Controller initialized for PC!")
+end
