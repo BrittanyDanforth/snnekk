@@ -594,6 +594,22 @@ local function createUltraSmoothSnake(character)
 		end
 		obj:Destroy()
 	end
+	
+	-- Clean up any orphaned snake heads before creating new snake
+	for _, model in pairs(workspace:GetChildren()) do
+		if model:IsA("Model") and model:GetAttribute("IsSnakeModel") then
+			for _, part in pairs(model:GetDescendants()) do
+				if part:IsA("BasePart") and part.Name == "SnakeHead" then
+					-- Check if this belongs to current player
+					local modelUserId = model:GetAttribute("OwnerUserId")
+					if modelUserId == player.UserId then
+						print("🧹 Cleaning up old snake head for player:", player.Name)
+						part:Destroy()
+					end
+				end
+			end
+		end
+	end
 
 	-- Don't create visual parts yet
 	local headParts = nil
@@ -737,16 +753,23 @@ local function createUltraSmoothSnake(character)
 		end
 
 		if headParts then
+			-- Specifically destroy the head first to prevent orphaning
+			if headParts.head and headParts.head.Parent then
+				headParts.head:Destroy()
+			end
+			
+			-- Then clean up all other parts
 			for name, part in pairs(headParts) do
 				if typeof(part) == "Instance" and part.Parent then
 					for _, child in part:GetChildren() do
-						if child:IsA("Attachment") then
+						if child:IsA("Attachment") or child:IsA("WeldConstraint") then
 							child:Destroy()
 						end
 					end
 					part:Destroy()
 				end
 			end
+			headParts = nil
 		end
 
 		if snakeModel and snakeModel.Parent then
@@ -830,8 +853,8 @@ local function createUltraSmoothSnake(character)
 		local headOffset = lookVector * 1.5
 		local headPos = currentPos + headOffset
 
-		-- Create head after 3 frames to prevent flash
-		if not headParts and framesSinceSpawn == 3 then
+		-- Create head after spawn stabilization and only once
+		if not headParts and not spawnStabilizing and framesSinceSpawn > 10 then
 			headParts = createVisualHead(rootPart, activeConfig, snakeModel)
 		end
 
@@ -1197,6 +1220,38 @@ task.spawn(function()
 				end
 
 				if not hasSegments then
+					child:Destroy()
+				end
+			end
+		end
+		
+		-- ADDED: Clean up orphaned snake heads
+		for _, child in pairs(workspace:GetDescendants()) do
+			if child:IsA("BasePart") and child.Name == "SnakeHead" then
+				-- Check if it belongs to an active snake
+				local isOrphaned = true
+				local parentModel = child.Parent
+				
+				-- Check if parent is a valid snake model
+				if parentModel and parentModel:IsA("Model") then
+					local userId = parentModel:GetAttribute("OwnerUserId")
+					if userId then
+						-- Check if player exists
+						for _, player in pairs(Players:GetPlayers()) do
+							if player.UserId == userId then
+								-- Check if this is their active snake
+								local snake = playerSnakes[player] or _G.PlayerSnakes[player]
+								if snake and snake.headParts and snake.headParts.head == child then
+									isOrphaned = false
+									break
+								end
+							end
+						end
+					end
+				end
+				
+				if isOrphaned then
+					print("🧹 Removing orphaned snake head")
 					child:Destroy()
 				end
 			end
