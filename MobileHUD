@@ -173,7 +173,7 @@ local movementHint = Instance.new("TextLabel")
 movementHint.Size = UDim2.new(0, 300, 0, 30)
 movementHint.Position = UDim2.new(0.5, -150, 1, -200)
 movementHint.BackgroundTransparency = 1
-movementHint.Text = "Touch to move"
+movementHint.Text = "Touch and drag to move"
 movementHint.TextColor3 = Color3.new(1, 1, 1)
 movementHint.TextTransparency = 0.5
 movementHint.Font = Enum.Font.SourceSans
@@ -193,8 +193,8 @@ task.spawn(function()
 end)
 
 -- 📱 SLITHER.IO STYLE TOUCH MOVEMENT
-local touchActive = false
-local currentTouchId = nil
+local activeTouches = {} -- Track multiple touches
+local primaryTouch = nil -- The main touch controlling movement
 
 -- Visual touch indicator - smooth like slither.io
 local touchIndicator = Instance.new("ImageLabel")
@@ -225,58 +225,84 @@ local innerCorner = Instance.new("UICorner")
 innerCorner.CornerRadius = UDim.new(0.5, 0)
 innerCorner.Parent = innerDot
 
--- Touch handling - exactly like slither.io
-UserInputService.TouchStarted:Connect(function(input, gameProcessed)
-	-- Don't process if touching the boost button area
-	if gameProcessed and input.Position.X > workspace.CurrentCamera.ViewportSize.X - 200 and 
-	   input.Position.Y > workspace.CurrentCamera.ViewportSize.Y - 200 then
-		return
-	end
-	
-	touchActive = true
-	currentTouchId = input.UserInputState
-	
-	-- Store the touch position for the snake to follow
-	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
-		_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
+-- Better touch handling for hold and drag
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		-- Don't process if touching the boost button area
+		if gameProcessed and input.Position.X > workspace.CurrentCamera.ViewportSize.X - 200 and 
+		   input.Position.Y > workspace.CurrentCamera.ViewportSize.Y - 200 then
+			return
+		end
 		
-		-- Show touch indicator at position
-		touchIndicator.Position = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
-		touchIndicator.Visible = true
+		-- Track this touch
+		activeTouches[input] = true
 		
-		-- Smooth fade in
-		touchIndicator.ImageTransparency = 0.8
-		innerDot.BackgroundTransparency = 0.6
-		TweenService:Create(touchIndicator, TweenInfo.new(0.2), {ImageTransparency = 0.5}):Play()
-		TweenService:Create(innerDot, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
-	end
-end)
-
-UserInputService.TouchMoved:Connect(function(input, gameProcessed)
-	if not touchActive or input.UserInputState ~= currentTouchId then return end
-	
-	-- Update touch position continuously
-	if _G.PlayerSnakes and _G.PlayerSnakes[player] then
-		_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
-		
-		-- Update touch indicator smoothly
-		local targetPos = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
-		TweenService:Create(touchIndicator, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
-			Position = targetPos
-		}):Play()
+		-- If no primary touch, make this the primary
+		if not primaryTouch then
+			primaryTouch = input
+			
+			-- Store the touch position for the snake to follow
+			if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+				_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
+				
+				-- Show touch indicator at position
+				touchIndicator.Position = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
+				touchIndicator.Visible = true
+				
+				-- Smooth fade in
+				touchIndicator.ImageTransparency = 0.8
+				innerDot.BackgroundTransparency = 0.6
+				TweenService:Create(touchIndicator, TweenInfo.new(0.2), {ImageTransparency = 0.5}):Play()
+				TweenService:Create(innerDot, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
+			end
+		end
 	end
 end)
 
-UserInputService.TouchEnded:Connect(function(input)
-	if input.UserInputState == currentTouchId then
-		touchActive = false
-		currentTouchId = nil
+UserInputService.InputChanged:Connect(function(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.Touch and input == primaryTouch then
+		-- Update touch position continuously as finger moves
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			_G.PlayerSnakes[player].touchPosition = Vector2.new(input.Position.X, input.Position.Y)
+			
+			-- Update touch indicator position immediately (no tween for responsiveness)
+			touchIndicator.Position = UDim2.new(0, input.Position.X - 30, 0, input.Position.Y - 30)
+		end
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		-- Remove from active touches
+		activeTouches[input] = nil
 		
-		-- Keep last touch position so snake continues moving
-		-- Don't clear touchPosition - snake will continue towards last touch
-		
-		-- Hide touch indicator
-		touchIndicator.Visible = false
+		-- If this was the primary touch
+		if input == primaryTouch then
+			primaryTouch = nil
+			
+			-- Keep last touch position so snake continues moving
+			-- Don't clear touchPosition - snake will continue towards last touch
+			
+			-- Hide touch indicator with fade
+			TweenService:Create(touchIndicator, TweenInfo.new(0.2), {ImageTransparency = 1}):Play()
+			TweenService:Create(innerDot, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+			
+			task.wait(0.2)
+			touchIndicator.Visible = false
+		end
+	end
+end)
+
+-- Update loop for smooth touch tracking
+local lastTouchUpdate = 0
+RunService.Heartbeat:Connect(function()
+	-- Force update touch position every frame if we have an active touch
+	if primaryTouch and _G.PlayerSnakes and _G.PlayerSnakes[player] then
+		-- This ensures continuous updates even if InputChanged doesn't fire
+		local currentTime = tick()
+		if currentTime - lastTouchUpdate > 0.016 then -- 60 FPS update rate
+			lastTouchUpdate = currentTime
+		end
 	end
 end)
 

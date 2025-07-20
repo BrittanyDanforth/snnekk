@@ -573,26 +573,33 @@ local function initializeForCharacter(character)
 			if snakeData.touchPosition then
 				-- Convert touch position to world position
 				local camera = workspace.CurrentCamera
+				local viewportSize = camera.ViewportSize
+				
+				-- Get ray from camera through touch point
 				local ray = camera:ScreenPointToRay(snakeData.touchPosition.X, snakeData.touchPosition.Y)
 				
-				-- Project ray onto the snake's Y plane
-				local planeY = rootPart.Position.Y
-				local t = (planeY - ray.Origin.Y) / ray.Direction.Y
-				local worldTouchPos = ray.Origin + ray.Direction * t
+				-- Since camera is top-down, we can use a simpler approach
+				-- Map screen coordinates to world coordinates
+				local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+				local touchOffset = snakeData.touchPosition - screenCenter
 				
-				-- Calculate direction from snake to touch position
-				local toTouch = worldTouchPos - rootPart.Position
-				toTouch = Vector3.new(toTouch.X, 0, toTouch.Z) -- Keep only horizontal
+				-- Scale touch offset to world units (adjust scale for sensitivity)
+				local worldOffset = Vector3.new(
+					touchOffset.X / 10,  -- Adjust divisor for X sensitivity
+					0,
+					touchOffset.Y / 10   -- Adjust divisor for Y sensitivity
+				)
 				
-				-- Only update direction if touch is far enough from snake
-				if toTouch.Magnitude > 5 then -- Minimum distance to avoid jittering
-					State.targetDirection = toTouch.Unit
-					
-					-- Smooth turning like slither.io - faster turn rate for mobile
-					Config.TurnSpeed = 8.0 -- Increased for mobile responsiveness
-				else
-					-- When touch is very close, maintain current direction
-					-- This prevents the snake from stopping when finger is on top of it
+				-- Calculate target position relative to snake
+				local targetWorldPos = rootPart.Position + worldOffset
+				
+				-- Calculate direction from snake to target
+				local toTarget = targetWorldPos - rootPart.Position
+				toTarget = Vector3.new(toTarget.X, 0, toTarget.Z)
+				
+				-- Always update direction for smooth following
+				if toTarget.Magnitude > 0.1 then
+					State.targetDirection = toTarget.Unit
 				end
 			end
 			
@@ -637,32 +644,16 @@ local function initializeForCharacter(character)
 
 		-- BUTTERY smooth direction changes
 		-- Use different turn rates for mobile vs PC
-		local baseTurnRate = _G.IsMobile and 12.0 or Config.TurnSpeed
-		local turnRate = baseTurnRate * dt * 1.2 -- Slightly faster turning for responsiveness
+		local baseTurnRate = _G.IsMobile and 20.0 or Config.TurnSpeed -- Much faster for mobile
+		local turnRate = baseTurnRate * dt
 		
-		-- For mobile, use smoother interpolation
-		if _G.IsMobile then
-			-- Calculate angle difference for smoother turning
-			local currentAngle = math.atan2(State.currentDirection.Z, State.currentDirection.X)
-			local targetAngle = math.atan2(State.targetDirection.Z, State.targetDirection.X)
-			
-			-- Handle angle wrapping
-			local angleDiff = targetAngle - currentAngle
-			if angleDiff > math.pi then
-				angleDiff = angleDiff - 2 * math.pi
-			elseif angleDiff < -math.pi then
-				angleDiff = angleDiff + 2 * math.pi
-			end
-			
-			-- Smooth angle interpolation
-			local newAngle = currentAngle + angleDiff * turnRate
-			State.currentDirection = Vector3.new(math.cos(newAngle), 0, math.sin(newAngle))
-		else
-			-- PC uses normal lerping
-			local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
-			if newDirection.Magnitude > 0.001 then
-				State.currentDirection = newDirection.Unit
-			end
+		-- Clamp turn rate to prevent overshooting
+		turnRate = math.min(turnRate, 1.0)
+		
+		-- Smooth direction interpolation
+		local newDirection = State.currentDirection:Lerp(State.targetDirection, turnRate)
+		if newDirection.Magnitude > 0.001 then
+			State.currentDirection = newDirection.Unit
 		end
 
 		-- BUTTERY smooth speed changes
