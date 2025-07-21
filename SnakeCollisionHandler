@@ -124,6 +124,24 @@ local function handleWallCollision(entity, isPlayer)
 		-- Spawn wall collision orbs near the snake
 		local mapBoundary = 395 -- Keep orbs inside the 400 boundary
 		
+		-- Calculate orb value based on snake size
+		local orbValue = 1
+		if currentLength > 50 then
+			orbValue = 2
+		end
+		if currentLength > 100 then
+			orbValue = 3
+		end
+		if currentLength > 200 then
+			orbValue = 5
+		end
+		if currentLength > 500 then
+			orbValue = 10
+		end
+		if currentLength > 1000 then
+			orbValue = 15
+		end
+		
 		for i = 1, WALL_ORB_DROP_AMOUNT do
 			-- Random offset around the snake's head
 			local randomOffset = Vector3.new(
@@ -141,14 +159,29 @@ local function handleWallCollision(entity, isPlayer)
 				math.clamp(orbPos.Z, -mapBoundary, mapBoundary)
 			)
 			
-			-- Spawn orb directly using OrbUtils
-			OrbUtils.spawnOrbAt(orbPos, 1)
+			-- Spawn orb with scaled value
+			OrbUtils.spawnOrbAt(orbPos, orbValue)
 		end
 		
-		-- Remove segments (lose length) for players
+		-- Remove segments (lose length) for players - scales with size
 		if isPlayer and snakeData.shrink and currentLength > 10 then
+			-- Scale segments lost based on size (bigger snakes lose more)
+			local baseLoss = WALL_ORB_DROP_AMOUNT
+			if currentLength > 100 then
+				baseLoss = 5
+			end
+			if currentLength > 300 then
+				baseLoss = 8
+			end
+			if currentLength > 500 then
+				baseLoss = 12
+			end
+			if currentLength > 1000 then
+				baseLoss = 20
+			end
+			
 			-- Only shrink if we have enough segments
-			local segmentsToRemove = math.min(WALL_ORB_DROP_AMOUNT, currentLength - 10)
+			local segmentsToRemove = math.min(baseLoss, currentLength - 10)
 			if segmentsToRemove > 0 then
 				snakeData.shrink(segmentsToRemove)
 			end
@@ -1622,6 +1655,21 @@ RunService.Stepped:Connect(function()
 						
 						-- Force drop extra orbs when pushed
 						local mapBoundary = 395
+						
+						-- Get snake length for orb scaling
+						local snakeLength = 10
+						if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+							local snake = _G.PlayerSnakes[player]
+							if snake.length then
+								snakeLength = snake.length()
+							elseif snake.segments then
+								snakeLength = #snake.segments
+							end
+						end
+						
+						-- Scale orb value based on size
+						local pushOrbValue = math.max(1, math.floor(snakeLength / 50))
+						
 						for i = 1, 2 do
 							-- Random offset near the snake
 							local randomOffset = Vector3.new(
@@ -1638,7 +1686,7 @@ RunService.Stepped:Connect(function()
 								math.clamp(orbPos.Z, -mapBoundary, mapBoundary)
 							)
 							
-							OrbUtils.spawnOrbAt(orbPos, 1)
+							OrbUtils.spawnOrbAt(orbPos, pushOrbValue)
 						end
 						
 						-- Also lose segments when pushed
