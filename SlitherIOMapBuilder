@@ -216,14 +216,14 @@ local function createDecor()
                 line.Name = "HexLine"
                 line.Size = Vector3.new(
                     math.sqrt((x2-x1)^2 + (z2-z1)^2) + 1,  -- Small overlap
-                    0.05,  -- Thin to sit flush
+                    0.01,  -- Super thin, basically 2D
                     3  -- Width for visibility
                 )
                 
                 -- Position and rotate line
                 local midX = (x1 + x2) / 2
                 local midZ = (z1 + z2) / 2
-                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.025, midZ) * 
+                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.005, midZ) *  -- Barely above ground
                              CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
                 
                 line.Anchored = true
