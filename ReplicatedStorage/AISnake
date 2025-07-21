@@ -8,12 +8,6 @@ local Players = game:GetService("Players")
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
--- Load SnakeSkins module for getting random skins
-local SnakeSkins
-pcall(function()
-	SnakeSkins = require(ReplicatedStorage:WaitForChild("SnakeSkins"))
-end)
-
 -- Load the orb pickup module
 local AISnakeOrbPickup
 pcall(function()
@@ -200,47 +194,7 @@ end
 
 
 
--- Get random skin from available player skins
-local function getRandomPlayerSkin()
-	if not SnakeSkins then
-		-- Fallback if SnakeSkins not loaded
-		return {
-			HeadColor = Color3.fromRGB(255, 255, 0),
-			BodyColors = {Color3.fromRGB(255, 255, 0)},
-			HeadMaterial = Enum.Material.Neon,
-			BodyMaterial = Enum.Material.Neon
-		}
-	end
-	
-	-- Get all available skins
-	local availableSkins = {}
-	for skinName, skinData in pairs(SnakeSkins) do
-		-- Add all skins including shop skins
-		table.insert(availableSkins, {
-			name = skinName,
-			data = skinData
-		})
-	end
-	
-	-- Pick a random skin
-	if #availableSkins > 0 then
-		local randomSkin = availableSkins[math.random(1, #availableSkins)]
-		return {
-			HeadColor = randomSkin.data.HeadColor,
-			BodyColors = randomSkin.data.BodyColors,
-			HeadMaterial = randomSkin.data.HeadMaterial or Enum.Material.Neon,
-			BodyMaterial = randomSkin.data.BodyMaterial or Enum.Material.Neon,
-			SkinName = randomSkin.name
-		}
-	end
-	
-	return {
-		HeadColor = Color3.fromRGB(255, 255, 0),
-		BodyColors = {Color3.fromRGB(255, 255, 0)},
-		HeadMaterial = Enum.Material.Neon,
-		BodyMaterial = Enum.Material.Neon
-	}
-end
+
 
 local function deepCopy(orig)
 	local orig_type = type(orig)
@@ -1094,12 +1048,11 @@ function AISnake.new(startPosition)
 	local self = setmetatable({}, AISnake)
 	self.Config = deepCopy(SnakeConfig)
 
-	local skin = getRandomPlayerSkin()
-	self.Config.HeadColor = skin.HeadColor
-	self.Config.BodyColors = skin.BodyColors
-	self.Config.HeadMaterial = skin.HeadMaterial
-	self.Config.BodyMaterial = skin.BodyMaterial
-	self.SkinName = skin.SkinName or "Classic"
+	local combo = getRandomColorCombo()
+	self.Config.HeadColor = combo.HeadColor
+	self.Config.BodyColors = combo.BodyColors
+	self.Config.HeadMaterial = Enum.Material.Neon
+	self.Config.BodyMaterial = Enum.Material.Neon
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
@@ -1503,21 +1456,13 @@ function AISnake:updateMovement(dt)
 	for i = 1 + updateOffset, self.CurrentLength, segmentSkip do
 		local segment = self.Segments[i]
 		if segment and segment.Parent then
-			local delay = mathFloor(i * 1.1)  -- Reduced from 1.2 for tighter following
+			local delay = mathFloor(i * 1.2)
 			local targetData = self:getFromHistory(delay)
 			if targetData then
-				-- Use proper segment spacing to prevent overlap
-				local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * i * 0.9)
+				local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
 				local currentSegmentPos = segment.Position
-				
-				-- Only update if moved significantly to reduce flickering
-				local moveDistance = (segmentPos - currentSegmentPos).Magnitude
-				if moveDistance > 0.1 then  -- Threshold to prevent micro-movements
-					local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed * 0.8)  -- Slightly slower for smoothness
-					-- Add tiny Y offset based on segment index to prevent z-fighting
-					local yOffset = (i % 2 == 0) and 0.01 or -0.01
-					segment.CFrame = CFramenew(newPos + Vector3new(0, yOffset, 0))
-				end
+				local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
+				segment.CFrame = CFramenew(newPos)
 			end
 		end
 	end
@@ -1530,16 +1475,11 @@ function AISnake:updateMovement(dt)
 			for i = tailStart, self.CurrentLength, 10 do
 				local segment = self.Segments[i]
 				if segment and segment.Parent then
-					local delay = mathFloor(i * 1.1)
+					local delay = mathFloor(i * 1.2)
 					local targetData = self:getFromHistory(delay)
 					if targetData then
-						-- Use same spacing calculation as main loop
-						local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * i * 0.9)
-						-- Smooth position update for tail too
-						local currentPos = segment.Position
-						if (segmentPos - currentPos).Magnitude > 0.5 then  -- Higher threshold for tail
-							segment.CFrame = CFramenew(currentPos:Lerp(segmentPos, 0.5))
-						end
+						local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
+						segment.Position = segmentPos  -- Direct position set for tail
 					end
 				end
 			end
@@ -1721,6 +1661,45 @@ AISnake._brainConnection = RunService.Stepped:Connect(function(time, deltaTime)
 	end
 end)
 
+-- Simple AI snake colors (yellow is smooth)
+local AISnakeColorCombos = {
+	{
+		-- Yellow snake (the smooth one) - most common
+		HeadColor = Color3.fromRGB(255, 255, 102),
+		BodyColors = {
+			Color3.fromRGB(255, 255, 51), Color3.fromRGB(255, 255, 102),
+			Color3.fromRGB(255, 255, 153), Color3.fromRGB(255, 255, 102), Color3.fromRGB(255, 255, 51),
+		}
+	},
+	{
+		-- Green snake
+		HeadColor = Color3.fromRGB(102, 255, 102),
+		BodyColors = {
+			Color3.fromRGB(102, 255, 102), Color3.fromRGB(153, 255, 153),
+			Color3.fromRGB(204, 255, 204), Color3.fromRGB(153, 255, 153), Color3.fromRGB(102, 255, 102),
+		}
+	},
+	{
+		-- Red snake
+		HeadColor = Color3.fromRGB(255, 102, 102),
+		BodyColors = {
+			Color3.fromRGB(255, 51, 51), Color3.fromRGB(255, 102, 102),
+			Color3.fromRGB(255, 153, 153), Color3.fromRGB(255, 102, 102), Color3.fromRGB(255, 51, 51),
+		}
+	},
+}
+
+-- Get random color combo (prefer yellow)
+local function getRandomColorCombo()
+	local rand = math.random()
+	if rand < 0.6 then
+		return AISnakeColorCombos[1]  -- Yellow (60% chance)
+	elseif rand < 0.8 then
+		return AISnakeColorCombos[2]  -- Green (20% chance)
+	else
+		return AISnakeColorCombos[3]  -- Red (20% chance)
+	end
+end
 
 
 return AISnake
