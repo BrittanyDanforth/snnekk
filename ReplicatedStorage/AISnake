@@ -44,7 +44,7 @@ local SPATIAL_GRID_UPDATE_RATE = 0.5  -- Increased from 0.2 (update less often)
 local BRAIN_UPDATES_PER_FRAME = 1
 local DEBUG_UPDATE_RATE = 2.0  -- Increased from 1.0
 local AI_HEIGHT = 5
-local SEGMENT_UPDATE_SKIP = 3  -- Increased from 2 - only update every 3rd segment for long snakes
+local SEGMENT_UPDATE_SKIP = 1  -- Update every segment for no gaps
 local LONG_SNAKE_THRESHOLD = 100  -- Snakes longer than this use more aggressive optimization
 local VERY_LONG_SNAKE_THRESHOLD = 300  -- Even more optimization for very long snakes
 
@@ -195,9 +195,10 @@ end
 
 
 
--- Simple yellow snake color for AI (smooth and no lag)
-local function getYellowSnakeColor()
-	return {
+-- AI Snake color combinations - using patterns similar to SnakeData
+local AISnakeColors = {
+	{
+		-- Yellow (Classic smooth)
 		HeadColor = Color3.fromRGB(255, 255, 102),
 		BodyColors = {
 			Color3.fromRGB(255, 255, 51), 
@@ -208,7 +209,55 @@ local function getYellowSnakeColor()
 		},
 		HeadMaterial = Enum.Material.Neon,
 		BodyMaterial = Enum.Material.Neon
+	},
+	{
+		-- Green (Nature)
+		HeadColor = Color3.fromRGB(102, 255, 102),
+		BodyColors = {
+			Color3.fromRGB(60, 180, 80),
+			Color3.fromRGB(80, 200, 100),
+			Color3.fromRGB(100, 220, 120),
+			Color3.fromRGB(80, 200, 100),
+			Color3.fromRGB(60, 180, 80),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
+	},
+	{
+		-- Blue (Ocean)
+		HeadColor = Color3.fromRGB(102, 178, 255),
+		BodyColors = {
+			Color3.fromRGB(51, 153, 255),
+			Color3.fromRGB(102, 178, 255),
+			Color3.fromRGB(153, 204, 255),
+			Color3.fromRGB(102, 178, 255),
+			Color3.fromRGB(51, 153, 255),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
+	},
+	{
+		-- Orange (Sunset)
+		HeadColor = Color3.fromRGB(255, 178, 102),
+		BodyColors = {
+			Color3.fromRGB(255, 153, 51),
+			Color3.fromRGB(255, 178, 102),
+			Color3.fromRGB(255, 204, 153),
+			Color3.fromRGB(255, 178, 102),
+			Color3.fromRGB(255, 153, 51),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
 	}
+}
+
+local function getRandomAIColor()
+	-- 50% yellow, 50% others
+	if math.random() < 0.5 then
+		return AISnakeColors[1] -- Yellow
+	else
+		return AISnakeColors[math.random(2, #AISnakeColors)]
+	end
 end
 
 local function deepCopy(orig)
@@ -1063,12 +1112,12 @@ function AISnake.new(startPosition)
 	local self = setmetatable({}, AISnake)
 	self.Config = deepCopy(SnakeConfig)
 
-	-- Always use yellow snake for smooth performance
-	local yellowSnake = getYellowSnakeColor()
-	self.Config.HeadColor = yellowSnake.HeadColor
-	self.Config.BodyColors = yellowSnake.BodyColors
-	self.Config.HeadMaterial = yellowSnake.HeadMaterial
-	self.Config.BodyMaterial = yellowSnake.BodyMaterial
+	-- Get random AI color (50% yellow, 50% others)
+	local colorData = getRandomAIColor()
+	self.Config.HeadColor = colorData.HeadColor
+	self.Config.BodyColors = colorData.BodyColors
+	self.Config.HeadMaterial = colorData.HeadMaterial
+	self.Config.BodyMaterial = colorData.BodyMaterial
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
@@ -1446,9 +1495,13 @@ function AISnake:updateMovement(dt)
 	local lastHistoryPoint = self:getFromHistory(1)
 	local dist = (self.Position - lastHistoryPoint.position).Magnitude
 
-	if dist > 0.01 then
-		if dist > self.SegmentSpacing * 0.75 then
-			local numInterpolations = math.floor(dist / (self.SegmentSpacing * 0.5))
+	-- EXACT same interpolation as CharacterSetup
+	if dist > 0.02 then
+		-- Balanced interpolations (from CharacterSetup)
+		if dist > self.Config.SegmentSpacing * 0.7 then
+			local isBoosting = self.Speed > 16  -- AI boost check
+			local maxInterp = isBoosting and 6 or 3
+			local numInterpolations = mathMin(mathFloor(dist / (self.Config.SegmentSpacing * 0.35)), maxInterp)
 			for i = 1, numInterpolations do
 				local fraction = i / (numInterpolations + 1)
 				local interpPos = lastHistoryPoint.position:Lerp(self.Position, fraction)
@@ -1465,12 +1518,12 @@ function AISnake:updateMovement(dt)
 	-- Initialize frame counter if needed
 	self._segmentUpdateFrame = (self._segmentUpdateFrame or 0) + 1
 	
-	-- Adaptive segment update skip based on snake length
+	-- Adaptive segment update skip based on snake length (less aggressive)
 	local segmentSkip = SEGMENT_UPDATE_SKIP
 	if self.CurrentLength > VERY_LONG_SNAKE_THRESHOLD then
-		segmentSkip = 6  -- Update every 6th segment for very long snakes
+		segmentSkip = 2  -- Only skip every other segment even for very long snakes
 	elseif self.CurrentLength > LONG_SNAKE_THRESHOLD then
-		segmentSkip = 4  -- Update every 4th segment for long snakes
+		segmentSkip = 1  -- No skipping for medium-long snakes
 	end
 	
 	-- Update different segments on different frames to spread the load
