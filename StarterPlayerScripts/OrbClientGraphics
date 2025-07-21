@@ -359,6 +359,15 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		-- Immediately handle snake glows with transition
 		handleSnakeGlows(mode, playerPos)
 		
+		-- Force immediate material update in Low mode
+		if mode == "Low" then
+			materialOverrideEnabled = true
+			for i = 1, 10 do
+				task.wait(0.05)
+				overrideMaterials()
+			end
+		end
+		
 		-- Performance feedback
 		local perfMsg = mode == "Low" and "🚀 Maximum Performance Mode" or
 		               mode == "Medium" and "⚖️ Balanced Graphics Mode" or
@@ -413,24 +422,58 @@ workspace.DescendantAdded:Connect(function(descendant)
 	end
 end)
 
--- Continuous monitoring for material changes on player's snake
-task.spawn(function()
-	while true do
-		task.wait(0.1) -- Check every 0.1 seconds
-		
-		-- Only in Low graphics mode
-		if currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic then
-			-- Check player's own snake
-			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
-				local snake = _G.PlayerSnakes[LocalPlayer]
-				if snake.segments then
-					for _, segment in ipairs(snake.segments) do
-						if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
-							segment.Material = Enum.Material.SmoothPlastic
+-- Aggressive material override system
+local materialOverrideEnabled = false
+
+local function overrideMaterials()
+	if not materialOverrideEnabled then return end
+	
+	-- Override player's snake
+	if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+		local snake = _G.PlayerSnakes[LocalPlayer]
+		if snake.segments then
+			for _, segment in ipairs(snake.segments) do
+				if segment and segment.Parent then
+					segment.Material = Enum.Material.SmoothPlastic
+					-- Disable any lights
+					for _, child in ipairs(segment:GetChildren()) do
+						if child:IsA("PointLight") or child:IsA("SpotLight") then
+							child.Enabled = false
 						end
 					end
 				end
 			end
+		end
+		-- Also check head parts
+		if snake.headParts then
+			for _, part in pairs(snake.headParts) do
+				if part and part.Parent and part:IsA("BasePart") then
+					part.Material = Enum.Material.SmoothPlastic
+				end
+			end
+		end
+	end
+	
+	-- Override all snake segments in workspace
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("BasePart") and (obj.Name:match("Segment") or obj.Name == "Head" or obj.Name:match("Eye")) then
+			if obj.Parent and (obj.Parent.Name == "Snake" or (obj.Parent.Parent and obj.Parent.Parent.Name == "Snake")) then
+				obj.Material = Enum.Material.SmoothPlastic
+			end
+		end
+	end
+end
+
+-- Run material override continuously in Low graphics
+task.spawn(function()
+	while true do
+		task.wait(0.05) -- Very aggressive checking
+		
+		-- Enable override in Low graphics
+		materialOverrideEnabled = (currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic)
+		
+		if materialOverrideEnabled then
+			overrideMaterials()
 		end
 	end
 end)
