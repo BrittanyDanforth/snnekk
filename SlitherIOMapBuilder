@@ -98,37 +98,25 @@ local function createGround()
     ground.Color = Color3.fromRGB(45, 45, 55)  -- Dark blue-gray like real slither.io
     ground.Parent = Workspace
 
-    -- Add hex pattern texture directly on the ground
+    -- Use a grid texture that's actually visible
     local texture = Instance.new("Texture")
-    texture.Texture = "rbxasset://textures/GridPattern.png"  -- Grid texture
+    texture.Texture = "rbxasset://textures/SpawnLocation.png"  -- Checkered pattern
     texture.Face = Enum.NormalId.Top
-    texture.StudsPerTileU = 100  -- Adjust for hex size
-    texture.StudsPerTileV = 100  -- Adjust for hex size
-    texture.Transparency = 0.4  -- Subtle pattern
-    texture.Color3 = Color3.fromRGB(65, 65, 75)  -- Hex line color
+    texture.StudsPerTileU = 40  -- Size of pattern
+    texture.StudsPerTileV = 40  
+    texture.Transparency = 0.8  -- Make it subtle
+    texture.Color3 = Color3.fromRGB(60, 60, 70)
     texture.Parent = ground
     
-    -- Alternative: Create a SurfaceGui with drawn hexagons
-    local surfaceGui = Instance.new("SurfaceGui")
-    surfaceGui.Face = Enum.NormalId.Top
-    surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-    surfaceGui.PixelsPerStud = 50
-    surfaceGui.Parent = ground
-    
-    -- Create a frame to hold the hex pattern
-    local patternFrame = Instance.new("Frame")
-    patternFrame.Size = UDim2.new(1, 0, 1, 0)
-    patternFrame.BackgroundTransparency = 1
-    patternFrame.Parent = surfaceGui
-    
-    -- Add a subtle vignette for atmosphere
-    local vignette = Instance.new("ImageLabel")
-    vignette.Size = UDim2.new(1, 0, 1, 0)
-    vignette.BackgroundTransparency = 1
-    vignette.Image = "rbxasset://textures/ui/LevelUp/BlackBorder.png"
-    vignette.ImageTransparency = 0.7
-    vignette.ZIndex = 2
-    vignette.Parent = patternFrame
+    -- Add another texture layer for variation
+    local texture2 = Instance.new("Texture")
+    texture2.Texture = "rbxasset://textures/grid.png"  -- Grid overlay
+    texture2.Face = Enum.NormalId.Top
+    texture2.StudsPerTileU = 80
+    texture2.StudsPerTileV = 80
+    texture2.Transparency = 0.85
+    texture2.Color3 = Color3.fromRGB(55, 55, 65)
+    texture2.Parent = ground
 end
 
 -- Helper: Create invisible boundary walls with better collision
@@ -183,8 +171,61 @@ end
 
 -- Helper: Create map decorations (only in High graphics)
 local function createDecor()
-    -- Decorations removed - hex pattern is now part of ground texture
-    -- This prevents lag and makes the pattern truly part of the ground
+    local decorGroup = Instance.new("Folder")
+    decorGroup.Name = DECOR_GROUP_NAME
+    decorGroup.Parent = Workspace
+
+    -- Create simple hex pattern with lines IN the ground
+    local hexRadius = 80
+    local tileWidth = hexRadius * 2
+    local tileHeight = hexRadius * math.sqrt(3)
+    
+    -- Fewer hexagons for performance
+    for row = -8, 8 do
+        for col = -8, 8 do
+            local offsetX = (row % 2 == 1) and (tileWidth / 2) or 0
+            local posX = (col * tileWidth * 3/4) + offsetX
+            local posZ = row * tileHeight
+            
+            if math.abs(posX) > MAP_SIZE/2 - 100 or math.abs(posZ) > MAP_SIZE/2 - 100 then
+                continue
+            end
+            
+            -- Create hex using 6 lines
+            for i = 0, 5 do
+                local angle1 = (i * 60) * math.pi / 180
+                local angle2 = ((i + 1) * 60) * math.pi / 180
+                
+                local x1 = posX + hexRadius * math.cos(angle1)
+                local z1 = posZ + hexRadius * math.sin(angle1)
+                local x2 = posX + hexRadius * math.cos(angle2)
+                local z2 = posZ + hexRadius * math.sin(angle2)
+                
+                local line = Instance.new("Part")
+                line.Name = "HexLine"
+                line.Size = Vector3.new(
+                    math.sqrt((x2-x1)^2 + (z2-z1)^2),
+                    0.1,  -- Thin but visible
+                    4  -- Width
+                )
+                
+                local midX = (x1 + x2) / 2
+                local midZ = (z1 + z2) / 2
+                line.CFrame = CFrame.new(midX, MAP_HEIGHT - 0.05, midZ) *  -- BELOW ground surface
+                             CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
+                
+                line.Anchored = true
+                line.CanCollide = false
+                line.CanTouch = false
+                line.CanQuery = false
+                line.Transparency = 0.4  -- More visible
+                line.Color = Color3.fromRGB(55, 55, 65)
+                line.Material = Enum.Material.Neon  -- Slight glow for visibility
+                line.CastShadow = false
+                line.Parent = decorGroup
+            end
+        end
+    end
 end
 
 -- Helper: Create grid lines (only in High graphics)
