@@ -108,6 +108,7 @@ end
 -- === SEGMENT POOLING (unchanged) ===
 local SegmentPool = {}
 local PoolSize = 0
+local MAX_POOL_SIZE = 1000 -- Increased pool size
 local SEGMENT_PARENT = Workspace:FindFirstChild("AISegmentContainer") or Instance.new("Folder", Workspace)
 SEGMENT_PARENT.Name = "AISegmentContainer"
 
@@ -144,20 +145,30 @@ local function getSegment(config)
 end
 
 local function returnSegment(segment)
+	if not segment then return end
+	
+	-- Clean up all children first
+	for _, child in ipairs(segment:GetChildren()) do
+		child:Destroy()
+	end
+	
+	-- If pool is full or segment is problematic, just destroy it
+	if PoolSize >= MAX_POOL_SIZE then
+		segment:Destroy()
+		return
+	end
+	
+	-- Reset segment properties
 	segment.Transparency = 1
 	segment.CanCollide = false
+	segment.CanQuery = false
+	segment.CanTouch = false
 	segment.Anchored = true
 	segment.Color = Color3.new()
-
-	local light = segment:FindFirstChild("Glow")
-	if light then light.Enabled = false end
-
-	local outline = segment:FindFirstChild("Outline")
-	if outline then
-		outline.Adornee = nil
-		outline.Parent = nil
-	end
-
+	segment.Material = Enum.Material.Neon
+	segment.Size = Vector3.new(3.5, 3.5, 4)
+	
+	-- Return to pool
 	segment.Parent = SEGMENT_PARENT
 	PoolSize = PoolSize + 1
 	SegmentPool[PoolSize] = segment
@@ -1200,11 +1211,17 @@ function AISnake:Destroy()
 	if not self._active then return end
 	self._active = false
 	
+	-- Immediately mark as destroyed to prevent any updates
+	self._destroyed = true
+	
 	-- Untrack snake from orb pickup system
 	if AISnakeOrbPickup then
-		AISnakeOrbPickup.UntrackSnake(self)
+		pcall(function()
+			AISnakeOrbPickup.UntrackSnake(self)
+		end)
 	end
 
+	-- Remove from active snakes list
 	for i = #AISnake._activeSnakes, 1, -1 do
 		if AISnake._activeSnakes[i] == self then
 			table.remove(AISnake._activeSnakes, i)
@@ -1213,50 +1230,87 @@ function AISnake:Destroy()
 	end
 	AISnake._orbTargets[self] = nil
 
+	-- Spawn orbs before destroying segments
 	local orbSpawnData = {}
 	if self.HeadParts and self.HeadParts.head and self.HeadParts.head.Parent then
 		local head = self.HeadParts.head
-		table.insert(orbSpawnData, {position = head.Position, size = 3.5, color = head.Color}) -- Smaller head orb
+		table.insert(orbSpawnData, {position = head.Position, size = 3.5, color = head.Color})
 	end
-	local ORB_SPAWN_DENSITY = 5 -- Reduced orb count for performance
+	
+	local ORB_SPAWN_DENSITY = 5
 	for i = 1, #self.Segments do
 		if i % ORB_SPAWN_DENSITY == 1 then
 			local segment = self.Segments[i]
 			if segment and segment.Parent then
-				table.insert(orbSpawnData, {position = segment.Position, size = 1.8, color = segment.Color}) -- Smaller orbs
+				table.insert(orbSpawnData, {position = segment.Position, size = 1.8, color = segment.Color})
 			end
 		end
 	end
 
+	-- Spawn orbs asynchronously
 	task.spawn(function()
 		if OrbUtils and OrbUtils.spawnOrb then
 			for i = 1, #orbSpawnData do
 				local data = orbSpawnData[i]
-				OrbUtils.spawnOrb(data.position, data.size, data.color)
+				pcall(function()
+					OrbUtils.spawnOrb(data.position, data.size, data.color)
+				end)
 			end
 		end
 	end)
 
+	-- IMMEDIATE CLEANUP - Destroy all segments right away
 	for i = 1, #self.Segments do
 		local segment = self.Segments[i]
 		if segment then
-			returnSegment(segment)
+			-- Don't use returnSegment for death, just destroy
+			pcall(function()
+				segment:Destroy()
+			end)
 		end
 	end
 	self.Segments = {}
 
-	if self.Model and self.Model.Parent then
-		self.Model:Destroy()
+	-- Destroy head parts
+	if self.HeadParts then
+		for name, part in pairs(self.HeadParts) do
+			if typeof(part) == "Instance" and part.Parent then
+				pcall(function()
+					part:Destroy()
+				end)
+			end
+		end
 	end
+
+	-- Destroy model and all its descendants
+	if self.Model and self.Model.Parent then
+		pcall(function()
+			-- First destroy all descendants to ensure nothing is left
+			for _, descendant in ipairs(self.Model:GetDescendants()) do
+				if descendant:IsA("BasePart") then
+					descendant:Destroy()
+				end
+			end
+			self.Model:Destroy()
+		end)
+	end
+	
+	-- Clear all references
 	self.Model = nil
 	self.HeadParts = nil
 	self.RootPart = nil
+	self.Segments = nil
 end
 
 -- === SMOOTHER MOVEMENT ===
 function AISnake:updateMovement(dt)
+	-- Check if destroyed
+	if self._destroyed then return end
+	
 	if not self._active or not self.HeadParts or not self.HeadParts.head or not self.HeadParts.head.Parent then
-		if self._active then self:Destroy() end
+		if self._active and not self._destroyed then 
+			self:Destroy() 
+		end
 		return
 	end
 	local now = tick()

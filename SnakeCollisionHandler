@@ -885,8 +885,41 @@ local function queuePlayerDeath(player)
 end
 
 local function queueAIDeath(head)
+	-- Validate head exists and is a proper AI snake head
+	if not head or not head.Parent or head.Name ~= "AISnakeHead" then
+		if DEBUG_COLLISIONS then
+			print("[SAFETY] Blocked AI death - invalid head")
+		end
+		return
+	end
+	
 	-- Check if this AI is already marked as dead
 	if deadAISnakes[head] then
+		return
+	end
+	
+	-- Find the actual AI snake instance
+	local aiSnake = nil
+	for _, snake in AISnakeModule._activeSnakes do
+		if snake and snake._active and snake.HeadParts and snake.HeadParts.head == head then
+			aiSnake = snake
+			break
+		end
+	end
+	
+	-- If we can't find the snake, don't process death
+	if not aiSnake then
+		if DEBUG_COLLISIONS then
+			print("[SAFETY] Blocked AI death - no snake instance found")
+		end
+		return
+	end
+	
+	-- Check if snake is spawn protected
+	if isAIProtected(head) then
+		if DEBUG_COLLISIONS then
+			print("[SAFETY] Blocked AI death - spawn protected")
+		end
 		return
 	end
 
@@ -899,6 +932,10 @@ local function queueAIDeath(head)
 
 	-- Mark this AI as dead immediately (with timestamp)
 	deadAISnakes[head] = tick()
+
+	if DEBUG_COLLISIONS then
+		print(string.format("[QUEUE] Adding death to queue for AI: %s", tostring(head)))
+	end
 
 	table.insert(deathQueue, {
 		type = "ai",

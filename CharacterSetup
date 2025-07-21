@@ -1427,25 +1427,53 @@ task.spawn(function()
 			end
 		end
 
-		-- ADDED: Clean up AI snake models
+		-- ENHANCED: More aggressive AI snake cleanup
 		for _, child in pairs(workspace:GetChildren()) do
-			if child:IsA("Model") and child.Name:match("^AISnakeModel_table:") then
-				-- Check if it has any segments
+			if child:IsA("Model") and child.Name:match("^AISnakeModel_") then
+				-- Check if model has any valid AI snake using it
+				local hasActiveSnake = false
+				
+				-- Check if any segments exist in the model
 				local hasSegments = false
-				for _, part in pairs(child:GetChildren()) do
-					if part:IsA("BasePart") and part.Name:match("Segment") then
+				for _, part in pairs(child:GetDescendants()) do
+					if part:IsA("BasePart") and (part.Name:match("Segment") or part.Name == "AISnakeHead") then
 						hasSegments = true
 						break
 					end
 				end
-
+				
+				-- If model has no segments, destroy it
 				if not hasSegments then
 					child:Destroy()
 				end
 			end
 		end
-
-		-- Removed aggressive head cleanup - it was deleting active heads!
+		
+		-- Clean up orphaned AI segments anywhere in workspace
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and obj.Name:match("^AISegment") then
+				-- Check if this segment belongs to any model
+				local parent = obj.Parent
+				if not parent or not parent:IsA("Model") or not parent.Name:match("^AISnakeModel_") then
+					-- Orphaned segment, destroy it
+					obj:Destroy()
+				end
+			end
+		end
+		
+		-- Clean up AISegmentContainer
+		local aiContainer = workspace:FindFirstChild("AISegmentContainer")
+		if aiContainer then
+			-- Clear any segments that shouldn't be in the container (they should be invisible in pool)
+			for _, child in pairs(aiContainer:GetChildren()) do
+				if child:IsA("BasePart") then
+					-- If it's visible or has non-standard properties, it's likely orphaned
+					if child.Transparency < 1 or child.Parent ~= aiContainer then
+						child:Destroy()
+					end
+				end
+			end
+		end
 	end
 end)
 
