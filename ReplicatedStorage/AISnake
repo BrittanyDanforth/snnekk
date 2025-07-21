@@ -1176,23 +1176,31 @@ function AISnake:grow(amount)
 			local segment = createSegment(self.CurrentLength, newPos, color, self.Config, self.Model, self.CurrentLength)
 			self.Segments[self.CurrentLength] = segment
 
+			-- Match CharacterSetup's segment growth exactly
 			segment.Transparency = 1
 			segment.Size = Vector3new(0.1, 0.1, 0.1)
+			
+			-- Apply growth factor for the final size
+			local growthFactor = 1
+			if self.CurrentLength > 200 then
+				growthFactor = 1 + ((self.CurrentLength - 200) / 2800) * 1.0
+			end
+			local finalSize = self.Config.SegmentSize * mathMin(growthFactor, 2.0)
+			
 			task.spawn(function()
 				if not segment or not segment.Parent then return end
 				local growTime = 0.18
 				local t = 0
 				local startSize = Vector3new(0.1, 0.1, 0.1)
-				local endSize = self.Config.SegmentSize
 				while t < growTime do
 					t = t + RunService.Heartbeat:Wait()
 					if not segment or not segment.Parent then return end
 					local alpha = mathMin(t / growTime, 1)
-					segment.Size = startSize:Lerp(endSize, alpha)
+					segment.Size = startSize:Lerp(finalSize, alpha)
 					segment.Transparency = 1 - alpha
 				end
 				if segment and segment.Parent then
-					segment.Size = endSize
+					segment.Size = finalSize
 					segment.Transparency = 0
 				end
 			end)
@@ -1475,10 +1483,27 @@ function AISnake:updateMovement(dt)
 			local delay = mathFloor(i * 1.2)
 			local targetData = self:getFromHistory(delay)
 			if targetData then
-				-- Better spacing to prevent gaps - tighter following
-				local spacing = self.Config.SegmentSpacing * 0.8
-				local segmentPos = targetData.position - targetData.lookVector * spacing
+				-- Use EXACT same spacing as CharacterSetup
+				local spacingMultiplier = 0.15  -- Base spacing from CharacterSetup
+				if self.CurrentLength > 1500 then
+					spacingMultiplier = 0.2  -- More spacing to show pattern
+				end
+				local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * spacingMultiplier)
 				local currentSegmentPos = segment.Position
+				
+				-- Anti-gap check (from CharacterSetup)
+				if i > 1 then
+					local prevSegment = self.Segments[i - 1]
+					if prevSegment and prevSegment.Parent then
+						local gap = (currentSegmentPos - prevSegment.Position).Magnitude
+						if gap > self.Config.SegmentSpacing * 1.5 then
+							-- Too far, pull it closer
+							local dir = (prevSegment.Position - currentSegmentPos).Unit
+							segmentPos = prevSegment.Position - dir * self.Config.SegmentSpacing
+						end
+					end
+				end
+				
 				local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 				segment.CFrame = CFramenew(newPos)
 			end
@@ -1496,8 +1521,25 @@ function AISnake:updateMovement(dt)
 					local delay = mathFloor(i * 1.2)
 					local targetData = self:getFromHistory(delay)
 					if targetData then
-						local spacing = self.Config.SegmentSpacing * 0.8
-						local segmentPos = targetData.position - targetData.lookVector * spacing
+						-- Same spacing as main segments
+						local spacingMultiplier = 0.15
+						if self.CurrentLength > 1500 then
+							spacingMultiplier = 0.2
+						end
+						local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * spacingMultiplier)
+						
+						-- Anti-gap for tail too
+						if i > 300 then
+							local prevSegment = self.Segments[i - 1]
+							if prevSegment and prevSegment.Parent then
+								local gap = (segment.Position - prevSegment.Position).Magnitude
+								if gap > self.Config.SegmentSpacing * 1.5 then
+									local dir = (prevSegment.Position - segment.Position).Unit
+									segmentPos = prevSegment.Position - dir * self.Config.SegmentSpacing
+								end
+							end
+						end
+						
 						segment.Position = segmentPos  -- Direct position set for tail
 					end
 				end
