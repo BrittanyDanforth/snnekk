@@ -312,6 +312,7 @@ local function initializeForCharacter(character)
 		debugMode = false,
 		lastDebugUpdate = 0,
 		speedMultiplier = player:GetAttribute("SpeedMultiplier") or 1, -- Gamepass multiplier
+		tempSpeedMultiplier = 1, -- Temporary boost multiplier
 		stats = {
 			fps = 0,
 			distance = 0,
@@ -715,7 +716,9 @@ local function initializeForCharacter(character)
 		State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
 		-- Apply movement DIRECTLY for proper speed (with gamepass multiplier)
-		local actualSpeed = State.smoothSpeed * State.speedMultiplier
+		-- Apply all speed multipliers
+		local tempMultiplier = player:GetAttribute("TempSpeedMultiplier") or 1
+		local actualSpeed = State.smoothSpeed * State.speedMultiplier * tempMultiplier
 		local moveDistance = actualSpeed * dt
 		local newPosition = rootPart.Position + State.currentDirection * moveDistance
 

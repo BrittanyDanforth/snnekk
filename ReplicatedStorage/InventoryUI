@@ -81,6 +81,8 @@ InventoryUI.isOpen = false
 InventoryUI.inventory = {
 	skins = {},
 	items = {},
+	gamepasses = {},
+	boosts = {},
 	currency = {
 		coins = 0,
 		gems = 0,
@@ -929,6 +931,23 @@ function InventoryUI.getFilteredItems()
 				value = itemData.value or 0,
 			})
 		end
+		
+		-- Add all gamepasses
+		for gamepassName, owned in pairs(InventoryUI.inventory.gamepasses) do
+			if owned then
+				table.insert(items, {
+					name = gamepassName,
+					type = "Gamepass",
+					color = Color3.fromRGB(255, 215, 0),
+					quantity = 1,
+					rarity = "Legendary",
+					rarityColor = INVENTORY_CONFIG.COLORS.LEGENDARY,
+					description = "Permanent power-up",
+					value = 999999,
+					permanent = true,
+				})
+			end
+		end
 	elseif InventoryUI.currentFilter == "Skins" then
 		for skinName, skinData in pairs(InventoryUI.inventory.skins) do
 			table.insert(items, {
@@ -1302,10 +1321,25 @@ function InventoryUI.loadInventoryData()
 		end
 	end
 	
-	-- Items would be loaded from server in a real implementation
-	-- For now, no items unless the player actually has them
+	-- Check for owned gamepasses
+	local remotes = ReplicatedStorage:WaitForChild("Remotes")
+	local checkGamepassRemote = remotes:WaitForChild("CheckGamepass")
 	
-	print("📦 Loaded inventory with", #ShopUI.playerData.ownedSkins, "skins and", ShopUI.playerData.coins, "coins")
+	local gamepassList = {
+		"Speed Boost", "Mega Speed", "2x Growth", "2x Coins", 
+		"Ghost Mode", "Magnet", "VIP Pass"
+	}
+	
+	for _, gamepassName in pairs(gamepassList) do
+		local hasPass = checkGamepassRemote:InvokeServer(gamepassName)
+		if hasPass then
+			InventoryUI.inventory.gamepasses[gamepassName] = true
+		end
+	end
+	
+	print("📦 Loaded inventory with", #ShopUI.playerData.ownedSkins, "skins,", 
+		#InventoryUI.inventory.gamepasses, "gamepasses, and", 
+		ShopUI.playerData.coins, "coins")
 end
 
 -- Toggle inventory (for keybind)

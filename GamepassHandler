@@ -23,16 +23,61 @@ local remotes = ReplicatedStorage:FindFirstChild("Remotes") or Instance.new("Fol
 remotes.Name = "Remotes"
 remotes.Parent = ReplicatedStorage
 
-local checkGamepassRemote = Instance.new("RemoteFunction")
+local checkGamepassRemote = remotes:FindFirstChild("CheckGamepass") or Instance.new("RemoteFunction")
 checkGamepassRemote.Name = "CheckGamepass"
 checkGamepassRemote.Parent = remotes
 
-local gamepassPurchasedRemote = Instance.new("RemoteEvent")
+local gamepassPurchasedRemote = remotes:FindFirstChild("GamepassPurchased") or Instance.new("RemoteEvent")
 gamepassPurchasedRemote.Name = "GamepassPurchased"
 gamepassPurchasedRemote.Parent = remotes
 
+local useBoostRemote = remotes:FindFirstChild("UseBoost") or Instance.new("RemoteEvent")
+useBoostRemote.Name = "UseBoost"
+useBoostRemote.Parent = remotes
+
+local boostStatusRemote = remotes:FindFirstChild("BoostStatus") or Instance.new("RemoteEvent")
+boostStatusRemote.Name = "BoostStatus"
+boostStatusRemote.Parent = remotes
+
 -- Player gamepass cache
 local playerGamepasses = {}
+
+-- Player boost inventories and active boosts
+local playerBoostInventory = {}
+local activeBoosts = {}
+
+-- Boost configurations
+local BOOST_CONFIGS = {
+	["Speed Boost"] = {
+		multiplier = 1.5,
+		duration = 30,
+		attribute = "ActiveSpeedBoost",
+		cooldown = 60
+	},
+	["Mega Speed"] = {
+		multiplier = 2.0,
+		duration = 20,
+		attribute = "ActiveMegaSpeed",
+		cooldown = 120
+	},
+	["Growth Boost"] = {
+		multiplier = 2.0,
+		duration = 45,
+		attribute = "ActiveGrowthBoost",
+		cooldown = 90
+	},
+	["Ghost Mode"] = {
+		duration = 10,
+		attribute = "ActiveGhostMode",
+		cooldown = 180
+	},
+	["Magnet"] = {
+		multiplier = 2.0,
+		duration = 60,
+		attribute = "ActiveMagnet",
+		cooldown = 120
+	}
+}
 
 -- Check if player owns a gamepass
 local function hasGamepass(player, gamepassName)
@@ -220,4 +265,169 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamep
 	end
 end)
 
-print("GamepassHandler loaded successfully!")
+-- Initialize player boost inventory
+local function initializePlayerBoosts(player)
+	if not playerBoostInventory[player] then
+		playerBoostInventory[player] = {
+			["Speed Boost"] = 5,  -- Start with 5 free speed boosts
+			["Mega Speed"] = 0,
+			["Growth Boost"] = 3,  -- Start with 3 free growth boosts
+			["Ghost Mode"] = 0,
+			["Magnet"] = 2  -- Start with 2 free magnets
+		}
+		
+		-- Give more boosts to gamepass owners
+		if hasGamepass(player, "VIP Pass") then
+			playerBoostInventory[player]["Speed Boost"] = 10
+			playerBoostInventory[player]["Mega Speed"] = 5
+			playerBoostInventory[player]["Growth Boost"] = 10
+			playerBoostInventory[player]["Ghost Mode"] = 3
+			playerBoostInventory[player]["Magnet"] = 10
+		elseif hasGamepass(player, "Speed Boost") then
+			playerBoostInventory[player]["Speed Boost"] = 999  -- Unlimited for gamepass owners
+		end
+	end
+	
+	-- Send inventory to client
+	boostStatusRemote:FireClient(player, nil, "update_inventory", {
+		inventory = playerBoostInventory[player]
+	})
+end
+
+-- Handle boost usage
+local function useBoost(player, boostType)
+	local config = BOOST_CONFIGS[boostType]
+	if not config then return end
+	
+	-- Check if player has the boost
+	local inventory = playerBoostInventory[player]
+	if not inventory or inventory[boostType] <= 0 then
+		return
+	end
+	
+	-- Check if boost is already active
+	if activeBoosts[player] and activeBoosts[player][boostType] then
+		return
+	end
+	
+	-- Use the boost
+	if inventory[boostType] < 999 then  -- Don't decrement unlimited boosts
+		inventory[boostType] = inventory[boostType] - 1
+	end
+	
+	-- Initialize active boosts table
+	if not activeBoosts[player] then
+		activeBoosts[player] = {}
+	end
+	
+	-- Activate boost
+	activeBoosts[player][boostType] = {
+		startTime = tick(),
+		duration = config.duration
+	}
+	
+	-- Set player attribute
+	player:SetAttribute(config.attribute, true)
+	
+	-- Apply immediate effects
+	if boostType == "Speed Boost" or boostType == "Mega Speed" then
+		local currentMultiplier = player:GetAttribute("SpeedMultiplier") or 1
+		player:SetAttribute("TempSpeedMultiplier", config.multiplier)
+		
+		-- Update SnakeMovement speed
+		if _G.SnakeState then
+			_G.SnakeState.speedMultiplier = currentMultiplier * config.multiplier
+		end
+	elseif boostType == "Growth Boost" then
+		player:SetAttribute("TempGrowthMultiplier", config.multiplier)
+	elseif boostType == "Magnet" then
+		player:SetAttribute("TempMagnetRange", config.multiplier)
+	elseif boostType == "Ghost Mode" then
+		-- Make snake semi-transparent
+		local character = player.Character
+		if character then
+			for _, part in pairs(character:GetDescendants()) do
+				if part:IsA("BasePart") and part.Name:match("Segment") then
+					part.Transparency = 0.5
+					part.CanCollide = false
+				end
+			end
+		end
+	end
+	
+	-- Notify client
+	boostStatusRemote:FireClient(player, boostType, "activate", {
+		duration = config.duration
+	})
+	
+	-- Update inventory on client
+	boostStatusRemote:FireClient(player, nil, "update_inventory", {
+		inventory = inventory
+	})
+	
+	-- Set cooldown
+	task.wait(config.duration)
+	
+	-- Deactivate boost
+	if activeBoosts[player] and activeBoosts[player][boostType] then
+		activeBoosts[player][boostType] = nil
+		player:SetAttribute(config.attribute, false)
+		
+		-- Remove temporary multipliers
+		if boostType == "Speed Boost" or boostType == "Mega Speed" then
+			player:SetAttribute("TempSpeedMultiplier", 1)
+			if _G.SnakeState then
+				_G.SnakeState.speedMultiplier = player:GetAttribute("SpeedMultiplier") or 1
+			end
+		elseif boostType == "Growth Boost" then
+			player:SetAttribute("TempGrowthMultiplier", 1)
+		elseif boostType == "Magnet" then
+			player:SetAttribute("TempMagnetRange", 1)
+		elseif boostType == "Ghost Mode" then
+			-- Restore visibility
+			local character = player.Character
+			if character then
+				for _, part in pairs(character:GetDescendants()) do
+					if part:IsA("BasePart") and part.Name:match("Segment") then
+						part.Transparency = 0
+						part.CanCollide = true
+					end
+				end
+			end
+		end
+		
+		-- Notify client
+		boostStatusRemote:FireClient(player, boostType, "deactivate", {})
+		
+		-- Send cooldown
+		boostStatusRemote:FireClient(player, boostType, "cooldown", {
+			cooldown = config.cooldown
+		})
+	end
+end
+
+-- Handle boost remote
+useBoostRemote.OnServerEvent:Connect(function(player, boostType)
+	task.spawn(function()
+		useBoost(player, boostType)
+	end)
+end)
+
+-- Update player joined handling
+Players.PlayerAdded:Connect(function(player)
+	-- Initialize boosts
+	initializePlayerBoosts(player)
+	
+	player.CharacterAdded:Connect(function()
+		applyGamepassBenefits(player)
+	end)
+end)
+
+-- Clean up on player leaving
+Players.PlayerRemoving:Connect(function(player)
+	playerBoostInventory[player] = nil
+	activeBoosts[player] = nil
+	playerGamepasses[player.UserId] = nil
+end)
+
+print("GamepassHandler loaded successfully with boost system!")
