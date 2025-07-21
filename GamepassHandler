@@ -8,14 +8,15 @@ local RunService = game:GetService("RunService")
 
 -- GAMEPASS IDs (Replace with your actual IDs)
 local GAMEPASS_IDS = {
-	["Speed Boost"] = 123456789,
+	["Lifeline Boost"] = 123456789,
 	["Mega Speed"] = 123456790,
 	["2x Growth"] = 123456791,
 	["2x Coins"] = 123456792,
-	["Magnet Power"] = 123456793,
+	["Magnet"] = 123456793,
 	["Ghost Mode"] = 123456794,
-	["VIP Pass"] = 123456795,
-	["Trail Pack"] = 123456796
+	["VIP Access"] = 123456795,
+	["Pet Ally"] = 123456796,
+	["Revive"] = 123456797
 }
 
 -- Create RemoteEvents
@@ -119,12 +120,14 @@ local function applyGamepassBenefits(player)
 	local hasMagnet = false
 	
 	-- Check each gamepass
-	if hasGamepass(player, "Speed Boost") then
-		speedMultiplier = speedMultiplier * 1.25
+	if hasGamepass(player, "Lifeline Boost") then
+		-- Give emergency boost items every 3 minutes
+		player:SetAttribute("HasLifelineBoost", true)
+		speedMultiplier = speedMultiplier * 1.1 -- Small permanent boost
 	end
 	
 	if hasGamepass(player, "Mega Speed") then
-		speedMultiplier = speedMultiplier * 1.5 -- Overrides basic speed boost
+		speedMultiplier = speedMultiplier * 1.5
 	end
 	
 	if hasGamepass(player, "2x Growth") then
@@ -135,7 +138,12 @@ local function applyGamepassBenefits(player)
 		coinMultiplier = coinMultiplier * 2
 	end
 	
-	if hasGamepass(player, "VIP Pass") then
+	if hasGamepass(player, "Magnet") then
+		hasMagnet = true
+		player:SetAttribute("MagnetRange", 2.0)
+	end
+	
+	if hasGamepass(player, "VIP Access") then
 		-- VIP gets everything
 		speedMultiplier = math.max(speedMultiplier, 1.25)
 		growthMultiplier = math.max(growthMultiplier, 2)
@@ -174,6 +182,19 @@ local function applyGamepassBenefits(player)
 	player:SetAttribute("CoinMultiplier", coinMultiplier)
 	player:SetAttribute("HasGhostMode", hasGhostMode)
 	player:SetAttribute("HasMagnet", hasMagnet)
+	
+	-- Check for Revive gamepass
+	if hasGamepass(player, "Revive") then
+		local currentRevives = player:GetAttribute("RevivesAvailable") or 0
+		player:SetAttribute("RevivesAvailable", currentRevives + 1)
+		player:SetAttribute("HasRevive", true)
+	end
+	
+	-- Check for Pet Ally gamepass
+	if hasGamepass(player, "Pet Ally") then
+		player:SetAttribute("HasPetAlly", true)
+		-- Pet ally will be spawned by a separate system
+	end
 	
 	print("Applied gamepass benefits to", player.Name)
 	print("Speed:", speedMultiplier, "Growth:", growthMultiplier, "Coins:", coinMultiplier)
@@ -277,14 +298,27 @@ local function initializePlayerBoosts(player)
 		}
 		
 		-- Give more boosts to gamepass owners
-		if hasGamepass(player, "VIP Pass") then
+		if hasGamepass(player, "VIP Access") then
 			playerBoostInventory[player]["Speed Boost"] = 10
 			playerBoostInventory[player]["Mega Speed"] = 5
 			playerBoostInventory[player]["Growth Boost"] = 10
 			playerBoostInventory[player]["Ghost Mode"] = 3
 			playerBoostInventory[player]["Magnet"] = 10
-		elseif hasGamepass(player, "Speed Boost") then
-			playerBoostInventory[player]["Speed Boost"] = 999  -- Unlimited for gamepass owners
+		end
+		
+		-- Lifeline boost gives emergency speed boosts
+		if hasGamepass(player, "Lifeline Boost") then
+			playerBoostInventory[player]["Speed Boost"] = 999  -- Unlimited emergency boosts
+			-- Auto-give boost every 3 minutes
+			task.spawn(function()
+				while player.Parent do
+					wait(180) -- 3 minutes
+					if player.Parent then
+						-- Notify player they got a lifeline boost
+						boostStatusRemote:FireClient(player, nil, "lifeline_ready", {})
+					end
+				end
+			end)
 		end
 	end
 	

@@ -1260,49 +1260,55 @@ ShopUI.SKIN_DATA = {
 	["Cyberpunk"] = {price = 18000, robux = 225, tag = "Futuristic"},
 }
 
--- Gamepass data
+-- Gamepass data with realistic pricing
 local GAMEPASS_DATA = {
 	["2x Coins"] = {
-		id = nil, -- Add your gamepass ID here
+		id = 123456792, -- Replace with actual ID
 		price = 99,
-		icon = "",
+		icon = "💰",
 		description = "Double all coin earnings!",
-		color = Color3.fromRGB(255, 215, 0)
+		color = Color3.fromRGB(255, 215, 0),
+		gradient = {Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 170, 0)}
 	},
-	["Speed Boost"] = {
-		id = nil, -- Add your gamepass ID here
+	["Lifeline Boost"] = {
+		id = 123456789, -- Replace with actual ID
 		price = 149,
-		icon = "",
-		description = "25% faster movement speed!",
-		color = Color3.fromRGB(100, 200, 255)
+		icon = "⚡",
+		description = "Emergency speed boost every 3 minutes!",
+		color = Color3.fromRGB(100, 200, 255),
+		gradient = {Color3.fromRGB(100, 200, 255), Color3.fromRGB(50, 150, 220)}
 	},
-	["Extra Life"] = {
-		id = nil, -- Add your gamepass ID here
-		price = 199,
+	["Revive"] = {
+		id = 123456791, -- Replace with actual ID
+		price = 50,
 		icon = "❤️",
-		description = "Respawn once per game!",
-		color = Color3.fromRGB(255, 100, 100)
+		description = "Extra life - stackable!",
+		color = Color3.fromRGB(255, 100, 100),
+		gradient = {Color3.fromRGB(255, 100, 100), Color3.fromRGB(200, 50, 50)}
 	},
 	["Magnet"] = {
-		id = nil, -- Add your gamepass ID here
-		price = 249,
+		id = 123456793, -- Replace with actual ID
+		price = 150,
 		icon = "🧲",
-		description = "Attract food from further away!",
-		color = Color3.fromRGB(200, 100, 255)
+		description = "Attract orbs from further away!",
+		color = Color3.fromRGB(200, 100, 255),
+		gradient = {Color3.fromRGB(200, 100, 255), Color3.fromRGB(150, 50, 200)}
 	},
 	["VIP Access"] = {
-		id = nil, -- Add your gamepass ID here
-		price = 499,
+		id = 123456795, -- Replace with actual ID
+		price = 299,
 		icon = "👑",
-		description = "VIP chat tag + exclusive skins!",
-		color = Color3.fromRGB(255, 215, 0)
+		description = "VIP perks + exclusive content!",
+		color = Color3.fromRGB(255, 215, 0),
+		gradient = {Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 150, 0)}
 	},
 	["Pet Ally"] = {
-		id = nil, -- Add your gamepass ID here
-		price = 799,
+		id = 123456796, -- Replace with actual ID
+		price = 150,
 		icon = "🐉",
-		description = "A dragon ally follows and protects you!",
-		color = Color3.fromRGB(255, 100, 0)
+		description = "Dragon ally protects you for 1 life!",
+		color = Color3.fromRGB(255, 100, 0),
+		gradient = {Color3.fromRGB(255, 100, 0), Color3.fromRGB(200, 50, 0)}
 	}
 }
 
@@ -2284,17 +2290,19 @@ local function createCategoryButton(category, index)
 	return btn
 end
 
--- Create gamepass card
+-- Create modern gamepass card with gradients and effects
 local function createGamepassCard(passName, index)
 	local passData = GAMEPASS_DATA[passName]
 	if not passData then return end
 
+	-- Main card container
 	local card = Instance.new("TextButton")
 	card.Name = "GamepassCard_"..passName
 	card.Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH, 0, SHOP_CONFIG.CARD_HEIGHT)
-	card.BackgroundColor3 = passData.color or SHOP_CONFIG.COLORS.TERTIARY
-	card.BackgroundTransparency = 0.2
+	card.BackgroundColor3 = SHOP_CONFIG.COLORS.SECONDARY
+	card.BackgroundTransparency = 0.3
 	card.Text = ""
+	card.ClipsDescendants = true
 	card.Parent = ShopUI.uiElements.gridScroll
 
 	-- Grid position
@@ -2304,97 +2312,166 @@ local function createGamepassCard(passName, index)
 	card.Position = UDim2.new(0, col * (SHOP_CONFIG.CARD_WIDTH + SHOP_CONFIG.GRID_SPACING) + 8, 
 		0, row * (SHOP_CONFIG.CARD_HEIGHT + SHOP_CONFIG.GRID_SPACING) + 8)
 
-	createCorner(card, 12)
-	local cardStroke = createStroke(card, Color3.fromRGB(0, 255, 127), 2, 0.8)
-
+	createCorner(card, 16)
+	
+	-- Gradient background
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, passData.gradient[1]),
+		ColorSequenceKeypoint.new(1, passData.gradient[2])
+	})
+	gradient.Rotation = 45
+	gradient.Parent = card
+	
+	-- Glass overlay
+	local glassOverlay = Instance.new("Frame")
+	glassOverlay.Size = UDim2.new(1, 0, 1, 0)
+	glassOverlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	glassOverlay.BackgroundTransparency = 0.95
+	glassOverlay.Parent = card
+	createCorner(glassOverlay, 16)
+	
+	-- Top section with icon
+	local topSection = Instance.new("Frame")
+	topSection.Size = UDim2.new(1, 0, 0.5, 0)
+	topSection.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	topSection.BackgroundTransparency = 0.8
+	topSection.Parent = card
+	
+	-- Icon container with glow
+	local iconContainer = Instance.new("Frame")
+	iconContainer.Size = UDim2.new(0, 80, 0, 80)
+	iconContainer.Position = UDim2.new(0.5, -40, 0.25, -40)
+	iconContainer.BackgroundColor3 = passData.color
+	iconContainer.BackgroundTransparency = 0.3
+	iconContainer.Parent = card
+	createCorner(iconContainer, 40)
+	
+	-- Icon glow effect
+	local iconGlow = Instance.new("ImageLabel")
+	iconGlow.Size = UDim2.new(1.5, 0, 1.5, 0)
+	iconGlow.Position = UDim2.new(-0.25, 0, -0.25, 0)
+	iconGlow.BackgroundTransparency = 1
+	iconGlow.Image = "rbxasset://textures/ui/LuaApp/graphic/shimmer_circle_2_512x512.png"
+	iconGlow.ImageColor3 = passData.color
+	iconGlow.ImageTransparency = 0.5
+	iconGlow.Parent = iconContainer
+	
 	-- Icon
 	local iconLabel = Instance.new("TextLabel")
-	iconLabel.Size = UDim2.new(0.5, 0, 0.4, 0)
-	iconLabel.Position = UDim2.new(0.25, 0, 0.1, 0)
+	iconLabel.Size = UDim2.new(0.8, 0, 0.8, 0)
+	iconLabel.Position = UDim2.new(0.1, 0, 0.1, 0)
 	iconLabel.BackgroundTransparency = 1
 	iconLabel.Text = passData.icon
 	iconLabel.TextScaled = true
 	iconLabel.Font = Enum.Font.SourceSansBold
-	iconLabel.Parent = card
+	iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	iconLabel.Parent = iconContainer
 
-	-- Name
+	-- Name with modern font
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(0.9, 0, 0.15, 0)
-	nameLabel.Position = UDim2.new(0.05, 0, 0.5, 0)
+	nameLabel.Position = UDim2.new(0.05, 0, 0.52, 0)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = passName
+	nameLabel.Text = passName:upper()
 	nameLabel.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	nameLabel.TextScaled = true
-	nameLabel.Font = SHOP_CONFIG.FONTS.HEADING
+	nameLabel.Font = Enum.Font.Montserrat
 	nameLabel.Parent = card
 
-	-- Description
+	-- Description with subtle styling
 	local descLabel = Instance.new("TextLabel")
-	descLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
-	descLabel.Position = UDim2.new(0.05, 0, 0.65, 0)
+	descLabel.Size = UDim2.new(0.85, 0, 0.1, 0)
+	descLabel.Position = UDim2.new(0.075, 0, 0.68, 0)
 	descLabel.BackgroundTransparency = 1
 	descLabel.Text = passData.description
 	descLabel.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
 	descLabel.TextScaled = true
-	descLabel.Font = SHOP_CONFIG.FONTS.BUTTON
+	descLabel.Font = Enum.Font.Gotham
 	descLabel.Parent = card
 
-	-- Price
+	-- Price button with gradient
+	local priceButton = Instance.new("Frame")
+	priceButton.Size = UDim2.new(0.7, 0, 0.12, 0)
+	priceButton.Position = UDim2.new(0.15, 0, 0.82, 0)
+	priceButton.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
+	priceButton.Parent = card
+	createCorner(priceButton, 8)
+	
+	local priceGradient = Instance.new("UIGradient")
+	priceGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
+	})
+	priceGradient.Rotation = 90
+	priceGradient.Parent = priceButton
+	
 	local priceLabel = Instance.new("TextLabel")
-	priceLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
-	priceLabel.Position = UDim2.new(0.05, 0, 0.82, 0)
+	priceLabel.Size = UDim2.new(1, 0, 1, 0)
 	priceLabel.BackgroundTransparency = 1
 	priceLabel.Text = "R$ " .. tostring(passData.price)
-	priceLabel.TextColor3 = Color3.fromRGB(0, 255, 127)
+	priceLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
 	priceLabel.TextScaled = true
-	priceLabel.Font = SHOP_CONFIG.FONTS.PRICE
-	priceLabel.Parent = card
+	priceLabel.Font = Enum.Font.GothamBold
+	priceLabel.Parent = priceButton
 
-	-- Hover effects
+	-- Hover effects with glow animation
 	card.MouseEnter:Connect(function()
 		playSound("HOVER", 0.1)
-		TweenService:Create(card, TweenInfo.new(0.2), {
-			Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH * SHOP_CONFIG.HOVER_SCALE, 
-				0, SHOP_CONFIG.CARD_HEIGHT * SHOP_CONFIG.HOVER_SCALE)
+		
+		-- Scale up card
+		TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+			Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH * 1.05, 
+				0, SHOP_CONFIG.CARD_HEIGHT * 1.05)
 		}):Play()
-		TweenService:Create(cardStroke, TweenInfo.new(0.2), {
-			Thickness = 3
+		
+		-- Brighten glass overlay
+		TweenService:Create(glassOverlay, TweenInfo.new(0.3), {
+			BackgroundTransparency = 0.9
+		}):Play()
+		
+		-- Animate icon glow
+		TweenService:Create(iconGlow, TweenInfo.new(0.3), {
+			ImageTransparency = 0.2,
+			Size = UDim2.new(2, 0, 2, 0),
+			Position = UDim2.new(-0.5, 0, -0.5, 0)
+		}):Play()
+		
+		-- Pulse price button
+		TweenService:Create(priceButton, TweenInfo.new(0.3), {
+			Size = UDim2.new(0.75, 0, 0.13, 0)
 		}):Play()
 	end)
 
 	card.MouseLeave:Connect(function()
+		-- Reset all animations
 		TweenService:Create(card, TweenInfo.new(0.2), {
 			Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH, 0, SHOP_CONFIG.CARD_HEIGHT)
 		}):Play()
-		TweenService:Create(cardStroke, TweenInfo.new(0.2), {
-			Thickness = 2
+		
+		TweenService:Create(glassOverlay, TweenInfo.new(0.2), {
+			BackgroundTransparency = 0.95
+		}):Play()
+		
+		TweenService:Create(iconGlow, TweenInfo.new(0.2), {
+			ImageTransparency = 0.5,
+			Size = UDim2.new(1.5, 0, 1.5, 0),
+			Position = UDim2.new(-0.25, 0, -0.25, 0)
+		}):Play()
+		
+		TweenService:Create(priceButton, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.7, 0, 0.12, 0)
 		}):Play()
 	end)
 
-	-- Click to purchase
+	-- Click to purchase with modern popup
 	card.MouseButton1Click:Connect(function()
 		playSound("SELECT")
-
-		if passData.id and passData.id ~= 123456789 then -- Check for real ID
-			-- Prompt gamepass purchase
-			local MarketplaceService = game:GetService("MarketplaceService")
-			local player = game:GetService("Players").LocalPlayer
-
-			local success, err = pcall(function()
-				MarketplaceService:PromptGamePassPurchase(player, passData.id)
-			end)
-
-			if not success then
-				warn("Failed to prompt gamepass purchase:", err)
-			end
-		else
-			-- TEST MODE - Show purchase UI for testing
-			warn("⚠️ TEST MODE - Real gamepass ID not configured for:", passName)
-			
-			-- Create a test purchase popup
-			local popup = Instance.new("Frame")
-			popup.Size = UDim2.new(0.4, 0, 0.5, 0)
-			popup.Position = UDim2.new(0.3, 0, 0.25, 0)
+		
+		-- Create purchase confirmation popup
+		createGamepassPurchasePopup(passName, passData)
+	end)
+end
 			popup.BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY
 			popup.BorderSizePixel = 0
 			popup.Parent = ShopUI.uiElements.screenGui
@@ -2488,6 +2565,218 @@ local function createGamepassCard(passName, index)
 				popup:Destroy()
 			end)
 		end
+	end)
+end
+
+-- Create modern gamepass purchase popup
+local function createGamepassPurchasePopup(passName, passData)
+	-- Blur background
+	local blur = Instance.new("Frame")
+	blur.Name = "PurchaseBlur"
+	blur.Size = UDim2.new(1, 0, 1, 0)
+	blur.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	blur.BackgroundTransparency = 0.3
+	blur.Parent = ShopUI.uiElements.shopFrame.Parent
+	
+	-- Main popup container
+	local popup = Instance.new("Frame")
+	popup.Name = "GamepassPurchasePopup"
+	popup.Size = UDim2.new(0, 400, 0, 500)
+	popup.Position = UDim2.new(0.5, -200, 0.5, -250)
+	popup.BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY
+	popup.Parent = blur
+	createCorner(popup, 20)
+	
+	-- Gradient background
+	local popupGradient = Instance.new("UIGradient")
+	popupGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, SHOP_CONFIG.COLORS.SECONDARY),
+		ColorSequenceKeypoint.new(1, SHOP_CONFIG.COLORS.PRIMARY)
+	})
+	popupGradient.Rotation = 90
+	popupGradient.Parent = popup
+	
+	-- Glass effect
+	local glass = Instance.new("Frame")
+	glass.Size = UDim2.new(1, 0, 1, 0)
+	glass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	glass.BackgroundTransparency = 0.97
+	glass.Parent = popup
+	createCorner(glass, 20)
+	
+	-- Close button
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 40, 0, 40)
+	closeBtn.Position = UDim2.new(1, -50, 0, 10)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
+	closeBtn.Text = "×"
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.TextScaled = true
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.Parent = popup
+	createCorner(closeBtn, 20)
+	
+	-- Header with icon
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0.3, 0)
+	header.BackgroundColor3 = passData.color
+	header.BackgroundTransparency = 0.2
+	header.Parent = popup
+	
+	local headerGradient = Instance.new("UIGradient")
+	headerGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, passData.gradient[1]),
+		ColorSequenceKeypoint.new(1, passData.gradient[2])
+	})
+	headerGradient.Rotation = 45
+	headerGradient.Parent = header
+	
+	-- Large icon
+	local largeIcon = Instance.new("TextLabel")
+	largeIcon.Size = UDim2.new(0, 100, 0, 100)
+	largeIcon.Position = UDim2.new(0.5, -50, 0.15, -50)
+	largeIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	largeIcon.BackgroundTransparency = 0.9
+	largeIcon.Text = passData.icon
+	largeIcon.TextScaled = true
+	largeIcon.Font = Enum.Font.SourceSansBold
+	largeIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	largeIcon.Parent = popup
+	createCorner(largeIcon, 50)
+	
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(0.9, 0, 0.1, 0)
+	title.Position = UDim2.new(0.05, 0, 0.32, 0)
+	title.BackgroundTransparency = 1
+	title.Text = passName:upper()
+	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	title.TextScaled = true
+	title.Font = Enum.Font.Montserrat
+	title.Parent = popup
+	
+	-- Description box
+	local descBox = Instance.new("Frame")
+	descBox.Size = UDim2.new(0.9, 0, 0.15, 0)
+	descBox.Position = UDim2.new(0.05, 0, 0.45, 0)
+	descBox.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
+	descBox.BackgroundTransparency = 0.5
+	descBox.Parent = popup
+	createCorner(descBox, 10)
+	
+	local descText = Instance.new("TextLabel")
+	descText.Size = UDim2.new(0.95, 0, 0.8, 0)
+	descText.Position = UDim2.new(0.025, 0, 0.1, 0)
+	descText.BackgroundTransparency = 1
+	descText.Text = passData.description
+	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
+	descText.TextScaled = true
+	descText.Font = Enum.Font.Gotham
+	descText.Parent = descBox
+	
+	-- Benefits list
+	local benefitsTitle = Instance.new("TextLabel")
+	benefitsTitle.Size = UDim2.new(0.9, 0, 0.05, 0)
+	benefitsTitle.Position = UDim2.new(0.05, 0, 0.62, 0)
+	benefitsTitle.BackgroundTransparency = 1
+	benefitsTitle.Text = "BENEFITS:"
+	benefitsTitle.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	benefitsTitle.TextScaled = true
+	benefitsTitle.Font = Enum.Font.GothamBold
+	benefitsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	benefitsTitle.Parent = popup
+	
+	-- Purchase button
+	local purchaseBtn = Instance.new("TextButton")
+	purchaseBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
+	purchaseBtn.Position = UDim2.new(0.1, 0, 0.85, 0)
+	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
+	purchaseBtn.Text = "BUY NOW - R$" .. tostring(passData.price)
+	purchaseBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+	purchaseBtn.TextScaled = true
+	purchaseBtn.Font = Enum.Font.GothamBold
+	purchaseBtn.Parent = popup
+	createCorner(purchaseBtn, 10)
+	
+	local purchaseGradient = Instance.new("UIGradient")
+	purchaseGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
+	})
+	purchaseGradient.Rotation = 90
+	purchaseGradient.Parent = purchaseBtn
+	
+	-- Animate popup entrance
+	popup.Position = UDim2.new(0.5, -200, 0.5, -300)
+	popup.Size = UDim2.new(0, 350, 0, 450)
+	TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+		Position = UDim2.new(0.5, -200, 0.5, -250),
+		Size = UDim2.new(0, 400, 0, 500)
+	}):Play()
+	
+	TweenService:Create(blur, TweenInfo.new(0.3), {
+		BackgroundTransparency = 0.3
+	}):Play()
+	
+	-- Button interactions
+	purchaseBtn.MouseEnter:Connect(function()
+		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.85, 0, 0.11, 0)
+		}):Play()
+	end)
+	
+	purchaseBtn.MouseLeave:Connect(function()
+		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.8, 0, 0.1, 0)
+		}):Play()
+	end)
+	
+	-- Purchase functionality
+	purchaseBtn.MouseButton1Click:Connect(function()
+		playSound("PURCHASE")
+		
+		local MarketplaceService = game:GetService("MarketplaceService")
+		local player = game:GetService("Players").LocalPlayer
+		
+		local success, err = pcall(function()
+			MarketplaceService:PromptGamePassPurchase(player, passData.id)
+		end)
+		
+		if not success then
+			warn("Failed to prompt gamepass purchase:", err)
+		end
+		
+		-- Close popup
+		TweenService:Create(popup, TweenInfo.new(0.3), {
+			Position = UDim2.new(0.5, -200, 0.5, -300),
+			Size = UDim2.new(0, 350, 0, 450),
+			Transparency = 1
+		}):Play()
+		
+		TweenService:Create(blur, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1
+		}):Play()
+		
+		wait(0.3)
+		blur:Destroy()
+	end)
+	
+	-- Close button functionality
+	closeBtn.MouseButton1Click:Connect(function()
+		playSound("CLOSE")
+		
+		TweenService:Create(popup, TweenInfo.new(0.3), {
+			Position = UDim2.new(0.5, -200, 0.5, -300),
+			Size = UDim2.new(0, 350, 0, 450),
+			Transparency = 1
+		}):Play()
+		
+		TweenService:Create(blur, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1
+		}):Play()
+		
+		wait(0.3)
+		blur:Destroy()
 	end)
 end
 
