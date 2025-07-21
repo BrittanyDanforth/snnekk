@@ -298,13 +298,13 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Material override system (defined early to avoid nil errors)
+-- Aggressive material override system
 local materialOverrideEnabled = false
 
 local function overrideMaterials()
 	if not materialOverrideEnabled then return end
 	
-	-- Only override player's own snake for performance
+	-- Only override player's own snake (removed workspace scan for performance)
 	if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
 		local snake = _G.PlayerSnakes[LocalPlayer]
 		if snake.segments then
@@ -317,114 +317,27 @@ local function overrideMaterials()
 	end
 end
 
--- Handle graphics mode changes with smooth transitions
-LocalPlayer.AttributeChanged:Connect(function(attribute)
-	if attribute == "GraphicsMode" then
-		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
-		print("🎮 Graphics mode changed to:", mode)
+-- Run material override for Low graphics (less aggressive for performance)
+task.spawn(function()
+	while true do
+		task.wait(0.2) -- Check 5 times per second instead of 20
 		
-		-- Immediately update current preset
-		currentPreset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
-		materialOverrideEnabled = (mode == "Low")
-		
-		-- Update all cached orbs
-		local playerPos = getPlayerPosition()
-		if playerPos then
-			for orb, _ in pairs(orbCache) do
-				if orb.Parent then
-					local distance = (orb.Position - playerPos).Magnitude
-					applyOrbGraphics(orb, distance)
-				end
-			end
-		end
-		
-		-- CRITICAL: Update ALL orbs in workspace, not just cached ones
-		task.spawn(function()
-			for _, orb in ipairs(workspace:GetDescendants()) do
-				if orb:IsA("Part") and orb.Name == "Orb" and orb.Parent then
-					local distance = playerPos and (orb.Position - playerPos).Magnitude or 0
-					applyOrbGraphics(orb, distance)
-				end
-			end
-		end)
-		
-		-- Update player's own snake segments
-		task.spawn(function()
+		-- Only in Low graphics mode
+		if materialOverrideEnabled then
+			-- Only check player's own snake
 			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
 				local snake = _G.PlayerSnakes[LocalPlayer]
 				if snake.segments then
 					for _, segment in ipairs(snake.segments) do
-						if segment and segment.Parent then
-							segment.Material = currentPreset.SNAKE_MATERIAL
+						if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
+							segment.Material = Enum.Material.SmoothPlastic
 						end
 					end
 				end
 			end
-			
-			-- Also update ALL snake segments in workspace for all players
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("BasePart") and (obj.Name:match("Segment") or obj.Name == "Head") then
-					-- Check if it's part of a snake model
-					local parent = obj.Parent
-					if parent and (parent.Name == "Snake" or parent.Parent and parent.Parent.Name == "Snake") then
-						obj.Material = currentPreset.SNAKE_MATERIAL
-					end
-				end
-			end
-		end)
-		
-		-- Adjust particle effects
-		adjustParticleEffects(mode)
-		
-		-- Immediately handle snake glows with transition
-		handleSnakeGlows(mode, playerPos)
-		
-		-- Force immediate material update in Low mode
-		if mode == "Low" then
-			task.spawn(function()
-				-- Quick update of player's snake
-				if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
-					local snake = _G.PlayerSnakes[LocalPlayer]
-					if snake and snake.segments then
-						for _, segment in ipairs(snake.segments) do
-							if segment and segment.Parent then
-								segment.Material = Enum.Material.SmoothPlastic
-							end
-						end
-					end
-				end
-			end)
 		end
-		
-		-- Performance feedback
-		local perfMsg = mode == "Low" and "🚀 Maximum Performance Mode" or
-		               mode == "Medium" and "⚖️ Balanced Graphics Mode" or
-		               "✨ Ultra Quality Mode"
-		print(perfMsg)
 	end
 end)
-
--- Initial setup with error handling
-local function safeInitialize()
-	local success, err = pcall(function()
-		local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
-		currentPreset = GRAPHICS_PRESETS[initialMode] or GRAPHICS_PRESETS.High
-		adjustParticleEffects(initialMode)
-		
-		-- Wait a bit for world to load
-		task.wait(0.5)
-		handleSnakeGlows(initialMode, getPlayerPosition())
-		
-		print("✅ Client Graphics Handler V2.0 initialized for:", LocalPlayer.Name)
-		print("🎮 Current mode:", initialMode)
-	end)
-	
-	if not success then
-		warn("Graphics handler initialization error:", err)
-	end
-end
-
-safeInitialize()
 
 -- Monitor for new segments and apply correct material
 workspace.DescendantAdded:Connect(function(descendant)
@@ -450,26 +363,100 @@ workspace.DescendantAdded:Connect(function(descendant)
 	end
 end)
 
--- Simple low graphics material fix
-task.spawn(function()
-	while true do
-		task.wait(0.3) -- Check 3 times per second
+-- Handle graphics mode changes
+LocalPlayer.AttributeChanged:Connect(function(attribute)
+	if attribute == "GraphicsMode" then
+		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+		print("🎮 Graphics mode changed to:", mode)
 		
-		-- Only in Low graphics mode
-		if currentPreset and currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic then
-			-- Fix player's own snake materials
-			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
-				local snake = _G.PlayerSnakes[LocalPlayer]
-				if snake and snake.segments then
-					for _, segment in ipairs(snake.segments) do
-						if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
-							segment.Material = Enum.Material.SmoothPlastic
-						end
-					end
+		-- Update preset
+		currentPreset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
+		materialOverrideEnabled = (mode == "Low")
+		
+		-- Update orbs
+		local playerPos = getPlayerPosition()
+		if playerPos then
+			for orb, _ in pairs(orbCache) do
+				if orb.Parent then
+					local distance = (orb.Position - playerPos).Magnitude
+					applyOrbGraphics(orb, distance)
+				end
+			end
+		end
+		
+		-- Adjust particle effects
+		adjustParticleEffects(mode)
+		
+		-- Handle snake glows
+		handleSnakeGlows(mode, playerPos)
+		
+		-- Performance feedback
+		local perfMsg = mode == "Low" and "🚀 Maximum Performance Mode" or
+		               mode == "Medium" and "⚖️ Balanced Graphics Mode" or
+		               "✨ Ultra Quality Mode"
+		print(perfMsg)
+	end
+end)
+
+-- Initial setup
+local function safeInitialize()
+	local success, err = pcall(function()
+		local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+		currentPreset = GRAPHICS_PRESETS[initialMode] or GRAPHICS_PRESETS.High
+		materialOverrideEnabled = (initialMode == "Low")
+		adjustParticleEffects(initialMode)
+		
+		task.wait(0.5)
+		handleSnakeGlows(initialMode, getPlayerPosition())
+		
+		print("✅ Client Graphics Handler V2.0 initialized for:", LocalPlayer.Name)
+		print("🎮 Current mode:", initialMode)
+	end)
+	
+	if not success then
+		warn("Graphics handler initialization error:", err)
+	end
+end
+
+safeInitialize()
+
+print("✅ Orb graphics system ready with low-lag monitoring!")
+
+-- Simple material fix for Low graphics mode
+local lowGraphicsActive = false
+
+-- Check graphics mode
+local function updateGraphicsMode()
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	lowGraphicsActive = (mode == "Low")
+end
+
+-- Apply materials to player snake
+local function applyMaterials()
+	if not lowGraphicsActive then return end
+	
+	if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+		local snake = _G.PlayerSnakes[LocalPlayer]
+		if snake and snake.segments then
+			for _, segment in ipairs(snake.segments) do
+				if segment and segment.Parent then
+					segment.Material = Enum.Material.SmoothPlastic
 				end
 			end
 		end
 	end
-end)
+end
 
-print("✅ Orb graphics system ready with segment monitoring!")
+-- Initial check
+updateGraphicsMode()
+
+-- Monitor graphics changes
+LocalPlayer:GetAttributeChangedSignal("GraphicsMode"):Connect(updateGraphicsMode)
+
+-- Apply materials periodically (not too often to avoid lag)
+task.spawn(function()
+	while true do
+		task.wait(0.5) -- Only check twice per second
+		applyMaterials()
+	end
+end)
