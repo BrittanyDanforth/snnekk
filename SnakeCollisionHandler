@@ -872,6 +872,33 @@ local function queuePlayerDeath(player)
 
 	-- IMMEDIATELY mark as dead to prevent mutual deaths (with timestamp)
 	deadPlayers[player] = tick()
+	
+	-- IMMEDIATELY disable collision on all segments to prevent timing issues
+	task.spawn(function()
+		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+			local snake = _G.PlayerSnakes[player]
+			if snake and snake.segments then
+				for _, segment in ipairs(snake.segments) do
+					if segment and segment.Parent then
+						segment.CanCollide = false
+						segment.CanQuery = false
+						segment.CanTouch = false
+					end
+				end
+			end
+		end
+		
+		-- Also disable collision on character parts
+		if character then
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
+					part.CanQuery = false
+					part.CanTouch = false
+				end
+			end
+		end
+	end)
 
 	if DEBUG_COLLISIONS then
 		print(string.format("[QUEUE] Adding death to queue for player: %s", player.Name))
@@ -932,6 +959,26 @@ local function queueAIDeath(head)
 
 	-- Mark this AI as dead immediately (with timestamp)
 	deadAISnakes[head] = tick()
+	
+	-- IMMEDIATELY disable collision on all segments to prevent timing issues
+	task.spawn(function()
+		if aiSnake and aiSnake.Segments then
+			for _, segment in ipairs(aiSnake.Segments) do
+				if segment and segment.Parent then
+					segment.CanCollide = false
+					segment.CanQuery = false
+					segment.CanTouch = false
+				end
+			end
+		end
+		
+		-- Also disable collision on head
+		if head and head.Parent then
+			head.CanCollide = false
+			head.CanQuery = false
+			head.CanTouch = false
+		end
+	end)
 
 	if DEBUG_COLLISIONS then
 		print(string.format("[QUEUE] Adding death to queue for AI: %s", tostring(head)))
@@ -1921,6 +1968,11 @@ RunService.Stepped:Connect(function()
 			for _, headData in ipairs(playerHeads) do
 				local player = headData.player
 
+				-- Skip if player is already dead/dying
+				if deadPlayers[player] then
+					continue
+				end
+
 				if not isPlayerInvincible(player) then
 					local segmentData = getPlayerSegments(player)
 					if segmentData and segmentData.segments then
@@ -1938,8 +1990,7 @@ RunService.Stepped:Connect(function()
 						end
 
 						if collision then
-							-- FIXED: When AI head hits player body, PLAYER dies, not AI!
-							queuePlayerDeath(player)
+							queueAIDeath(aiHead)
 							break
 						end
 					end
