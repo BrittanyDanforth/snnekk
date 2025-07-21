@@ -195,6 +195,78 @@ local function handleWallCollision(entity, isPlayer)
 	end
 end
 
+-- === ENHANCED SPATIAL PARTITIONING ===
+local SpatialGrid = {}
+SpatialGrid.__index = SpatialGrid
+
+function SpatialGrid.new()
+	return setmetatable({
+		cells = {},
+		cellSize = COLLISION_GRID_SIZE,
+		objectCount = 0
+	}, SpatialGrid)
+end
+
+function SpatialGrid:getCell(position)
+	local x = math.floor(position.X / self.cellSize)
+	local z = math.floor(position.Z / self.cellSize)
+	return x, z
+end
+
+function SpatialGrid:getCellKey(x, z)
+	-- Optimized key generation
+	return x * 10000 + z
+end
+
+function SpatialGrid:insert(object, position)
+	local x, z = self:getCell(position)
+	local key = self:getCellKey(x, z)
+
+	if not self.cells[key] then
+		self.cells[key] = {}
+	end
+
+	table.insert(self.cells[key], object)
+	self.objectCount = self.objectCount + 1
+end
+
+function SpatialGrid:query(position, radius)
+	local results = {}
+	local cellRadius = math.ceil(radius / self.cellSize)
+	local cx, cz = self:getCell(position)
+
+	-- Optimized query with early exit
+	for dx = -cellRadius, cellRadius do
+		for dz = -cellRadius, cellRadius do
+			local key = self:getCellKey(cx + dx, cz + dz)
+			local cell = self.cells[key]
+			if cell and #cell > 0 then
+				for i = 1, #cell do
+					results[#results + 1] = cell[i]
+				end
+			end
+		end
+	end
+
+	return results
+end
+
+function SpatialGrid:clear()
+	-- Faster table clearing
+	for k in pairs(self.cells) do
+		self.cells[k] = nil
+	end
+	self.objectCount = 0
+end
+
+-- === SUPREME COLLISION CACHE ===
+local CollisionCache = {
+	playerSegments = {},
+	aiSegments = {},
+	spatialGrid = SpatialGrid.new(),
+	frameCache = {} -- Per-frame collision results
+}
+
 -- === DEATH CLEANUP SYSTEM ===
 -- Periodically clean up dead player marks to prevent permanent death
 task.spawn(function()
@@ -254,8 +326,8 @@ Players.PlayerRemoving:Connect(function(player)
 	wallPushImmunity[player] = nil
 	wallLastCheck[player] = nil
 
-	-- Clean from collision cache (if it exists)
-	if CollisionCache and CollisionCache.playerSegments then
+	-- Clean from collision cache
+	if CollisionCache.playerSegments then
 		CollisionCache.playerSegments[player] = nil
 	end
 
@@ -380,78 +452,6 @@ for _, player in Players:GetPlayers() do
 		end)
 	end)
 end
-
--- === ENHANCED SPATIAL PARTITIONING ===
-local SpatialGrid = {}
-SpatialGrid.__index = SpatialGrid
-
-function SpatialGrid.new()
-	return setmetatable({
-		cells = {},
-		cellSize = COLLISION_GRID_SIZE,
-		objectCount = 0
-	}, SpatialGrid)
-end
-
-function SpatialGrid:getCell(position)
-	local x = math.floor(position.X / self.cellSize)
-	local z = math.floor(position.Z / self.cellSize)
-	return x, z
-end
-
-function SpatialGrid:getCellKey(x, z)
-	-- Optimized key generation
-	return x * 10000 + z
-end
-
-function SpatialGrid:insert(object, position)
-	local x, z = self:getCell(position)
-	local key = self:getCellKey(x, z)
-
-	if not self.cells[key] then
-		self.cells[key] = {}
-	end
-
-	table.insert(self.cells[key], object)
-	self.objectCount = self.objectCount + 1
-end
-
-function SpatialGrid:query(position, radius)
-	local results = {}
-	local cellRadius = math.ceil(radius / self.cellSize)
-	local cx, cz = self:getCell(position)
-
-	-- Optimized query with early exit
-	for dx = -cellRadius, cellRadius do
-		for dz = -cellRadius, cellRadius do
-			local key = self:getCellKey(cx + dx, cz + dz)
-			local cell = self.cells[key]
-			if cell and #cell > 0 then
-				for i = 1, #cell do
-					results[#results + 1] = cell[i]
-				end
-			end
-		end
-	end
-
-	return results
-end
-
-function SpatialGrid:clear()
-	-- Faster table clearing
-	for k in pairs(self.cells) do
-		self.cells[k] = nil
-	end
-	self.objectCount = 0
-end
-
--- === SUPREME COLLISION CACHE ===
-local CollisionCache = {
-	playerSegments = {},
-	aiSegments = {},
-	spatialGrid = SpatialGrid.new(),
-	frameCache = {} -- Per-frame collision results
-}
 
 -- === FIXED ORB SPAWNING SYSTEM ===
 local ORB_SPAWN_HEIGHT = 5 -- Match AI snake height for proper collection
