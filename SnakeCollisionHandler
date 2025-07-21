@@ -56,7 +56,11 @@ local spawnProtectedAI = {} -- Track AI spawn protection
 local WALL_ORB_DROP_AMOUNT = 3 -- Number of orbs to drop when hitting wall
 local WALL_ORB_DROP_COOLDOWN = 1.0 -- Cooldown between wall orb drops
 local WALL_DAMAGE_MULTIPLIER = 0.95 -- Lose 5% of length per wall hit
+local WALL_PUSH_TIME = 3.0 -- Time before pushing player away from wall
+local WALL_PUSH_FORCE = 50 -- Force to push player away
+local WALL_WARNING_TIME = 2.0 -- Time before warning player
 local wallCollisionCooldowns = {} -- Track cooldowns per player/AI
+local wallContactTime = {} -- Track how long player has been near wall
 
 -- === WALL COLLISION FUNCTIONS ===
 local function checkWallCollision(position)
@@ -169,6 +173,8 @@ Players.PlayerRemoving:Connect(function(player)
 	-- Clean all death tracking
 	deadPlayers[player] = nil
 	invinciblePlayers[player] = nil
+	wallCollisionCooldowns[player] = nil
+	wallContactTime[player] = nil
 
 	-- Clean from collision cache (if it exists)
 	if CollisionCache and CollisionCache.playerSegments then
@@ -1503,6 +1509,64 @@ RunService.Stepped:Connect(function()
 			-- Check wall collision
 			if checkWallCollision(headPos) then
 				handleWallCollision(player, true)
+				
+				-- Track wall contact time
+				local key = player
+				if not wallContactTime[key] then
+					wallContactTime[key] = tick()
+				end
+				
+				local contactDuration = tick() - wallContactTime[key]
+				
+				-- Push player away if they've been at wall too long
+				if contactDuration > WALL_PUSH_TIME then
+					local character = player.Character
+					if character and character:FindFirstChild("HumanoidRootPart") then
+						local root = character.HumanoidRootPart
+						local pushDirection = -root.CFrame.LookVector
+						
+						-- Determine push direction based on which wall
+						local pos = root.Position
+						if math.abs(pos.X) > 390 then
+							pushDirection = Vector3.new(-math.sign(pos.X) * WALL_PUSH_FORCE, 0, 0)
+						elseif math.abs(pos.Z) > 390 then
+							pushDirection = Vector3.new(0, 0, -math.sign(pos.Z) * WALL_PUSH_FORCE)
+						end
+						
+						-- Apply push force
+						root.AssemblyLinearVelocity = root.AssemblyLinearVelocity + pushDirection
+						
+						-- Reset contact time
+						wallContactTime[key] = nil
+						
+						-- Visual feedback
+						if DEBUG_COLLISIONS then
+							print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
+						end
+					end
+				elseif contactDuration > WALL_WARNING_TIME then
+					-- Warning phase - make snake segments shake slightly
+					if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+						local snake = _G.PlayerSnakes[player]
+						if snake.segments then
+							for i = 1, math.min(5, #snake.segments) do
+								local segment = snake.segments[i]
+								if segment and segment.Parent then
+									-- Small shake effect
+									local shake = Vector3.new(
+										math.random(-1, 1) * 0.2,
+										0,
+										math.random(-1, 1) * 0.2
+									)
+									segment.Position = segment.Position + shake
+								end
+							end
+						end
+					end
+				end
+			else
+				-- Reset wall contact time if not touching wall
+				wallContactTime[player] = nil
 			end
 
 			-- Check each AI snake
@@ -1611,6 +1675,41 @@ RunService.Stepped:Connect(function()
 			end
 			if aiSnake and checkWallCollision(aiPos) then
 				handleWallCollision(aiSnake, false)
+				
+				-- Track wall contact time for AI
+				local key = aiSnake.Name or aiSnake
+				if not wallContactTime[key] then
+					wallContactTime[key] = tick()
+				end
+				
+				local contactDuration = tick() - wallContactTime[key]
+				
+				-- Make AI turn away from wall if too long
+				if contactDuration > WALL_PUSH_TIME then
+					-- Force AI to turn away
+					if aiSnake.TurnAwayFromWall then
+						aiSnake:TurnAwayFromWall()
+					else
+						-- Manual turn if method doesn't exist
+						local pos = aiPos
+						local newDirection
+						if math.abs(pos.X) > 390 then
+							newDirection = Vector3.new(-math.sign(pos.X), 0, math.random(-1, 1)).Unit
+						elseif math.abs(pos.Z) > 390 then
+							newDirection = Vector3.new(math.random(-1, 1), 0, -math.sign(pos.Z)).Unit
+						end
+						if newDirection and aiSnake.Direction then
+							aiSnake.Direction = newDirection
+						end
+					end
+					wallContactTime[key] = nil
+				end
+			else
+				-- Reset AI wall contact
+				if aiSnake then
+					local key = aiSnake.Name or aiSnake
+					wallContactTime[key] = nil
+				end
 			end
 
 			for _, headData in ipairs(playerHeads) do
