@@ -276,16 +276,31 @@ local function createSegment(index, position, color, config, parentModel)
 	segment:SetAttribute("IsSnakeSegment", true)
 	segment:SetAttribute("SegmentIndex", index)
 
-	local light = segment:FindFirstChild("Glow")
-	if not light then
-		light = Instance.new("PointLight")
-		light.Name = "Glow"
-		light.Parent = segment
+	-- Check player's graphics mode
+	local graphicsMode = "High"
+	if parentModel and parentModel:GetAttribute("OwnerUserId") then
+		local userId = parentModel:GetAttribute("OwnerUserId")
+		for _, p in pairs(Players:GetPlayers()) do
+			if p.UserId == userId then
+				graphicsMode = p:GetAttribute("GraphicsMode") or "High"
+				break
+			end
+		end
 	end
-	light.Color = color
-	light.Brightness = config.GlowIntensity
-	light.Range = config.GlowRange
-	light.Enabled = true
+
+	-- Only add glow if not in Low graphics mode
+	if graphicsMode ~= "Low" then
+		local light = segment:FindFirstChild("Glow")
+		if not light then
+			light = Instance.new("PointLight")
+			light.Name = "Glow"
+			light.Parent = segment
+		end
+		light.Color = color
+		light.Brightness = config.GlowIntensity
+		light.Range = config.GlowRange
+		light.Enabled = true
+	end
 
 	local outline = segment:FindFirstChild("Outline")
 	if not outline then
@@ -319,11 +334,27 @@ local function createVisualHead(rootPart, config, parentModel)
 	headPart:SetAttribute("IsSnakeHead", true)
 	headPart:SetAttribute("IsSnakeSegment", true)
 
-	local headLight = Instance.new("PointLight")
-	headLight.Color = config.HeadColor
-	headLight.Brightness = config.GlowIntensity + 1
-	headLight.Range = config.GlowRange + 2
-	headLight.Parent = headPart
+	-- Check player's graphics mode
+	local graphicsMode = "High"
+	if parentModel and parentModel:GetAttribute("OwnerUserId") then
+		local userId = parentModel:GetAttribute("OwnerUserId")
+		for _, p in pairs(Players:GetPlayers()) do
+			if p.UserId == userId then
+				graphicsMode = p:GetAttribute("GraphicsMode") or "High"
+				break
+			end
+		end
+	end
+
+	local headLight = nil
+	-- Only create light if not in Low graphics mode
+	if graphicsMode ~= "Low" then
+		headLight = Instance.new("PointLight")
+		headLight.Color = config.HeadColor
+		headLight.Brightness = config.GlowIntensity + 1
+		headLight.Range = config.GlowRange + 2
+		headLight.Parent = headPart
+	end
 
 	local headOutline = Instance.new("SelectionBox")
 	headOutline.Adornee = headPart
@@ -406,17 +437,23 @@ local function applySkinToExistingSnake(player, snakeInstance)
 	if not snakeInstance or not snakeInstance.isActive() then return end
 
 	local activeConfig = getActiveConfig(player)
+	local graphicsMode = player:GetAttribute("GraphicsMode") or "High"
 
 	-- Update head appearance
 	if snakeInstance.headParts and snakeInstance.headParts.head then
 		snakeInstance.headParts.head.Color = activeConfig.HeadColor
 		snakeInstance.headParts.head.Material = activeConfig.HeadMaterial
 
-		-- Update head light
+		-- Update head light (only if not in Low graphics mode)
 		if snakeInstance.headParts.headLight then
-			snakeInstance.headParts.headLight.Color = activeConfig.HeadColor
-			snakeInstance.headParts.headLight.Brightness = activeConfig.GlowIntensity + 1
-			snakeInstance.headParts.headLight.Range = activeConfig.GlowRange + 2
+			if graphicsMode == "Low" then
+				snakeInstance.headParts.headLight.Enabled = false
+			else
+				snakeInstance.headParts.headLight.Enabled = true
+				snakeInstance.headParts.headLight.Color = activeConfig.HeadColor
+				snakeInstance.headParts.headLight.Brightness = activeConfig.GlowIntensity + 1
+				snakeInstance.headParts.headLight.Range = activeConfig.GlowRange + 2
+			end
 		end
 	end
 
@@ -428,18 +465,23 @@ local function applySkinToExistingSnake(player, snakeInstance)
 				segment.Color = activeConfig.BodyColors[colorIndex]
 				segment.Material = activeConfig.BodyMaterial
 
-				-- Update segment light
+				-- Update segment light (only if not in Low graphics mode)
 				local light = segment:FindFirstChild("Glow")
 				if light then
-					light.Color = activeConfig.BodyColors[colorIndex]
-					light.Brightness = activeConfig.GlowIntensity
-					light.Range = activeConfig.GlowRange
+					if graphicsMode == "Low" then
+						light.Enabled = false
+					else
+						light.Enabled = true
+						light.Color = activeConfig.BodyColors[colorIndex]
+						light.Brightness = activeConfig.GlowIntensity
+						light.Range = activeConfig.GlowRange
+					end
 				end
 			end
 		end
 	end
 
-	print("🎨 Applied skin changes to existing snake for", player.Name)
+	print("🎨 Applied skin changes to existing snake for", player.Name, "- Graphics:", graphicsMode)
 end
 
 local function createUltraSmoothSnake(character)
@@ -911,6 +953,19 @@ local function handlePlayer(player)
 		if newSkin and newSkin ~= "" then
 			selectedSkinValue.Value = newSkin
 			print("📝 Skin preference updated for", player.Name, ":", newSkin)
+		end
+	end)
+
+	-- Monitor for graphics mode changes
+	player:GetAttributeChangedSignal("GraphicsMode"):Connect(function()
+		local newMode = player:GetAttribute("GraphicsMode")
+		if newMode then
+			print("🎮 Graphics mode changed for", player.Name, "to", newMode)
+			-- Update existing snake if it exists
+			local snakeInstance = playerSnakes[player] or _G.PlayerSnakes[player]
+			if snakeInstance and snakeInstance.isActive() then
+				applySkinToExistingSnake(player, snakeInstance)
+			end
 		end
 	end)
 

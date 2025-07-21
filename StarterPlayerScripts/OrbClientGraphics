@@ -336,9 +336,17 @@ local function safeInitialize()
 		currentPreset = GRAPHICS_PRESETS[initialMode] or GRAPHICS_PRESETS.High
 		adjustParticleEffects(initialMode)
 		
-		-- Wait a bit for world to load
-		task.wait(0.5)
-		handleSnakeGlows(initialMode, getPlayerPosition())
+		-- Wait for character to spawn properly
+		if not LocalPlayer.Character then
+			LocalPlayer.CharacterAdded:Wait()
+		end
+		task.wait(1) -- Increased wait to ensure snake is created
+		
+		-- Apply graphics settings multiple times to catch all glows
+		for i = 1, 3 do
+			handleSnakeGlows(initialMode, getPlayerPosition())
+			task.wait(0.2)
+		end
 		
 		print("✅ Client Graphics Handler V2.0 initialized for:", LocalPlayer.Name)
 		print("🎮 Current mode:", initialMode)
@@ -348,5 +356,12 @@ local function safeInitialize()
 		warn("Graphics handler initialization error:", err)
 	end
 end
+
+-- Also handle character respawns
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1.5) -- Wait for snake to be fully created
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	handleSnakeGlows(mode, getPlayerPosition())
+end)
 
 safeInitialize()
