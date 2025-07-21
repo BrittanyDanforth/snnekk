@@ -196,7 +196,7 @@ local function createDecor()
             line.Orientation = Vector3.new(0, angle + 30, 0)
             line.Anchored = true
             line.CanCollide = false
-            line.Transparency = 0.9
+            line.Transparency = 0.88  -- Just a tiny bit more visible (was 0.9)
             line.Color = Color3.fromRGB(60, 60, 70)
             line.Material = Enum.Material.SmoothPlastic
             line.Parent = decorGroup
