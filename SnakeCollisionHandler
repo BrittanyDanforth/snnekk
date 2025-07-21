@@ -1533,20 +1533,37 @@ RunService.Stepped:Connect(function()
 							pushDirection = Vector3.new(0, 0, -math.sign(pos.Z) * WALL_PUSH_FORCE)
 						end
 						
-						-- Apply STRONG push force using BodyVelocity
+						-- Apply smooth but strong push force
 						local bodyVelocity = Instance.new("BodyVelocity")
-						bodyVelocity.MaxForce = Vector3.new(10000, 0, 10000) -- Much stronger force
-						bodyVelocity.Velocity = pushDirection * 2 -- Double the push speed
+						bodyVelocity.MaxForce = Vector3.new(50000, 0, 50000) -- Very strong force to overcome movement
+						bodyVelocity.Velocity = pushDirection * 1.5 -- Strong push velocity
 						bodyVelocity.Parent = root
 						
-						-- Remove after a short time
-						game:GetService("Debris"):AddItem(bodyVelocity, 1.0) -- Longer push duration
+						-- Also apply BodyPosition to ensure smooth movement away
+						local bodyPosition = Instance.new("BodyPosition")
+						bodyPosition.MaxForce = Vector3.new(20000, 0, 20000)
+						bodyPosition.Position = root.Position + pushDirection.Unit * 20 -- Target position 20 studs away
+						bodyPosition.D = 2000 -- Damping for smooth movement
+						bodyPosition.P = 10000 -- Power for smooth acceleration
+						bodyPosition.Parent = root
 						
-						-- Teleport away from wall immediately to prevent glitching
-						root.CFrame = root.CFrame + pushDirection.Unit * 15 -- Teleport 15 studs away
+						-- Remove after push completes
+						game:GetService("Debris"):AddItem(bodyVelocity, 0.8)
+						game:GetService("Debris"):AddItem(bodyPosition, 1.2)
 						
 						-- Reset contact time
 						wallContactTime[key] = nil
+						
+						-- Temporarily disable snake control to let push work
+						if character:FindFirstChild("Humanoid") then
+							local humanoid = character.Humanoid
+							local oldSpeed = humanoid.WalkSpeed
+							humanoid.WalkSpeed = 0 -- Disable movement temporarily
+							
+							-- Re-enable after push
+							task.wait(0.5)
+							humanoid.WalkSpeed = oldSpeed
+						end
 						
 						-- Visual feedback
 						print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
