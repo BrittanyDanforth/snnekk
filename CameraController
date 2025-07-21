@@ -38,7 +38,7 @@ local isMobile = isMobileDevice()
 -- Camera settings - like slither.io
 local BASE_HEIGHT = isMobile and 60 or 40  -- Base height
 local MAX_HEIGHT = isMobile and 150 or 120  -- Maximum zoom out
-local FOV = 60  -- Slightly lower FOV for better view
+local FOV = 70  -- Back to 70 for better view
 local SMOOTH_FACTOR = 0.15  -- Camera smoothing
 
 -- Current camera values for smooth interpolation
