@@ -371,6 +371,9 @@ local function createVisualHead(rootPart, config, parentModel)
 
 	headPart:SetAttribute("IsSnakeHead", true)
 	headPart:SetAttribute("IsSnakeSegment", true)
+	
+	-- MAKE HEAD COMPLETELY INVISIBLE - Eyes will still show
+	headPart.Transparency = 1
 
 	-- Only add light if not in Low graphics mode
 	local headLight = nil
@@ -567,6 +570,9 @@ local function applyGraphicsModeToSnake(player, snakeInstance)
 				snakeInstance.headParts.rightPupil.Material = Enum.Material.Neon
 			end
 		end
+		
+		-- ENSURE HEAD STAYS INVISIBLE REGARDLESS OF GRAPHICS MODE
+		snakeInstance.headParts.head.Transparency = 1
 		
 		-- Handle head light
 		if graphicsMode == "Low" then
@@ -1034,6 +1040,11 @@ local function createUltraSmoothSnake(character)
 		if headParts and headParts.head and headParts.head.Parent then
 			-- Position head properly without creating duplicates
 			headParts.head.CFrame = CFrame.lookAt(headPos, headPos + lookVector)
+			
+			-- ENSURE HEAD STAYS INVISIBLE
+			if headParts.head.Transparency ~= 1 then
+				headParts.head.Transparency = 1
+			end
 
 			-- Update eye positions to maintain EXACT proportions as head grows
 			if headParts.leftEye and headParts.rightEye and updateCounter % 30 == 0 then  -- Less frequent for performance
