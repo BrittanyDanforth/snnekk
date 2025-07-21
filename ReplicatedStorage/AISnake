@@ -8,12 +8,6 @@ local Players = game:GetService("Players")
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
--- Load SnakeSkins module for consistent skins with players
-local SnakeSkins
-pcall(function()
-	SnakeSkins = require(ReplicatedStorage:WaitForChild("SnakeSkins"))
-end)
-
 -- Load the orb pickup module
 local AISnakeOrbPickup
 pcall(function()
@@ -198,53 +192,54 @@ local function getOrCreateSnakeModel(aiId)
 	return model
 end
 
--- Get random skin from SnakeSkins module
-local function getRandomSnakeSkin()
-	if not SnakeSkins then
-		-- Fallback to default if SnakeSkins not loaded
-		return {
-			HeadColor = Color3.fromRGB(255, 255, 0), -- Yellow
-			BodyColors = {
-				Color3.fromRGB(255, 255, 0), -- Yellow
-				Color3.fromRGB(255, 223, 0), -- Golden yellow
-				Color3.fromRGB(255, 255, 0), -- Yellow
-				Color3.fromRGB(255, 255, 224), -- Light yellow
-			}
+local AISnakeColorCombos = {
+	{
+		-- Purple snake (the laggy one)
+		HeadColor = Color3.fromRGB(120, 0, 255),
+		BodyColors = {
+			Color3.fromRGB(25, 0, 51), Color3.fromRGB(75, 0, 130),
+			Color3.fromRGB(139, 0, 255), Color3.fromRGB(0, 0, 128), Color3.fromRGB(25, 0, 51),
 		}
-	end
-	
-	-- Get list of available skins (excluding special ones)
-	local availableSkins = {}
-	for skinName, skinData in pairs(SnakeSkins) do
-		-- Prefer Yellow skin and other smooth skins, avoid Purple
-		if skinName ~= "Purple" and skinName ~= "Galaxy" and skinName ~= "Void" then
-			-- Add Yellow skin multiple times to increase its chance
-			if skinName == "Yellow" then
-				for i = 1, 3 do
-					table.insert(availableSkins, skinData)
-				end
-			else
-				table.insert(availableSkins, skinData)
-			end
-		end
-	end
-	
-	-- Return random skin
-	if #availableSkins > 0 then
-		local skin = availableSkins[math.random(1, #availableSkins)]
-		return {
-			HeadColor = skin.HeadColor,
-			BodyColors = skin.BodyColors,
-			HeadMaterial = skin.HeadMaterial or Enum.Material.Neon,
-			BodyMaterial = skin.BodyMaterial or Enum.Material.Neon
+	},
+	{
+		-- Green snake
+		HeadColor = Color3.fromRGB(102, 255, 102),
+		BodyColors = {
+			Color3.fromRGB(102, 255, 102), Color3.fromRGB(153, 255, 153),
+			Color3.fromRGB(204, 255, 204), Color3.fromRGB(153, 255, 153), Color3.fromRGB(102, 255, 102),
 		}
+	},
+	{
+		-- Red snake
+		HeadColor = Color3.fromRGB(255, 102, 102),
+		BodyColors = {
+			Color3.fromRGB(255, 51, 51), Color3.fromRGB(255, 102, 102),
+			Color3.fromRGB(255, 153, 153), Color3.fromRGB(255, 102, 102), Color3.fromRGB(255, 51, 51),
+		}
+	},
+	{
+		-- Yellow snake (the smooth one)
+		HeadColor = Color3.fromRGB(255, 255, 102),
+		BodyColors = {
+			Color3.fromRGB(255, 255, 51), Color3.fromRGB(255, 255, 102),
+			Color3.fromRGB(255, 255, 153), Color3.fromRGB(255, 255, 102), Color3.fromRGB(255, 255, 51),
+		}
+	},
+}
+
+-- Prefer yellow snakes since they run smoother
+local function getRandomColorCombo()
+	-- 40% chance for yellow, 20% for each other color
+	local rand = math.random()
+	if rand < 0.4 then
+		return AISnakeColorCombos[4]  -- Yellow
+	elseif rand < 0.6 then
+		return AISnakeColorCombos[2]  -- Green
+	elseif rand < 0.8 then
+		return AISnakeColorCombos[3]  -- Red
+	else
+		return AISnakeColorCombos[1]  -- Purple (least common due to lag)
 	end
-	
-	-- Ultimate fallback
-	return {
-		HeadColor = Color3.fromRGB(255, 255, 0),
-		BodyColors = {Color3.fromRGB(255, 255, 0)}
-	}
 end
 
 local function deepCopy(orig)
@@ -1094,11 +1089,9 @@ function AISnake.new(startPosition)
 	local self = setmetatable({}, AISnake)
 	self.Config = deepCopy(SnakeConfig)
 
-	local combo = getRandomSnakeSkin()
+	local combo = getRandomColorCombo()
 	self.Config.HeadColor = combo.HeadColor
 	self.Config.BodyColors = combo.BodyColors
-	self.Config.HeadMaterial = combo.HeadMaterial
-	self.Config.BodyMaterial = combo.BodyMaterial
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
