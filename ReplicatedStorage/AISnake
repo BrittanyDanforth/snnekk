@@ -1503,13 +1503,21 @@ function AISnake:updateMovement(dt)
 	for i = 1 + updateOffset, self.CurrentLength, segmentSkip do
 		local segment = self.Segments[i]
 		if segment and segment.Parent then
-			local delay = mathFloor(i * 1.2)
+			local delay = mathFloor(i * 1.1)  -- Reduced from 1.2 for tighter following
 			local targetData = self:getFromHistory(delay)
 			if targetData then
-				local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
+				-- Use proper segment spacing to prevent overlap
+				local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * i * 0.9)
 				local currentSegmentPos = segment.Position
-				local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
-				segment.CFrame = CFramenew(newPos)
+				
+				-- Only update if moved significantly to reduce flickering
+				local moveDistance = (segmentPos - currentSegmentPos).Magnitude
+				if moveDistance > 0.1 then  -- Threshold to prevent micro-movements
+					local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed * 0.8)  -- Slightly slower for smoothness
+					-- Add tiny Y offset based on segment index to prevent z-fighting
+					local yOffset = (i % 2 == 0) and 0.01 or -0.01
+					segment.CFrame = CFramenew(newPos + Vector3new(0, yOffset, 0))
+				end
 			end
 		end
 	end
@@ -1522,11 +1530,16 @@ function AISnake:updateMovement(dt)
 			for i = tailStart, self.CurrentLength, 10 do
 				local segment = self.Segments[i]
 				if segment and segment.Parent then
-					local delay = mathFloor(i * 1.2)
+					local delay = mathFloor(i * 1.1)
 					local targetData = self:getFromHistory(delay)
 					if targetData then
-						local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
-						segment.Position = segmentPos  -- Direct position set for tail
+						-- Use same spacing calculation as main loop
+						local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * i * 0.9)
+						-- Smooth position update for tail too
+						local currentPos = segment.Position
+						if (segmentPos - currentPos).Magnitude > 0.5 then  -- Higher threshold for tail
+							segment.CFrame = CFramenew(currentPos:Lerp(segmentPos, 0.5))
+						end
 					end
 				end
 			end
