@@ -77,7 +77,19 @@ local function checkWallCollision(position)
 end
 
 local function handleWallCollision(entity, isPlayer)
-	local key = isPlayer and entity or entity.Name
+	-- Validate entity
+	if not entity then return end
+	
+	local key
+	if isPlayer then
+		key = entity
+	else
+		key = entity.Name or tostring(entity)
+	end
+	
+	-- Ensure we have a valid key
+	if not key then return end
+	
 	local currentTime = tick()
 	
 	-- Check cooldown
@@ -97,6 +109,13 @@ local function handleWallCollision(entity, isPlayer)
 	
 	if not snakeData or not snakeData.segments then return end
 	
+	-- Check minimum length to prevent errors
+	local currentLength = #snakeData.segments
+	if currentLength <= 10 then
+		-- Don't process wall collisions for very small snakes
+		return
+	end
+	
 	-- Drop orbs at head position
 	local headPos = snakeData.segments[1] and snakeData.segments[1].Position
 	if headPos then
@@ -115,9 +134,12 @@ local function handleWallCollision(entity, isPlayer)
 		end
 		
 		-- Remove segments (lose length) for players
-		if isPlayer and snakeData.shrink then
-			-- Use the shrink method if available
-			snakeData.shrink(WALL_ORB_DROP_AMOUNT)
+		if isPlayer and snakeData.shrink and currentLength > 10 then
+			-- Only shrink if we have enough segments
+			local segmentsToRemove = math.min(WALL_ORB_DROP_AMOUNT, currentLength - 10)
+			if segmentsToRemove > 0 then
+				snakeData.shrink(segmentsToRemove)
+			end
 		end
 		
 		-- Visual feedback
