@@ -1188,11 +1188,12 @@ function AISnake:setConfidenceBuff()
 	self.killCount = self.killCount + 1
 	self.lastKillTime = tick()
 
-	if self.HeadParts and self.HeadParts.headOutline then
-		self.HeadParts.headOutline.Color3 = Color3.fromRGB(255, 255, 0)
-		self.HeadParts.headOutline.LineThickness = 0.3
-		self.HeadParts.headOutline.Transparency = 0.3
-	end
+	-- REMOVED: Debug yellow outline - keep it invisible
+	-- if self.HeadParts and self.HeadParts.headOutline then
+	--	self.HeadParts.headOutline.Color3 = Color3.fromRGB(255, 255, 0)
+	--	self.HeadParts.headOutline.LineThickness = 0.3
+	--	self.HeadParts.headOutline.Transparency = 0.3
+	-- end
 end
 
 function AISnake:Destroy()
