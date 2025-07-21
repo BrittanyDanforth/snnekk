@@ -219,33 +219,12 @@ local function createDecor()
                 ) * CFrame.Angles(0, math.pi/2, 0)
                 line.Anchored = true
                 line.CanCollide = false
-                line.Transparency = 0.88  -- Just a tiny bit more visible
+                line.Transparency = 0.62  -- User's preferred transparency
                 line.Color = Color3.fromRGB(60, 60, 70)
                 line.Material = Enum.Material.SmoothPlastic
                 line.Parent = decorGroup
             end
         end
-    end
-
-    -- Add some circular spots like slither.io
-    for i = 1, 40 do
-        local spot = Instance.new("Part")
-        spot.Name = "GroundSpot"
-        spot.Shape = Enum.PartType.Cylinder
-        spot.Size = Vector3.new(0.2, math.random(30, 60), math.random(30, 60))
-        spot.Position = Vector3.new(
-            math.random(-MAP_SIZE/2+50, MAP_SIZE/2-50),
-            MAP_HEIGHT+0.1,
-            math.random(-MAP_SIZE/2+50, MAP_SIZE/2-50)
-        )
-        spot.Orientation = Vector3.new(0, 0, 90)
-        spot.Anchored = true
-        spot.CanCollide = false
-        spot.Locked = true
-        spot.Transparency = 0.92
-        spot.Color = Color3.fromRGB(55, 55, 65)
-        spot.Material = Enum.Material.SmoothPlastic
-        spot.Parent = decorGroup
     end
 end
 
