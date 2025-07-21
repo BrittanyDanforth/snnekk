@@ -59,8 +59,10 @@ local WALL_DAMAGE_MULTIPLIER = 0.95 -- Lose 5% of length per wall hit
 local WALL_PUSH_TIME = 3.0 -- Time before pushing player away from wall
 local WALL_PUSH_FORCE = 100 -- Force to push player away (doubled)
 local WALL_WARNING_TIME = 2.0 -- Time before warning player
+local WALL_PUSH_IMMUNITY_TIME = 3.0 -- Immunity time after being pushed
 local wallCollisionCooldowns = {} -- Track cooldowns per player/AI
 local wallContactTime = {} -- Track how long player has been near wall
+local wallPushImmunity = {} -- Track push immunity
 
 -- === WALL COLLISION FUNCTIONS ===
 local function checkWallCollision(position)
@@ -175,6 +177,7 @@ Players.PlayerRemoving:Connect(function(player)
 	invinciblePlayers[player] = nil
 	wallCollisionCooldowns[player] = nil
 	wallContactTime[player] = nil
+	wallPushImmunity[player] = nil
 
 	-- Clean from collision cache (if it exists)
 	if CollisionCache and CollisionCache.playerSegments then
@@ -1506,8 +1509,9 @@ RunService.Stepped:Connect(function()
 		if head and head.Parent then
 			local headPos = head.Position
 			
-			-- Check wall collision
-			if checkWallCollision(headPos) then
+			-- Check wall collision (skip if being pushed or has immunity)
+			local hasImmunity = wallPushImmunity[player] and tick() - wallPushImmunity[player] < WALL_PUSH_IMMUNITY_TIME
+			if checkWallCollision(headPos) and not player:GetAttribute("BeingPushedFromWall") and not hasImmunity then
 				handleWallCollision(player, true)
 				
 				-- Track wall contact time
@@ -1554,16 +1558,15 @@ RunService.Stepped:Connect(function()
 						-- Reset contact time
 						wallContactTime[key] = nil
 						
-						-- Temporarily disable snake control to let push work
-						if character:FindFirstChild("Humanoid") then
-							local humanoid = character.Humanoid
-							local oldSpeed = humanoid.WalkSpeed
-							humanoid.WalkSpeed = 0 -- Disable movement temporarily
-							
-							-- Re-enable after push
-							task.wait(0.5)
-							humanoid.WalkSpeed = oldSpeed
-						end
+						-- Grant temporary immunity
+						wallPushImmunity[player] = tick()
+						
+						-- Mark player as being pushed to prevent re-collision
+						player:SetAttribute("BeingPushedFromWall", true)
+						task.spawn(function()
+							task.wait(1.5) -- Wait for push to complete
+							player:SetAttribute("BeingPushedFromWall", false)
+						end)
 						
 						-- Visual feedback
 						print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
