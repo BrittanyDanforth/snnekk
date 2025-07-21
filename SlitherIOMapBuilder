@@ -209,21 +209,21 @@ local function createDecor()
                 local line = Instance.new("Part")
                 line.Name = "HexLine"
                 line.Size = Vector3.new(
-                    math.sqrt((x2-x1)^2 + (z2-z1)^2),  -- Exact length, no overlap
-                    0.2,  -- Very thin
-                    2  -- Thin line
+                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 1,  -- Small overlap to hide edges
+                    0.05,  -- Even thinner to sit flush with ground
+                    3  -- Slightly wider for better visibility
                 )
                 -- Position and rotate properly
                 local midX = (x1 + x2) / 2
                 local midZ = (z1 + z2) / 2
-                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.1, midZ) * 
+                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.025, midZ) *  -- Much lower, almost in ground
                              CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
                 line.Anchored = true
                 line.CanCollide = false
                 line.CanTouch = false  -- Disable touch for performance
                 line.CanQuery = false  -- Disable raycasts for performance
-                line.Transparency = 0.62
-                line.Color = Color3.fromRGB(60, 60, 70)
+                line.Transparency = 0.6  -- Slightly more visible
+                line.Color = Color3.fromRGB(65, 65, 75)  -- Slightly brighter
                 line.Material = Enum.Material.SmoothPlastic  -- Simpler material
                 line.CastShadow = false  -- No shadows for performance
                 line.Parent = decorGroup
