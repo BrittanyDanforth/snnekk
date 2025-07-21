@@ -60,9 +60,11 @@ local WALL_PUSH_TIME = 3.0 -- Time before pushing player away from wall
 local WALL_PUSH_FORCE = 50 -- Force to push player away (gentle)
 local WALL_WARNING_TIME = 2.0 -- Time before warning player
 local WALL_PUSH_IMMUNITY_TIME = 3.0 -- Immunity time after being pushed
+local WALL_CHECK_INTERVAL = 0.1 -- Only check walls every 0.1 seconds per player
 local wallCollisionCooldowns = {} -- Track cooldowns per player/AI
 local wallContactTime = {} -- Track how long player has been near wall
 local wallPushImmunity = {} -- Track push immunity
+local wallLastCheck = {} -- Track last wall check time per player
 
 -- === WALL COLLISION FUNCTIONS ===
 local function checkWallCollision(position)
@@ -119,15 +121,35 @@ local function handleWallCollision(entity, isPlayer)
 	-- Drop orbs at head position
 	local headPos = snakeData.segments[1] and snakeData.segments[1].Position
 	if headPos then
-		-- Spawn wall collision orbs
+		-- Spawn wall collision orbs INSIDE the map
+		local mapBoundary = 390 -- Stay 10 studs inside the 400 boundary
+		
 		for i = 1, WALL_ORB_DROP_AMOUNT do
+			-- Calculate offset to push orbs inward from wall
+			local inwardOffset = Vector3.new(0, 0, 0)
+			if math.abs(headPos.X) > mapBoundary then
+				-- Near left/right wall, push inward
+				inwardOffset = Vector3.new(-math.sign(headPos.X) * 15, 0, 0)
+			elseif math.abs(headPos.Z) > mapBoundary then
+				-- Near top/bottom wall, push inward
+				inwardOffset = Vector3.new(0, 0, -math.sign(headPos.Z) * 15)
+			end
+			
+			-- Add random offset but keep within bounds
 			local randomOffset = Vector3.new(
-				math.random(-10, 10),
+				math.random(-5, 5),
 				0,
-				math.random(-10, 10)
+				math.random(-5, 5)
 			)
-			local orbPos = headPos + randomOffset
-			orbPos = Vector3.new(orbPos.X, 5, orbPos.Z) -- Match orb spawn height
+			
+			local orbPos = headPos + inwardOffset + randomOffset
+			
+			-- Clamp position to ensure it's inside map
+			orbPos = Vector3.new(
+				math.clamp(orbPos.X, -mapBoundary, mapBoundary),
+				5, -- Match orb spawn height
+				math.clamp(orbPos.Z, -mapBoundary, mapBoundary)
+			)
 			
 			-- Spawn orb directly using OrbUtils
 			OrbUtils.spawnOrbAt(orbPos, 1)
@@ -206,6 +228,7 @@ Players.PlayerRemoving:Connect(function(player)
 	wallCollisionCooldowns[player] = nil
 	wallContactTime[player] = nil
 	wallPushImmunity[player] = nil
+	wallLastCheck[player] = nil
 
 	-- Clean from collision cache (if it exists)
 	if CollisionCache and CollisionCache.playerSegments then
@@ -1537,8 +1560,16 @@ RunService.Stepped:Connect(function()
 		if head and head.Parent then
 			local headPos = head.Position
 			
+			-- Throttle wall checks for performance
+			local currentTime = tick()
+			local lastCheck = wallLastCheck[player] or 0
+			if currentTime - lastCheck < WALL_CHECK_INTERVAL then
+				continue -- Skip this wall check
+			end
+			wallLastCheck[player] = currentTime
+			
 			-- Check wall collision (skip if being pushed or has immunity)
-			local hasImmunity = wallPushImmunity[player] and tick() - wallPushImmunity[player] < WALL_PUSH_IMMUNITY_TIME
+			local hasImmunity = wallPushImmunity[player] and currentTime - wallPushImmunity[player] < WALL_PUSH_IMMUNITY_TIME
 			if checkWallCollision(headPos) and not player:GetAttribute("BeingPushedFromWall") and not hasImmunity then
 				handleWallCollision(player, true)
 				
@@ -1599,15 +1630,25 @@ RunService.Stepped:Connect(function()
 						-- Visual feedback
 						print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
 						
-						-- Force drop extra orbs when pushed
+						-- Force drop extra orbs when pushed (inside map)
+						local mapBoundary = 390
 						for i = 1, 2 do
+							-- Push orbs toward center when pushed from wall
+							local centerDirection = -headPos.Unit * 10
 							local randomOffset = Vector3.new(
-								math.random(-5, 5),
+								math.random(-3, 3),
 								0,
-								math.random(-5, 5)
+								math.random(-3, 3)
 							)
-							local orbPos = headPos + randomOffset
-							orbPos = Vector3.new(orbPos.X, 5, orbPos.Z)
+							local orbPos = headPos + centerDirection + randomOffset
+							
+							-- Ensure orb is inside map
+							orbPos = Vector3.new(
+								math.clamp(orbPos.X, -mapBoundary, mapBoundary),
+								5,
+								math.clamp(orbPos.Z, -mapBoundary, mapBoundary)
+							)
+							
 							OrbUtils.spawnOrbAt(orbPos, 1)
 						end
 						
