@@ -104,16 +104,9 @@ local function handleWallCollision(entity, isPlayer)
 			local orbPos = headPos + randomOffset
 			orbPos = Vector3.new(orbPos.X, 5, orbPos.Z) -- Match orb spawn height
 			
-			-- Queue orb spawn
-			table.insert(orbSpawnQueue, {
-				position = orbPos,
-				value = 1, -- Single orb value
-				sourceType = "wall"
-			})
+			-- Spawn orb directly using OrbUtils
+			OrbUtils.spawnOrbAt(orbPos, 1)
 		end
-		
-		-- Process orb spawns immediately
-		processOrbSpawnQueue()
 		
 		-- Visual feedback
 		if DEBUG_COLLISIONS then
