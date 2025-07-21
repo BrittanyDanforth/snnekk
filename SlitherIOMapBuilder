@@ -17,18 +17,19 @@ local WALL_HEIGHT = 200    -- Height of invisible walls (much taller)
 local DECOR_GROUP_NAME = "SlitherIOMapDecor"
 local GRID_GROUP_NAME = "SlitherIOMapGrid"
 
--- Function to set up slither.io style lighting and environment
+-- Function to set up slither.io style DARK lighting
 local function setupSlitherEnvironment()
-	print("Setting up dark slither.io environment...")
-	-- Remove skybox
+	local Lighting = game:GetService("Lighting")
+	
+	-- Remove skybox for dark background
 	local sky = Lighting:FindFirstChildOfClass("Sky")
 	if sky then
 		sky:Destroy()
 	end
-
-	-- Set up slither.io style environment (dark but not pitch black)
-	Lighting.Ambient = Color3.fromRGB(15, 15, 20)  -- Even darker for true nighttime
-	Lighting.Brightness = 0.1  -- Very low brightness for night
+	
+	-- Dark slither.io style lighting
+	Lighting.Ambient = Color3.fromRGB(15, 15, 20)  -- Very dark ambient
+	Lighting.Brightness = 0.1  -- Low brightness for night
 	Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 15)
 	Lighting.ColorShift_Top = Color3.fromRGB(20, 20, 25)
 	Lighting.EnvironmentDiffuseScale = 0.2
@@ -36,33 +37,19 @@ local function setupSlitherEnvironment()
 	Lighting.GlobalShadows = false
 	Lighting.OutdoorAmbient = Color3.fromRGB(20, 20, 25)
 	Lighting.ShadowSoftness = 1
-	Lighting.ClockTime = 20  -- 8 PM - Dark evening like slither.io
+	Lighting.ClockTime = 20  -- 8 PM - Dark evening
 	Lighting.GeographicLatitude = 0
-	Lighting.FogEnd = 500  -- Even closer fog
+	
+	-- Dark fog for atmosphere
+	Lighting.FogEnd = 500
 	Lighting.FogStart = 50
 	Lighting.FogColor = Color3.fromRGB(15, 15, 20)
-
-	-- Create a proper backdrop
-	local backdrop = Workspace:FindFirstChild("SlitherBackdrop")
-	if backdrop then backdrop:Destroy() end
-
-	backdrop = Instance.new("Part")
-	backdrop.Name = "SlitherBackdrop"
-	backdrop.Size = Vector3.new(MAP_SIZE + 1000, 1, MAP_SIZE + 1000)
-	backdrop.Position = Vector3.new(0, -20, 0)
-	backdrop.Anchored = true
-	backdrop.CanCollide = false
-	backdrop.Material = Enum.Material.SmoothPlastic
-	backdrop.Color = Color3.fromRGB(10, 10, 15)  -- Even darker backdrop
-	backdrop.Parent = Workspace
-
-	-- Remove or adjust atmosphere for clarity
+	
+	-- Remove atmosphere if exists
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
 	if atmosphere then
-		atmosphere:Destroy()  -- Remove haze for better visibility
+		atmosphere:Destroy()
 	end
-	
-	print("Dark environment setup complete!")
 end
 
 -- Helper: Remove all map decor (grid lines, hexagons, spots, corners)
