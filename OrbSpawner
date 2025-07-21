@@ -54,13 +54,14 @@ local ORB_MAX             = 950  -- More orbs available!
 local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
--- Server uses default high settings, clients handle their own graphics
-local RENDER_DISTANCE = 250  -- Increased from 150
-local FAR_DISTANCE = 400     -- Increased from 300
-local FADE_DISTANCE = 100    -- Increased from 50
-local MIN_ORB_SIZE = 0.3
-local MAX_ORB_SIZE = 2.0
-local LOD_UPDATE_RATE = 0.1
+-- Server uses aggressive LOD to reduce lag
+local RENDER_DISTANCE = 120  -- Reduced for better performance
+local FAR_DISTANCE = 180     -- Hide orbs beyond this
+local FADE_DISTANCE = 60     -- Start fading at this distance
+local NEAR_DISTANCE = 30     -- Full quality within this range
+local MIN_ORB_SIZE = 0.5
+local MAX_ORB_SIZE = 1.5
+local LOD_UPDATE_RATE = 0.15 -- Update less frequently
 
 ---------------------------------------------------------------------
 -- Dynamic spawn area
@@ -192,14 +193,18 @@ local function calculateOrbLOD(orb, viewPositions)
 		if dist < closestDist then closestDist = dist end
 	end
 
-	if closestDist <= FADE_DISTANCE then
+	if closestDist <= NEAR_DISTANCE then
 		return "full", 1.0  -- Full visibility
+	elseif closestDist <= FADE_DISTANCE then
+		-- Smooth fade from near to fade distance
+		local fade = 1 - ((closestDist - NEAR_DISTANCE) / (FADE_DISTANCE - NEAR_DISTANCE))
+		return "fading", math.max(0.3, fade)
 	elseif closestDist <= RENDER_DISTANCE then
-		-- Fade based on distance
-		local fade = 1 - ((closestDist - FADE_DISTANCE) / (RENDER_DISTANCE - FADE_DISTANCE))
-		return "fading", fade
+		-- Very faded but still visible
+		return "far", 0.15
 	elseif closestDist <= FAR_DISTANCE then
-		return "far", 0.3  -- Minimal visibility
+		-- Barely visible - just a hint
+		return "far", 0.05
 	else
 		return "hidden", 0  -- Too far, hide completely
 	end
@@ -614,9 +619,12 @@ attachOrbTouched = function(orb)
 end
 
 ---------------------------------------------------------------------
--- LOD Update Loop - Updates visibility of all orbs
+-- LOD Update Loop - Updates visibility of all orbs in batches
 ---------------------------------------------------------------------
 local lastLODUpdate = 0
+local orbUpdateIndex = 1
+local ORBS_PER_FRAME = 50 -- Process this many orbs per update
+
 task.spawn(function()
 	RunService.Heartbeat:Connect(function()
 		local now = tick()
@@ -626,13 +634,29 @@ task.spawn(function()
 		local viewPositions = getAllViewingPositions()
 		if #viewPositions == 0 then return end
 
-		-- Update LOD for all orbs
-		for i = #orbs, 1, -1 do
-			local orb = orbs[i]
+		-- Update LOD for a batch of orbs each frame
+		local processed = 0
+		local totalOrbs = #orbs
+		
+		while processed < ORBS_PER_FRAME and orbUpdateIndex <= totalOrbs do
+			local orb = orbs[orbUpdateIndex]
 			if orb and orb.Parent then
 				local state, fade = calculateOrbLOD(orb, viewPositions)
 				applyOrbLOD(orb, state, fade)
 			end
+			
+			orbUpdateIndex = orbUpdateIndex + 1
+			processed = processed + 1
+			
+			-- Wrap around to start
+			if orbUpdateIndex > totalOrbs then
+				orbUpdateIndex = 1
+			end
+		end
+		
+		-- Reset index if we've gone past the end
+		if orbUpdateIndex > totalOrbs then
+			orbUpdateIndex = 1
 		end
 	end)
 end)
@@ -729,15 +753,13 @@ local function createOrb()
 			-- CRITICAL FIX: Add regular orbs to the orbs array!
 			orbs[#orbs + 1] = orb
 			
-			-- Start orbs visible at medium distance
-			orb.Transparency = 0.3
-			orb.Size = Vector3.new(1.5, 1.5, 1.5)
-			orbStates[orb] = {state = "far", fade = 0.7}
+			-- Start orbs hidden until LOD system takes over
+			orb.Transparency = 1
+			orb.Size = Vector3.new(0.1, 0.1, 0.1)
+			orbStates[orb] = {state = "hidden", fade = 0}
 			local light = orb:FindFirstChild("PointLight")
 			if light then 
-				light.Enabled = true
-				light.Brightness = 1.4
-				light.Range = 5.6
+				light.Enabled = false
 			end
 			addOrbToGrid(orb) -- Add to grid
 		end
