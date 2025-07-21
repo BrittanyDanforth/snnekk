@@ -174,32 +174,56 @@ local function createDecor()
     decorGroup.Name = DECOR_GROUP_NAME
     decorGroup.Parent = Workspace
 
-    -- Create slither.io style hexagonal pattern on ground
-    for i = 1, 80 do
-        local x = math.random(-MAP_SIZE/2+40, MAP_SIZE/2-40)
-        local z = math.random(-MAP_SIZE/2+40, MAP_SIZE/2-40)
-
-        -- Create hexagon outline using 6 parts
-        local hexSize = math.random(20, 40)
-        for angle = 0, 300, 60 do
-            local rad = math.rad(angle)
-            local nextRad = math.rad(angle + 60)
+    -- Create proper tessellating hexagonal pattern like slither.io
+    local hexRadius = 50  -- Distance from center to vertex
+    local hexHeight = hexRadius * math.sqrt(3)  -- Height of hexagon
+    local hexWidth = hexRadius * 2  -- Width of hexagon
+    
+    -- Calculate spacing for perfect tessellation
+    local xSpacing = hexWidth * 3/4  -- Hexagons overlap horizontally
+    local ySpacing = hexHeight  -- Vertical spacing
+    
+    -- Create hexagonal grid across the map
+    for row = -20, 20 do
+        for col = -20, 20 do
+            -- Calculate position with offset for odd rows
+            local xOffset = (row % 2) * (xSpacing / 2)
+            local x = col * xSpacing + xOffset
+            local z = row * ySpacing
             
-            local line = Instance.new("Part")
-            line.Name = "HexLine"
-            line.Size = Vector3.new(hexSize * 0.1, 0.1, hexSize)
-            line.Position = Vector3.new(
-                x + math.cos(rad) * hexSize/2,
-                MAP_HEIGHT + 0.1,
-                z + math.sin(rad) * hexSize/2
-            )
-            line.Orientation = Vector3.new(0, angle + 30, 0)
-            line.Anchored = true
-            line.CanCollide = false
-            line.Transparency = 0.88  -- Just a tiny bit more visible (was 0.9)
-            line.Color = Color3.fromRGB(60, 60, 70)
-            line.Material = Enum.Material.SmoothPlastic
-            line.Parent = decorGroup
+            -- Skip if outside map bounds
+            if math.abs(x) > MAP_SIZE/2 - 50 or math.abs(z) > MAP_SIZE/2 - 50 then
+                continue
+            end
+            
+            -- Create hexagon using 6 lines
+            for i = 0, 5 do
+                local angle1 = (i * 60) * math.pi / 180
+                local angle2 = ((i + 1) * 60) * math.pi / 180
+                
+                local x1 = x + hexRadius * math.cos(angle1)
+                local z1 = z + hexRadius * math.sin(angle1)
+                local x2 = x + hexRadius * math.cos(angle2)
+                local z2 = z + hexRadius * math.sin(angle2)
+                
+                local line = Instance.new("Part")
+                line.Name = "HexLine"
+                line.Size = Vector3.new(
+                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 2,  -- Length with small overlap
+                    0.1,
+                    3  -- Line thickness
+                )
+                line.CFrame = CFrame.lookAt(
+                    Vector3.new((x1+x2)/2, MAP_HEIGHT + 0.1, (z1+z2)/2),
+                    Vector3.new(x2, MAP_HEIGHT + 0.1, z2)
+                ) * CFrame.Angles(0, math.pi/2, 0)
+                line.Anchored = true
+                line.CanCollide = false
+                line.Transparency = 0.88  -- Just a tiny bit more visible
+                line.Color = Color3.fromRGB(60, 60, 70)
+                line.Material = Enum.Material.SmoothPlastic
+                line.Parent = decorGroup
+            end
         end
     end
 
