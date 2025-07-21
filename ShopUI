@@ -2725,10 +2725,14 @@ local function createGamepassCard(passName, index)
 
 	-- Click to purchase with modern popup
 	card.MouseButton1Click:Connect(function()
-		playSound("SELECT")
+		-- No sound on click - was too annoying
 		
 		-- Create purchase confirmation popup
-		createGamepassPurchasePopup(passName, passData)
+		if createGamepassPurchasePopup then
+			createGamepassPurchasePopup(passName, passData)
+		else
+			warn("createGamepassPurchasePopup is not defined yet!")
+		end
 	end)
 end
 
@@ -2793,28 +2797,6 @@ local function createSkinCard(skinName, index)
 end
 
 -- Duplicate createSkinCard function removed (was orphaned code from bad merge)
-	title.Size = UDim2.new(0.9, 0, 0.1, 0)
-	title.Position = UDim2.new(0.05, 0, 0.32, 0)
-	title.BackgroundTransparency = 1
-	title.Text = passName:upper()
-	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
-	title.TextScaled = true
-	title.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
-	title.Parent = popup
-	
-	-- Description box
-	local descBox = Instance.new("Frame")
-	descBox.Size = UDim2.new(0.9, 0, 0.15, 0)
-	descBox.Position = UDim2.new(0.05, 0, 0.45, 0)
-	descBox.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
-	descBox.BackgroundTransparency = 0.5
-	descBox.Parent = popup
-	createCorner(descBox, 10)
-	
-	local descText = Instance.new("TextLabel")
-	descText.Size = UDim2.new(0.95, 0, 0.8, 0)
-	descText.Position = UDim2.new(0.025, 0, 0.1, 0)
-	descText.BackgroundTransparency = 1
 	descText.Text = passData.description
 	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
 	descText.TextScaled = true
