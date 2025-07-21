@@ -438,6 +438,136 @@ local SnakeSkinsData = {
 		GlowIntensity = 2.5,
 		GlowRange = 8,
 		Description = "All colors of the rainbow!"
+	},
+	["VIP Diamond"] = {price = nil, robux = 999, tag = "VIP", perkDescription = "• Diamond trail\n• +25% XP\n• Diamond crown"},
+	["VIP Inferno"] = {price = nil, robux = 1499, tag = "VIP", perkDescription = "• Flame effects\n• +30% coins\n• Fire crown"},
+	["VIP Nebula"] = {price = nil, robux = 1999, tag = "VIP", perkDescription = "• Galaxy effects\n• +35% size boost\n• Space crown"},
+	["VIP Crystal"] = {price = nil, robux = 2499, tag = "ULTIMATE", perkDescription = "• Crystal shards\n• All perks\n• Crystal crown"}
+}
+
+-- GAMEPASS DATA - Essential power-ups and boosts
+local GAMEPASS_DATA = {
+	-- SPEED BOOSTS
+	["Speed Boost"] = {
+		id = 123456789, -- Replace with your actual gamepass ID
+		price = 299,
+		icon = "⚡",
+		description = "+25% Movement Speed forever!",
+		color = Color3.fromRGB(255, 255, 0),
+		tag = "POPULAR",
+		benefits = {
+			"⚡ 25% faster movement",
+			"💨 Speed trail effect",
+			"🏃 Better acceleration"
+		}
+	},
+	
+	["Mega Speed"] = {
+		id = 123456790, -- Replace with actual ID
+		price = 599,
+		icon = "🚀",
+		description = "+50% Speed - Become the fastest!",
+		color = Color3.fromRGB(255, 150, 0),
+		tag = "BEST VALUE",
+		benefits = {
+			"🚀 50% faster movement",
+			"🔥 Fire trail effect",
+			"💎 Includes Speed Boost"
+		}
+	},
+	
+	-- GROWTH BOOSTS
+	["2x Growth"] = {
+		id = 123456791,
+		price = 399,
+		icon = "📈",
+		description = "Grow 2x faster from orbs!",
+		color = Color3.fromRGB(0, 255, 0),
+		tag = "HOT",
+		benefits = {
+			"📈 Double growth rate",
+			"🍎 2x mass from orbs",
+			"✨ Growth effect"
+		}
+	},
+	
+	-- COIN MULTIPLIERS
+	["2x Coins"] = {
+		id = 123456792,
+		price = 249,
+		icon = "💰",
+		description = "Double all coin earnings!",
+		color = Color3.fromRGB(255, 215, 0),
+		tag = "SMART",
+		benefits = {
+			"💰 2x coins earned",
+			"🎯 2x kill rewards",
+			"📊 2x daily bonus"
+		}
+	},
+	
+	-- SPECIAL ABILITIES
+	["Magnet Power"] = {
+		id = 123456793,
+		price = 349,
+		icon = "🧲",
+		description = "Auto-collect nearby orbs!",
+		color = Color3.fromRGB(255, 100, 255),
+		tag = "USEFUL",
+		benefits = {
+			"🧲 Orb magnet range",
+			"📏 +50% pickup range",
+			"✨ Magnetic effect"
+		}
+	},
+	
+	["Ghost Mode"] = {
+		id = 123456794,
+		price = 449,
+		icon = "👻",
+		description = "5 second spawn protection!",
+		color = Color3.fromRGB(150, 150, 255),
+		tag = "NEW",
+		benefits = {
+			"👻 Spawn invincibility",
+			"💨 Phase through enemies",
+			"🛡️ Death protection"
+		}
+	},
+	
+	-- VIP PACKAGE
+	["VIP Pass"] = {
+		id = 123456795,
+		price = 999,
+		icon = "👑",
+		description = "Ultimate VIP benefits package!",
+		color = Color3.fromRGB(255, 0, 255),
+		tag = "ULTIMATE",
+		benefits = {
+			"👑 VIP chat tag",
+			"💰 3x coins",
+			"📈 2x growth",
+			"⚡ +25% speed",
+			"✨ VIP aura",
+			"🎨 Exclusive skins"
+		}
+	},
+	
+	-- COSMETIC PACKS
+	["Trail Pack"] = {
+		id = 123456796,
+		price = 199,
+		icon = "🌈",
+		description = "10 exclusive trail effects!",
+		color = Color3.fromRGB(255, 100, 150),
+		tag = "STYLE",
+		benefits = {
+			"🌈 Rainbow trail",
+			"🔥 Fire trail",
+			"❄️ Ice trail",
+			"⚡ Lightning trail",
+			"✨ 6 more trails"
+		}
 	}
 }
 

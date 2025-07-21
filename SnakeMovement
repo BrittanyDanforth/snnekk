@@ -311,6 +311,7 @@ local function initializeForCharacter(character)
 		targetDirection = rootPart.CFrame.LookVector,
 		debugMode = false,
 		lastDebugUpdate = 0,
+		speedMultiplier = player:GetAttribute("SpeedMultiplier") or 1, -- Gamepass multiplier
 		stats = {
 			fps = 0,
 			distance = 0,
@@ -713,8 +714,9 @@ local function initializeForCharacter(character)
 		local speedRate = 15 * dt -- Consistent smooth acceleration
 		State.smoothSpeed = State.smoothSpeed + (State.targetSpeed - State.smoothSpeed) * speedRate
 
-		-- Apply movement DIRECTLY for proper speed
-		local moveDistance = State.smoothSpeed * dt
+		-- Apply movement DIRECTLY for proper speed (with gamepass multiplier)
+		local actualSpeed = State.smoothSpeed * State.speedMultiplier
+		local moveDistance = actualSpeed * dt
 		local newPosition = rootPart.Position + State.currentDirection * moveDistance
 
 		-- Update position and rotation

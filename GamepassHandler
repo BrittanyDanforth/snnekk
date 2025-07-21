@@ -1,0 +1,223 @@
+-- GamepassHandler - ServerScriptService
+-- Handles all gamepass functionality and benefits
+
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+-- GAMEPASS IDs (Replace with your actual IDs)
+local GAMEPASS_IDS = {
+	["Speed Boost"] = 123456789,
+	["Mega Speed"] = 123456790,
+	["2x Growth"] = 123456791,
+	["2x Coins"] = 123456792,
+	["Magnet Power"] = 123456793,
+	["Ghost Mode"] = 123456794,
+	["VIP Pass"] = 123456795,
+	["Trail Pack"] = 123456796
+}
+
+-- Create RemoteEvents
+local remotes = ReplicatedStorage:FindFirstChild("Remotes") or Instance.new("Folder")
+remotes.Name = "Remotes"
+remotes.Parent = ReplicatedStorage
+
+local checkGamepassRemote = Instance.new("RemoteFunction")
+checkGamepassRemote.Name = "CheckGamepass"
+checkGamepassRemote.Parent = remotes
+
+local gamepassPurchasedRemote = Instance.new("RemoteEvent")
+gamepassPurchasedRemote.Name = "GamepassPurchased"
+gamepassPurchasedRemote.Parent = remotes
+
+-- Player gamepass cache
+local playerGamepasses = {}
+
+-- Check if player owns a gamepass
+local function hasGamepass(player, gamepassName)
+	local gamepassId = GAMEPASS_IDS[gamepassName]
+	if not gamepassId then return false end
+	
+	-- Check cache first
+	if playerGamepasses[player.UserId] and playerGamepasses[player.UserId][gamepassName] ~= nil then
+		return playerGamepasses[player.UserId][gamepassName]
+	end
+	
+	-- Check with Roblox
+	local success, hasPass = pcall(function()
+		return MarketplaceService:UserOwnsGamePassAsync(player.UserId, gamepassId)
+	end)
+	
+	if success then
+		-- Cache the result
+		if not playerGamepasses[player.UserId] then
+			playerGamepasses[player.UserId] = {}
+		end
+		playerGamepasses[player.UserId][gamepassName] = hasPass
+		return hasPass
+	end
+	
+	return false
+end
+
+-- Apply gamepass benefits
+local function applyGamepassBenefits(player)
+	local character = player.Character
+	if not character then return end
+	
+	-- Store benefits in player attributes
+	local speedMultiplier = 1
+	local growthMultiplier = 1
+	local coinMultiplier = 1
+	local hasGhostMode = false
+	local hasMagnet = false
+	
+	-- Check each gamepass
+	if hasGamepass(player, "Speed Boost") then
+		speedMultiplier = speedMultiplier * 1.25
+	end
+	
+	if hasGamepass(player, "Mega Speed") then
+		speedMultiplier = speedMultiplier * 1.5 -- Overrides basic speed boost
+	end
+	
+	if hasGamepass(player, "2x Growth") then
+		growthMultiplier = growthMultiplier * 2
+	end
+	
+	if hasGamepass(player, "2x Coins") then
+		coinMultiplier = coinMultiplier * 2
+	end
+	
+	if hasGamepass(player, "VIP Pass") then
+		-- VIP gets everything
+		speedMultiplier = math.max(speedMultiplier, 1.25)
+		growthMultiplier = math.max(growthMultiplier, 2)
+		coinMultiplier = 3 -- VIP gets 3x coins
+		
+		-- Add VIP tag to player
+		if character:FindFirstChild("Head") then
+			local billboardGui = character.Head:FindFirstChild("VIPTag") or Instance.new("BillboardGui")
+			billboardGui.Name = "VIPTag"
+			billboardGui.Size = UDim2.new(0, 100, 0, 40)
+			billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+			billboardGui.Parent = character.Head
+			
+			local textLabel = billboardGui:FindFirstChild("TextLabel") or Instance.new("TextLabel")
+			textLabel.Size = UDim2.new(1, 0, 1, 0)
+			textLabel.BackgroundTransparency = 1
+			textLabel.Text = "👑 VIP"
+			textLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+			textLabel.TextScaled = true
+			textLabel.Font = Enum.Font.SourceSansBold
+			textLabel.Parent = billboardGui
+		end
+	end
+	
+	if hasGamepass(player, "Ghost Mode") then
+		hasGhostMode = true
+	end
+	
+	if hasGamepass(player, "Magnet Power") then
+		hasMagnet = true
+	end
+	
+	-- Apply attributes
+	player:SetAttribute("SpeedMultiplier", speedMultiplier)
+	player:SetAttribute("GrowthMultiplier", growthMultiplier)
+	player:SetAttribute("CoinMultiplier", coinMultiplier)
+	player:SetAttribute("HasGhostMode", hasGhostMode)
+	player:SetAttribute("HasMagnet", hasMagnet)
+	
+	print("Applied gamepass benefits to", player.Name)
+	print("Speed:", speedMultiplier, "Growth:", growthMultiplier, "Coins:", coinMultiplier)
+end
+
+-- Handle player joining
+Players.PlayerAdded:Connect(function(player)
+	-- Clear cache for this player
+	playerGamepasses[player.UserId] = {}
+	
+	-- Apply benefits when character spawns
+	player.CharacterAdded:Connect(function(character)
+		wait(0.5) -- Wait for character to load
+		applyGamepassBenefits(player)
+		
+		-- Apply ghost mode if they have it
+		if player:GetAttribute("HasGhostMode") then
+			-- Make player semi-transparent and non-collidable for 5 seconds
+			local function applyGhostMode()
+				for _, part in pairs(character:GetDescendants()) do
+					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+						part.Transparency = 0.5
+						part.CanCollide = false
+					end
+				end
+				
+				-- Add ghost effect
+				local ghostEffect = Instance.new("PointLight")
+				ghostEffect.Brightness = 2
+				ghostEffect.Color = Color3.fromRGB(150, 150, 255)
+				ghostEffect.Range = 10
+				ghostEffect.Parent = character:FindFirstChild("HumanoidRootPart")
+				
+				-- Remove after 5 seconds
+				wait(5)
+				
+				for _, part in pairs(character:GetDescendants()) do
+					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+						part.Transparency = 0
+						part.CanCollide = true
+					end
+				end
+				
+				if ghostEffect then
+					ghostEffect:Destroy()
+				end
+			end
+			
+			spawn(applyGhostMode)
+		end
+	end)
+end)
+
+-- Handle player leaving
+Players.PlayerRemoving:Connect(function(player)
+	playerGamepasses[player.UserId] = nil
+end)
+
+-- Remote function to check gamepass ownership
+checkGamepassRemote.OnServerInvoke = function(player, gamepassName)
+	return hasGamepass(player, gamepassName)
+end
+
+-- Handle gamepass purchases
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamepassId, wasPurchased)
+	if wasPurchased then
+		-- Find which gamepass was purchased
+		local gamepassName = nil
+		for name, id in pairs(GAMEPASS_IDS) do
+			if id == gamepassId then
+				gamepassName = name
+				break
+			end
+		end
+		
+		if gamepassName then
+			-- Update cache
+			if not playerGamepasses[player.UserId] then
+				playerGamepasses[player.UserId] = {}
+			end
+			playerGamepasses[player.UserId][gamepassName] = true
+			
+			-- Apply benefits immediately
+			applyGamepassBenefits(player)
+			
+			-- Notify client
+			gamepassPurchasedRemote:FireClient(player, gamepassName)
+		end
+	end
+end)
+
+print("GamepassHandler loaded successfully!")
