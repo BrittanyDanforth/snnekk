@@ -1,9 +1,9 @@
--- CameraController: FIXED TOP-DOWN VIEW (Like Slither.io)
+-- CameraController: SLITHER.IO STYLE CAMERA
 -- LOCALSCRIPT INSIDE STARTERPLAYERSCRIPTS
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
@@ -35,9 +35,15 @@ end
 
 local isMobile = isMobileDevice()
 
--- Camera settings
-local HEIGHT = isMobile and 80 or 50  -- Higher on mobile for better view
-local FOV = 70  -- Fixed FOV like slither.io
+-- Camera settings - like slither.io
+local BASE_HEIGHT = isMobile and 60 or 40  -- Base height
+local MAX_HEIGHT = isMobile and 150 or 120  -- Maximum zoom out
+local FOV = 60  -- Slightly lower FOV for better view
+local SMOOTH_FACTOR = 0.15  -- Camera smoothing
+
+-- Current camera values for smooth interpolation
+local currentHeight = BASE_HEIGHT
+local targetHeight = BASE_HEIGHT
 
 -- 🔒 LOCK CAMERA COMPLETELY
 camera.CameraType = Enum.CameraType.Scriptable
@@ -48,8 +54,20 @@ UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 player.CameraMinZoomDistance = 128
 player.CameraMaxZoomDistance = 128
 
--- Main camera update loop - SUPER SIMPLE
-RunService.RenderStepped:Connect(function()
+-- Function to get snake length for dynamic zoom
+local function getSnakeLength()
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local length = leaderstats:FindFirstChild("Length")
+		if length then
+			return length.Value
+		end
+	end
+	return 0
+end
+
+-- Main camera update loop - SLITHER.IO STYLE
+RunService.RenderStepped:Connect(function(dt)
 	local character = player.Character
 	if not character then return end
 
@@ -59,11 +77,17 @@ RunService.RenderStepped:Connect(function()
 	-- Get snake position
 	local snakePos = rootPart.Position
 	
-	-- Camera ALWAYS looks straight down from above
-	-- NO ROTATION, NO SPINNING, JUST STRAIGHT DOWN
-	local cameraPos = snakePos + Vector3.new(0, HEIGHT, 0)
+	-- Dynamic zoom based on snake length (like slither.io)
+	local snakeLength = getSnakeLength()
+	targetHeight = math.min(BASE_HEIGHT + (snakeLength / 10), MAX_HEIGHT)
 	
-	-- Look straight down at snake (with slight forward offset to ensure proper orientation)
+	-- Smooth camera height transition
+	currentHeight = currentHeight + (targetHeight - currentHeight) * SMOOTH_FACTOR
+	
+	-- Camera position with smooth follow
+	local cameraPos = snakePos + Vector3.new(0, currentHeight, 0)
+	
+	-- Look straight down at snake with slight forward bias
 	local lookAtPos = snakePos + Vector3.new(0, 0, 0.1)
 	
 	-- Set camera - FIXED ORIENTATION
@@ -76,4 +100,40 @@ RunService.RenderStepped:Connect(function()
 	camera.CameraType = Enum.CameraType.Scriptable
 end)
 
-print("Camera Controller: FIXED top-down view (no rotation) initialized!")
+-- Add vignette effect for slither.io feel
+local function addVignetteEffect()
+	local playerGui = player:WaitForChild("PlayerGui")
+	
+	-- Check if vignette already exists
+	if playerGui:FindFirstChild("SlitherVignette") then return end
+	
+	local vignetteGui = Instance.new("ScreenGui")
+	vignetteGui.Name = "SlitherVignette"
+	vignetteGui.ResetOnSpawn = false
+	vignetteGui.IgnoreGuiInset = true
+	vignetteGui.Parent = playerGui
+	
+	local vignetteFrame = Instance.new("ImageLabel")
+	vignetteFrame.Name = "Vignette"
+	vignetteFrame.Size = UDim2.new(1, 0, 1, 0)
+	vignetteFrame.Position = UDim2.new(0, 0, 0, 0)
+	vignetteFrame.BackgroundTransparency = 1
+	vignetteFrame.Image = "rbxasset://textures/ui/LuaApp/graphic/gr-radial-shadow-1024x1024.png"
+	vignetteFrame.ImageColor3 = Color3.fromRGB(0, 0, 0)
+	vignetteFrame.ImageTransparency = 0.3
+	vignetteFrame.ZIndex = 100
+	vignetteFrame.Parent = vignetteGui
+end
+
+-- Apply vignette after character loads
+player.CharacterAdded:Connect(function()
+	task.wait(0.5)
+	addVignetteEffect()
+end)
+
+-- Apply immediately if character exists
+if player.Character then
+	addVignetteEffect()
+end
+
+print("Camera Controller: SLITHER.IO style camera initialized!")

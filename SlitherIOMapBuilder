@@ -5,6 +5,7 @@
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
 
 -- CONFIGURABLE MAP SIZE
 local MAP_SIZE = 800      -- Map is MAP_SIZE x MAP_SIZE studs
@@ -15,6 +16,58 @@ local WALL_HEIGHT = 200    -- Height of invisible walls (much taller)
 -- GROUP NAMES for easy cleanup/toggling
 local DECOR_GROUP_NAME = "SlitherIOMapDecor"
 local GRID_GROUP_NAME = "SlitherIOMapGrid"
+
+-- Function to set up slither.io style lighting and environment
+local function setupSlitherEnvironment()
+    -- Remove skybox
+    local sky = Lighting:FindFirstChildOfClass("Sky")
+    if sky then
+        sky:Destroy()
+    end
+    
+    -- Set up dark environment
+    Lighting.Ambient = Color3.fromRGB(20, 20, 25)
+    Lighting.Brightness = 0.3
+    Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 15)
+    Lighting.ColorShift_Top = Color3.fromRGB(15, 15, 20)
+    Lighting.EnvironmentDiffuseScale = 0.2
+    Lighting.EnvironmentSpecularScale = 0.1
+    Lighting.GlobalShadows = false
+    Lighting.OutdoorAmbient = Color3.fromRGB(15, 15, 20)
+    Lighting.ShadowSoftness = 0.5
+    Lighting.ClockTime = 0 -- Midnight
+    Lighting.GeographicLatitude = 0
+    Lighting.FogEnd = 1000
+    Lighting.FogStart = 100
+    Lighting.FogColor = Color3.fromRGB(10, 10, 15)
+    
+    -- Create a dark background part to prevent see-through
+    local backdrop = Workspace:FindFirstChild("SlitherBackdrop")
+    if backdrop then backdrop:Destroy() end
+    
+    backdrop = Instance.new("Part")
+    backdrop.Name = "SlitherBackdrop"
+    backdrop.Size = Vector3.new(MAP_SIZE + 500, 1, MAP_SIZE + 500)
+    backdrop.Position = Vector3.new(0, -10, 0)
+    backdrop.Anchored = true
+    backdrop.CanCollide = false
+    backdrop.Material = Enum.Material.SmoothPlastic
+    backdrop.Color = Color3.fromRGB(8, 8, 12)
+    backdrop.Parent = Workspace
+    
+    -- Add atmospheric haze
+    local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+    if not atmosphere then
+        atmosphere = Instance.new("Atmosphere")
+        atmosphere.Parent = Lighting
+    end
+    atmosphere.Density = 0.3
+    atmosphere.Offset = 0
+    atmosphere.Color = Color3.fromRGB(10, 10, 15)
+    atmosphere.Decay = Color3.fromRGB(5, 5, 10)
+    atmosphere.Glare = 0
+    atmosphere.Haze = 2
+end
 
 -- Helper: Remove all map decor (grid lines, hexagons, spots, corners)
 local function removeDecor()
@@ -49,17 +102,17 @@ local function createGround()
     ground.TopSurface = Enum.SurfaceType.Smooth
     ground.BottomSurface = Enum.SurfaceType.Smooth
     ground.Material = Enum.Material.SmoothPlastic
-    ground.Color = Color3.fromRGB(17, 17, 22)  -- Dark slither.io style
+    ground.Color = Color3.fromRGB(20, 20, 28)  -- Slightly lighter dark for better visibility
     ground.Parent = Workspace
 
-    -- Add a surface texture for the grid pattern (always present, but faint)
+    -- Add a subtle grid pattern texture
     local texture = Instance.new("Texture")
     texture.Texture = "rbxasset://textures/grid.dds"
     texture.Face = Enum.NormalId.Top
     texture.StudsPerTileU = 20
     texture.StudsPerTileV = 20
-    texture.Transparency = 0.92
-    texture.Color3 = Color3.fromRGB(40, 40, 50)
+    texture.Transparency = 0.85 -- More visible grid
+    texture.Color3 = Color3.fromRGB(35, 35, 45)
     texture.Parent = ground
 end
 
@@ -276,6 +329,7 @@ local function buildMap()
     createGround()
     createWalls()
     removeBaseplate()
+    setupSlitherEnvironment() -- Call the new lighting setup function
     if shouldShowDecor() then
         createDecor()
         createGrid()
