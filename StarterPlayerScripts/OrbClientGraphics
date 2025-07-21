@@ -1,7 +1,8 @@
 --[[
-CLIENT GRAPHICS HANDLER V2.0 - ENHANCED & STABILIZED
+CLIENT GRAPHICS HANDLER V2.1 - FIXED INITIAL LOAD ISSUE
 Handles client-side graphics for orbs and snake glows
 Features:
+- Fixed initial load graphics mode application
 - Smooth transitions between graphics modes
 - Performance optimizations with caching
 - Error handling for stability
@@ -244,15 +245,25 @@ local function handleSnakeGlows(mode, playerPos)
 	end
 	
 	lastMode = mode
+end
+
+-- Apply low graphics to all snake segments
+local function applyLowGraphicsToAllSnakes()
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	if mode ~= "Low" then return end
 	
-	-- Only print if there's a significant change
-	-- DISABLED: This was spamming the console
-	--[[
-	if math.abs(glowCount - processedCount) > 10 then
-		print(string.format("Graphics: %s | Glows: %d | Processed: %d | Cached: %d", 
-			mode, glowCount, processedCount, #snakeGlowCache))
+	-- Apply to all snake segments in workspace
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("BasePart") and (obj.Name:match("Segment") or obj.Name == "SnakeHead") then
+			obj.Material = Enum.Material.SmoothPlastic
+			
+			-- Disable any glows
+			local glow = obj:FindFirstChild("Glow")
+			if glow then
+				glow.Enabled = false
+			end
+		end
 	end
-	--]]
 end
 
 -- Main update loop with dynamic timing
@@ -298,60 +309,19 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Aggressive material override system
-local materialOverrideEnabled = false
-
-local function overrideMaterials()
-	if not materialOverrideEnabled then return end
-	
-	-- Only override player's own snake (removed workspace scan for performance)
-	if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
-		local snake = _G.PlayerSnakes[LocalPlayer]
-		if snake.segments then
-			for _, segment in ipairs(snake.segments) do
-				if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
-					segment.Material = Enum.Material.SmoothPlastic
-				end
-			end
-		end
-	end
-end
-
--- Run material override for Low graphics (less aggressive for performance)
-task.spawn(function()
-	while true do
-		task.wait(0.2) -- Check 5 times per second instead of 20
-		
-		-- Only in Low graphics mode
-		if materialOverrideEnabled then
-			-- Only check player's own snake
-			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
-				local snake = _G.PlayerSnakes[LocalPlayer]
-				if snake.segments then
-					for _, segment in ipairs(snake.segments) do
-						if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
-							segment.Material = Enum.Material.SmoothPlastic
-						end
-					end
-				end
-			end
-		end
-	end
-end)
-
 -- Monitor for new segments and apply correct material
 workspace.DescendantAdded:Connect(function(descendant)
-	if descendant:IsA("BasePart") and (descendant.Name:match("Segment") or descendant.Name == "Head") then
+	if descendant:IsA("BasePart") and (descendant.Name:match("Segment") or descendant.Name == "SnakeHead") then
 		-- Apply correct material based on current graphics mode
 		task.wait() -- Wait a frame for parent to be set
-		local parent = descendant.Parent
-		if parent and (parent.Name == "Snake" or parent.Parent and parent.Parent.Name == "Snake") then
-			descendant.Material = currentPreset.SNAKE_MATERIAL
+		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+		if mode == "Low" then
+			descendant.Material = Enum.Material.SmoothPlastic
 			
 			-- Monitor this specific segment for material changes
 			local connection
 			connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
-				if descendant.Parent and currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic then
+				if descendant.Parent and mode == "Low" then
 					if descendant.Material ~= Enum.Material.SmoothPlastic then
 						descendant.Material = Enum.Material.SmoothPlastic
 					end
@@ -371,7 +341,6 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		
 		-- Update preset
 		currentPreset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
-		materialOverrideEnabled = (mode == "Low")
 		
 		-- Update orbs
 		local playerPos = getPlayerPosition()
@@ -390,6 +359,11 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		-- Handle snake glows
 		handleSnakeGlows(mode, playerPos)
 		
+		-- Apply low graphics to all snakes if needed
+		if mode == "Low" then
+			applyLowGraphicsToAllSnakes()
+		end
+		
 		-- Performance feedback
 		local perfMsg = mode == "Low" and "🚀 Maximum Performance Mode" or
 		               mode == "Medium" and "⚖️ Balanced Graphics Mode" or
@@ -398,18 +372,75 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 	end
 end)
 
+-- FIXED: Wait for character and apply graphics mode properly on spawn
+local function onCharacterAdded(character)
+	-- Wait for character to be fully loaded
+	local humanoid = character:WaitForChild("Humanoid", 5)
+	local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+	
+	if humanoid and rootPart then
+		-- Apply graphics mode after a short delay to ensure snake is created
+		task.wait(0.5)
+		
+		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+		print("🎮 Applying graphics mode on spawn:", mode)
+		
+		-- Force apply low graphics if needed
+		if mode == "Low" then
+			applyLowGraphicsToAllSnakes()
+			
+			-- Also apply to player's own snake
+			task.spawn(function()
+				-- Multiple attempts to ensure it sticks
+				for i = 1, 5 do
+					task.wait(0.2)
+					if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+						local snake = _G.PlayerSnakes[LocalPlayer]
+						if snake and snake.segments then
+							for _, segment in ipairs(snake.segments) do
+								if segment and segment.Parent then
+									segment.Material = Enum.Material.SmoothPlastic
+								end
+							end
+						end
+						-- Also apply to head parts
+						if snake.headParts then
+							for name, part in pairs(snake.headParts) do
+								if part and part.Parent and part:IsA("BasePart") then
+									part.Material = Enum.Material.SmoothPlastic
+								end
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
+end
+
+-- Connect character spawning
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+if LocalPlayer.Character then
+	onCharacterAdded(LocalPlayer.Character)
+end
+
 -- Initial setup
 local function safeInitialize()
 	local success, err = pcall(function()
 		local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
 		currentPreset = GRAPHICS_PRESETS[initialMode] or GRAPHICS_PRESETS.High
-		materialOverrideEnabled = (initialMode == "Low")
+		lastMode = initialMode
 		adjustParticleEffects(initialMode)
 		
 		task.wait(0.5)
 		handleSnakeGlows(initialMode, getPlayerPosition())
 		
-		print("✅ Client Graphics Handler V2.0 initialized for:", LocalPlayer.Name)
+		-- Apply low graphics if needed
+		if initialMode == "Low" then
+			applyLowGraphicsToAllSnakes()
+		end
+		
+		print("✅ Client Graphics Handler V2.1 initialized for:", LocalPlayer.Name)
 		print("🎮 Current mode:", initialMode)
 	end)
 	
@@ -420,7 +451,7 @@ end
 
 safeInitialize()
 
-print("✅ Orb graphics system ready with low-lag monitoring!")
+print("✅ Orb graphics system ready with fixed initial load!")
 
 -- Simple material fix for Low graphics mode
 local lowGraphicsActive = false

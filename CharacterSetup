@@ -273,7 +273,29 @@ local function createSegment(index, position, color, config, parentModel, curren
 	end
 
 	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
-	segment.Material = config.BodyMaterial
+	
+	-- CHECK GRAPHICS MODE BEFORE SETTING MATERIAL
+	local player = Players:GetPlayerFromCharacter(parentModel.Parent)
+	if not player then
+		-- Try to get player from model attributes
+		local userId = parentModel:GetAttribute("OwnerUserId")
+		if userId then
+			for _, p in pairs(Players:GetPlayers()) do
+				if p.UserId == userId then
+					player = p
+					break
+				end
+			end
+		end
+	end
+	
+	local graphicsMode = player and player:GetAttribute("GraphicsMode") or "High"
+	if graphicsMode == "Low" then
+		segment.Material = Enum.Material.SmoothPlastic
+	else
+		segment.Material = config.BodyMaterial
+	end
+	
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
 	segment.Parent = parentModel
@@ -283,7 +305,8 @@ local function createSegment(index, position, color, config, parentModel, curren
 	segment:SetAttribute("SegmentIndex", index)
 
 	-- Add glow to head segments and every 10th segment for performance
-	if index <= 30 or index % 10 == 0 then
+	-- DISABLE GLOW IN LOW GRAPHICS MODE
+	if graphicsMode ~= "Low" and (index <= 30 or index % 10 == 0) then
 		local light = segment:FindFirstChild("Glow")
 		if not light then
 			light = Instance.new("PointLight")
@@ -311,10 +334,31 @@ local function createSegment(index, position, color, config, parentModel, curren
 end
 
 local function createVisualHead(rootPart, config, parentModel)
+	-- Get player to check graphics mode
+	local player = Players:GetPlayerFromCharacter(rootPart.Parent)
+	if not player then
+		local userId = parentModel:GetAttribute("OwnerUserId")
+		if userId then
+			for _, p in pairs(Players:GetPlayers()) do
+				if p.UserId == userId then
+					player = p
+					break
+				end
+			end
+		end
+	end
+	
+	local graphicsMode = player and player:GetAttribute("GraphicsMode") or "High"
+	
 	local headPart = Instance.new("Part")
 	headPart.Name = "SnakeHead"
 	headPart.Size = config.HeadSize
-	headPart.Material = config.HeadMaterial
+	-- Apply material based on graphics mode
+	if graphicsMode == "Low" then
+		headPart.Material = Enum.Material.SmoothPlastic
+	else
+		headPart.Material = config.HeadMaterial
+	end
 	headPart.Color = config.HeadColor
 	headPart.Shape = Enum.PartType.Ball
 	headPart.CanCollide = false
@@ -328,11 +372,15 @@ local function createVisualHead(rootPart, config, parentModel)
 	headPart:SetAttribute("IsSnakeHead", true)
 	headPart:SetAttribute("IsSnakeSegment", true)
 
-	local headLight = Instance.new("PointLight")
-	headLight.Color = config.HeadColor
-	headLight.Brightness = config.GlowIntensity + 1
-	headLight.Range = config.GlowRange + 2
-	headLight.Parent = headPart
+	-- Only add light if not in Low graphics mode
+	local headLight = nil
+	if graphicsMode ~= "Low" then
+		headLight = Instance.new("PointLight")
+		headLight.Color = config.HeadColor
+		headLight.Brightness = config.GlowIntensity + 1
+		headLight.Range = config.GlowRange + 2
+		headLight.Parent = headPart
+	end
 
 	local headOutline = Instance.new("SelectionBox")
 	headOutline.Adornee = headPart
@@ -345,7 +393,12 @@ local function createVisualHead(rootPart, config, parentModel)
 		local eye = Instance.new("Part")
 		eye.Name = name
 		eye.Size = Vector3new(0.6, 0.6, 0.6)  -- Match reference code size
-		eye.Material = Enum.Material.Neon
+		-- Eyes always use SmoothPlastic in low graphics
+		if graphicsMode == "Low" then
+			eye.Material = Enum.Material.SmoothPlastic
+		else
+			eye.Material = Enum.Material.Neon
+		end
 		eye.Color = Color3.fromRGB(255, 255, 255)
 		eye.Shape = Enum.PartType.Ball
 		eye.CanCollide = false
@@ -373,7 +426,12 @@ local function createVisualHead(rootPart, config, parentModel)
 		local pupil = Instance.new("Part")
 		pupil.Name = name
 		pupil.Size = Vector3new(0.25, 0.25, 0.25)  -- Match reference code size
-		pupil.Material = Enum.Material.Neon
+		-- Pupils always use SmoothPlastic in low graphics
+		if graphicsMode == "Low" then
+			pupil.Material = Enum.Material.SmoothPlastic
+		else
+			pupil.Material = Enum.Material.Neon
+		end
 		pupil.Color = Color3.fromRGB(0, 0, 0)
 		pupil.Shape = Enum.PartType.Ball
 		pupil.CanCollide = false
@@ -464,6 +522,109 @@ local function applySkinToExistingSnake(player, snakeInstance)
 	end
 
 	print("🎨 Applied skin changes to existing snake for", player.Name)
+end
+
+-- NEW: Apply graphics mode changes to existing snake
+local function applyGraphicsModeToSnake(player, snakeInstance)
+	if not snakeInstance or not snakeInstance.isActive() then return end
+	
+	local graphicsMode = player:GetAttribute("GraphicsMode") or "High"
+	local activeConfig = getActiveConfig(player)
+	
+	print("🎮 Applying graphics mode:", graphicsMode, "to", player.Name)
+	
+	-- Update head
+	if snakeInstance.headParts and snakeInstance.headParts.head then
+		-- Update material
+		if graphicsMode == "Low" then
+			snakeInstance.headParts.head.Material = Enum.Material.SmoothPlastic
+			-- Update eyes and pupils
+			if snakeInstance.headParts.leftEye then
+				snakeInstance.headParts.leftEye.Material = Enum.Material.SmoothPlastic
+			end
+			if snakeInstance.headParts.rightEye then
+				snakeInstance.headParts.rightEye.Material = Enum.Material.SmoothPlastic
+			end
+			if snakeInstance.headParts.leftPupil then
+				snakeInstance.headParts.leftPupil.Material = Enum.Material.SmoothPlastic
+			end
+			if snakeInstance.headParts.rightPupil then
+				snakeInstance.headParts.rightPupil.Material = Enum.Material.SmoothPlastic
+			end
+		else
+			snakeInstance.headParts.head.Material = activeConfig.HeadMaterial
+			-- Update eyes and pupils
+			if snakeInstance.headParts.leftEye then
+				snakeInstance.headParts.leftEye.Material = Enum.Material.Neon
+			end
+			if snakeInstance.headParts.rightEye then
+				snakeInstance.headParts.rightEye.Material = Enum.Material.Neon
+			end
+			if snakeInstance.headParts.leftPupil then
+				snakeInstance.headParts.leftPupil.Material = Enum.Material.Neon
+			end
+			if snakeInstance.headParts.rightPupil then
+				snakeInstance.headParts.rightPupil.Material = Enum.Material.Neon
+			end
+		end
+		
+		-- Handle head light
+		if graphicsMode == "Low" then
+			-- Remove or disable light
+			if snakeInstance.headParts.headLight then
+				snakeInstance.headParts.headLight.Enabled = false
+			end
+		else
+			-- Enable or create light
+			if snakeInstance.headParts.headLight then
+				snakeInstance.headParts.headLight.Enabled = true
+			elseif snakeInstance.headParts.head then
+				-- Create light if it doesn't exist
+				local headLight = Instance.new("PointLight")
+				headLight.Color = activeConfig.HeadColor
+				headLight.Brightness = activeConfig.GlowIntensity + 1
+				headLight.Range = activeConfig.GlowRange + 2
+				headLight.Parent = snakeInstance.headParts.head
+				snakeInstance.headParts.headLight = headLight
+			end
+		end
+	end
+	
+	-- Update all segments
+	if snakeInstance.segments then
+		for i, segment in pairs(snakeInstance.segments) do
+			if segment and segment.Parent then
+				-- Update material
+				if graphicsMode == "Low" then
+					segment.Material = Enum.Material.SmoothPlastic
+					-- Remove or disable glow
+					local light = segment:FindFirstChild("Glow")
+					if light then
+						light.Enabled = false
+					end
+				else
+					segment.Material = activeConfig.BodyMaterial
+					-- Enable glow for appropriate segments
+					if i <= 30 or i % 10 == 0 then
+						local light = segment:FindFirstChild("Glow")
+						if light then
+							light.Enabled = true
+						else
+							-- Create light if it doesn't exist
+							light = Instance.new("PointLight")
+							light.Name = "Glow"
+							light.Color = segment.Color
+							light.Brightness = activeConfig.GlowIntensity
+							light.Range = activeConfig.GlowRange
+							light.Parent = segment
+						end
+					end
+				end
+			end
+		end
+	end
+	
+	print("✅ Graphics mode applied successfully")
 end
 
 local function createUltraSmoothSnake(character)
@@ -1087,6 +1248,10 @@ local function createUltraSmoothSnake(character)
 		updateSkin = function()
 			applySkinToExistingSnake(player, snakeInstance)
 		end,
+		-- NEW: Add graphics mode update capability
+		updateGraphicsMode = function()
+			applyGraphicsModeToSnake(player, snakeInstance)
+		end,
 	}
 	playerSnakes[player] = snakeInstance
 	_G.PlayerSnakes[player] = snakeInstance
@@ -1095,6 +1260,9 @@ local function createUltraSmoothSnake(character)
 	local skinChangeConn = player.AttributeChanged:Connect(function(attributeName)
 		if attributeName == "SelectedSkin" and isActive then
 			applySkinToExistingSnake(player, snakeInstance)
+		elseif attributeName == "GraphicsMode" and isActive then
+			-- NEW: Handle graphics mode changes
+			applyGraphicsModeToSnake(player, snakeInstance)
 		end
 	end)
 	table.insert(connections, skinChangeConn)

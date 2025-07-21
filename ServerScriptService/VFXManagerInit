@@ -1,0 +1,4 @@
+-- Initialize VFXManager on server
+local VFXManager = require(game.Workspace.VFXManager)
+
+print("✅ VFXManager initialized on server")
