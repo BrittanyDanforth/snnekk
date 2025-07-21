@@ -1533,35 +1533,74 @@ RunService.Stepped:Connect(function()
 							pushDirection = Vector3.new(0, 0, -math.sign(pos.Z) * WALL_PUSH_FORCE)
 						end
 						
-						-- Apply push force
-						root.AssemblyLinearVelocity = root.AssemblyLinearVelocity + pushDirection
+						-- Apply push force using BodyVelocity for better control
+						local bodyVelocity = Instance.new("BodyVelocity")
+						bodyVelocity.MaxForce = Vector3.new(4000, 0, 4000)
+						bodyVelocity.Velocity = pushDirection
+						bodyVelocity.Parent = root
+						
+						-- Remove after a short time
+						game:GetService("Debris"):AddItem(bodyVelocity, 0.5)
+						
+						-- Also set CFrame to ensure movement
+						root.CFrame = root.CFrame + pushDirection.Unit * 5
 						
 						-- Reset contact time
 						wallContactTime[key] = nil
 						
 						-- Visual feedback
-						if DEBUG_COLLISIONS then
-							print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
+						print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
+						
+						-- Force drop extra orbs when pushed
+						for i = 1, 2 do
+							local randomOffset = Vector3.new(
+								math.random(-5, 5),
+								0,
+								math.random(-5, 5)
+							)
+							local orbPos = headPos + randomOffset
+							orbPos = Vector3.new(orbPos.X, 5, orbPos.Z)
+							OrbUtils.spawnOrbAt(orbPos, 1)
 						end
 					end
 				elseif contactDuration > WALL_WARNING_TIME then
-					-- Warning phase - make snake segments shake slightly
+					-- Warning phase - make snake segments shake and flash
 					if _G.PlayerSnakes and _G.PlayerSnakes[player] then
 						local snake = _G.PlayerSnakes[player]
 						if snake.segments then
-							for i = 1, math.min(5, #snake.segments) do
+							-- Calculate warning intensity
+							local warningIntensity = (contactDuration - WALL_WARNING_TIME) / (WALL_PUSH_TIME - WALL_WARNING_TIME)
+							
+							for i = 1, math.min(10, #snake.segments) do
 								local segment = snake.segments[i]
 								if segment and segment.Parent then
-									-- Small shake effect
+									-- Shake effect that gets stronger
 									local shake = Vector3.new(
-										math.random(-1, 1) * 0.2,
+										math.random(-1, 1) * 0.5 * warningIntensity,
 										0,
-										math.random(-1, 1) * 0.2
+										math.random(-1, 1) * 0.5 * warningIntensity
 									)
 									segment.Position = segment.Position + shake
+									
+									-- Flash red warning
+									if math.random() > 0.5 then
+										segment.Color = Color3.new(1, 0.5, 0.5) -- Light red
+									end
 								end
 							end
 						end
+						
+						-- Warning message (once)
+						if not player:GetAttribute("WallWarningShown") then
+							player:SetAttribute("WallWarningShown", true)
+							-- You could fire a remote event here to show a GUI warning
+							print("[WALL WARNING] " .. player.Name .. " - Move away from wall!")
+						end
+					end
+				else
+					-- Reset warning
+					if player:GetAttribute("WallWarningShown") then
+						player:SetAttribute("WallWarningShown", false)
 					end
 				end
 			else
