@@ -70,7 +70,7 @@ local wallLastCheck = {} -- Track last wall check time per player
 local function checkWallCollision(position)
 	-- Check if position is near any wall
 	local mapHalf = 400 -- Half of MAP_SIZE from MapBuilder
-	local wallThreshold = mapHalf - 10 -- Check 10 studs from edge
+	local wallThreshold = mapHalf - 3 -- Only trigger when very close to wall (3 studs)
 	
 	if math.abs(position.X) > wallThreshold or math.abs(position.Z) > wallThreshold then
 		return true
