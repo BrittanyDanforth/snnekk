@@ -1,4 +1,4 @@
- -- THIS GOES INTO ReplicatedStorage AS A MODULESCRIPT
+-- THIS GOES INTO ReplicatedStorage AS A MODULESCRIPT
 -- SLITHER.IO ULTRA PREMIUM SHOP UI SYSTEM - COMPLETELY FIXED
 -- Modern, beautiful, and performance-optimized
 -- Fully integrated with CharacterPreview and Slither.io Menu
@@ -491,7 +491,7 @@ local GAMEPASS_DATA = {
 			"🏃 Better acceleration"
 		}
 	},
-	
+
 	["Mega Speed"] = {
 		id = 123456790, -- Replace with actual ID
 		price = 599,
@@ -505,7 +505,7 @@ local GAMEPASS_DATA = {
 			"💎 Includes Speed Boost"
 		}
 	},
-	
+
 	-- GROWTH BOOSTS
 	["2x Growth"] = {
 		id = 123456791,
@@ -520,7 +520,7 @@ local GAMEPASS_DATA = {
 			"✨ Growth effect"
 		}
 	},
-	
+
 	-- COIN MULTIPLIERS
 	["2x Coins"] = {
 		id = 123456792,
@@ -535,7 +535,7 @@ local GAMEPASS_DATA = {
 			"📊 2x daily bonus"
 		}
 	},
-	
+
 	-- SPECIAL ABILITIES
 	["Magnet Power"] = {
 		id = 123456793,
@@ -550,7 +550,7 @@ local GAMEPASS_DATA = {
 			"✨ Magnetic effect"
 		}
 	},
-	
+
 	["Ghost Mode"] = {
 		id = 123456794,
 		price = 449,
@@ -564,7 +564,7 @@ local GAMEPASS_DATA = {
 			"🛡️ Death protection"
 		}
 	},
-	
+
 	-- VIP PACKAGE
 	["VIP Pass"] = {
 		id = 123456795,
@@ -582,7 +582,7 @@ local GAMEPASS_DATA = {
 			"🎨 Exclusive skins"
 		}
 	},
-	
+
 	-- COSMETIC PACKS
 	["Trail Pack"] = {
 		id = 123456796,
@@ -784,7 +784,7 @@ function CharacterPreview.create(viewport)
 	end
 
 	-- Main animation loop - PERFECT SLITHERING
-				rotationConnection = RunService.RenderStepped:Connect(function(dt)
+	rotationConnection = RunService.RenderStepped:Connect(function(dt)
 		time = time + dt
 
 		-- Camera rotation with proper positioning
@@ -1158,7 +1158,7 @@ local SHOP_CONFIG = {
 		PRIMARY = Color3.fromRGB(20, 20, 25),         -- Dark card backgrounds
 		SECONDARY = Color3.fromRGB(30, 30, 35),       -- Slightly lighter cards
 		TERTIARY = Color3.fromRGB(40, 40, 45),        -- Borders and dividers
-		
+
 		-- Modern accent colors (teal/green like the examples)
 		ACCENT = Color3.fromRGB(0, 200, 150),         -- Teal/green main
 		ACCENT_GLOW = Color3.fromRGB(0, 255, 180),    -- Bright teal glow
@@ -1166,17 +1166,17 @@ local SHOP_CONFIG = {
 		SUCCESS = Color3.fromRGB(0, 255, 150),        -- Bright green
 		WARNING = Color3.fromRGB(255, 180, 0),        -- Orange/yellow
 		ERROR = Color3.fromRGB(255, 70, 70),          -- Red
-		
+
 		-- Text hierarchy
 		TEXT_PRIMARY = Color3.fromRGB(255, 255, 255),   -- Pure white
 		TEXT_SECONDARY = Color3.fromRGB(200, 200, 210), -- Light gray
 		TEXT_MUTED = Color3.fromRGB(140, 140, 150),     -- Mid gray
-		
+
 		-- Special colors
 		GLOW = Color3.fromRGB(0, 255, 200),        -- Teal glow
 		VIP_GOLD = Color3.fromRGB(255, 200, 80),   -- Soft gold
 		RAINBOW = Color3.fromRGB(0, 200, 255),     -- Cyan/teal gradient
-		
+
 		-- Glass morphism colors
 		GLASS_WHITE = Color3.fromRGB(255, 255, 255),
 		GLASS_TINT = Color3.fromRGB(200, 180, 255),
@@ -1192,12 +1192,11 @@ local SHOP_CONFIG = {
 
 	SOUNDS = {
 		HOVER = "", -- Disabled - too annoying
-		SELECT = "rbxassetid://876939830", -- Modern UI select sound
-		PURCHASE = "rbxassetid://203691378", -- Cash register sound
-		ERROR = "rbxassetid://130840811", -- Error beep
-		WHOOSH = "rbxassetid://130791043", -- Swoosh sound
-		CLICK = "rbxassetid://876939830", -- Modern click
-		CLOSE = "rbxassetid://156785206", -- Soft close sound
+		SELECT = "rbxasset://sounds/electronicpingshort.wav",
+		PURCHASE = "rbxasset://sounds/electronicpingshort.wav",
+		ERROR = "rbxasset://sounds/electronicpingshort.wav",
+		WHOOSH = "rbxasset://sounds/electronicpingshort.wav",
+		CLICK = "rbxasset://sounds/electronicpingshort.wav",
 	}
 }
 
@@ -1282,7 +1281,7 @@ ShopUI.SKIN_DATA = {
 	["Lightning"] = {price = 4500, robux = 85, tag = "Electric"},
 	["Quantum"] = {price = 25000, robux = 249, tag = "Special"},
 	["Prismatic"] = {price = 30000, robux = 299, tag = "Special"},
-	
+
 	-- ADDITIONAL SKINS FROM SERVER
 	["Ocean Blue"] = {price = 2500, robux = 55, tag = "Cool"},
 	["Rainbow Prism"] = {price = 12000, robux = 175, tag = "Rare"},
@@ -1371,7 +1370,7 @@ local function loadPlayerData()
 	else
 		ShopUI.playerData.ownedSkins = {"Default"}
 	end
-	
+
 	-- Ensure Default is always owned
 	if not table.find(ShopUI.playerData.ownedSkins, "Default") then
 		table.insert(ShopUI.playerData.ownedSkins, 1, "Default")
@@ -1570,11 +1569,11 @@ end
 -- Modern glass morphism effect
 local function createGlassPanel(parent, transparency, blurSize)
 	transparency = transparency or 0.7
-	
+
 	-- Semi-transparent background with tint
 	parent.BackgroundTransparency = transparency
 	parent.BackgroundColor3 = SHOP_CONFIG.COLORS.GLASS_TINT
-	
+
 	-- Modern soft shadow
 	local shadow = Instance.new("Frame")
 	shadow.Name = "ModernShadow"
@@ -1584,18 +1583,18 @@ local function createGlassPanel(parent, transparency, blurSize)
 	shadow.Size = UDim2.new(1, 0, 1, 0)
 	shadow.ZIndex = parent.ZIndex - 1
 	shadow.Parent = parent.Parent
-	
+
 	local shadowCorner = Instance.new("UICorner")
 	shadowCorner.CornerRadius = UDim.new(0, 12)
 	shadowCorner.Parent = shadow
-	
+
 	-- Soft glass border
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = SHOP_CONFIG.COLORS.GLASS_WHITE
 	stroke.Transparency = 0.85
 	stroke.Thickness = 1
 	stroke.Parent = parent
-	
+
 	-- Inner glow effect
 	local innerGlow = Instance.new("Frame")
 	innerGlow.Name = "InnerGlow"
@@ -1605,11 +1604,11 @@ local function createGlassPanel(parent, transparency, blurSize)
 	innerGlow.Position = UDim2.new(0, 1, 0, 1)
 	innerGlow.ZIndex = parent.ZIndex + 1
 	innerGlow.Parent = parent
-	
+
 	local glowCorner = Instance.new("UICorner")
 	glowCorner.CornerRadius = UDim.new(0, 11)
 	glowCorner.Parent = innerGlow
-	
+
 	-- Gradient overlay for depth
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
@@ -1620,7 +1619,7 @@ local function createGlassPanel(parent, transparency, blurSize)
 	}
 	gradient.Rotation = -45
 	gradient.Parent = innerGlow
-	
+
 	return stroke, shadow
 end
 
@@ -1631,7 +1630,7 @@ local function playSound(soundName, volume)
 	if not SHOP_CONFIG.SOUNDS[soundName] or SHOP_CONFIG.SOUNDS[soundName] == "" then
 		return
 	end
-	
+
 	-- Prevent hover sound spam
 	if soundName == "HOVER" then
 		local now = tick()
@@ -1640,7 +1639,7 @@ local function playSound(soundName, volume)
 		end
 		lastSoundTime[soundName] = now
 	end
-	
+
 	pcall(function()
 		local sound = Instance.new("Sound")
 		sound.SoundId = SHOP_CONFIG.SOUNDS[soundName]
@@ -1658,7 +1657,7 @@ local function createAnimatedBackground(parent)
 	bgFrame.Size = UDim2.new(1, 0, 1, 0)
 	bgFrame.BackgroundColor3 = SHOP_CONFIG.COLORS.BACKGROUND
 	bgFrame.Parent = parent
-	
+
 	-- Multiple gradient layers for depth
 	local layer1 = Instance.new("Frame")
 	layer1.Name = "GradientLayer1"
@@ -1666,20 +1665,20 @@ local function createAnimatedBackground(parent)
 	layer1.Position = UDim2.new(-0.25, 0, -0.25, 0)
 	layer1.BackgroundTransparency = 0.7
 	layer1.Parent = bgFrame
-	
+
 	local grad1 = createGradient(layer1, 
 		Color3.fromRGB(80, 60, 150), 
 		Color3.fromRGB(150, 80, 200), 
 		135
 	)
-	
+
 	local layer2 = Instance.new("Frame")
 	layer2.Name = "GradientLayer2"
 	layer2.Size = UDim2.new(1.3, 0, 1.3, 0)
 	layer2.Position = UDim2.new(-0.15, 0, -0.15, 0)
 	layer2.BackgroundTransparency = 0.85
 	layer2.Parent = bgFrame
-	
+
 	local grad2 = createGradient(layer2,
 		SHOP_CONFIG.COLORS.SECONDARY_ACCENT,
 		SHOP_CONFIG.COLORS.ACCENT,
@@ -1707,7 +1706,7 @@ local function createAnimatedBackground(parent)
 			Position = orb.Position + UDim2.new(0, math_random(-30, 30), 0, -floatHeight)
 		})
 		tween:Play()
-		
+
 		-- Subtle pulsing effect
 		local pulseTween = TweenService:Create(orb, 
 			TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
@@ -1724,7 +1723,7 @@ local function createAnimatedBackground(parent)
 		{Rotation = 360}
 	)
 	gradientTween1:Play()
-	
+
 	local gradientTween2 = TweenService:Create(grad2,
 		TweenInfo.new(30, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
 		{Rotation = -360}
@@ -1837,10 +1836,10 @@ local function createMainShop()
 	inventoryBtn.TextScaled = true
 	inventoryBtn.Font = SHOP_CONFIG.FONTS.BUTTON
 	inventoryBtn.Parent = header
-	
+
 	createCorner(inventoryBtn, 8)
 	createGlassPanel(inventoryBtn, 0.9)
-	
+
 	-- Add hover effect and tooltip
 	local tooltip = Instance.new("TextLabel")
 	tooltip.Name = "Tooltip"
@@ -1853,10 +1852,10 @@ local function createMainShop()
 	tooltip.Font = SHOP_CONFIG.FONTS.BODY
 	tooltip.Visible = false
 	tooltip.Parent = inventoryBtn
-	
+
 	createCorner(tooltip, 6)
 	createGlassPanel(tooltip, 0.8)
-	
+
 	inventoryBtn.MouseEnter:Connect(function()
 		TweenService:Create(inventoryBtn, TweenInfo.new(0.2), {
 			BackgroundColor3 = SHOP_CONFIG.COLORS.ACCENT,
@@ -1867,7 +1866,7 @@ local function createMainShop()
 			BackgroundTransparency = 0
 		}):Play()
 	end)
-	
+
 	inventoryBtn.MouseLeave:Connect(function()
 		TweenService:Create(inventoryBtn, TweenInfo.new(0.2), {
 			BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY,
@@ -1886,7 +1885,7 @@ local function createMainShop()
 	closeBtn.TextScaled = true
 	closeBtn.Font = SHOP_CONFIG.FONTS.BUTTON
 	closeBtn.Parent = header
-	
+
 	createCorner(closeBtn, 8)
 	createGlassPanel(closeBtn, 0.9)
 
@@ -2241,12 +2240,12 @@ local function createCategoryButton(category, index)
 			if CharacterPreview and CharacterPreview.cleanup then
 				CharacterPreview.cleanup()
 			end
-			
+
 			-- Hide preview container for gamepasses
 			if ShopUI.uiElements.previewContainer then
 				ShopUI.uiElements.previewContainer.Visible = false
 			end
-			
+
 			-- Hide skin-specific UI elements
 			if ShopUI.uiElements.skinName then
 				ShopUI.uiElements.skinName.Visible = false
@@ -2283,7 +2282,7 @@ local function createCategoryButton(category, index)
 			if ShopUI.uiElements.priceLabel then
 				ShopUI.uiElements.priceLabel.Visible = true
 			end
-			
+
 			-- Force show all UI elements for skins
 			if ShopUI.uiElements.purchaseBtn then
 				ShopUI.uiElements.purchaseBtn.Visible = true
@@ -2297,7 +2296,7 @@ local function createCategoryButton(category, index)
 			if ShopUI.uiElements.favoriteBtn then
 				ShopUI.uiElements.favoriteBtn.Visible = true
 			end
-			
+
 			-- Update preview if needed
 			if uiState.selectedSkin then
 				ShopUI.updatePreview()
@@ -2337,218 +2336,6 @@ local function createCategoryButton(category, index)
 	return btn
 end
 
--- Create modern gamepass purchase popup (moved here to be defined before use)
-local createGamepassPurchasePopup = function(passName, passData)
-	-- Blur background
-	local blur = Instance.new("Frame")
-	blur.Name = "PurchaseBlur"
-	blur.Size = UDim2.new(1, 0, 1, 0)
-	blur.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	blur.BackgroundTransparency = 0.3
-	blur.Parent = ShopUI.uiElements.shopFrame.Parent
-	
-	-- Main popup container
-	local popup = Instance.new("Frame")
-	popup.Name = "GamepassPurchasePopup"
-	popup.Size = UDim2.new(0, 400, 0, 500)
-	popup.Position = UDim2.new(0.5, -200, 0.5, -250)
-	popup.BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY
-	popup.Parent = blur
-	createCorner(popup, 20)
-	
-	-- Gradient background
-	local popupGradient = Instance.new("UIGradient")
-	popupGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, SHOP_CONFIG.COLORS.SECONDARY),
-		ColorSequenceKeypoint.new(1, SHOP_CONFIG.COLORS.PRIMARY)
-	})
-	popupGradient.Rotation = 90
-	popupGradient.Parent = popup
-	
-	-- Glass effect
-	local glass = Instance.new("Frame")
-	glass.Size = UDim2.new(1, 0, 1, 0)
-	glass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	glass.BackgroundTransparency = 0.97
-	glass.Parent = popup
-	createCorner(glass, 20)
-	
-	-- Close button
-	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 40, 0, 40)
-	closeBtn.Position = UDim2.new(1, -50, 0, 10)
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
-	closeBtn.Text = "×"
-	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextScaled = true
-	closeBtn.Font = Enum.Font.GothamBold
-	closeBtn.Parent = popup
-	createCorner(closeBtn, 20)
-	
-	-- Header with icon
-	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0.3, 0)
-	header.BackgroundColor3 = passData.color
-	header.BackgroundTransparency = 0.2
-	header.Parent = popup
-	
-	local headerGradient = Instance.new("UIGradient")
-	headerGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, passData.gradient[1]),
-		ColorSequenceKeypoint.new(1, passData.gradient[2])
-	})
-	headerGradient.Rotation = 45
-	headerGradient.Parent = header
-	
-	-- Large icon
-	local largeIcon = Instance.new("TextLabel")
-	largeIcon.Size = UDim2.new(0, 100, 0, 100)
-	largeIcon.Position = UDim2.new(0.5, -50, 0.15, -50)
-	largeIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	largeIcon.BackgroundTransparency = 0.9
-	largeIcon.Text = passData.icon
-	largeIcon.TextScaled = true
-	largeIcon.Font = Enum.Font.SourceSansBold
-	largeIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-	largeIcon.Parent = popup
-	createCorner(largeIcon, 50)
-	
-	-- Title
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(0.9, 0, 0.1, 0)
-	title.Position = UDim2.new(0.05, 0, 0.32, 0)
-	title.BackgroundTransparency = 1
-	title.Text = passName:upper()
-	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
-	title.TextScaled = true
-	title.Font = Enum.Font.SourceSansBold -- Modern font
-	title.Parent = popup
-	
-	-- Description box
-	local descBox = Instance.new("Frame")
-	descBox.Size = UDim2.new(0.9, 0, 0.15, 0)
-	descBox.Position = UDim2.new(0.05, 0, 0.45, 0)
-	descBox.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
-	descBox.BackgroundTransparency = 0.5
-	descBox.Parent = popup
-	createCorner(descBox, 10)
-	
-	local descText = Instance.new("TextLabel")
-	descText.Size = UDim2.new(0.95, 0, 0.8, 0)
-	descText.Position = UDim2.new(0.025, 0, 0.1, 0)
-	descText.BackgroundTransparency = 1
-	descText.Text = passData.description
-	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
-	descText.TextScaled = true
-	descText.Font = Enum.Font.Gotham
-	descText.Parent = descBox
-	
-	-- Benefits list
-	local benefitsTitle = Instance.new("TextLabel")
-	benefitsTitle.Size = UDim2.new(0.9, 0, 0.05, 0)
-	benefitsTitle.Position = UDim2.new(0.05, 0, 0.62, 0)
-	benefitsTitle.BackgroundTransparency = 1
-	benefitsTitle.Text = "BENEFITS:"
-	benefitsTitle.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
-	benefitsTitle.TextScaled = true
-	benefitsTitle.Font = Enum.Font.GothamBold
-	benefitsTitle.TextXAlignment = Enum.TextXAlignment.Left
-	benefitsTitle.Parent = popup
-	
-	-- Purchase button
-	local purchaseBtn = Instance.new("TextButton")
-	purchaseBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
-	purchaseBtn.Position = UDim2.new(0.1, 0, 0.85, 0)
-	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
-	purchaseBtn.Text = "BUY NOW - R$" .. tostring(passData.price)
-	purchaseBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-	purchaseBtn.TextScaled = true
-	purchaseBtn.Font = Enum.Font.GothamBold
-	purchaseBtn.Parent = popup
-	createCorner(purchaseBtn, 10)
-	
-	local purchaseGradient = Instance.new("UIGradient")
-	purchaseGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
-	})
-	purchaseGradient.Rotation = 90
-	purchaseGradient.Parent = purchaseBtn
-	
-	-- Animate popup entrance
-	popup.Position = UDim2.new(0.5, -200, 0.5, -300)
-	popup.Size = UDim2.new(0, 350, 0, 450)
-	TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-		Position = UDim2.new(0.5, -200, 0.5, -250),
-		Size = UDim2.new(0, 400, 0, 500)
-	}):Play()
-	
-	TweenService:Create(blur, TweenInfo.new(0.3), {
-		BackgroundTransparency = 0.3
-	}):Play()
-	
-	-- Button interactions
-	purchaseBtn.MouseEnter:Connect(function()
-		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
-			Size = UDim2.new(0.85, 0, 0.11, 0)
-		}):Play()
-	end)
-	
-	purchaseBtn.MouseLeave:Connect(function()
-		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
-			Size = UDim2.new(0.8, 0, 0.1, 0)
-		}):Play()
-	end)
-	
-	-- Purchase functionality
-	purchaseBtn.MouseButton1Click:Connect(function()
-		playSound("PURCHASE")
-		
-		local MarketplaceService = game:GetService("MarketplaceService")
-		local player = game:GetService("Players").LocalPlayer
-		
-		local success, err = pcall(function()
-			MarketplaceService:PromptGamePassPurchase(player, passData.id)
-		end)
-		
-		if not success then
-			warn("Failed to prompt gamepass purchase:", err)
-		end
-		
-		-- Close popup
-		TweenService:Create(popup, TweenInfo.new(0.3), {
-			Position = UDim2.new(0.5, -200, 0.5, -300),
-			Size = UDim2.new(0, 350, 0, 450),
-			Transparency = 1
-		}):Play()
-		
-		TweenService:Create(blur, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-		
-		wait(0.3)
-		blur:Destroy()
-	end)
-	
-	-- Close button functionality
-	closeBtn.MouseButton1Click:Connect(function()
-		playSound("CLOSE")
-		
-		TweenService:Create(popup, TweenInfo.new(0.3), {
-			Position = UDim2.new(0.5, -200, 0.5, -300),
-			Size = UDim2.new(0, 350, 0, 450),
-			Transparency = 1
-		}):Play()
-		
-		TweenService:Create(blur, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-		
-		wait(0.3)
-		blur:Destroy()
-	end)
-end
-
 -- Create modern gamepass card with gradients and effects
 local function createGamepassCard(passName, index)
 	local passData = GAMEPASS_DATA[passName]
@@ -2572,7 +2359,7 @@ local function createGamepassCard(passName, index)
 		0, row * (SHOP_CONFIG.CARD_HEIGHT + SHOP_CONFIG.GRID_SPACING) + 8)
 
 	createCorner(card, 16)
-	
+
 	-- Gradient background
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
@@ -2581,7 +2368,7 @@ local function createGamepassCard(passName, index)
 	})
 	gradient.Rotation = 45
 	gradient.Parent = card
-	
+
 	-- Glass overlay
 	local glassOverlay = Instance.new("Frame")
 	glassOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -2589,14 +2376,14 @@ local function createGamepassCard(passName, index)
 	glassOverlay.BackgroundTransparency = 0.95
 	glassOverlay.Parent = card
 	createCorner(glassOverlay, 16)
-	
+
 	-- Top section with icon
 	local topSection = Instance.new("Frame")
 	topSection.Size = UDim2.new(1, 0, 0.5, 0)
 	topSection.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	topSection.BackgroundTransparency = 0.8
 	topSection.Parent = card
-	
+
 	-- Icon container with glow
 	local iconContainer = Instance.new("Frame")
 	iconContainer.Size = UDim2.new(0, 80, 0, 80)
@@ -2605,7 +2392,7 @@ local function createGamepassCard(passName, index)
 	iconContainer.BackgroundTransparency = 0.3
 	iconContainer.Parent = card
 	createCorner(iconContainer, 40)
-	
+
 	-- Icon glow effect
 	local iconGlow = Instance.new("ImageLabel")
 	iconGlow.Size = UDim2.new(1.5, 0, 1.5, 0)
@@ -2615,7 +2402,7 @@ local function createGamepassCard(passName, index)
 	iconGlow.ImageColor3 = passData.color
 	iconGlow.ImageTransparency = 0.5
 	iconGlow.Parent = iconContainer
-	
+
 	-- Icon
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.new(0.8, 0, 0.8, 0)
@@ -2635,7 +2422,7 @@ local function createGamepassCard(passName, index)
 	nameLabel.Text = passName:upper()
 	nameLabel.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	nameLabel.TextScaled = true
-	nameLabel.Font = Enum.Font.SourceSansBold -- Modern font
+	nameLabel.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
 	nameLabel.Parent = card
 
 	-- Description with subtle styling
@@ -2656,7 +2443,7 @@ local function createGamepassCard(passName, index)
 	priceButton.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
 	priceButton.Parent = card
 	createCorner(priceButton, 8)
-	
+
 	local priceGradient = Instance.new("UIGradient")
 	priceGradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
@@ -2664,7 +2451,7 @@ local function createGamepassCard(passName, index)
 	})
 	priceGradient.Rotation = 90
 	priceGradient.Parent = priceButton
-	
+
 	local priceLabel = Instance.new("TextLabel")
 	priceLabel.Size = UDim2.new(1, 0, 1, 0)
 	priceLabel.BackgroundTransparency = 1
@@ -2677,25 +2464,25 @@ local function createGamepassCard(passName, index)
 	-- Hover effects with glow animation
 	card.MouseEnter:Connect(function()
 		-- No hover sound
-		
+
 		-- Scale up card
 		TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
 			Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH * 1.05, 
 				0, SHOP_CONFIG.CARD_HEIGHT * 1.05)
 		}):Play()
-		
+
 		-- Brighten glass overlay
 		TweenService:Create(glassOverlay, TweenInfo.new(0.3), {
 			BackgroundTransparency = 0.9
 		}):Play()
-		
+
 		-- Animate icon glow
 		TweenService:Create(iconGlow, TweenInfo.new(0.3), {
 			ImageTransparency = 0.2,
 			Size = UDim2.new(2, 0, 2, 0),
 			Position = UDim2.new(-0.5, 0, -0.5, 0)
 		}):Play()
-		
+
 		-- Pulse price button
 		TweenService:Create(priceButton, TweenInfo.new(0.3), {
 			Size = UDim2.new(0.75, 0, 0.13, 0)
@@ -2707,17 +2494,17 @@ local function createGamepassCard(passName, index)
 		TweenService:Create(card, TweenInfo.new(0.2), {
 			Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH, 0, SHOP_CONFIG.CARD_HEIGHT)
 		}):Play()
-		
+
 		TweenService:Create(glassOverlay, TweenInfo.new(0.2), {
 			BackgroundTransparency = 0.95
 		}):Play()
-		
+
 		TweenService:Create(iconGlow, TweenInfo.new(0.2), {
 			ImageTransparency = 0.5,
 			Size = UDim2.new(1.5, 0, 1.5, 0),
 			Position = UDim2.new(-0.25, 0, -0.25, 0)
 		}):Play()
-		
+
 		TweenService:Create(priceButton, TweenInfo.new(0.2), {
 			Size = UDim2.new(0.7, 0, 0.12, 0)
 		}):Play()
@@ -2725,14 +2512,222 @@ local function createGamepassCard(passName, index)
 
 	-- Click to purchase with modern popup
 	card.MouseButton1Click:Connect(function()
-		-- No sound on click - was too annoying
-		
+		playSound("SELECT")
+
 		-- Create purchase confirmation popup
-		if createGamepassPurchasePopup then
-			createGamepassPurchasePopup(passName, passData)
-		else
-			warn("createGamepassPurchasePopup is not defined yet!")
+		createGamepassPurchasePopup(passName, passData)
+	end)
+end
+
+-- Create modern gamepass purchase popup
+local function createGamepassPurchasePopup(passName, passData)
+	-- Blur background
+	local blur = Instance.new("Frame")
+	blur.Name = "PurchaseBlur"
+	blur.Size = UDim2.new(1, 0, 1, 0)
+	blur.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	blur.BackgroundTransparency = 0.3
+	blur.Parent = ShopUI.uiElements.shopFrame.Parent
+
+	-- Main popup container
+	local popup = Instance.new("Frame")
+	popup.Name = "GamepassPurchasePopup"
+	popup.Size = UDim2.new(0, 400, 0, 500)
+	popup.Position = UDim2.new(0.5, -200, 0.5, -250)
+	popup.BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY
+	popup.Parent = blur
+	createCorner(popup, 20)
+
+	-- Gradient background
+	local popupGradient = Instance.new("UIGradient")
+	popupGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, SHOP_CONFIG.COLORS.SECONDARY),
+		ColorSequenceKeypoint.new(1, SHOP_CONFIG.COLORS.PRIMARY)
+	})
+	popupGradient.Rotation = 90
+	popupGradient.Parent = popup
+
+	-- Glass effect
+	local glass = Instance.new("Frame")
+	glass.Size = UDim2.new(1, 0, 1, 0)
+	glass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	glass.BackgroundTransparency = 0.97
+	glass.Parent = popup
+	createCorner(glass, 20)
+
+	-- Close button
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 40, 0, 40)
+	closeBtn.Position = UDim2.new(1, -50, 0, 10)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
+	closeBtn.Text = "×"
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.TextScaled = true
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.Parent = popup
+	createCorner(closeBtn, 20)
+
+	-- Header with icon
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0.3, 0)
+	header.BackgroundColor3 = passData.color
+	header.BackgroundTransparency = 0.2
+	header.Parent = popup
+
+	local headerGradient = Instance.new("UIGradient")
+	headerGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, passData.gradient[1]),
+		ColorSequenceKeypoint.new(1, passData.gradient[2])
+	})
+	headerGradient.Rotation = 45
+	headerGradient.Parent = header
+
+	-- Large icon
+	local largeIcon = Instance.new("TextLabel")
+	largeIcon.Size = UDim2.new(0, 100, 0, 100)
+	largeIcon.Position = UDim2.new(0.5, -50, 0.15, -50)
+	largeIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	largeIcon.BackgroundTransparency = 0.9
+	largeIcon.Text = passData.icon
+	largeIcon.TextScaled = true
+	largeIcon.Font = Enum.Font.SourceSansBold
+	largeIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	largeIcon.Parent = popup
+	createCorner(largeIcon, 50)
+
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(0.9, 0, 0.1, 0)
+	title.Position = UDim2.new(0.05, 0, 0.32, 0)
+	title.BackgroundTransparency = 1
+	title.Text = passName:upper()
+	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	title.TextScaled = true
+	title.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
+	title.Parent = popup
+
+	-- Description box
+	local descBox = Instance.new("Frame")
+	descBox.Size = UDim2.new(0.9, 0, 0.15, 0)
+	descBox.Position = UDim2.new(0.05, 0, 0.45, 0)
+	descBox.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
+	descBox.BackgroundTransparency = 0.5
+	descBox.Parent = popup
+	createCorner(descBox, 10)
+
+	local descText = Instance.new("TextLabel")
+	descText.Size = UDim2.new(0.95, 0, 0.8, 0)
+	descText.Position = UDim2.new(0.025, 0, 0.1, 0)
+	descText.BackgroundTransparency = 1
+	descText.Text = passData.description
+	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
+	descText.TextScaled = true
+	descText.Font = Enum.Font.Gotham
+	descText.Parent = descBox
+
+	-- Benefits list
+	local benefitsTitle = Instance.new("TextLabel")
+	benefitsTitle.Size = UDim2.new(0.9, 0, 0.05, 0)
+	benefitsTitle.Position = UDim2.new(0.05, 0, 0.62, 0)
+	benefitsTitle.BackgroundTransparency = 1
+	benefitsTitle.Text = "BENEFITS:"
+	benefitsTitle.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	benefitsTitle.TextScaled = true
+	benefitsTitle.Font = Enum.Font.GothamBold
+	benefitsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	benefitsTitle.Parent = popup
+
+	-- Purchase button
+	local purchaseBtn = Instance.new("TextButton")
+	purchaseBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
+	purchaseBtn.Position = UDim2.new(0.1, 0, 0.85, 0)
+	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
+	purchaseBtn.Text = "BUY NOW - R$" .. tostring(passData.price)
+	purchaseBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+	purchaseBtn.TextScaled = true
+	purchaseBtn.Font = Enum.Font.GothamBold
+	purchaseBtn.Parent = popup
+	createCorner(purchaseBtn, 10)
+
+	local purchaseGradient = Instance.new("UIGradient")
+	purchaseGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
+	})
+	purchaseGradient.Rotation = 90
+	purchaseGradient.Parent = purchaseBtn
+
+	-- Animate popup entrance
+	popup.Position = UDim2.new(0.5, -200, 0.5, -300)
+	popup.Size = UDim2.new(0, 350, 0, 450)
+	TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+		Position = UDim2.new(0.5, -200, 0.5, -250),
+		Size = UDim2.new(0, 400, 0, 500)
+	}):Play()
+
+	TweenService:Create(blur, TweenInfo.new(0.3), {
+		BackgroundTransparency = 0.3
+	}):Play()
+
+	-- Button interactions
+	purchaseBtn.MouseEnter:Connect(function()
+		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.85, 0, 0.11, 0)
+		}):Play()
+	end)
+
+	purchaseBtn.MouseLeave:Connect(function()
+		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.8, 0, 0.1, 0)
+		}):Play()
+	end)
+
+	-- Purchase functionality
+	purchaseBtn.MouseButton1Click:Connect(function()
+		playSound("PURCHASE")
+
+		local MarketplaceService = game:GetService("MarketplaceService")
+		local player = game:GetService("Players").LocalPlayer
+
+		local success, err = pcall(function()
+			MarketplaceService:PromptGamePassPurchase(player, passData.id)
+		end)
+
+		if not success then
+			warn("Failed to prompt gamepass purchase:", err)
 		end
+
+		-- Close popup
+		TweenService:Create(popup, TweenInfo.new(0.3), {
+			Position = UDim2.new(0.5, -200, 0.5, -300),
+			Size = UDim2.new(0, 350, 0, 450),
+			Transparency = 1
+		}):Play()
+
+		TweenService:Create(blur, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1
+		}):Play()
+
+		wait(0.3)
+		blur:Destroy()
+	end)
+
+	-- Close button functionality
+	closeBtn.MouseButton1Click:Connect(function()
+		playSound("CLOSE")
+
+		TweenService:Create(popup, TweenInfo.new(0.3), {
+			Position = UDim2.new(0.5, -200, 0.5, -300),
+			Size = UDim2.new(0, 350, 0, 450),
+			Transparency = 1
+		}):Play()
+
+		TweenService:Create(blur, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1
+		}):Play()
+
+		wait(0.3)
+		blur:Destroy()
 	end)
 end
 
@@ -2743,68 +2738,7 @@ local function createSkinCard(skinName, index)
 		warn("Invalid skin name:", tostring(skinName))
 		return
 	end
-	
-	local skinData = ShopUI.SKIN_DATA[skinName]
-	if not skinData then
-		warn("No skin data found for:", skinName)
-		return
-	end
-	
-	-- Calculate grid position
-	local row = math.floor((index - 1) / SHOP_CONFIG.GRID_COLUMNS)
-	local col = (index - 1) % SHOP_CONFIG.GRID_COLUMNS
-	
-	-- Create card frame
-	local card = Instance.new("ImageButton")
-	card.Name = skinName
-	card.Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH, 0, SHOP_CONFIG.CARD_HEIGHT)
-	card.Position = UDim2.new(0, col * (SHOP_CONFIG.CARD_WIDTH + SHOP_CONFIG.CARD_SPACING), 0, row * (SHOP_CONFIG.CARD_HEIGHT + SHOP_CONFIG.CARD_SPACING))
-	card.BackgroundColor3 = SHOP_CONFIG.COLORS.SECONDARY
-	card.Image = ""
-	card.ImageTransparency = 1
-	card.AutoButtonColor = false
-	card.Parent = ShopUI.uiElements.grid
-	
-	createCorner(card, 15)
-	
-	-- Create stroke/border
-	local stroke = createStroke(card, SHOP_CONFIG.COLORS.TERTIARY, 2, 0.8)
-	
-	-- Background gradient
-	local gradient = Instance.new("UIGradient")
-	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, SHOP_CONFIG.COLORS.PRIMARY),
-		ColorSequenceKeypoint.new(1, SHOP_CONFIG.COLORS.SECONDARY)
-	})
-	gradient.Rotation = 135
-	gradient.Parent = card
-	
-	-- Add glow effect for owned skins
-	if ShopUI.isOwned(skinName) then
-		local glow = Instance.new("ImageLabel")
-		glow.Name = "Glow"
-		glow.Size = UDim2.new(1.2, 0, 1.2, 0)
-		glow.Position = UDim2.new(-0.1, 0, -0.1, 0)
-		glow.BackgroundTransparency = 1
-		glow.Image = "rbxassetid://5028857084"
-		glow.ImageColor3 = skinData.HeadColor or SHOP_CONFIG.COLORS.ACCENT
-		glow.ImageTransparency = 0.7
-		glow.ZIndex = 0
-		glow.Parent = card
-	end
-	
-	return card
-end
 
--- Duplicate createSkinCard function removed (was orphaned code from bad merge)
--- Create skin card
-local function createSkinCard(skinName, index)
-	-- Validate skin name
-	if not skinName or type(skinName) ~= "string" or skinName == "" then
-		warn("Invalid skin name:", tostring(skinName))
-		return
-	end
-	
 	local skinData = ShopUI.SKIN_DATA[skinName]
 	if not skinData then
 		warn("No skin data found for:", skinName)
@@ -2828,7 +2762,7 @@ local function createSkinCard(skinName, index)
 
 	createCorner(card, 16)
 	createGlassPanel(card, 0.75)
-	
+
 	-- Card stroke for equipped state
 	local cardStroke = Instance.new("UIStroke")
 	cardStroke.Name = "CardStroke"
@@ -3077,7 +3011,7 @@ function ShopUI.updateSkinGrid()
 			local rows = math.ceil(i / 5)
 			totalHeight = rows * (SHOP_CONFIG.CARD_HEIGHT + SHOP_CONFIG.GRID_SPACING) + 25
 		end
-		
+
 		-- Auto-select first skin if none selected
 		if not uiState.selectedSkin and #category.skins > 0 then
 			uiState.selectedSkin = category.skins[1]
@@ -3098,27 +3032,27 @@ function ShopUI.updatePreview()
 		warn("❌ No skin selected for preview")
 		return
 	end
-	
+
 	if not ShopUI.uiElements or not ShopUI.uiElements.viewport then
 		warn("❌ UI elements or viewport not ready")
 		return
 	end
-	
+
 	-- Check if viewport is still valid
 	if not ShopUI.uiElements.viewport.Parent then
 		warn("❌ Viewport has no parent!")
 		return
 	end
-	
+
 	print("🔄 Updating preview for:", uiState.selectedSkin)
-	
+
 	-- If no model exists, create it first
 	if not CharacterPreview.currentModel then
 		print("📦 No preview model, creating one...")
 		CharacterPreview.create(ShopUI.uiElements.viewport)
 		task.wait(0.1)
 	end
-	
+
 	CharacterPreview.update(uiState.selectedSkin)
 end
 
@@ -3333,10 +3267,10 @@ function ShopUI.purchaseSkin(useRobux)
 
 		-- Sync with attributes
 		syncPlayerData()
-		
+
 		-- Update the UI immediately
 		ShopUI.updateInfo()
-		
+
 		-- Update the specific card that was purchased
 		task.spawn(function()
 			local cards = ShopUI.uiElements.gridScroll:GetChildren()
@@ -3363,7 +3297,7 @@ function ShopUI.purchaseSkin(useRobux)
 
 		-- Update coin display immediately
 		coinDisplay.Text = ShopUI.formatNumber(ShopUI.playerData.coins)
-		
+
 		-- Coin animation
 		local startTime = tick()
 		local targetCoins = ShopUI.playerData.coins
@@ -3395,7 +3329,7 @@ function ShopUI.purchaseSkin(useRobux)
 		ShopUI.updateInfo()
 
 		print("🎉 Purchased skin:", uiState.selectedSkin, "for", skinData.price, "coins!")
-		
+
 		-- Update inventory if it's open
 		pcall(function()
 			local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
@@ -3404,7 +3338,7 @@ function ShopUI.purchaseSkin(useRobux)
 				InventoryUI.refreshGrid()
 			end
 		end)
-		
+
 		-- Update the current card immediately
 		ShopUI.updateInfo()
 	else
@@ -3475,7 +3409,7 @@ function ShopUI.applySkin()
 		Debris:AddItem(successFrame, 0.4)
 
 		ShopUI.updateInfo()
-		
+
 		-- Update all cards to show equipped status
 		task.spawn(function()
 			local cards = ShopUI.uiElements.gridScroll:GetChildren()
@@ -3512,7 +3446,7 @@ function ShopUI.applySkin()
 		end)
 
 		print("✅ Applied skin:", uiState.selectedSkin)
-		
+
 		-- Update inventory if it's open
 		pcall(function()
 			local InventoryUI = require(ReplicatedStorage:FindFirstChild("InventoryUI"))
@@ -3521,7 +3455,7 @@ function ShopUI.applySkin()
 				InventoryUI.refreshGrid()
 			end
 		end)
-		
+
 		-- Update immediately
 		ShopUI.updateInfo()
 	else
@@ -3569,7 +3503,7 @@ function ShopUI.init()
 	ShopUI.uiElements.closeBtn.MouseButton1Click:Connect(function()
 		ShopUI.close()
 	end)
-	
+
 	ShopUI.uiElements.inventoryBtn.MouseButton1Click:Connect(function()
 		-- Open inventory with error handling
 		local success, err = pcall(function()
@@ -3582,7 +3516,7 @@ function ShopUI.init()
 				warn("❌ InventoryUI module not found!")
 			end
 		end)
-		
+
 		if not success then
 			warn("❌ Failed to open inventory:", err)
 		end
