@@ -98,33 +98,41 @@ end
 -- 🚀 BOOST BUTTON (Primary mobile control)
 local boostButton = Instance.new("ImageButton")
 boostButton.Name = "BoostButton"
-boostButton.Size = UDim2.new(0, 120, 0, 120)
-boostButton.Position = UDim2.new(1, -140, 1, -140)
-boostButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-boostButton.BackgroundTransparency = 0.3
-boostButton.Image = "rbxassetid://6034983856" -- Speed boost icon
-boostButton.ImageTransparency = 0.2
+boostButton.Size = UDim2.new(0, 100, 0, 100)
+boostButton.Position = UDim2.new(1, -120, 1, -120)
+boostButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Dark gray base
+boostButton.BackgroundTransparency = 0.2
 boostButton.Parent = hudGui
 
+-- Clean circular design
 local boostCorner = Instance.new("UICorner")
-boostCorner.CornerRadius = UDim.new(0.5, 0)
+boostCorner.CornerRadius = UDim.new(0.5, 0) -- Perfect circle
 boostCorner.Parent = boostButton
 
+-- Subtle glow effect
 local boostStroke = Instance.new("UIStroke")
-boostStroke.Thickness = 3
-boostStroke.Color = Color3.new(1, 1, 1)
-boostStroke.Transparency = 0.5
+boostStroke.Thickness = 2
+boostStroke.Color = Color3.fromRGB(100, 200, 255) -- Soft blue glow
+boostStroke.Transparency = 0.3
 boostStroke.Parent = boostButton
 
--- Add boost text
+-- Clean boost text
 local boostText = Instance.new("TextLabel")
 boostText.Size = UDim2.new(1, 0, 1, 0)
 boostText.BackgroundTransparency = 1
 boostText.Text = "BOOST"
-boostText.TextColor3 = Color3.new(1, 1, 1)
-boostText.Font = Enum.Font.SourceSansBold
+boostText.TextColor3 = Color3.fromRGB(255, 255, 255)
+boostText.Font = Enum.Font.Gotham -- Modern clean font
 boostText.TextScaled = true
 boostText.Parent = boostButton
+
+-- Add inner padding for text
+local textPadding = Instance.new("UIPadding")
+textPadding.PaddingTop = UDim.new(0.2, 0)
+textPadding.PaddingBottom = UDim.new(0.2, 0)
+textPadding.PaddingLeft = UDim.new(0.1, 0)
+textPadding.PaddingRight = UDim.new(0.1, 0)
+textPadding.Parent = boostText
 
 -- Boost visual feedback
 local isBoostPressed = false
@@ -134,10 +142,11 @@ boostButton.MouseButton1Down:Connect(function()
 	if not isBoostPressed then
 		isBoostPressed = true
 		
-		-- Visual feedback
-		boostButton.BackgroundColor3 = Color3.fromRGB(255, 200, 100)
-		boostStroke.Color = Color3.fromRGB(255, 255, 100)
-		boostStroke.Thickness = 5
+		-- Visual feedback - subtle glow
+		boostButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70) -- Slightly lighter
+		boostStroke.Color = Color3.fromRGB(150, 255, 150) -- Green active glow
+		boostStroke.Thickness = 3
+		boostStroke.Transparency = 0
 		
 		-- Send boost signal
 		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
@@ -158,9 +167,10 @@ boostButton.MouseButton1Up:Connect(function()
 		isBoostPressed = false
 		
 		-- Reset visual
-		boostButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-		boostStroke.Color = Color3.new(1, 1, 1)
-		boostStroke.Thickness = 3
+		boostButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		boostStroke.Color = Color3.fromRGB(100, 200, 255)
+		boostStroke.Thickness = 2
+		boostStroke.Transparency = 0.3
 		
 		-- Stop boost
 		if _G.PlayerSnakes and _G.PlayerSnakes[player] then
