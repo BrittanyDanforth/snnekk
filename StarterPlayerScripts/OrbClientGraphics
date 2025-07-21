@@ -43,6 +43,7 @@ local GRAPHICS_PRESETS = {
 		DISABLE_SHADOWS = false,
 		ORB_TRANSPARENCY_MODIFIER = 0,
 		-- Snake settings
+		SNAKE_GLOW_ENABLED = true,  -- Enable glow but reduced
 		SNAKE_GLOW_MULTIPLIER = 0.5,
 		SNAKE_MATERIAL = Enum.Material.Neon,
 		SNAKE_RENDER_DISTANCE = 150,
@@ -58,6 +59,7 @@ local GRAPHICS_PRESETS = {
 		DISABLE_SHADOWS = false,
 		ORB_TRANSPARENCY_MODIFIER = 0,
 		-- Snake settings
+		SNAKE_GLOW_ENABLED = true,
 		SNAKE_GLOW_MULTIPLIER = 1,
 		SNAKE_MATERIAL = Enum.Material.Neon,
 		SNAKE_RENDER_DISTANCE = 200,
@@ -255,12 +257,28 @@ local function applyLowGraphicsToAllSnakes()
 	-- Apply to all snake segments in workspace
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj:IsA("BasePart") and (obj.Name:match("Segment") or obj.Name == "SnakeHead") then
-			obj.Material = Enum.Material.SmoothPlastic
+			-- IMPORTANT: Skip HumanoidRootPart and other character parts
+			local isCharacterPart = false
+			local parent = obj.Parent
+			if parent and parent:IsA("Model") then
+				-- Check if this is part of a player character
+				for _, player in pairs(Players:GetPlayers()) do
+					if player.Character and (obj:IsDescendantOf(player.Character) or parent == player.Character) then
+						isCharacterPart = true
+						break
+					end
+				end
+			end
 			
-			-- Disable any glows
-			local glow = obj:FindFirstChild("Glow")
-			if glow then
-				glow.Enabled = false
+			-- Only apply to actual snake segments, not character parts
+			if not isCharacterPart then
+				obj.Material = Enum.Material.SmoothPlastic
+				
+				-- Disable any glows
+				local glow = obj:FindFirstChild("Glow")
+				if glow then
+					glow.Enabled = false
+				end
 			end
 		end
 	end
@@ -314,21 +332,36 @@ workspace.DescendantAdded:Connect(function(descendant)
 	if descendant:IsA("BasePart") and (descendant.Name:match("Segment") or descendant.Name == "SnakeHead") then
 		-- Apply correct material based on current graphics mode
 		task.wait() -- Wait a frame for parent to be set
-		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
-		if mode == "Low" then
-			descendant.Material = Enum.Material.SmoothPlastic
-			
-			-- Monitor this specific segment for material changes
-			local connection
-			connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
-				if descendant.Parent and mode == "Low" then
-					if descendant.Material ~= Enum.Material.SmoothPlastic then
-						descendant.Material = Enum.Material.SmoothPlastic
-					end
-				elseif not descendant.Parent then
-					connection:Disconnect()
+		
+		-- Check if this is a character part (like HumanoidRootPart)
+		local isCharacterPart = false
+		if descendant.Parent then
+			for _, player in pairs(Players:GetPlayers()) do
+				if player.Character and descendant:IsDescendantOf(player.Character) then
+					isCharacterPart = true
+					break
 				end
-			end)
+			end
+		end
+		
+		-- Only apply to actual snake segments
+		if not isCharacterPart then
+			local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+			if mode == "Low" then
+				descendant.Material = Enum.Material.SmoothPlastic
+				
+				-- Monitor this specific segment for material changes
+				local connection
+				connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
+					if descendant.Parent and mode == "Low" then
+						if descendant.Material ~= Enum.Material.SmoothPlastic then
+							descendant.Material = Enum.Material.SmoothPlastic
+						end
+					elseif not descendant.Parent then
+						connection:Disconnect()
+					end
+				end)
+			end
 		end
 	end
 end)
