@@ -19,6 +19,7 @@ local GRID_GROUP_NAME = "SlitherIOMapGrid"
 
 -- Function to set up slither.io style lighting and environment
 local function setupSlitherEnvironment()
+	print("Setting up dark slither.io environment...")
 	-- Remove skybox
 	local sky = Lighting:FindFirstChildOfClass("Sky")
 	if sky then
@@ -26,20 +27,20 @@ local function setupSlitherEnvironment()
 	end
 
 	-- Set up slither.io style environment (dark but not pitch black)
-	Lighting.Ambient = Color3.fromRGB(25, 25, 30)  -- Darker for nighttime
-	Lighting.Brightness = 0.3  -- Lower brightness for night
-	Lighting.ColorShift_Bottom = Color3.fromRGB(20, 20, 25)
-	Lighting.ColorShift_Top = Color3.fromRGB(30, 30, 35)
-	Lighting.EnvironmentDiffuseScale = 0.3
-	Lighting.EnvironmentSpecularScale = 0.2
+	Lighting.Ambient = Color3.fromRGB(15, 15, 20)  -- Even darker for true nighttime
+	Lighting.Brightness = 0.1  -- Very low brightness for night
+	Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 15)
+	Lighting.ColorShift_Top = Color3.fromRGB(20, 20, 25)
+	Lighting.EnvironmentDiffuseScale = 0.2
+	Lighting.EnvironmentSpecularScale = 0.1
 	Lighting.GlobalShadows = false
-	Lighting.OutdoorAmbient = Color3.fromRGB(30, 30, 35)
+	Lighting.OutdoorAmbient = Color3.fromRGB(20, 20, 25)
 	Lighting.ShadowSoftness = 1
 	Lighting.ClockTime = 20  -- 8 PM - Dark evening like slither.io
 	Lighting.GeographicLatitude = 0
-	Lighting.FogEnd = 600  -- Closer fog for atmosphere
-	Lighting.FogStart = 100
-	Lighting.FogColor = Color3.fromRGB(20, 20, 25)
+	Lighting.FogEnd = 500  -- Even closer fog
+	Lighting.FogStart = 50
+	Lighting.FogColor = Color3.fromRGB(15, 15, 20)
 
 	-- Create a proper backdrop
 	local backdrop = Workspace:FindFirstChild("SlitherBackdrop")
@@ -52,7 +53,7 @@ local function setupSlitherEnvironment()
 	backdrop.Anchored = true
 	backdrop.CanCollide = false
 	backdrop.Material = Enum.Material.SmoothPlastic
-	backdrop.Color = Color3.fromRGB(15, 15, 20)  -- Very dark backdrop
+	backdrop.Color = Color3.fromRGB(10, 10, 15)  -- Even darker backdrop
 	backdrop.Parent = Workspace
 
 	-- Remove or adjust atmosphere for clarity
@@ -60,6 +61,8 @@ local function setupSlitherEnvironment()
 	if atmosphere then
 		atmosphere:Destroy()  -- Remove haze for better visibility
 	end
+	
+	print("Dark environment setup complete!")
 end
 
 -- Helper: Remove all map decor (grid lines, hexagons, spots, corners)
@@ -462,6 +465,7 @@ end)
 
 -- Initial build
 buildMap()
+print("SlitherIOMapBuilder: Map built successfully!")
 
 -- Add chat command to rebuild map for testing
 Players.PlayerAdded:Connect(function(player)
