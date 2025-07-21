@@ -57,7 +57,7 @@ local WALL_ORB_DROP_AMOUNT = 3 -- Number of orbs to drop when hitting wall
 local WALL_ORB_DROP_COOLDOWN = 1.0 -- Cooldown between wall orb drops
 local WALL_DAMAGE_MULTIPLIER = 0.95 -- Lose 5% of length per wall hit
 local WALL_PUSH_TIME = 3.0 -- Time before pushing player away from wall
-local WALL_PUSH_FORCE = 80 -- Force to push player away (balanced)
+local WALL_PUSH_FORCE = 50 -- Force to push player away (gentle)
 local WALL_WARNING_TIME = 2.0 -- Time before warning player
 local WALL_PUSH_IMMUNITY_TIME = 3.0 -- Immunity time after being pushed
 local wallCollisionCooldowns = {} -- Track cooldowns per player/AI
@@ -1540,20 +1540,20 @@ RunService.Stepped:Connect(function()
 						-- Apply balanced push force
 						local bodyVelocity = Instance.new("BodyVelocity")
 						bodyVelocity.MaxForce = Vector3.new(100000, 0, 100000) -- High force to overcome snake movement
-						bodyVelocity.Velocity = pushDirection -- Normal push velocity
+						bodyVelocity.Velocity = pushDirection * 0.6 -- Reduced velocity
 						bodyVelocity.Parent = root
 						
 						-- Also apply BodyPosition for guaranteed movement
 						local bodyPosition = Instance.new("BodyPosition")
 						bodyPosition.MaxForce = Vector3.new(50000, 0, 50000) -- Strong enough to move
-						bodyPosition.Position = root.Position + pushDirection.Unit * 12 -- 12 studs away
-						bodyPosition.D = 2500 -- Balanced damping
+						bodyPosition.Position = root.Position + pushDirection.Unit * 7 -- Only 7 studs away
+						bodyPosition.D = 3500 -- Higher damping for quicker stop
 						bodyPosition.P = 20000 -- Strong power to ensure movement
 						bodyPosition.Parent = root
 						
 						-- Remove after push completes
-						game:GetService("Debris"):AddItem(bodyVelocity, 0.7)
-						game:GetService("Debris"):AddItem(bodyPosition, 1.0)
+						game:GetService("Debris"):AddItem(bodyVelocity, 0.5)
+						game:GetService("Debris"):AddItem(bodyPosition, 0.7)
 						
 						-- Reset contact time
 						wallContactTime[key] = nil
