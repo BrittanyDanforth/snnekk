@@ -121,30 +121,20 @@ local function handleWallCollision(entity, isPlayer)
 	-- Drop orbs at head position
 	local headPos = snakeData.segments[1] and snakeData.segments[1].Position
 	if headPos then
-		-- Spawn wall collision orbs INSIDE the map
-		local mapBoundary = 390 -- Stay 10 studs inside the 400 boundary
+		-- Spawn wall collision orbs near the snake
+		local mapBoundary = 395 -- Keep orbs inside the 400 boundary
 		
 		for i = 1, WALL_ORB_DROP_AMOUNT do
-			-- Calculate offset to push orbs inward from wall
-			local inwardOffset = Vector3.new(0, 0, 0)
-			if math.abs(headPos.X) > mapBoundary then
-				-- Near left/right wall, push inward
-				inwardOffset = Vector3.new(-math.sign(headPos.X) * 15, 0, 0)
-			elseif math.abs(headPos.Z) > mapBoundary then
-				-- Near top/bottom wall, push inward
-				inwardOffset = Vector3.new(0, 0, -math.sign(headPos.Z) * 15)
-			end
-			
-			-- Add random offset but keep within bounds
+			-- Random offset around the snake's head
 			local randomOffset = Vector3.new(
-				math.random(-5, 5),
+				math.random(-10, 10),
 				0,
-				math.random(-5, 5)
+				math.random(-10, 10)
 			)
 			
-			local orbPos = headPos + inwardOffset + randomOffset
+			local orbPos = headPos + randomOffset
 			
-			-- Clamp position to ensure it's inside map
+			-- Only clamp if the orb would be outside map
 			orbPos = Vector3.new(
 				math.clamp(orbPos.X, -mapBoundary, mapBoundary),
 				5, -- Match orb spawn height
@@ -1630,19 +1620,18 @@ RunService.Stepped:Connect(function()
 						-- Visual feedback
 						print("[WALL PUSH] Pushed " .. player.Name .. " away from wall!")
 						
-						-- Force drop extra orbs when pushed (inside map)
-						local mapBoundary = 390
+						-- Force drop extra orbs when pushed
+						local mapBoundary = 395
 						for i = 1, 2 do
-							-- Push orbs toward center when pushed from wall
-							local centerDirection = -headPos.Unit * 10
+							-- Random offset near the snake
 							local randomOffset = Vector3.new(
-								math.random(-3, 3),
+								math.random(-8, 8),
 								0,
-								math.random(-3, 3)
+								math.random(-8, 8)
 							)
-							local orbPos = headPos + centerDirection + randomOffset
+							local orbPos = headPos + randomOffset
 							
-							-- Ensure orb is inside map
+							-- Only clamp to keep inside map
 							orbPos = Vector3.new(
 								math.clamp(orbPos.X, -mapBoundary, mapBoundary),
 								5,
