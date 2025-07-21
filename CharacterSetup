@@ -444,7 +444,13 @@ local function applySkinToExistingSnake(player, snakeInstance)
 			if segment and segment.Parent then
 				local colorIndex = ((i - 1) % #activeConfig.BodyColors) + 1
 				segment.Color = activeConfig.BodyColors[colorIndex]
-				segment.Material = activeConfig.BodyMaterial
+				-- Check graphics mode before setting material
+				local graphicsMode = player:GetAttribute("GraphicsMode") or "High"
+				if graphicsMode == "Low" then
+					segment.Material = Enum.Material.SmoothPlastic
+				else
+					segment.Material = activeConfig.BodyMaterial
+				end
 
 				-- Update segment light
 				local light = segment:FindFirstChild("Glow")
