@@ -439,10 +439,40 @@ local SnakeSkinsData = {
 		GlowRange = 8,
 		Description = "All colors of the rainbow!"
 	},
-	["VIP Diamond"] = {price = nil, robux = 999, tag = "VIP", perkDescription = "• Diamond trail\n• +25% XP\n• Diamond crown"},
-	["VIP Inferno"] = {price = nil, robux = 1499, tag = "VIP", perkDescription = "• Flame effects\n• +30% coins\n• Fire crown"},
-	["VIP Nebula"] = {price = nil, robux = 1999, tag = "VIP", perkDescription = "• Galaxy effects\n• +35% size boost\n• Space crown"},
-	["VIP Crystal"] = {price = nil, robux = 2499, tag = "ULTIMATE", perkDescription = "• Crystal shards\n• All perks\n• Crystal crown"}
+	["VIP Nebula"] = {
+		HeadColor = Color3.fromRGB(150, 50, 200),
+		BodyColors = {
+			Color3.fromRGB(100, 0, 150),
+			Color3.fromRGB(150, 50, 200),
+			Color3.fromRGB(200, 100, 250),
+			Color3.fromRGB(150, 50, 200),
+			Color3.fromRGB(100, 0, 150),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Neon,
+		GlowIntensity = 3.0,
+		GlowRange = 10,
+		Description = "Cosmic nebula energy!"
+	},
+	["VIP Crystal"] = {
+		HeadColor = Color3.fromRGB(200, 255, 255),
+		BodyColors = {
+			Color3.fromRGB(150, 230, 255),
+			Color3.fromRGB(180, 240, 255),
+			Color3.fromRGB(200, 255, 255),
+			Color3.fromRGB(180, 240, 255),
+			Color3.fromRGB(150, 230, 255),
+		},
+		HeadSize = Vector3.new(3, 3, 3),
+		SegmentSize = Vector3.new(2.5, 2.5, 2.5),
+		HeadMaterial = Enum.Material.ForceField,
+		BodyMaterial = Enum.Material.Glass,
+		GlowIntensity = 4.0,
+		GlowRange = 15,
+		Description = "Ultimate crystal power!"
+	}
 }
 
 -- GAMEPASS DATA - Essential power-ups and boosts
@@ -2376,7 +2406,7 @@ local function createGamepassCard(passName, index)
 	nameLabel.Text = passName:upper()
 	nameLabel.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	nameLabel.TextScaled = true
-	nameLabel.Font = Enum.Font.Montserrat
+	nameLabel.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
 	nameLabel.Parent = card
 
 	-- Description with subtle styling
@@ -2557,7 +2587,7 @@ local function createGamepassPurchasePopup(passName, passData)
 	title.Text = passName:upper()
 	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	title.TextScaled = true
-	title.Font = Enum.Font.Montserrat
+	title.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
 	title.Parent = popup
 	
 	-- Description box
