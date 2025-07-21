@@ -397,6 +397,40 @@ workspace.DescendantAdded:Connect(function(descendant)
 		local parent = descendant.Parent
 		if parent and (parent.Name == "Snake" or parent.Parent and parent.Parent.Name == "Snake") then
 			descendant.Material = currentPreset.SNAKE_MATERIAL
+			
+			-- Monitor this specific segment for material changes
+			local connection
+			connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
+				if descendant.Parent and currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic then
+					if descendant.Material ~= Enum.Material.SmoothPlastic then
+						descendant.Material = Enum.Material.SmoothPlastic
+					end
+				elseif not descendant.Parent then
+					connection:Disconnect()
+				end
+			end)
+		end
+	end
+end)
+
+-- Continuous monitoring for material changes on player's snake
+task.spawn(function()
+	while true do
+		task.wait(0.1) -- Check every 0.1 seconds
+		
+		-- Only in Low graphics mode
+		if currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic then
+			-- Check player's own snake
+			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+				local snake = _G.PlayerSnakes[LocalPlayer]
+				if snake.segments then
+					for _, segment in ipairs(snake.segments) do
+						if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
+							segment.Material = Enum.Material.SmoothPlastic
+						end
+					end
+				end
+			end
 		end
 	end
 end)
