@@ -305,30 +305,11 @@ local function applyOrbLOD(orb, state, fadeValue)
 			light.Range = 8 * fadeValue
 		end
 
-		-- Smooth tween for visible orbs
-		local tweenInfo = TweenInfo.new(
-			0.3,  -- Duration
-			Enum.EasingStyle.Quad,
-			Enum.EasingDirection.Out
-		)
+		-- OPTIMIZED: Instant transitions for better performance
+		orb.Size = targetSize
+		orb.Transparency = targetTransparency
 
-		local tween = TweenService:Create(orb, tweenInfo, {
-			Size = targetSize,
-			Transparency = targetTransparency
-		})
-
-		orbTweens[orb] = tween
-		tween:Play()
-
-		-- Add pop-in effect for newly visible orbs
-		if currentState.state == "hidden" and state ~= "hidden" then
-			orb.Size = Vector3.new(0.1, 0.1, 0.1)
-			local popTween = TweenService:Create(orb, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-				Size = targetSize
-			})
-			orbTweens[orb] = popTween
-			popTween:Play()
-		end
+		-- No pop-in effect - instant visibility for better performance
 	end
 end
 
