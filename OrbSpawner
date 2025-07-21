@@ -460,9 +460,10 @@ local function removeOrb(orb)
 		end 
 	end
 	
+	-- Clean up all references
 	orbDebounce[orb] = nil
 	orbStates[orb] = nil
-	removeOrbFromGrid(orb) -- Remove from grid
+	removeOrbFromGrid(orb)
 	
 	-- Unregister from SpatialGrid
 	pcall(function()
@@ -471,6 +472,8 @@ local function removeOrb(orb)
 			SpatialGrid.UnregisterEntity(orb)
 		end
 	end)
+	
+	-- Cancel any tweens
 	if orbTweens[orb] then
 		orbTweens[orb]:Cancel()
 		orbTweens[orb] = nil
@@ -716,8 +719,10 @@ local function createOrb()
 	if math.random() < UPGRADE_ORB_CHANCE then
 		orb = createSafeOrb(randomPosition(), 0, "UpgradeOrb",
 			Color3.fromRGB(0, 200, 255), Enum.Material.ForceField)
-		upgradeOrbs[#upgradeOrbs + 1] = orb
-		orbs[#orbs + 1] = orb
+		if orb then
+			upgradeOrbs[#upgradeOrbs + 1] = orb
+			orbs[#orbs + 1] = orb
+		end
 	else
 		orb = OrbUtils.spawnOrbAt(randomPosition(), 1)  -- REDUCED from 10 to 1
 		if orb then
@@ -737,7 +742,10 @@ local function createOrb()
 			addOrbToGrid(orb) -- Add to grid
 		end
 	end
-	if orb then attachOrbTouched(orb) end
+	if orb then 
+		attachOrbTouched(orb)
+		orbDebounce[orb] = false -- Initialize debounce
+	end
 	return orb
 end
 
@@ -759,24 +767,40 @@ task.spawn(function()
 	end
 end)
 
+-- Optimized spawn loop with batch cleaning
 task.spawn(function()
+	local cleanupCounter = 0
 	while true do 
 		task.wait(ORB_SPAWN_INTERVAL)
 		
-		-- Clean up any destroyed orbs that weren't properly removed
-		local validOrbs = {}
-		for _, orb in ipairs(orbs) do
-			if orb and orb.Parent then
-				table.insert(validOrbs, orb)
+		-- Clean up destroyed orbs every 10 iterations for performance
+		cleanupCounter = cleanupCounter + 1
+		if cleanupCounter >= 10 then
+			cleanupCounter = 0
+			local validOrbs = {}
+			for _, orb in ipairs(orbs) do
+				if orb and orb.Parent then
+					table.insert(validOrbs, orb)
+				else
+					-- Clean up references for destroyed orbs
+					orbDebounce[orb] = nil
+					orbStates[orb] = nil
+					if orbTweens[orb] then
+						orbTweens[orb]:Cancel()
+						orbTweens[orb] = nil
+					end
+				end
 			end
-		end
-		if #validOrbs < #orbs then
 			orbs = validOrbs
 		end
 		
-		if #orbs < ORB_MAX then 
-			createOrb()
-		end 
+		-- Spawn multiple orbs per frame if needed for faster recovery
+		local orbsToSpawn = math.min(5, ORB_MAX - #orbs)
+		for i = 1, orbsToSpawn do
+			if #orbs < ORB_MAX then 
+				createOrb()
+			end
+		end
 	end
 end)
 
