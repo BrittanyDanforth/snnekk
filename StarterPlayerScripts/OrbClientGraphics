@@ -21,31 +21,31 @@ local LocalPlayer = Players.LocalPlayer
 local GRAPHICS_PRESETS = {
 	Low = {
 		-- Orb settings
-		RENDER_DISTANCE = 80,
+		RENDER_DISTANCE = 60,  -- Very short for potato PCs
 		MATERIAL = Enum.Material.SmoothPlastic,
 		DISABLE_LIGHTS = true,
 		PARTICLE_RATE_MULTIPLIER = 0.3,
 		DISABLE_SHADOWS = true,
-		ORB_TRANSPARENCY_MODIFIER = 0.2,
+		ORB_TRANSPARENCY_MODIFIER = 0.3,
 		-- Snake settings
 		SNAKE_GLOW_ENABLED = false,
 		SNAKE_MATERIAL = Enum.Material.SmoothPlastic,
-		SNAKE_RENDER_DISTANCE = 100,  -- Hide distant snakes
+		SNAKE_RENDER_DISTANCE = 80,  -- Hide distant snakes
 		-- Performance
-		UPDATE_RATE = 0.2,  -- Slower updates for better FPS
+		UPDATE_RATE = 0.25,  -- Slower updates for better FPS
 	},
 	Medium = {
 		-- Orb settings
-		RENDER_DISTANCE = 120,
+		RENDER_DISTANCE = 100,
 		MATERIAL = Enum.Material.Neon,
 		DISABLE_LIGHTS = false,
 		PARTICLE_RATE_MULTIPLIER = 0.7,
 		DISABLE_SHADOWS = false,
-		ORB_TRANSPARENCY_MODIFIER = 0,
+		ORB_TRANSPARENCY_MODIFIER = 0.1,
 		-- Snake settings
 		SNAKE_GLOW_MULTIPLIER = 0.5,
 		SNAKE_MATERIAL = Enum.Material.Neon,
-		SNAKE_RENDER_DISTANCE = 150,
+		SNAKE_RENDER_DISTANCE = 120,
 		-- Performance
 		UPDATE_RATE = 0.15,
 	},
@@ -128,10 +128,6 @@ local function applyOrbGraphics(orb, distance)
 			-- Beyond render distance - completely hide
 			targetTransparency = 1
 			orb.LocalTransparencyModifier = 1
-			-- Disable collision for performance
-			orb.CanCollide = false
-			orb.CanTouch = false
-			orb.CanQuery = false
 		elseif distance > fadeDistance then
 			-- Fade zone - progressive transparency
 			local fadeFactor = (distance - fadeDistance) / (preset.RENDER_DISTANCE - fadeDistance)
@@ -144,10 +140,6 @@ local function applyOrbGraphics(orb, distance)
 		else
 			-- Near distance - full visibility
 			orb.LocalTransparencyModifier = 0
-			-- Re-enable collision
-			orb.CanCollide = true
-			orb.CanTouch = true
-			orb.CanQuery = true
 		end
 		
 		-- Apply additional transparency modifier for Low graphics
@@ -497,7 +489,8 @@ local function safeInitialize()
 		end
 		
 		print("✅ Client Graphics Handler V2.1 initialized for:", LocalPlayer.Name)
-		print("🎮 Current mode:", initialMode)
+print("🎮 Current mode:", initialMode)
+print("🔍 Client LOD: Orbs render up to", currentPreset.RENDER_DISTANCE, "studs")
 	end)
 	
 	if not success then
