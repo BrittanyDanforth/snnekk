@@ -2162,21 +2162,30 @@ RunService.Stepped:Connect(function()
 						end
 					end
 
-					-- Apply deaths
+					-- Apply deaths - FIXED: Only one should die when hitting body
 					if playerDies and aiDies then
-						-- Both hit bodies
-						queuePlayerDeath(player)
-						queueAIDeath(aiHead)
+						-- RARE: Both somehow hit each other's body at exact same time
+						-- In this case, check who was moving faster/more aggressively
+						local velPlayer = head.AssemblyLinearVelocity or head.Velocity or Vector3.zero
+						local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity or Vector3.zero
+						
+						if velPlayer.Magnitude > velAI.Magnitude then
+							-- Player was more aggressive, only AI dies
+							queueAIDeath(aiHead)
+						else
+							-- AI was more aggressive, only player dies
+							queuePlayerDeath(player)
+						end
 					elseif playerDies then
-						-- Player hit AI's body
+						-- Player hit AI's body - ONLY PLAYER DIES
 						queuePlayerDeath(player)
 					elseif aiDies then
-						-- AI hit player's body
+						-- AI hit player's body - ONLY AI DIES
 						queueAIDeath(aiHead)
 					else
 						-- Pure head-to-head - only ONE dies
-						local velPlayer = head.AssemblyLinearVelocity or head.Velocity
-						local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity
+						local velPlayer = head.AssemblyLinearVelocity or head.Velocity or Vector3.zero
+						local velAI = aiHead.AssemblyLinearVelocity or aiHead.Velocity or Vector3.zero
 						local dirToAI = (aiHead.Position - head.Position).Unit
 						local dirToPlayer = -dirToAI
 
