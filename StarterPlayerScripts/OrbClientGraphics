@@ -318,6 +318,30 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 			end
 		end
 		
+		-- CRITICAL: Update ALL orbs in workspace, not just cached ones
+		task.spawn(function()
+			for _, orb in ipairs(workspace:GetDescendants()) do
+				if orb:IsA("Part") and orb.Name == "Orb" and orb.Parent then
+					local distance = playerPos and (orb.Position - playerPos).Magnitude or 0
+					applyOrbGraphics(orb, distance)
+				end
+			end
+		end)
+		
+		-- Update player's own snake segments
+		task.spawn(function()
+			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+				local snake = _G.PlayerSnakes[LocalPlayer]
+				if snake.segments then
+					for _, segment in ipairs(snake.segments) do
+						if segment and segment.Parent then
+							segment.Material = currentPreset.SNAKE_MATERIAL
+						end
+					end
+				end
+			end
+		end)
+		
 		-- Adjust particle effects
 		adjustParticleEffects(mode)
 		
