@@ -174,29 +174,29 @@ local function createDecor()
     decorGroup.Name = DECOR_GROUP_NAME
     decorGroup.Parent = Workspace
 
-    -- Create proper tessellating hexagonal pattern like slither.io
-    local hexRadius = 50  -- Distance from center to vertex
-    local hexHeight = hexRadius * math.sqrt(3)  -- Height of hexagon
-    local hexWidth = hexRadius * 2  -- Width of hexagon
+    -- Create optimized hexagonal pattern
+    local hexRadius = 100  -- Larger hexagons = fewer parts = less lag
+    local hexHeight = hexRadius * math.sqrt(3)
+    local hexWidth = hexRadius * 2
     
     -- Calculate spacing for perfect tessellation
-    local xSpacing = hexWidth * 3/4  -- Hexagons overlap horizontally
-    local ySpacing = hexHeight  -- Vertical spacing
+    local xSpacing = hexWidth * 3/4
+    local ySpacing = hexHeight
     
-    -- Create hexagonal grid across the map
-    for row = -20, 20 do
-        for col = -20, 20 do
+    -- Create hexagonal grid
+    for row = -10, 10 do  -- Fewer hexagons
+        for col = -10, 10 do  -- Fewer hexagons
             -- Calculate position with offset for odd rows
             local xOffset = (row % 2) * (xSpacing / 2)
             local x = col * xSpacing + xOffset
             local z = row * ySpacing
             
             -- Skip if outside map bounds
-            if math.abs(x) > MAP_SIZE/2 - 50 or math.abs(z) > MAP_SIZE/2 - 50 then
+            if math.abs(x) > MAP_SIZE/2 - 60 or math.abs(z) > MAP_SIZE/2 - 60 then
                 continue
             end
             
-            -- Create hexagon using 6 lines
+            -- Create hexagon using 6 THIN lines for performance
             for i = 0, 5 do
                 local angle1 = (i * 60) * math.pi / 180
                 local angle2 = ((i + 1) * 60) * math.pi / 180
@@ -208,21 +208,24 @@ local function createDecor()
                 
                 local line = Instance.new("Part")
                 line.Name = "HexLine"
-                line.Shape = Enum.PartType.Cylinder  -- Use cylinder for smoother edges
                 line.Size = Vector3.new(
-                    4,  -- Line thickness (cylinder diameter)
-                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 3,  -- Length with overlap
-                    4  -- Same as thickness for round appearance
+                    math.sqrt((x2-x1)^2 + (z2-z1)^2),  -- Exact length, no overlap
+                    0.2,  -- Very thin
+                    2  -- Thin line
                 )
-                line.CFrame = CFrame.lookAt(
-                    Vector3.new((x1+x2)/2, MAP_HEIGHT + 0.1, (z1+z2)/2),
-                    Vector3.new(x2, MAP_HEIGHT + 0.1, z2)
-                ) * CFrame.Angles(0, 0, math.pi/2)  -- Rotate cylinder to lie flat
+                -- Position and rotate properly
+                local midX = (x1 + x2) / 2
+                local midZ = (z1 + z2) / 2
+                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.1, midZ) * 
+                             CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
                 line.Anchored = true
                 line.CanCollide = false
-                line.Transparency = 0.62  -- User's preferred transparency
+                line.CanTouch = false  -- Disable touch for performance
+                line.CanQuery = false  -- Disable raycasts for performance
+                line.Transparency = 0.62
                 line.Color = Color3.fromRGB(60, 60, 70)
-                line.Material = Enum.Material.Neon  -- Smoother material with glow
+                line.Material = Enum.Material.SmoothPlastic  -- Simpler material
+                line.CastShadow = false  -- No shadows for performance
                 line.Parent = decorGroup
             end
         end
