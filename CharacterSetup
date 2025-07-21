@@ -182,13 +182,7 @@ local function resetSegment(segment)
 	segment.CanTouch = false
 	segment.Transparency = 0
 	segment.Size = Config.SegmentSize
-	-- Check graphics mode for material
-	local graphicsMode = player:GetAttribute("GraphicsMode") or "High"
-	if graphicsMode == "Low" then
-		segment.Material = Enum.Material.SmoothPlastic
-	else
-		segment.Material = Config.BodyMaterial
-	end
+	segment.Material = Config.BodyMaterial
 	segment.Shape = Enum.PartType.Ball
 	segment.TopSurface = Enum.SurfaceType.Smooth
 	segment.BottomSurface = Enum.SurfaceType.Smooth
@@ -279,13 +273,7 @@ local function createSegment(index, position, color, config, parentModel, curren
 	end
 
 	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
-	-- Check graphics mode for material
-	local graphicsMode = player:GetAttribute("GraphicsMode") or "High"
-	if graphicsMode == "Low" then
-		segment.Material = Enum.Material.SmoothPlastic
-	else
-		segment.Material = config.BodyMaterial
-	end
+	segment.Material = config.BodyMaterial
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
 	segment.Parent = parentModel

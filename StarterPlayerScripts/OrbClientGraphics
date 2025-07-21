@@ -340,6 +340,17 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 					end
 				end
 			end
+			
+			-- Also update ALL snake segments in workspace for all players
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj:IsA("BasePart") and (obj.Name:match("Segment") or obj.Name == "Head") then
+					-- Check if it's part of a snake model
+					local parent = obj.Parent
+					if parent and (parent.Name == "Snake" or parent.Parent and parent.Parent.Name == "Snake") then
+						obj.Material = currentPreset.SNAKE_MATERIAL
+					end
+				end
+			end
 		end)
 		
 		-- Adjust particle effects
@@ -377,3 +388,17 @@ local function safeInitialize()
 end
 
 safeInitialize()
+
+-- Monitor for new segments and apply correct material
+workspace.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("BasePart") and (descendant.Name:match("Segment") or descendant.Name == "Head") then
+		-- Apply correct material based on current graphics mode
+		task.wait() -- Wait a frame for parent to be set
+		local parent = descendant.Parent
+		if parent and (parent.Name == "Snake" or parent.Parent and parent.Parent.Name == "Snake") then
+			descendant.Material = currentPreset.SNAKE_MATERIAL
+		end
+	end
+end)
+
+print("✅ Orb graphics system ready with segment monitoring!")
