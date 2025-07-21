@@ -1035,13 +1035,47 @@ local function createUltraSmoothSnake(character)
 	end)
 	table.insert(connections, heartbeatConn)
 
+	local function shrinkSnake(amount)
+		amount = amount or 1
+		local shrunk = false
+		
+		-- Don't shrink below minimum length
+		if currentLength <= 10 then
+			return false
+		end
+		
+		for i = 1, amount do
+			if currentLength > 10 then
+				shrunk = true
+				local segment = segments[currentLength]
+				if segment and segment.Parent then
+					segment:Destroy()
+				end
+				segments[currentLength] = nil
+				currentLength = currentLength - 1
+			end
+		end
+		
+		-- Update leaderstats
+		if shrunk and leaderstats then
+			local lengthValue = leaderstats:FindFirstChild("Length")
+			if lengthValue then
+				lengthValue.Value = currentLength
+			end
+		end
+		
+		return shrunk
+	end
+
 	local snakeInstance
 	snakeInstance = {
 		segments = segments,
 		headParts = headParts,
 		cleanup = cleanup,
 		grow = growSnake,
+		shrink = shrinkSnake,
 		model = snakeModel,
+		length = function() return currentLength end,
 		isActive = function() return isActive end,
 		-- ENHANCED: Add skin update capability
 		updateSkin = function()

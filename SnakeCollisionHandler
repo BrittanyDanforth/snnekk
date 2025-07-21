@@ -114,6 +114,12 @@ local function handleWallCollision(entity, isPlayer)
 			OrbUtils.spawnOrbAt(orbPos, 1)
 		end
 		
+		-- Remove segments (lose length) for players
+		if isPlayer and snakeData.shrink then
+			-- Use the shrink method if available
+			snakeData.shrink(WALL_ORB_DROP_AMOUNT)
+		end
+		
 		-- Visual feedback
 		if DEBUG_COLLISIONS then
 			print("[WALL] " .. tostring(key) .. " hit the wall and dropped " .. WALL_ORB_DROP_AMOUNT .. " orbs!")
@@ -1581,6 +1587,15 @@ RunService.Stepped:Connect(function()
 							local orbPos = headPos + randomOffset
 							orbPos = Vector3.new(orbPos.X, 5, orbPos.Z)
 							OrbUtils.spawnOrbAt(orbPos, 1)
+						end
+						
+						-- Also lose segments when pushed
+						if _G.PlayerSnakes and _G.PlayerSnakes[player] then
+							local snake = _G.PlayerSnakes[player]
+							if snake.shrink then
+								-- Remove 2 extra segments for being pushed
+								snake.shrink(2)
+							end
 						end
 					end
 				elseif contactDuration > WALL_WARNING_TIME then
