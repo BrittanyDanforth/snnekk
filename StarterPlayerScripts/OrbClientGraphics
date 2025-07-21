@@ -311,24 +311,38 @@ end)
 
 -- Monitor for new segments and apply correct material
 workspace.DescendantAdded:Connect(function(descendant)
-	if descendant:IsA("BasePart") and (descendant.Name:match("Segment") or descendant.Name == "SnakeHead") then
-		-- Apply correct material based on current graphics mode
-		task.wait() -- Wait a frame for parent to be set
-		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
-		if mode == "Low" then
-			descendant.Material = Enum.Material.SmoothPlastic
-			
-			-- Monitor this specific segment for material changes
-			local connection
-			connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
-				if descendant.Parent and mode == "Low" then
-					if descendant.Material ~= Enum.Material.SmoothPlastic then
-						descendant.Material = Enum.Material.SmoothPlastic
+	if descendant:IsA("BasePart") then
+		-- First check if this is a player character part
+		local isPlayerBodyPart = false
+		for _, player in pairs(Players:GetPlayers()) do
+			if player.Character and descendant:IsDescendantOf(player.Character) then
+				-- This is a character body part - ensure it stays transparent
+				descendant.Transparency = 1
+				isPlayerBodyPart = true
+				break
+			end
+		end
+		
+		-- Only apply graphics settings to actual snake segments
+		if not isPlayerBodyPart and (descendant.Name:match("Segment") or descendant.Name == "SnakeHead") then
+			-- Apply correct material based on current graphics mode
+			task.wait() -- Wait a frame for parent to be set
+			local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+			if mode == "Low" then
+				descendant.Material = Enum.Material.SmoothPlastic
+				
+				-- Monitor this specific segment for material changes
+				local connection
+				connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
+					if descendant.Parent and mode == "Low" then
+						if descendant.Material ~= Enum.Material.SmoothPlastic then
+							descendant.Material = Enum.Material.SmoothPlastic
+						end
+					elseif not descendant.Parent then
+						connection:Disconnect()
 					end
-				elseif not descendant.Parent then
-					connection:Disconnect()
-				end
-			end)
+				end)
+			end
 		end
 	end
 end)
@@ -379,6 +393,16 @@ local function onCharacterAdded(character)
 	local rootPart = character:WaitForChild("HumanoidRootPart", 5)
 	
 	if humanoid and rootPart then
+		-- Ensure all character parts are transparent
+		task.spawn(function()
+			task.wait(0.1)
+			for _, part in pairs(character:GetChildren()) do
+				if part:IsA("BasePart") then
+					part.Transparency = 1
+				end
+			end
+		end)
+		
 		-- Apply graphics mode after a short delay to ensure snake is created
 		task.wait(0.5)
 		
@@ -410,6 +434,13 @@ local function onCharacterAdded(character)
 									part.Material = Enum.Material.SmoothPlastic
 								end
 							end
+						end
+					end
+					
+					-- Re-ensure character parts are transparent
+					for _, part in pairs(character:GetChildren()) do
+						if part:IsA("BasePart") then
+							part.Transparency = 1
 						end
 					end
 				end

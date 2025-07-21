@@ -967,6 +967,21 @@ local function createUltraSmoothSnake(character)
 		if not isActive or not rootPart.Parent then return end
 
 		updateCounter = updateCounter + 1
+		
+		-- ENSURE ALL CHARACTER PARTS STAY INVISIBLE
+		if updateCounter % 10 == 0 then -- Check every 10 frames for performance
+			for _, part in character:GetChildren() do
+				if part:IsA("BasePart") and part ~= rootPart then
+					if part.Transparency ~= 1 then
+						part.Transparency = 1
+					end
+				end
+			end
+			-- Ensure root part is also invisible
+			if rootPart.Transparency ~= 1 then
+				rootPart.Transparency = 1
+			end
+		end
 
 		-- Calculate uniform size ONCE per frame for ALL segments
 		local currentGrowthFactor = 1
