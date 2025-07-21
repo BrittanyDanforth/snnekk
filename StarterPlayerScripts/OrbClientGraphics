@@ -115,20 +115,45 @@ local function applyOrbGraphics(orb, distance)
 		end
 	end
 	
-	-- Smooth transparency for distant orbs
+	-- Enhanced LOD system with size scaling
 	if distance then
 		local targetTransparency = 0
+		local targetSize = orb.Size
 		
-		-- Calculate transparency based on distance
+		-- Different LOD zones based on graphics mode
+		local nearDistance = preset.RENDER_DISTANCE * 0.2  -- 20% of render distance
+		local fadeDistance = preset.RENDER_DISTANCE * 0.5  -- 50% of render distance
+		
 		if distance > preset.RENDER_DISTANCE then
-			targetTransparency = 1  -- Completely hide
-		elseif preset.ORB_TRANSPARENCY_MODIFIER > 0 and distance > 50 then
-			local fadeFactor = math.clamp((distance - 50) / (preset.RENDER_DISTANCE - 50), 0, 1)
-			targetTransparency = preset.ORB_TRANSPARENCY_MODIFIER * fadeFactor
+			-- Beyond render distance - completely hide
+			targetTransparency = 1
+			orb.LocalTransparencyModifier = 1
+			-- Disable collision for performance
+			orb.CanCollide = false
+			orb.CanTouch = false
+			orb.CanQuery = false
+		elseif distance > fadeDistance then
+			-- Fade zone - progressive transparency
+			local fadeFactor = (distance - fadeDistance) / (preset.RENDER_DISTANCE - fadeDistance)
+			targetTransparency = 0.3 + (0.7 * fadeFactor)
+			orb.LocalTransparencyModifier = targetTransparency
+		elseif distance > nearDistance then
+			-- Medium distance - slightly transparent
+			targetTransparency = 0.1
+			orb.LocalTransparencyModifier = targetTransparency
+		else
+			-- Near distance - full visibility
+			orb.LocalTransparencyModifier = 0
+			-- Re-enable collision
+			orb.CanCollide = true
+			orb.CanTouch = true
+			orb.CanQuery = true
 		end
 		
-		-- Apply transparency
-		orb.LocalTransparencyModifier = targetTransparency
+		-- Apply additional transparency modifier for Low graphics
+		if preset.ORB_TRANSPARENCY_MODIFIER > 0 then
+			orb.LocalTransparencyModifier = math.min(1, orb.LocalTransparencyModifier + preset.ORB_TRANSPARENCY_MODIFIER)
+		end
 	end
 end
 

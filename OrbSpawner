@@ -88,8 +88,8 @@ local LOD_SETTINGS = {
 	}
 }
 
--- Default to Medium settings
-local currentSettings = LOD_SETTINGS.Medium
+-- Server always uses High settings - clients handle their own LOD
+local currentSettings = LOD_SETTINGS.High
 
 ---------------------------------------------------------------------
 -- Dynamic spawn area
@@ -668,47 +668,8 @@ attachOrbTouched = function(orb)
 	end)
 end
 
----------------------------------------------------------------------
--- LOD Update Loop - Updates visibility of all orbs in batches
----------------------------------------------------------------------
-local lastLODUpdate = 0
-local orbUpdateIndex = 1
-
-task.spawn(function()
-	RunService.Heartbeat:Connect(function()
-		local now = tick()
-		if now - lastLODUpdate < currentSettings.LOD_UPDATE_RATE then return end
-		lastLODUpdate = now
-
-		local viewPositions = getAllViewingPositions()
-		if #viewPositions == 0 then return end
-
-		-- Update LOD for a batch of orbs each frame
-		local processed = 0
-		local totalOrbs = #orbs
-		
-		while processed < currentSettings.ORBS_PER_FRAME and orbUpdateIndex <= totalOrbs do
-			local orb = orbs[orbUpdateIndex]
-			if orb and orb.Parent then
-				local state, fade = calculateOrbLOD(orb, viewPositions)
-				applyOrbLOD(orb, state, fade)
-			end
-			
-			orbUpdateIndex = orbUpdateIndex + 1
-			processed = processed + 1
-			
-			-- Wrap around to start
-			if orbUpdateIndex > totalOrbs then
-				orbUpdateIndex = 1
-			end
-		end
-		
-		-- Reset index if we've gone past the end
-		if orbUpdateIndex > totalOrbs then
-			orbUpdateIndex = 1
-		end
-	end)
-end)
+-- REMOVED: Server-side LOD loop
+-- Client-side LOD is handled by OrbClientGraphics for each player individually
 
 ---------------------------------------------------------------------
 -- Backup proximity scan (runs every 0.2 s) - only for visible orbs
@@ -802,13 +763,14 @@ local function createOrb()
 			-- CRITICAL FIX: Add regular orbs to the orbs array!
 			orbs[#orbs + 1] = orb
 			
-			-- Start orbs hidden until LOD system takes over
-			orb.Transparency = 1
-			orb.Size = Vector3.new(0.1, 0.1, 0.1)
-			orbStates[orb] = {state = "hidden", fade = 0}
+			-- Start orbs fully visible - client will handle LOD
+			orb.Transparency = 0
+			orb.Size = Vector3.new(1.5, 1.5, 1.5)
 			local light = orb:FindFirstChild("PointLight")
 			if light then 
-				light.Enabled = false
+				light.Enabled = true
+				light.Brightness = 2
+				light.Range = 8
 			end
 			addOrbToGrid(orb) -- Add to grid
 		end
@@ -918,23 +880,8 @@ local OrbSpawner = {
 -- Set the attachOrbTouched function for OrbUtils
 OrbUtils.attachOrbTouched = attachOrbTouched
 
--- Update graphics settings periodically
-task.spawn(function()
-	while true do
-		updateGraphicsSettings()
-		task.wait(2) -- Check every 2 seconds
-	end
-end)
-
--- Listen for player attribute changes
-Players.PlayerAdded:Connect(function(player)
-	player:GetAttributeChangedSignal("GraphicsMode"):Connect(function()
-		updateGraphicsSettings()
-	end)
-end)
-
--- Initial update
-updateGraphicsSettings()
+-- REMOVED: Server-side LOD affects all players
+-- Client-side LOD is handled by OrbClientGraphics LocalScript
 
 _G.OrbSpawner = OrbSpawner
 print("OrbSpawner loaded successfully - LOD now respects graphics settings!")
