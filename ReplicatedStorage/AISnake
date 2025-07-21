@@ -200,6 +200,48 @@ end
 
 
 
+-- Get random skin from available player skins
+local function getRandomPlayerSkin()
+	if not SnakeSkins then
+		-- Fallback if SnakeSkins not loaded
+		return {
+			HeadColor = Color3.fromRGB(255, 255, 0),
+			BodyColors = {Color3.fromRGB(255, 255, 0)},
+			HeadMaterial = Enum.Material.Neon,
+			BodyMaterial = Enum.Material.Neon
+		}
+	end
+	
+	-- Get all available skins
+	local availableSkins = {}
+	for skinName, skinData in pairs(SnakeSkins) do
+		-- Add all skins including shop skins
+		table.insert(availableSkins, {
+			name = skinName,
+			data = skinData
+		})
+	end
+	
+	-- Pick a random skin
+	if #availableSkins > 0 then
+		local randomSkin = availableSkins[math.random(1, #availableSkins)]
+		return {
+			HeadColor = randomSkin.data.HeadColor,
+			BodyColors = randomSkin.data.BodyColors,
+			HeadMaterial = randomSkin.data.HeadMaterial or Enum.Material.Neon,
+			BodyMaterial = randomSkin.data.BodyMaterial or Enum.Material.Neon,
+			SkinName = randomSkin.name
+		}
+	end
+	
+	return {
+		HeadColor = Color3.fromRGB(255, 255, 0),
+		BodyColors = {Color3.fromRGB(255, 255, 0)},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
+	}
+end
+
 local function deepCopy(orig)
 	local orig_type = type(orig)
 	local copy
@@ -1666,46 +1708,6 @@ AISnake._brainConnection = RunService.Stepped:Connect(function(time, deltaTime)
 	end
 end)
 
--- Get random skin from available player skins
-local function getRandomPlayerSkin()
-	if not SnakeSkins then
-		-- Fallback if SnakeSkins not loaded
-		return {
-			HeadColor = Color3.fromRGB(255, 255, 0),
-			BodyColors = {Color3.fromRGB(255, 255, 0)},
-			HeadMaterial = Enum.Material.Neon,
-			BodyMaterial = Enum.Material.Neon
-		}
-	end
-	
-	-- Get all available skins
-	local availableSkins = {}
-	for skinName, skinData in pairs(SnakeSkins) do
-		-- Add all skins including shop skins
-		table.insert(availableSkins, {
-			name = skinName,
-			data = skinData
-		})
-	end
-	
-	-- Pick a random skin
-	if #availableSkins > 0 then
-		local randomSkin = availableSkins[math.random(1, #availableSkins)]
-		return {
-			HeadColor = randomSkin.data.HeadColor,
-			BodyColors = randomSkin.data.BodyColors,
-			HeadMaterial = randomSkin.data.HeadMaterial or Enum.Material.Neon,
-			BodyMaterial = randomSkin.data.BodyMaterial or Enum.Material.Neon,
-			SkinName = randomSkin.name
-		}
-	end
-	
-	return {
-		HeadColor = Color3.fromRGB(255, 255, 0),
-		BodyColors = {Color3.fromRGB(255, 255, 0)},
-		HeadMaterial = Enum.Material.Neon,
-		BodyMaterial = Enum.Material.Neon
-	}
-end
+
 
 return AISnake
