@@ -23,11 +23,12 @@ local YIELD_INTERVAL = 100
 
 -- === IMPROVED COLLISION SETTINGS ===
 local COLLISION_FRAME_SKIP = 4 -- Process every 4 frames
-local BODY_COLLISION_DISTANCE = 2.5 -- More precise body collision
-local HEAD_COLLISION_DISTANCE = 3.0 -- More precise head collision
+local BODY_COLLISION_DISTANCE = 2.2 -- Tighter body collision
+local HEAD_COLLISION_DISTANCE = 2.8 -- Tighter head collision
 local MIN_COLLISION_DISTANCE = 1.8 -- Minimum distance for any collision
-local COLLISION_BUFFER = 0.3 -- Reduced buffer for accuracy
-local NETWORK_COMPENSATION = 0.2 -- Reduced compensation
+local COLLISION_BUFFER = 0.2 -- Even smaller buffer
+local NETWORK_COMPENSATION = 0.15 -- Less compensation
+local PLAYER_SPAWN_PROTECTION = 3 -- 3 seconds spawn protection for players
 local SPAWN_PROTECTION_TIME = 5 -- 5 seconds spawn protection for AI
 local MIN_AI_SPAWN_DISTANCE = 50 -- Minimum distance between AI spawn points
 
@@ -825,11 +826,22 @@ local function validateCollision(posA, posB, expectedDistance)
 end
 
 -- === DEATH HANDLERS (QUEUE-BASED) ===
+local recentDeaths = {} -- Track recent deaths with timestamps
+
 local function queuePlayerDeath(player)
 	-- Additional safety checks to prevent random deaths
 	if not player or not player.Parent then
 		if DEBUG_COLLISIONS then
 			print(string.format("[SAFETY] Blocked death - invalid player object"))
+		end
+		return
+	end
+	
+	-- Check death cooldown (prevent rapid deaths)
+	local lastDeath = recentDeaths[player]
+	if lastDeath and (tick() - lastDeath) < 2 then -- 2 second cooldown
+		if DEBUG_COLLISIONS then
+			print(string.format("[SAFETY] Blocked rapid death for %s", player.Name))
 		end
 		return
 	end
@@ -914,6 +926,9 @@ local function queuePlayerDeath(player)
 		target = player,
 		timestamp = tick()
 	})
+	
+	-- Track death time
+	recentDeaths[player] = tick()
 end
 
 local function queueAIDeath(head)
@@ -1849,8 +1864,47 @@ RunService.Stepped:Connect(function()
 							end
 
 							if collision then
-								-- Validate collision is real (not a glitch)
-								if headPos.Y > -10 and collision.distance < BODY_COLLISION_DISTANCE * 1.5 then
+								-- Enhanced validation for long snakes
+								local isValidCollision = true
+								
+								-- Check 1: Height validation
+								if headPos.Y < -5 or headPos.Y > 50 then
+									isValidCollision = false
+								end
+								
+								-- Check 2: Distance validation (stricter for long snakes)
+								local maxDistance = BODY_COLLISION_DISTANCE
+								if segmentData.length > 500 then
+									maxDistance = BODY_COLLISION_DISTANCE * 0.8 -- Stricter for long snakes
+								end
+								if collision.distance > maxDistance then
+									isValidCollision = false
+								end
+								
+								-- Check 3: Ensure it's not a self-collision
+								if targetPlayer == player then
+									isValidCollision = false
+								end
+								
+								-- Check 4: Velocity check - prevent high-speed glitches
+								local humanoid = character:FindFirstChild("Humanoid")
+								if humanoid and humanoid.RootPart then
+									local velocity = humanoid.RootPart.AssemblyLinearVelocity
+									if velocity.Magnitude > 100 then -- Too fast, likely a glitch
+										isValidCollision = false
+									end
+								end
+								
+								-- Check 5: Spawn protection
+								local spawnTime = player:GetAttribute("SpawnTime")
+								if spawnTime and (tick() - spawnTime) < PLAYER_SPAWN_PROTECTION then
+									isValidCollision = false
+								end
+								
+								if isValidCollision then
+									if DEBUG_COLLISIONS then
+										print("Valid collision:", player.Name, "->", targetPlayer.Name, "distance:", collision.distance)
+									end
 									queuePlayerDeath(player)
 									break
 								end

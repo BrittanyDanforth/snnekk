@@ -1337,6 +1337,9 @@ local function handlePlayer(player)
 	local function onCharacterAdded(character)
 		-- ENHANCED: Ensure skin persists through respawns
 		task.wait(0.1) -- Small delay to ensure attributes are set
+		
+		-- Set spawn protection
+		player:SetAttribute("SpawnTime", tick())
 
 		-- Double-check skin is still set (in case something reset it)
 		local currentSkin = player:GetAttribute("SelectedSkin")
