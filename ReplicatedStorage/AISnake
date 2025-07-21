@@ -236,6 +236,9 @@ local function createVisualHead(config, parentModel)
 	headPart.TopSurface = Enum.SurfaceType.Smooth
 	headPart.BottomSurface = Enum.SurfaceType.Smooth
 	headPart.Parent = parentModel
+	
+	-- MAKE AI SNAKE HEAD COMPLETELY INVISIBLE (like player snakes)
+	headPart.Transparency = 1
 
 	local headLight = Instance.new("PointLight")
 	headLight.Color = config.HeadColor
@@ -1359,6 +1362,11 @@ function AISnake:updateMovement(dt)
 	local headOffset = self.Direction * 1.5
 	local newHeadPos = self.Position + headOffset
 	self.HeadParts.head.CFrame = CFramelookAt(newHeadPos, newHeadPos + self.Direction)
+	
+	-- ENSURE AI SNAKE HEAD STAYS INVISIBLE
+	if self.HeadParts.head.Transparency ~= 1 then
+		self.HeadParts.head.Transparency = 1
+	end
 
 	-- Set velocity for collision detection
 	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
