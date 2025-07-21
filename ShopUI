@@ -2223,6 +2223,244 @@ local function createCategoryButton(category, index)
 	return btn
 end
 
+-- Create modern gamepass purchase popup
+local function createGamepassPurchasePopup(passName, passData)
+	-- Blur background
+	local blur = Instance.new("Frame")
+	blur.Name = "PurchaseBlur"
+	blur.Size = UDim2.new(1, 0, 1, 0)
+	blur.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	blur.BackgroundTransparency = 0.3
+	blur.Parent = ShopUI.uiElements.shopFrame.Parent
+
+	-- Main popup container
+	local popup = Instance.new("Frame")
+	popup.Name = "GamepassPurchasePopup"
+	popup.Size = UDim2.new(0, 400, 0, 500)
+	popup.Position = UDim2.new(0.5, -200, 0.5, -250)
+	popup.BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY
+	popup.Parent = blur
+	createCorner(popup, 20)
+
+	-- Gradient background
+	local popupGradient = Instance.new("UIGradient")
+	popupGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, SHOP_CONFIG.COLORS.SECONDARY),
+		ColorSequenceKeypoint.new(1, SHOP_CONFIG.COLORS.PRIMARY)
+	})
+	popupGradient.Rotation = 90
+	popupGradient.Parent = popup
+
+	-- Glass effect
+	local glass = Instance.new("Frame")
+	glass.Size = UDim2.new(1, 0, 1, 0)
+	glass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	glass.BackgroundTransparency = 0.97
+	glass.Parent = popup
+	createCorner(glass, 20)
+
+	-- Close button
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 40, 0, 40)
+	closeBtn.Position = UDim2.new(1, -50, 0, 10)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
+	closeBtn.Text = "×"
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.TextScaled = true
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.Parent = popup
+	createCorner(closeBtn, 20)
+
+	-- Header with icon
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0.3, 0)
+	header.BackgroundColor3 = passData.color
+	header.BackgroundTransparency = 0.2
+	header.Parent = popup
+
+	local headerGradient = Instance.new("UIGradient")
+	headerGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, passData.gradient[1]),
+		ColorSequenceKeypoint.new(1, passData.gradient[2])
+	})
+	headerGradient.Rotation = 45
+	headerGradient.Parent = header
+
+	-- Large icon
+	local largeIcon = Instance.new("TextLabel")
+	largeIcon.Size = UDim2.new(0, 100, 0, 100)
+	largeIcon.Position = UDim2.new(0.5, -50, 0.15, -50)
+	largeIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	largeIcon.BackgroundTransparency = 0.9
+	largeIcon.Text = passData.icon
+	largeIcon.TextScaled = true
+	largeIcon.Font = Enum.Font.SourceSansBold
+	largeIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	largeIcon.Parent = popup
+	createCorner(largeIcon, 50)
+
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(0.9, 0, 0.1, 0)
+	title.Position = UDim2.new(0.05, 0, 0.32, 0)
+	title.BackgroundTransparency = 1
+	title.Text = passName:upper()
+	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	title.TextScaled = true
+	title.Font = Enum.Font.SourceSansBold
+	title.Parent = popup
+
+	-- Description box
+	local descBox = Instance.new("Frame")
+	descBox.Size = UDim2.new(0.9, 0, 0.15, 0)
+	descBox.Position = UDim2.new(0.05, 0, 0.45, 0)
+	descBox.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
+	descBox.BackgroundTransparency = 0.5
+	descBox.Parent = popup
+	createCorner(descBox, 10)
+
+	local descText = Instance.new("TextLabel")
+	descText.Size = UDim2.new(0.95, 0, 0.8, 0)
+	descText.Position = UDim2.new(0.025, 0, 0.1, 0)
+	descText.BackgroundTransparency = 1
+	descText.Text = passData.description
+	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
+	descText.TextScaled = true
+	descText.Font = Enum.Font.Gotham
+	descText.Parent = descBox
+
+	-- Benefits list
+	local benefitsTitle = Instance.new("TextLabel")
+	benefitsTitle.Size = UDim2.new(0.9, 0, 0.05, 0)
+	benefitsTitle.Position = UDim2.new(0.05, 0, 0.62, 0)
+	benefitsTitle.BackgroundTransparency = 1
+	benefitsTitle.Text = "BENEFITS:"
+	benefitsTitle.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
+	benefitsTitle.TextScaled = true
+	benefitsTitle.Font = Enum.Font.GothamBold
+	benefitsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	benefitsTitle.Parent = popup
+
+	-- Purchase button
+	local purchaseBtn = Instance.new("TextButton")
+	purchaseBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
+	purchaseBtn.Position = UDim2.new(0.1, 0, 0.85, 0)
+	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
+	purchaseBtn.Text = "BUY NOW - R$" .. tostring(passData.price)
+	purchaseBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+	purchaseBtn.TextScaled = true
+	purchaseBtn.Font = Enum.Font.GothamBold
+	purchaseBtn.Parent = popup
+	createCorner(purchaseBtn, 10)
+
+	local purchaseGradient = Instance.new("UIGradient")
+	purchaseGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
+	})
+	purchaseGradient.Rotation = 90
+	purchaseGradient.Parent = purchaseBtn
+
+	-- Animate popup entrance
+	popup.Position = UDim2.new(0.5, -200, 0.5, -300)
+	popup.Size = UDim2.new(0, 350, 0, 450)
+	TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+		Position = UDim2.new(0.5, -200, 0.5, -250),
+		Size = UDim2.new(0, 400, 0, 500)
+	}):Play()
+
+	TweenService:Create(blur, TweenInfo.new(0.3), {
+		BackgroundTransparency = 0.3
+	}):Play()
+
+	-- Button interactions
+	purchaseBtn.MouseEnter:Connect(function()
+		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.85, 0, 0.11, 0)
+		}):Play()
+	end)
+
+	purchaseBtn.MouseLeave:Connect(function()
+		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
+			Size = UDim2.new(0.8, 0, 0.1, 0)
+		}):Play()
+	end)
+
+	-- Purchase functionality
+	purchaseBtn.MouseButton1Click:Connect(function()
+		playSound("PURCHASE")
+
+		local MarketplaceService = game:GetService("MarketplaceService")
+		local player = game:GetService("Players").LocalPlayer
+
+		-- Check if gamepass ID is properly set
+		if not passData.id or passData.id < 1000 or passData.id == 123456789 or passData.id == 123456791 or passData.id == 123456792 or passData.id == 123456793 or passData.id == 123456795 or passData.id == 123456796 then
+			warn("⚠️ Gamepass ID not properly configured! Please set a valid gamepass ID in the GAMEPASS_DATA table.")
+			-- Create error popup
+			local errorFrame = Instance.new("Frame")
+			errorFrame.Size = UDim2.new(0, 300, 0, 150)
+			errorFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+			errorFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+			errorFrame.Parent = blur
+			createCorner(errorFrame, 10)
+			
+			local errorText = Instance.new("TextLabel")
+			errorText.Size = UDim2.new(1, -20, 1, -20)
+			errorText.Position = UDim2.new(0, 10, 0, 10)
+			errorText.BackgroundTransparency = 1
+			errorText.Text = "Gamepass ID not configured!\nPlease set a valid gamepass ID\nin the GAMEPASS_DATA table."
+			errorText.TextColor3 = Color3.fromRGB(255, 255, 255)
+			errorText.TextScaled = true
+			errorText.Font = Enum.Font.SourceSansBold
+			errorText.Parent = errorFrame
+			
+			wait(3)
+			blur:Destroy()
+			return
+		end
+
+		local success, err = pcall(function()
+			MarketplaceService:PromptGamePassPurchase(player, passData.id)
+		end)
+
+		if not success then
+			warn("Failed to prompt gamepass purchase:", err)
+		end
+
+		-- Close popup
+		TweenService:Create(popup, TweenInfo.new(0.3), {
+			Position = UDim2.new(0.5, -200, 0.5, -300),
+			Size = UDim2.new(0, 350, 0, 450),
+			Transparency = 1
+		}):Play()
+
+		TweenService:Create(blur, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1
+		}):Play()
+
+		wait(0.3)
+		blur:Destroy()
+	end)
+
+	-- Close button functionality
+	closeBtn.MouseButton1Click:Connect(function()
+		playSound("CLOSE")
+
+		TweenService:Create(popup, TweenInfo.new(0.3), {
+			Position = UDim2.new(0.5, -200, 0.5, -300),
+			Size = UDim2.new(0, 350, 0, 450),
+			Transparency = 1
+		}):Play()
+
+		TweenService:Create(blur, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1
+		}):Play()
+
+		wait(0.3)
+		blur:Destroy()
+	end)
+end
+
 -- Create modern gamepass card with gradients and effects
 local function createGamepassCard(passName, index)
 	local passData = GAMEPASS_DATA[passName]
@@ -2407,244 +2645,6 @@ local function createGamepassCard(passName, index)
 
 		-- Create purchase confirmation popup
 		createGamepassPurchasePopup(passName, passData)
-	end)
-end
-
--- Create modern gamepass purchase popup
-local function createGamepassPurchasePopup(passName, passData)
-	-- Blur background
-	local blur = Instance.new("Frame")
-	blur.Name = "PurchaseBlur"
-	blur.Size = UDim2.new(1, 0, 1, 0)
-	blur.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	blur.BackgroundTransparency = 0.3
-	blur.Parent = ShopUI.uiElements.shopFrame.Parent
-
-	-- Main popup container
-	local popup = Instance.new("Frame")
-	popup.Name = "GamepassPurchasePopup"
-	popup.Size = UDim2.new(0, 400, 0, 500)
-	popup.Position = UDim2.new(0.5, -200, 0.5, -250)
-	popup.BackgroundColor3 = SHOP_CONFIG.COLORS.PRIMARY
-	popup.Parent = blur
-	createCorner(popup, 20)
-
-	-- Gradient background
-	local popupGradient = Instance.new("UIGradient")
-	popupGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, SHOP_CONFIG.COLORS.SECONDARY),
-		ColorSequenceKeypoint.new(1, SHOP_CONFIG.COLORS.PRIMARY)
-	})
-	popupGradient.Rotation = 90
-	popupGradient.Parent = popup
-
-	-- Glass effect
-	local glass = Instance.new("Frame")
-	glass.Size = UDim2.new(1, 0, 1, 0)
-	glass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	glass.BackgroundTransparency = 0.97
-	glass.Parent = popup
-	createCorner(glass, 20)
-
-	-- Close button
-	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 40, 0, 40)
-	closeBtn.Position = UDim2.new(1, -50, 0, 10)
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
-	closeBtn.Text = "×"
-	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextScaled = true
-	closeBtn.Font = Enum.Font.GothamBold
-	closeBtn.Parent = popup
-	createCorner(closeBtn, 20)
-
-	-- Header with icon
-	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0.3, 0)
-	header.BackgroundColor3 = passData.color
-	header.BackgroundTransparency = 0.2
-	header.Parent = popup
-
-	local headerGradient = Instance.new("UIGradient")
-	headerGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, passData.gradient[1]),
-		ColorSequenceKeypoint.new(1, passData.gradient[2])
-	})
-	headerGradient.Rotation = 45
-	headerGradient.Parent = header
-
-	-- Large icon
-	local largeIcon = Instance.new("TextLabel")
-	largeIcon.Size = UDim2.new(0, 100, 0, 100)
-	largeIcon.Position = UDim2.new(0.5, -50, 0.15, -50)
-	largeIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	largeIcon.BackgroundTransparency = 0.9
-	largeIcon.Text = passData.icon
-	largeIcon.TextScaled = true
-	largeIcon.Font = Enum.Font.SourceSansBold
-	largeIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-	largeIcon.Parent = popup
-	createCorner(largeIcon, 50)
-
-	-- Title
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(0.9, 0, 0.1, 0)
-	title.Position = UDim2.new(0.05, 0, 0.32, 0)
-	title.BackgroundTransparency = 1
-	title.Text = passName:upper()
-	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
-	title.TextScaled = true
-			title.Font = Enum.Font.SourceSansBold
-	title.Parent = popup
-
-	-- Description box
-	local descBox = Instance.new("Frame")
-	descBox.Size = UDim2.new(0.9, 0, 0.15, 0)
-	descBox.Position = UDim2.new(0.05, 0, 0.45, 0)
-	descBox.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
-	descBox.BackgroundTransparency = 0.5
-	descBox.Parent = popup
-	createCorner(descBox, 10)
-
-	local descText = Instance.new("TextLabel")
-	descText.Size = UDim2.new(0.95, 0, 0.8, 0)
-	descText.Position = UDim2.new(0.025, 0, 0.1, 0)
-	descText.BackgroundTransparency = 1
-	descText.Text = passData.description
-	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
-	descText.TextScaled = true
-	descText.Font = Enum.Font.Gotham
-	descText.Parent = descBox
-
-	-- Benefits list
-	local benefitsTitle = Instance.new("TextLabel")
-	benefitsTitle.Size = UDim2.new(0.9, 0, 0.05, 0)
-	benefitsTitle.Position = UDim2.new(0.05, 0, 0.62, 0)
-	benefitsTitle.BackgroundTransparency = 1
-	benefitsTitle.Text = "BENEFITS:"
-	benefitsTitle.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
-	benefitsTitle.TextScaled = true
-	benefitsTitle.Font = Enum.Font.GothamBold
-	benefitsTitle.TextXAlignment = Enum.TextXAlignment.Left
-	benefitsTitle.Parent = popup
-
-	-- Purchase button
-	local purchaseBtn = Instance.new("TextButton")
-	purchaseBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
-	purchaseBtn.Position = UDim2.new(0.1, 0, 0.85, 0)
-	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
-	purchaseBtn.Text = "BUY NOW - R$" .. tostring(passData.price)
-	purchaseBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-	purchaseBtn.TextScaled = true
-	purchaseBtn.Font = Enum.Font.GothamBold
-	purchaseBtn.Parent = popup
-	createCorner(purchaseBtn, 10)
-
-	local purchaseGradient = Instance.new("UIGradient")
-	purchaseGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
-	})
-	purchaseGradient.Rotation = 90
-	purchaseGradient.Parent = purchaseBtn
-
-	-- Animate popup entrance
-	popup.Position = UDim2.new(0.5, -200, 0.5, -300)
-	popup.Size = UDim2.new(0, 350, 0, 450)
-	TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-		Position = UDim2.new(0.5, -200, 0.5, -250),
-		Size = UDim2.new(0, 400, 0, 500)
-	}):Play()
-
-	TweenService:Create(blur, TweenInfo.new(0.3), {
-		BackgroundTransparency = 0.3
-	}):Play()
-
-	-- Button interactions
-	purchaseBtn.MouseEnter:Connect(function()
-		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
-			Size = UDim2.new(0.85, 0, 0.11, 0)
-		}):Play()
-	end)
-
-	purchaseBtn.MouseLeave:Connect(function()
-		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
-			Size = UDim2.new(0.8, 0, 0.1, 0)
-		}):Play()
-	end)
-
-	-- Purchase functionality
-	purchaseBtn.MouseButton1Click:Connect(function()
-		playSound("PURCHASE")
-
-		local MarketplaceService = game:GetService("MarketplaceService")
-		local player = game:GetService("Players").LocalPlayer
-
-		-- Check if gamepass ID is properly set
-		if not passData.id or passData.id < 1000 or passData.id == 123456789 or passData.id == 123456791 or passData.id == 123456792 or passData.id == 123456793 or passData.id == 123456795 or passData.id == 123456796 then
-			warn("⚠️ Gamepass ID not properly configured! Please set a valid gamepass ID in the GAMEPASS_DATA table.")
-			-- Create error popup
-			local errorFrame = Instance.new("Frame")
-			errorFrame.Size = UDim2.new(0, 300, 0, 150)
-			errorFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-			errorFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-			errorFrame.Parent = blur
-			createCorner(errorFrame, 10)
-			
-			local errorText = Instance.new("TextLabel")
-			errorText.Size = UDim2.new(1, -20, 1, -20)
-			errorText.Position = UDim2.new(0, 10, 0, 10)
-			errorText.BackgroundTransparency = 1
-			errorText.Text = "Gamepass ID not configured!\nPlease set a valid gamepass ID\nin the GAMEPASS_DATA table."
-			errorText.TextColor3 = Color3.fromRGB(255, 255, 255)
-			errorText.TextScaled = true
-			errorText.Font = Enum.Font.SourceSansBold
-			errorText.Parent = errorFrame
-			
-			wait(3)
-			blur:Destroy()
-			return
-		end
-
-		local success, err = pcall(function()
-			MarketplaceService:PromptGamePassPurchase(player, passData.id)
-		end)
-
-		if not success then
-			warn("Failed to prompt gamepass purchase:", err)
-		end
-
-		-- Close popup
-		TweenService:Create(popup, TweenInfo.new(0.3), {
-			Position = UDim2.new(0.5, -200, 0.5, -300),
-			Size = UDim2.new(0, 350, 0, 450),
-			Transparency = 1
-		}):Play()
-
-		TweenService:Create(blur, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-
-		wait(0.3)
-		blur:Destroy()
-	end)
-
-	-- Close button functionality
-	closeBtn.MouseButton1Click:Connect(function()
-		playSound("CLOSE")
-
-		TweenService:Create(popup, TweenInfo.new(0.3), {
-			Position = UDim2.new(0.5, -200, 0.5, -300),
-			Size = UDim2.new(0, 350, 0, 450),
-			Transparency = 1
-		}):Play()
-
-		TweenService:Create(blur, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-
-		wait(0.3)
-		blur:Destroy()
 	end)
 end
 
