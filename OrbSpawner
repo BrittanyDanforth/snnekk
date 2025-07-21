@@ -442,12 +442,24 @@ end
 -- Remove orb from tables
 ---------------------------------------------------------------------
 local function removeOrb(orb)
+	-- Remove from OrbUtils tracking
 	OrbUtils.removeOrb(orb)
+	
+	-- CRITICAL FIX: Remove from OrbSpawner's main orbs array
+	for i = #orbs, 1, -1 do
+		if orbs[i] == orb then
+			table.remove(orbs, i)
+			break
+		end
+	end
+	
+	-- Remove from upgrade orbs if applicable
 	for i = #upgradeOrbs, 1, -1 do 
 		if upgradeOrbs[i] == orb then 
 			table.remove(upgradeOrbs, i) 
 		end 
 	end
+	
 	orbDebounce[orb] = nil
 	orbStates[orb] = nil
 	removeOrbFromGrid(orb) -- Remove from grid
@@ -709,6 +721,9 @@ local function createOrb()
 	else
 		orb = OrbUtils.spawnOrbAt(randomPosition(), 1)  -- REDUCED from 10 to 1
 		if orb then
+			-- CRITICAL FIX: Add regular orbs to the orbs array!
+			orbs[#orbs + 1] = orb
+			
 			-- Make sure new orbs from OrbUtils also start hidden
 			orb.Transparency = 1
 			orb.Size = Vector3.new(0.1, 0.1, 0.1)
