@@ -55,9 +55,9 @@ local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
 -- Server uses default high settings, clients handle their own graphics
-local RENDER_DISTANCE = 150
-local FAR_DISTANCE = 300
-local FADE_DISTANCE = 50
+local RENDER_DISTANCE = 250  -- Increased from 150
+local FAR_DISTANCE = 400     -- Increased from 300
+local FADE_DISTANCE = 100    -- Increased from 50
 local MIN_ORB_SIZE = 0.3
 local MAX_ORB_SIZE = 2.0
 local LOD_UPDATE_RATE = 0.1
@@ -724,12 +724,16 @@ local function createOrb()
 			-- CRITICAL FIX: Add regular orbs to the orbs array!
 			orbs[#orbs + 1] = orb
 			
-			-- Make sure new orbs from OrbUtils also start hidden
-			orb.Transparency = 1
-			orb.Size = Vector3.new(0.1, 0.1, 0.1)
-			orbStates[orb] = {state = "hidden", fade = 0}
+			-- Start orbs visible at medium distance
+			orb.Transparency = 0.3
+			orb.Size = Vector3.new(1.5, 1.5, 1.5)
+			orbStates[orb] = {state = "far", fade = 0.7}
 			local light = orb:FindFirstChild("PointLight")
-			if light then light.Enabled = false end
+			if light then 
+				light.Enabled = true
+				light.Brightness = 1.4
+				light.Range = 5.6
+			end
 			addOrbToGrid(orb) -- Add to grid
 		end
 	end
