@@ -484,44 +484,7 @@ local SnakeSkinsData = {
 	}
 }
 
--- GAMEPASS DATA placeholder - will use the more complete version later in the file
-	},
 
-	-- VIP PACKAGE
-	["VIP Pass"] = {
-		id = 123456795,
-		price = 999,
-		icon = "👑",
-		description = "Ultimate VIP benefits package!",
-		color = Color3.fromRGB(255, 0, 255),
-		tag = "ULTIMATE",
-		benefits = {
-			"👑 VIP chat tag",
-			"💰 3x coins",
-			"📈 2x growth",
-			"⚡ +25% speed",
-			"✨ VIP aura",
-			"🎨 Exclusive skins"
-		}
-	},
-
-	-- COSMETIC PACKS
-	["Trail Pack"] = {
-		id = 123456796,
-		price = 199,
-		icon = "🌈",
-		description = "10 exclusive trail effects!",
-		color = Color3.fromRGB(255, 100, 150),
-		tag = "STYLE",
-		benefits = {
-			"🌈 Rainbow trail",
-			"🔥 Fire trail",
-			"❄️ Ice trail",
-			"⚡ Lightning trail",
-			"✨ 6 more trails"
-		}
-	}
-}
 
 -- FIX FOR LENGTH COMPRESSION IN REAL GAME
 local PREVIEW_CONFIG = {
