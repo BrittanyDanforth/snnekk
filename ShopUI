@@ -2421,7 +2421,7 @@ local createGamepassPurchasePopup = function(passName, passData)
 	title.Text = passName:upper()
 	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	title.TextScaled = true
-	title.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
+	title.Font = Enum.Font.SourceSansBold -- Modern font
 	title.Parent = popup
 	
 	-- Description box
@@ -2635,7 +2635,7 @@ local function createGamepassCard(passName, index)
 	nameLabel.Text = passName:upper()
 	nameLabel.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	nameLabel.TextScaled = true
-	nameLabel.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
+	nameLabel.Font = Enum.Font.SourceSansBold -- Modern font
 	nameLabel.Parent = card
 
 	-- Description with subtle styling
@@ -2797,118 +2797,6 @@ local function createSkinCard(skinName, index)
 end
 
 -- Duplicate createSkinCard function removed (was orphaned code from bad merge)
-	descText.Text = passData.description
-	descText.TextColor3 = SHOP_CONFIG.COLORS.TEXT_SECONDARY
-	descText.TextScaled = true
-	descText.Font = Enum.Font.Gotham
-	descText.Parent = descBox
-	
-	-- Benefits list
-	local benefitsTitle = Instance.new("TextLabel")
-	benefitsTitle.Size = UDim2.new(0.9, 0, 0.05, 0)
-	benefitsTitle.Position = UDim2.new(0.05, 0, 0.62, 0)
-	benefitsTitle.BackgroundTransparency = 1
-	benefitsTitle.Text = "BENEFITS:"
-	benefitsTitle.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
-	benefitsTitle.TextScaled = true
-	benefitsTitle.Font = Enum.Font.GothamBold
-	benefitsTitle.TextXAlignment = Enum.TextXAlignment.Left
-	benefitsTitle.Parent = popup
-	
-	-- Purchase button
-	local purchaseBtn = Instance.new("TextButton")
-	purchaseBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
-	purchaseBtn.Position = UDim2.new(0.1, 0, 0.85, 0)
-	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
-	purchaseBtn.Text = "BUY NOW - R$" .. tostring(passData.price)
-	purchaseBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-	purchaseBtn.TextScaled = true
-	purchaseBtn.Font = Enum.Font.GothamBold
-	purchaseBtn.Parent = popup
-	createCorner(purchaseBtn, 10)
-	
-	local purchaseGradient = Instance.new("UIGradient")
-	purchaseGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 127)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 100))
-	})
-	purchaseGradient.Rotation = 90
-	purchaseGradient.Parent = purchaseBtn
-	
-	-- Animate popup entrance
-	popup.Position = UDim2.new(0.5, -200, 0.5, -300)
-	popup.Size = UDim2.new(0, 350, 0, 450)
-	TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-		Position = UDim2.new(0.5, -200, 0.5, -250),
-		Size = UDim2.new(0, 400, 0, 500)
-	}):Play()
-	
-	TweenService:Create(blur, TweenInfo.new(0.3), {
-		BackgroundTransparency = 0.3
-	}):Play()
-	
-	-- Button interactions
-	purchaseBtn.MouseEnter:Connect(function()
-		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
-			Size = UDim2.new(0.85, 0, 0.11, 0)
-		}):Play()
-	end)
-	
-	purchaseBtn.MouseLeave:Connect(function()
-		TweenService:Create(purchaseBtn, TweenInfo.new(0.2), {
-			Size = UDim2.new(0.8, 0, 0.1, 0)
-		}):Play()
-	end)
-	
-	-- Purchase functionality
-	purchaseBtn.MouseButton1Click:Connect(function()
-		playSound("PURCHASE")
-		
-		local MarketplaceService = game:GetService("MarketplaceService")
-		local player = game:GetService("Players").LocalPlayer
-		
-		local success, err = pcall(function()
-			MarketplaceService:PromptGamePassPurchase(player, passData.id)
-		end)
-		
-		if not success then
-			warn("Failed to prompt gamepass purchase:", err)
-		end
-		
-		-- Close popup
-		TweenService:Create(popup, TweenInfo.new(0.3), {
-			Position = UDim2.new(0.5, -200, 0.5, -300),
-			Size = UDim2.new(0, 350, 0, 450),
-			Transparency = 1
-		}):Play()
-		
-		TweenService:Create(blur, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-		
-		wait(0.3)
-		blur:Destroy()
-	end)
-	
-	-- Close button functionality
-	closeBtn.MouseButton1Click:Connect(function()
-		playSound("CLOSE")
-		
-		TweenService:Create(popup, TweenInfo.new(0.3), {
-			Position = UDim2.new(0.5, -200, 0.5, -300),
-			Size = UDim2.new(0, 350, 0, 450),
-			Transparency = 1
-		}):Play()
-		
-		TweenService:Create(blur, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-		
-		wait(0.3)
-		blur:Destroy()
-	end)
-end
-
 -- Create skin card
 local function createSkinCard(skinName, index)
 	-- Validate skin name
