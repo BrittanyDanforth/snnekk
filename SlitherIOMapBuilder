@@ -75,9 +75,18 @@ local function createWalls()
         wall.CanTouch = true  -- Ensure touch detection works
         wall.CanQuery = true  -- Ensure raycasts work
         wall.Locked = true
-        wall.Transparency = 1  -- Fully invisible
+        wall.Transparency = 0.95  -- Slightly visible
         wall.Material = Enum.Material.ForceField  -- Better collision detection
+        wall.BrickColor = BrickColor.new("Really red")  -- Red warning color
         wall.Parent = Workspace
+        
+        -- Add a SelectionBox for better visibility
+        local selectionBox = Instance.new("SelectionBox")
+        selectionBox.Adornee = wall
+        selectionBox.Color3 = Color3.new(1, 0, 0)
+        selectionBox.LineThickness = 0.05
+        selectionBox.Transparency = 0.5
+        selectionBox.Parent = wall
         
         -- Add invisible barrier below map to catch falling players
         if name == "SlitherIOWall_Bottom" then
