@@ -933,7 +933,7 @@ function InventoryUI.getFilteredItems()
 		end
 		
 		-- Add all gamepasses
-		for gamepassName, owned in pairs(InventoryUI.inventory.gamepasses) do
+		for gamepassName, owned in pairs(InventoryUI.inventory.gamepasses or {}) do
 			if owned then
 				table.insert(items, {
 					name = gamepassName,
@@ -1247,6 +1247,8 @@ function InventoryUI.loadInventoryData()
 		InventoryUI.inventory = {
 			skins = {["Default"] = {quantity = 1, rarity = "Common", equipped = true}},
 			items = {},
+			gamepasses = {},
+			boosts = {},
 			currency = {coins = 0, gems = 0}
 		}
 		return
@@ -1256,6 +1258,8 @@ function InventoryUI.loadInventoryData()
 	InventoryUI.inventory = {
 		skins = {},
 		items = {},
+		gamepasses = {},
+		boosts = {},
 		currency = {
 			coins = tonumber(ShopUI.playerData.coins) or 0,
 			gems = 0,
