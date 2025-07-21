@@ -754,7 +754,7 @@ function CharacterPreview.create(viewport)
 	end
 
 	-- Main animation loop - PERFECT SLITHERING
-	rotationConnection = RunService.Heartbeat:Connect(function(dt)
+				rotationConnection = RunService.RenderStepped:Connect(function(dt)
 		time = time + dt
 
 		-- Camera rotation with proper positioning

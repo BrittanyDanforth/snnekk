@@ -1006,10 +1006,7 @@ task.spawn(function()
 
 			local death = table.remove(deathQueue, 1)
 
-			-- Add small delay for head-to-head collisions to ensure proper orb spawning
-			if death.type == "player" or death.type == "ai" then
-				task.wait(0.02) -- Small delay to prevent orb spawning conflicts
-			end
+			-- No delay needed - process immediately
 
 			if death.type == "player" then
 				local player = death.target
@@ -2310,7 +2307,7 @@ RunService.Stepped:Connect(function()
 							-- Rare simultaneous case: both die
 							queueAIDeath(headA)
 							task.spawn(function()
-								task.wait(0.05)
+								task.wait(0.1) -- Reduced from 0.05 to reduce server load
 								queueAIDeath(headB)
 							end)
 						end

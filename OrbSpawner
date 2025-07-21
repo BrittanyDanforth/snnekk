@@ -49,8 +49,8 @@ if not OrbCollectedEvent then
 	OrbCollectedEvent.Parent = ReplicatedStorage
 end
 
-local ORB_SPAWN_INTERVAL  = 0.2  -- Faster orb respawn!
-local ORB_MAX             = 950  -- More orbs available!
+local ORB_SPAWN_INTERVAL  = 0.5  -- Balanced for performance
+local ORB_MAX             = 600  -- Reduced for better performance
 local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
@@ -63,8 +63,8 @@ local LOD_SETTINGS = {
 		NEAR_DISTANCE = 40,
 		MIN_ORB_SIZE = 0.8,
 		MAX_ORB_SIZE = 2.0,
-		LOD_UPDATE_RATE = 0.05,  -- 20 FPS updates
-		ORBS_PER_FRAME = 150     -- Process more orbs
+		LOD_UPDATE_RATE = 0.15,  -- 6.7 FPS updates
+		ORBS_PER_FRAME = 75      -- Process fewer orbs per frame
 	},
 	Medium = {
 		RENDER_DISTANCE = 120,
@@ -73,8 +73,8 @@ local LOD_SETTINGS = {
 		NEAR_DISTANCE = 30,
 		MIN_ORB_SIZE = 0.5,
 		MAX_ORB_SIZE = 1.5,
-		LOD_UPDATE_RATE = 0.067, -- 15 FPS updates
-		ORBS_PER_FRAME = 100     -- Process more orbs
+		LOD_UPDATE_RATE = 0.2,   -- 5 FPS updates
+		ORBS_PER_FRAME = 50      -- Process fewer orbs
 	},
 	Low = {
 		RENDER_DISTANCE = 80,
@@ -83,8 +83,8 @@ local LOD_SETTINGS = {
 		NEAR_DISTANCE = 20,
 		MIN_ORB_SIZE = 0.3,
 		MAX_ORB_SIZE = 1.0,
-		LOD_UPDATE_RATE = 0.1,   -- 10 FPS updates
-		ORBS_PER_FRAME = 50      -- Process more orbs
+		LOD_UPDATE_RATE = 0.3,   -- 3.3 FPS updates
+		ORBS_PER_FRAME = 25      -- Process fewer orbs
 	}
 }
 
@@ -714,12 +714,27 @@ end)
 -- Backup proximity scan (runs every 0.2 s) - only for visible orbs
 ---------------------------------------------------------------------
 task.spawn(function()
+	-- Cache AI heads and update less frequently
+	local aiHeads = {}
+	local lastAIUpdate = 0
+	
 	while true do 
-		task.wait(0.2)
-		local aiHeads = {}
-		for _, obj in Workspace:GetDescendants() do
-			if obj:IsA("BasePart") and obj.Name == "AISnakeHead" then
-				aiHeads[#aiHeads + 1] = obj
+		task.wait(0.5) -- Reduced frequency
+		
+		-- Update AI heads cache every 2 seconds
+		local now = tick()
+		if now - lastAIUpdate > 2 then
+			lastAIUpdate = now
+			aiHeads = {}
+			-- Use more efficient search
+			local aiContainer = Workspace:FindFirstChild("AISnakeContainer")
+			if aiContainer then
+				for _, model in ipairs(aiContainer:GetChildren()) do
+					local head = model:FindFirstChild("AISnakeHead")
+					if head then
+						aiHeads[#aiHeads + 1] = head
+					end
+				end
 			end
 		end
 		local players = getPlayerHeads()
