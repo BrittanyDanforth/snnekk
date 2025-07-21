@@ -826,22 +826,11 @@ local function validateCollision(posA, posB, expectedDistance)
 end
 
 -- === DEATH HANDLERS (QUEUE-BASED) ===
-local recentDeaths = {} -- Track recent deaths with timestamps
-
 local function queuePlayerDeath(player)
 	-- Additional safety checks to prevent random deaths
 	if not player or not player.Parent then
 		if DEBUG_COLLISIONS then
 			print(string.format("[SAFETY] Blocked death - invalid player object"))
-		end
-		return
-	end
-	
-	-- Check death cooldown (prevent rapid deaths)
-	local lastDeath = recentDeaths[player]
-	if lastDeath and (tick() - lastDeath) < 2 then -- 2 second cooldown
-		if DEBUG_COLLISIONS then
-			print(string.format("[SAFETY] Blocked rapid death for %s", player.Name))
 		end
 		return
 	end
@@ -926,9 +915,6 @@ local function queuePlayerDeath(player)
 		target = player,
 		timestamp = tick()
 	})
-	
-	-- Track death time
-	recentDeaths[player] = tick()
 end
 
 local function queueAIDeath(head)
