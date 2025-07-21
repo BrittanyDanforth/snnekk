@@ -1938,7 +1938,8 @@ RunService.Stepped:Connect(function()
 						end
 
 						if collision then
-							queueAIDeath(aiHead)
+							-- FIXED: When AI head hits player body, PLAYER dies, not AI!
+							queuePlayerDeath(player)
 							break
 						end
 					end
