@@ -1153,29 +1153,29 @@ local SHOP_CONFIG = {
 	CARD_HEIGHT = 240,
 
 	COLORS = {
-		-- Modern dark purple/blue gradient theme
-		BACKGROUND = Color3.fromRGB(13, 9, 20),  -- Deep purple-black
-		PRIMARY = Color3.fromRGB(26, 20, 35),    -- Purple-tinted dark
-		SECONDARY = Color3.fromRGB(35, 28, 48),  -- Mid purple
-		TERTIARY = Color3.fromRGB(45, 38, 58),   -- Light purple
+		-- Modern dark theme matching the UI examples
+		BACKGROUND = Color3.fromRGB(10, 10, 15),      -- Very dark background
+		PRIMARY = Color3.fromRGB(20, 20, 25),         -- Dark card backgrounds
+		SECONDARY = Color3.fromRGB(30, 30, 35),       -- Slightly lighter cards
+		TERTIARY = Color3.fromRGB(40, 40, 45),        -- Borders and dividers
 		
-		-- Softer accent colors (no harsh neons)
-		ACCENT = Color3.fromRGB(138, 100, 255),       -- Soft purple
-		ACCENT_GLOW = Color3.fromRGB(168, 130, 255), -- Light purple glow
-		SECONDARY_ACCENT = Color3.fromRGB(255, 100, 180), -- Soft pink
-		SUCCESS = Color3.fromRGB(100, 255, 180),     -- Soft mint green
-		WARNING = Color3.fromRGB(255, 180, 80),      -- Soft orange
-		ERROR = Color3.fromRGB(255, 100, 120),       -- Soft red
+		-- Modern accent colors (teal/green like the examples)
+		ACCENT = Color3.fromRGB(0, 200, 150),         -- Teal/green main
+		ACCENT_GLOW = Color3.fromRGB(0, 255, 180),    -- Bright teal glow
+		SECONDARY_ACCENT = Color3.fromRGB(255, 100, 0), -- Orange for contrast
+		SUCCESS = Color3.fromRGB(0, 255, 150),        -- Bright green
+		WARNING = Color3.fromRGB(255, 180, 0),        -- Orange/yellow
+		ERROR = Color3.fromRGB(255, 70, 70),          -- Red
 		
 		-- Text hierarchy
-		TEXT_PRIMARY = Color3.fromRGB(240, 240, 245),   -- Almost white
-		TEXT_SECONDARY = Color3.fromRGB(180, 180, 190), -- Light gray
-		TEXT_MUTED = Color3.fromRGB(120, 115, 130),     -- Mid gray
+		TEXT_PRIMARY = Color3.fromRGB(255, 255, 255),   -- Pure white
+		TEXT_SECONDARY = Color3.fromRGB(200, 200, 210), -- Light gray
+		TEXT_MUTED = Color3.fromRGB(140, 140, 150),     -- Mid gray
 		
 		-- Special colors
-		GLOW = Color3.fromRGB(180, 150, 255),      -- Purple glow
+		GLOW = Color3.fromRGB(0, 255, 200),        -- Teal glow
 		VIP_GOLD = Color3.fromRGB(255, 200, 80),   -- Soft gold
-		RAINBOW = Color3.fromRGB(200, 150, 255),    -- Soft purple-pink
+		RAINBOW = Color3.fromRGB(0, 200, 255),     -- Cyan/teal gradient
 		
 		-- Glass morphism colors
 		GLASS_WHITE = Color3.fromRGB(255, 255, 255),
@@ -1191,11 +1191,12 @@ local SHOP_CONFIG = {
 	},
 
 	SOUNDS = {
-		HOVER = "rbxasset://sounds/electronicpingshort.wav",
+		HOVER = "", -- Disabled - too annoying
 		SELECT = "rbxasset://sounds/electronicpingshort.wav",
 		PURCHASE = "rbxasset://sounds/electronicpingshort.wav",
 		ERROR = "rbxasset://sounds/electronicpingshort.wav",
 		WHOOSH = "rbxasset://sounds/electronicpingshort.wav",
+		CLICK = "rbxasset://sounds/electronicpingshort.wav",
 	}
 }
 
@@ -1622,11 +1623,26 @@ local function createGlassPanel(parent, transparency, blurSize)
 	return stroke, shadow
 end
 
--- Safe sound function
+-- Safe sound function with hover spam prevention
+local lastSoundTime = {}
 local function playSound(soundName, volume)
+	-- Skip empty sounds
+	if not SHOP_CONFIG.SOUNDS[soundName] or SHOP_CONFIG.SOUNDS[soundName] == "" then
+		return
+	end
+	
+	-- Prevent hover sound spam
+	if soundName == "HOVER" then
+		local now = tick()
+		if lastSoundTime[soundName] and now - lastSoundTime[soundName] < 0.2 then
+			return
+		end
+		lastSoundTime[soundName] = now
+	end
+	
 	pcall(function()
 		local sound = Instance.new("Sound")
-		sound.SoundId = SHOP_CONFIG.SOUNDS[soundName] or "rbxasset://sounds/electronicpingshort.wav"
+		sound.SoundId = SHOP_CONFIG.SOUNDS[soundName]
 		sound.Volume = volume or 0.2
 		sound.Parent = SoundService
 		sound:Play()
@@ -2127,15 +2143,15 @@ end
 local function createCategoryButton(category, index)
 	local btn = Instance.new("TextButton")
 	btn.Name = "Category_"..category.name
-	btn.Size = UDim2.new(0.9, 0, 0, 60)
-	btn.Position = UDim2.new(0.05, 0, 0, (index - 1) * 70 + 10)
-	btn.BackgroundColor3 = SHOP_CONFIG.COLORS.TERTIARY
-	btn.BackgroundTransparency = 0.3
+	btn.Size = UDim2.new(0.9, 0, 0, 55)
+	btn.Position = UDim2.new(0.05, 0, 0, (index - 1) * 65 + 10)
+	btn.BackgroundColor3 = SHOP_CONFIG.COLORS.SECONDARY
+	btn.BackgroundTransparency = 0.5
 	btn.Text = ""
 	btn.Parent = ShopUI.uiElements.sidebar
 
-	createCorner(btn, 10)
-	local stroke = createStroke(btn, category.color, 1, 0.8)
+	createCorner(btn, 12)
+	local stroke = createStroke(btn, SHOP_CONFIG.COLORS.TERTIARY, 1, 0.5)
 
 	-- Icon
 	local iconFrame = Instance.new("Frame")
@@ -2194,7 +2210,7 @@ local function createCategoryButton(category, index)
 
 	-- Hover effects
 	btn.MouseEnter:Connect(function()
-		playSound("HOVER", 0.1)
+		-- No hover sound - too spammy
 		TweenService:Create(btn, TweenInfo.new(0.15), {
 			BackgroundTransparency = 0,
 			Size = UDim2.new(0.92, 0, 0, 65)
@@ -2447,7 +2463,7 @@ local function createGamepassCard(passName, index)
 
 	-- Hover effects with glow animation
 	card.MouseEnter:Connect(function()
-		playSound("HOVER", 0.1)
+		-- No hover sound
 		
 		-- Scale up card
 		TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
@@ -2920,7 +2936,7 @@ local function createSkinCard(skinName, index)
 
 	-- Hover effects
 	card.MouseEnter:Connect(function()
-		playSound("HOVER", 0.1)
+		-- No hover sound
 
 		TweenService:Create(card, TweenInfo.new(0.2), {
 			Size = UDim2.new(0, SHOP_CONFIG.CARD_WIDTH * SHOP_CONFIG.HOVER_SCALE, 
