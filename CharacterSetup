@@ -273,7 +273,17 @@ local function createSegment(index, position, color, config, parentModel, curren
 	end
 
 	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
-	segment.Material = config.BodyMaterial
+	
+	-- Check graphics mode before setting material
+	local player = Players:GetPlayerFromCharacter(parentModel.Parent)
+	local graphicsMode = player and player:GetAttribute("GraphicsMode") or "High"
+	
+	if graphicsMode == "Low" then
+		segment.Material = Enum.Material.SmoothPlastic
+	else
+		segment.Material = config.BodyMaterial
+	end
+	
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
 	segment.Parent = parentModel
@@ -282,8 +292,8 @@ local function createSegment(index, position, color, config, parentModel, curren
 	segment:SetAttribute("IsSnakeSegment", true)
 	segment:SetAttribute("SegmentIndex", index)
 
-	-- Add glow to head segments and every 10th segment for performance
-	if index <= 30 or index % 10 == 0 then
+	-- Add glow to head segments and every 10th segment for performance (but respect graphics mode)
+	if (index <= 30 or index % 10 == 0) and graphicsMode ~= "Low" then
 		local light = segment:FindFirstChild("Glow")
 		if not light then
 			light = Instance.new("PointLight")
@@ -311,10 +321,14 @@ local function createSegment(index, position, color, config, parentModel, curren
 end
 
 local function createVisualHead(rootPart, config, parentModel)
+	-- Check graphics mode
+	local player = Players:GetPlayerFromCharacter(parentModel.Parent)
+	local graphicsMode = player and player:GetAttribute("GraphicsMode") or "High"
+	
 	local headPart = Instance.new("Part")
 	headPart.Name = "SnakeHead"
 	headPart.Size = config.HeadSize
-	headPart.Material = config.HeadMaterial
+	headPart.Material = graphicsMode == "Low" and Enum.Material.SmoothPlastic or config.HeadMaterial
 	headPart.Color = config.HeadColor
 	headPart.Shape = Enum.PartType.Ball
 	headPart.CanCollide = false
@@ -328,11 +342,15 @@ local function createVisualHead(rootPart, config, parentModel)
 	headPart:SetAttribute("IsSnakeHead", true)
 	headPart:SetAttribute("IsSnakeSegment", true)
 
-	local headLight = Instance.new("PointLight")
-	headLight.Color = config.HeadColor
-	headLight.Brightness = config.GlowIntensity + 1
-	headLight.Range = config.GlowRange + 2
-	headLight.Parent = headPart
+	-- Only add light if not in Low graphics mode
+	local headLight
+	if graphicsMode ~= "Low" then
+		headLight = Instance.new("PointLight")
+		headLight.Color = config.HeadColor
+		headLight.Brightness = config.GlowIntensity + 1
+		headLight.Range = config.GlowRange + 2
+		headLight.Parent = headPart
+	end
 
 	local headOutline = Instance.new("SelectionBox")
 	headOutline.Adornee = headPart
@@ -1278,6 +1296,64 @@ end
 
 -- Initialize respawn handler with retry
 handleRespawnEvent()
+
+-- Handle graphics mode changes for existing players
+local function handleGraphicsModeChange(player)
+	player:GetAttributeChangedSignal("GraphicsMode"):Connect(function()
+		local graphicsMode = player:GetAttribute("GraphicsMode") or "High"
+		local snake = _G.PlayerSnakes and _G.PlayerSnakes[player]
+		
+		if snake and snake.segments then
+			-- Update all segments
+			for i, segment in pairs(snake.segments) do
+				if segment and segment.Parent then
+					-- Update material
+					if graphicsMode == "Low" then
+						segment.Material = Enum.Material.SmoothPlastic
+						-- Remove or disable glow
+						local light = segment:FindFirstChild("Glow")
+						if light then
+							light.Enabled = false
+						end
+					else
+						segment.Material = snake.activeConfig.BodyMaterial
+						-- Re-enable glow for segments that should have it
+						if i <= 30 or i % 10 == 0 then
+							local light = segment:FindFirstChild("Glow")
+							if light then
+								light.Enabled = true
+							end
+						end
+					end
+				end
+			end
+			
+			-- Update head
+			if snake.headParts then
+				local head = snake.headParts.head
+				if head then
+					head.Material = graphicsMode == "Low" and Enum.Material.SmoothPlastic or snake.activeConfig.HeadMaterial
+				end
+				
+				-- Handle head light
+				if snake.headParts.headLight then
+					snake.headParts.headLight.Enabled = graphicsMode ~= "Low"
+				end
+			end
+			
+			print("[Server] Updated graphics mode for", player.Name, "to", graphicsMode)
+		end
+	end)
+end
+
+-- Apply to existing players
+for _, player in pairs(Players:GetPlayers()) do
+	handleGraphicsModeChange(player)
+end
+
+-- Apply to new players
+Players.PlayerAdded:Connect(handleGraphicsModeChange)
+
 task.spawn(function()
 	for i = 1, 5 do
 		if ReplicatedStorage:FindFirstChild("RespawnSnake") then break end

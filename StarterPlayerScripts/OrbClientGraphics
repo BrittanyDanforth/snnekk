@@ -460,3 +460,24 @@ task.spawn(function()
 		applyMaterials()
 	end
 end)
+
+-- Force immediate application when character spawns
+LocalPlayer.CharacterAdded:Connect(function(character)
+	-- Wait for snake to be created
+	task.wait(0.5)
+	
+	-- Force update graphics mode
+	updateGraphicsMode()
+	
+	-- Apply materials multiple times to ensure it sticks
+	for i = 1, 5 do
+		applyMaterials()
+		task.wait(0.1)
+	end
+	
+	-- Also handle snake glows immediately
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	if mode == "Low" then
+		handleSnakeGlows(mode, getPlayerPosition())
+	end
+end)
