@@ -9,8 +9,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- CONFIGURABLE MAP SIZE
 local MAP_SIZE = 800      -- Map is MAP_SIZE x MAP_SIZE studs
 local MAP_HEIGHT = 1      -- Height of the ground
-local WALL_THICKNESS = 8  -- Thickness of invisible walls
-local WALL_HEIGHT = 60    -- Height of invisible walls
+local WALL_THICKNESS = 20  -- Thickness of invisible walls (increased)
+local WALL_HEIGHT = 200    -- Height of invisible walls (much taller)
 
 -- GROUP NAMES for easy cleanup/toggling
 local DECOR_GROUP_NAME = "SlitherIOMapDecor"
@@ -75,9 +75,18 @@ local function createWalls()
         wall.CanTouch = true  -- Ensure touch detection works
         wall.CanQuery = true  -- Ensure raycasts work
         wall.Locked = true
-        wall.Transparency = 1  -- Fully invisible
+        wall.Transparency = 0.95  -- Slightly visible for testing (change to 1 later)
         wall.Material = Enum.Material.ForceField  -- Better collision detection
+        wall.BrickColor = BrickColor.new("Really red")  -- Red color for visibility
         wall.Parent = Workspace
+        
+        -- Add a SelectionBox for better visibility during testing
+        local selectionBox = Instance.new("SelectionBox")
+        selectionBox.Adornee = wall
+        selectionBox.Color3 = Color3.new(1, 0, 0)
+        selectionBox.LineThickness = 0.05
+        selectionBox.Transparency = 0.5
+        selectionBox.Parent = wall
         
         -- Add invisible barrier below map to catch falling players
         if name == "SlitherIOWall_Bottom" then
@@ -96,10 +105,12 @@ local function createWalls()
         return wall
     end
     local half = MAP_SIZE/2
-    createWall("SlitherIOWall_Left", Vector3.new(WALL_THICKNESS, WALL_HEIGHT, MAP_SIZE+WALL_THICKNESS*2), Vector3.new(-half-WALL_THICKNESS/2, WALL_HEIGHT/2, 0))
-    createWall("SlitherIOWall_Right", Vector3.new(WALL_THICKNESS, WALL_HEIGHT, MAP_SIZE+WALL_THICKNESS*2), Vector3.new(half+WALL_THICKNESS/2, WALL_HEIGHT/2, 0))
-    createWall("SlitherIOWall_Top", Vector3.new(MAP_SIZE+WALL_THICKNESS*2, WALL_HEIGHT, WALL_THICKNESS), Vector3.new(0, WALL_HEIGHT/2, -half-WALL_THICKNESS/2))
-    createWall("SlitherIOWall_Bottom", Vector3.new(MAP_SIZE+WALL_THICKNESS*2, WALL_HEIGHT, WALL_THICKNESS), Vector3.new(0, WALL_HEIGHT/2, half+WALL_THICKNESS/2))
+    -- Position walls to extend from below ground to high above
+    local wallY = WALL_HEIGHT/2 - 20  -- Start 20 studs below ground
+    createWall("SlitherIOWall_Left", Vector3.new(WALL_THICKNESS, WALL_HEIGHT, MAP_SIZE+WALL_THICKNESS*2), Vector3.new(-half-WALL_THICKNESS/2, wallY, 0))
+    createWall("SlitherIOWall_Right", Vector3.new(WALL_THICKNESS, WALL_HEIGHT, MAP_SIZE+WALL_THICKNESS*2), Vector3.new(half+WALL_THICKNESS/2, wallY, 0))
+    createWall("SlitherIOWall_Top", Vector3.new(MAP_SIZE+WALL_THICKNESS*2, WALL_HEIGHT, WALL_THICKNESS), Vector3.new(0, wallY, -half-WALL_THICKNESS/2))
+    createWall("SlitherIOWall_Bottom", Vector3.new(MAP_SIZE+WALL_THICKNESS*2, WALL_HEIGHT, WALL_THICKNESS), Vector3.new(0, wallY, half+WALL_THICKNESS/2))
 end
 
 -- Helper: Create map decorations (only in High graphics)
@@ -340,4 +351,14 @@ end)
 
 -- Initial build
 buildMap()
+
+-- Add chat command to rebuild map for testing
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        if message:lower() == "/rebuildmap" then
+            buildMap()
+            print("Map rebuilt with updated walls!")
+        end
+    end)
+end)
 
