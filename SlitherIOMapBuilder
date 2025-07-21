@@ -98,24 +98,37 @@ local function createGround()
     ground.Color = Color3.fromRGB(45, 45, 55)  -- Dark blue-gray like real slither.io
     ground.Parent = Workspace
 
-    -- Add hexagonal pattern decal (slither.io style)
+    -- Add hex pattern texture directly on the ground
+    local texture = Instance.new("Texture")
+    texture.Texture = "rbxasset://textures/GridPattern.png"  -- Grid texture
+    texture.Face = Enum.NormalId.Top
+    texture.StudsPerTileU = 100  -- Adjust for hex size
+    texture.StudsPerTileV = 100  -- Adjust for hex size
+    texture.Transparency = 0.4  -- Subtle pattern
+    texture.Color3 = Color3.fromRGB(65, 65, 75)  -- Hex line color
+    texture.Parent = ground
+    
+    -- Alternative: Create a SurfaceGui with drawn hexagons
     local surfaceGui = Instance.new("SurfaceGui")
     surfaceGui.Face = Enum.NormalId.Top
+    surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+    surfaceGui.PixelsPerStud = 50
     surfaceGui.Parent = ground
     
-    -- Create hexagonal grid pattern
-    for x = -10, 10 do
-        for z = -10, 10 do
-            local hex = Instance.new("ImageLabel")
-            hex.Size = UDim2.new(0.05, 0, 0.05, 0)
-            hex.Position = UDim2.new(0.5 + x * 0.05, 0, 0.5 + z * 0.05, 0)
-            hex.BackgroundTransparency = 1
-            hex.Image = "rbxasset://textures/ui/circle.png"
-            hex.ImageColor3 = Color3.fromRGB(55, 55, 65)
-            hex.ImageTransparency = 0.85
-            hex.Parent = surfaceGui
-        end
-    end
+    -- Create a frame to hold the hex pattern
+    local patternFrame = Instance.new("Frame")
+    patternFrame.Size = UDim2.new(1, 0, 1, 0)
+    patternFrame.BackgroundTransparency = 1
+    patternFrame.Parent = surfaceGui
+    
+    -- Add a subtle vignette for atmosphere
+    local vignette = Instance.new("ImageLabel")
+    vignette.Size = UDim2.new(1, 0, 1, 0)
+    vignette.BackgroundTransparency = 1
+    vignette.Image = "rbxasset://textures/ui/LevelUp/BlackBorder.png"
+    vignette.ImageTransparency = 0.7
+    vignette.ZIndex = 2
+    vignette.Parent = patternFrame
 end
 
 -- Helper: Create invisible boundary walls with better collision
@@ -170,74 +183,8 @@ end
 
 -- Helper: Create map decorations (only in High graphics)
 local function createDecor()
-    local decorGroup = Instance.new("Folder")
-    decorGroup.Name = DECOR_GROUP_NAME
-    decorGroup.Parent = Workspace
-
-    -- Proper hex grid implementation with correct offsets
-    local hexRadius = 80  -- Size of each hexagon
-    local tileWidth = hexRadius * 2
-    local tileHeight = hexRadius * math.sqrt(3)
-    
-    -- Calculate number of rows and columns to cover the map
-    local rows = math.floor(MAP_SIZE / (tileHeight * 0.75))
-    local cols = math.floor(MAP_SIZE / tileWidth)
-    
-    -- Start position to center the grid
-    local startX = -MAP_SIZE/2 + hexRadius
-    local startZ = -MAP_SIZE/2 + hexRadius
-    
-    -- Create hex grid with proper offsets
-    for z = 0, rows do
-        for x = 0, cols do
-            -- Calculate offset - every other row is offset by half tile width
-            local offsetX = (z % 2 == 1) and (tileWidth / 2) or 0
-            
-            -- Calculate position using proper hex grid formula
-            local posX = startX + (x * tileWidth) + offsetX
-            local posZ = startZ + (z * tileHeight * 0.75)  -- 3/4 height for proper tessellation
-            
-            -- Skip if outside map bounds
-            if math.abs(posX) > MAP_SIZE/2 - 50 or math.abs(posZ) > MAP_SIZE/2 - 50 then
-                continue
-            end
-            
-            -- Create hexagon outline using 6 lines
-            for i = 0, 5 do
-                local angle1 = (i * 60 - 30) * math.pi / 180  -- Start at flat top
-                local angle2 = ((i + 1) * 60 - 30) * math.pi / 180
-                
-                local x1 = posX + hexRadius * math.cos(angle1)
-                local z1 = posZ + hexRadius * math.sin(angle1)
-                local x2 = posX + hexRadius * math.cos(angle2)
-                local z2 = posZ + hexRadius * math.sin(angle2)
-                
-                local line = Instance.new("Part")
-                line.Name = "HexLine"
-                line.Size = Vector3.new(
-                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 1,  -- Small overlap
-                    0.01,  -- Super thin, basically 2D
-                    3  -- Width for visibility
-                )
-                
-                -- Position and rotate line
-                local midX = (x1 + x2) / 2
-                local midZ = (z1 + z2) / 2
-                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.005, midZ) *  -- Barely above ground
-                             CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
-                
-                line.Anchored = true
-                line.CanCollide = false
-                line.CanTouch = false
-                line.CanQuery = false
-                line.Transparency = 0.6
-                line.Color = Color3.fromRGB(65, 65, 75)
-                line.Material = Enum.Material.SmoothPlastic
-                line.CastShadow = false
-                line.Parent = decorGroup
-            end
-        end
-    end
+    -- Decorations removed - hex pattern is now part of ground texture
+    -- This prevents lag and makes the pattern truly part of the ground
 end
 
 -- Helper: Create grid lines (only in High graphics)
