@@ -57,7 +57,7 @@ local WALL_ORB_DROP_AMOUNT = 3 -- Number of orbs to drop when hitting wall
 local WALL_ORB_DROP_COOLDOWN = 1.0 -- Cooldown between wall orb drops
 local WALL_DAMAGE_MULTIPLIER = 0.95 -- Lose 5% of length per wall hit
 local WALL_PUSH_TIME = 3.0 -- Time before pushing player away from wall
-local WALL_PUSH_FORCE = 50 -- Force to push player away
+local WALL_PUSH_FORCE = 100 -- Force to push player away (doubled)
 local WALL_WARNING_TIME = 2.0 -- Time before warning player
 local wallCollisionCooldowns = {} -- Track cooldowns per player/AI
 local wallContactTime = {} -- Track how long player has been near wall
@@ -1533,17 +1533,17 @@ RunService.Stepped:Connect(function()
 							pushDirection = Vector3.new(0, 0, -math.sign(pos.Z) * WALL_PUSH_FORCE)
 						end
 						
-						-- Apply push force using BodyVelocity for better control
+						-- Apply STRONG push force using BodyVelocity
 						local bodyVelocity = Instance.new("BodyVelocity")
-						bodyVelocity.MaxForce = Vector3.new(4000, 0, 4000)
-						bodyVelocity.Velocity = pushDirection
+						bodyVelocity.MaxForce = Vector3.new(10000, 0, 10000) -- Much stronger force
+						bodyVelocity.Velocity = pushDirection * 2 -- Double the push speed
 						bodyVelocity.Parent = root
 						
 						-- Remove after a short time
-						game:GetService("Debris"):AddItem(bodyVelocity, 0.5)
+						game:GetService("Debris"):AddItem(bodyVelocity, 1.0) -- Longer push duration
 						
-						-- Also set CFrame to ensure movement
-						root.CFrame = root.CFrame + pushDirection.Unit * 5
+						-- Teleport away from wall immediately to prevent glitching
+						root.CFrame = root.CFrame + pushDirection.Unit * 15 -- Teleport 15 studs away
 						
 						-- Reset contact time
 						wallContactTime[key] = nil
@@ -1576,16 +1576,11 @@ RunService.Stepped:Connect(function()
 								if segment and segment.Parent then
 									-- Shake effect that gets stronger
 									local shake = Vector3.new(
-										math.random(-1, 1) * 0.5 * warningIntensity,
+										math.random(-1, 1) * 0.7 * warningIntensity,
 										0,
-										math.random(-1, 1) * 0.5 * warningIntensity
+										math.random(-1, 1) * 0.7 * warningIntensity
 									)
 									segment.Position = segment.Position + shake
-									
-									-- Flash red warning
-									if math.random() > 0.5 then
-										segment.Color = Color3.new(1, 0.5, 0.5) -- Light red
-									end
 								end
 							end
 						end
