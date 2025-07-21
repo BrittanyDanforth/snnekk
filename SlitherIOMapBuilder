@@ -174,58 +174,66 @@ local function createDecor()
     decorGroup.Name = DECOR_GROUP_NAME
     decorGroup.Parent = Workspace
 
-    -- Create optimized hexagonal pattern
-    local hexRadius = 100  -- Larger hexagons = fewer parts = less lag
-    local hexHeight = hexRadius * math.sqrt(3)
-    local hexWidth = hexRadius * 2
+    -- Proper hex grid implementation with correct offsets
+    local hexRadius = 80  -- Size of each hexagon
+    local tileWidth = hexRadius * 2
+    local tileHeight = hexRadius * math.sqrt(3)
     
-    -- Calculate spacing for perfect tessellation
-    local xSpacing = hexWidth * 3/4
-    local ySpacing = hexHeight
+    -- Calculate number of rows and columns to cover the map
+    local rows = math.floor(MAP_SIZE / (tileHeight * 0.75))
+    local cols = math.floor(MAP_SIZE / tileWidth)
     
-    -- Create hexagonal grid
-    for row = -10, 10 do  -- Fewer hexagons
-        for col = -10, 10 do  -- Fewer hexagons
-            -- Calculate position with offset for odd rows
-            local xOffset = (row % 2) * (xSpacing / 2)
-            local x = col * xSpacing + xOffset
-            local z = row * ySpacing
+    -- Start position to center the grid
+    local startX = -MAP_SIZE/2 + hexRadius
+    local startZ = -MAP_SIZE/2 + hexRadius
+    
+    -- Create hex grid with proper offsets
+    for z = 0, rows do
+        for x = 0, cols do
+            -- Calculate offset - every other row is offset by half tile width
+            local offsetX = (z % 2 == 1) and (tileWidth / 2) or 0
+            
+            -- Calculate position using proper hex grid formula
+            local posX = startX + (x * tileWidth) + offsetX
+            local posZ = startZ + (z * tileHeight * 0.75)  -- 3/4 height for proper tessellation
             
             -- Skip if outside map bounds
-            if math.abs(x) > MAP_SIZE/2 - 60 or math.abs(z) > MAP_SIZE/2 - 60 then
+            if math.abs(posX) > MAP_SIZE/2 - 50 or math.abs(posZ) > MAP_SIZE/2 - 50 then
                 continue
             end
             
-            -- Create hexagon using 6 THIN lines for performance
+            -- Create hexagon outline using 6 lines
             for i = 0, 5 do
-                local angle1 = (i * 60) * math.pi / 180
-                local angle2 = ((i + 1) * 60) * math.pi / 180
+                local angle1 = (i * 60 - 30) * math.pi / 180  -- Start at flat top
+                local angle2 = ((i + 1) * 60 - 30) * math.pi / 180
                 
-                local x1 = x + hexRadius * math.cos(angle1)
-                local z1 = z + hexRadius * math.sin(angle1)
-                local x2 = x + hexRadius * math.cos(angle2)
-                local z2 = z + hexRadius * math.sin(angle2)
+                local x1 = posX + hexRadius * math.cos(angle1)
+                local z1 = posZ + hexRadius * math.sin(angle1)
+                local x2 = posX + hexRadius * math.cos(angle2)
+                local z2 = posZ + hexRadius * math.sin(angle2)
                 
                 local line = Instance.new("Part")
                 line.Name = "HexLine"
                 line.Size = Vector3.new(
-                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 1,  -- Small overlap to hide edges
-                    0.05,  -- Even thinner to sit flush with ground
-                    3  -- Slightly wider for better visibility
+                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 1,  -- Small overlap
+                    0.05,  -- Thin to sit flush
+                    3  -- Width for visibility
                 )
-                -- Position and rotate properly
+                
+                -- Position and rotate line
                 local midX = (x1 + x2) / 2
                 local midZ = (z1 + z2) / 2
-                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.025, midZ) *  -- Much lower, almost in ground
+                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.025, midZ) * 
                              CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
+                
                 line.Anchored = true
                 line.CanCollide = false
-                line.CanTouch = false  -- Disable touch for performance
-                line.CanQuery = false  -- Disable raycasts for performance
-                line.Transparency = 0.6  -- Slightly more visible
-                line.Color = Color3.fromRGB(65, 65, 75)  -- Slightly brighter
-                line.Material = Enum.Material.SmoothPlastic  -- Simpler material
-                line.CastShadow = false  -- No shadows for performance
+                line.CanTouch = false
+                line.CanQuery = false
+                line.Transparency = 0.6
+                line.Color = Color3.fromRGB(65, 65, 75)
+                line.Material = Enum.Material.SmoothPlastic
+                line.CastShadow = false
                 line.Parent = decorGroup
             end
         end
