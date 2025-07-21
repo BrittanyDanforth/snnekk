@@ -63,8 +63,8 @@ local LOD_SETTINGS = {
 		NEAR_DISTANCE = 40,
 		MIN_ORB_SIZE = 0.8,
 		MAX_ORB_SIZE = 2.0,
-		LOD_UPDATE_RATE = 0.1,
-		ORBS_PER_FRAME = 100
+		LOD_UPDATE_RATE = 0.05,  -- 20 FPS updates
+		ORBS_PER_FRAME = 150     -- Process more orbs
 	},
 	Medium = {
 		RENDER_DISTANCE = 120,
@@ -73,8 +73,8 @@ local LOD_SETTINGS = {
 		NEAR_DISTANCE = 30,
 		MIN_ORB_SIZE = 0.5,
 		MAX_ORB_SIZE = 1.5,
-		LOD_UPDATE_RATE = 0.15,
-		ORBS_PER_FRAME = 50
+		LOD_UPDATE_RATE = 0.067, -- 15 FPS updates
+		ORBS_PER_FRAME = 100     -- Process more orbs
 	},
 	Low = {
 		RENDER_DISTANCE = 80,
@@ -83,8 +83,8 @@ local LOD_SETTINGS = {
 		NEAR_DISTANCE = 20,
 		MIN_ORB_SIZE = 0.3,
 		MAX_ORB_SIZE = 1.0,
-		LOD_UPDATE_RATE = 0.2,
-		ORBS_PER_FRAME = 25
+		LOD_UPDATE_RATE = 0.1,   -- 10 FPS updates
+		ORBS_PER_FRAME = 50      -- Process more orbs
 	}
 }
 
@@ -305,11 +305,30 @@ local function applyOrbLOD(orb, state, fadeValue)
 			light.Range = 8 * fadeValue
 		end
 
-		-- OPTIMIZED: Instant transitions for better performance
-		orb.Size = targetSize
+		-- OPTIMIZED: Fast transitions with smooth pop-in
+		-- Apply transparency instantly
 		orb.Transparency = targetTransparency
-
-		-- No pop-in effect - instant visibility for better performance
+		
+		-- Smooth size transition for natural feel
+		if currentState.state == "hidden" and state ~= "hidden" then
+			-- Pop-in effect for newly visible orbs
+			orb.Size = Vector3.new(0.3, 0.3, 0.3) -- Start slightly bigger
+			local popTween = TweenService:Create(orb, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = targetSize
+			})
+			orbTweens[orb] = popTween
+			popTween:Play()
+		elseif math.abs(orb.Size.X - targetSize.X) > 0.1 then
+			-- Quick size adjustment for LOD changes
+			local sizeTween = TweenService:Create(orb, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+				Size = targetSize
+			})
+			orbTweens[orb] = sizeTween
+			sizeTween:Play()
+		else
+			-- Instant for very small changes
+			orb.Size = targetSize
+		end
 	end
 end
 

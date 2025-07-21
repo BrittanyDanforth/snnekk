@@ -32,7 +32,7 @@ local GRAPHICS_PRESETS = {
 		SNAKE_MATERIAL = Enum.Material.SmoothPlastic,
 		SNAKE_RENDER_DISTANCE = 80,  -- Hide distant snakes
 		-- Performance
-		UPDATE_RATE = 0.25,  -- Slower updates for better FPS
+		UPDATE_RATE = 0.1,  -- Balanced for smooth transitions
 	},
 	Medium = {
 		-- Orb settings
@@ -47,7 +47,7 @@ local GRAPHICS_PRESETS = {
 		SNAKE_MATERIAL = Enum.Material.Neon,
 		SNAKE_RENDER_DISTANCE = 120,
 		-- Performance
-		UPDATE_RATE = 0.15,
+		UPDATE_RATE = 0.067, -- 15 FPS smooth transitions
 	},
 	High = {
 		-- Orb settings
@@ -62,7 +62,7 @@ local GRAPHICS_PRESETS = {
 		SNAKE_MATERIAL = Enum.Material.Neon,
 		SNAKE_RENDER_DISTANCE = 200,
 		-- Performance
-		UPDATE_RATE = 0.1,
+		UPDATE_RATE = 0.05, -- 20 FPS for smoothest transitions
 	}
 }
 
