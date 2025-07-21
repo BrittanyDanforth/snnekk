@@ -382,8 +382,17 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		-- Force immediate material update in Low mode
 		if mode == "Low" then
 			task.spawn(function()
-				task.wait(0.1)
-				overrideMaterials()
+				-- Quick update of player's snake
+				if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+					local snake = _G.PlayerSnakes[LocalPlayer]
+					if snake and snake.segments then
+						for _, segment in ipairs(snake.segments) do
+							if segment and segment.Parent then
+								segment.Material = Enum.Material.SmoothPlastic
+							end
+						end
+					end
+				end
 			end)
 		end
 		
@@ -441,13 +450,24 @@ workspace.DescendantAdded:Connect(function(descendant)
 	end
 end)
 
--- Less laggy material override loop
+-- Simple low graphics material fix
 task.spawn(function()
 	while true do
-		task.wait(0.2) -- Less frequent = less lag
+		task.wait(0.3) -- Check 3 times per second
 		
-		if materialOverrideEnabled then
-			overrideMaterials()
+		-- Only in Low graphics mode
+		if currentPreset and currentPreset.SNAKE_MATERIAL == Enum.Material.SmoothPlastic then
+			-- Fix player's own snake materials
+			if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+				local snake = _G.PlayerSnakes[LocalPlayer]
+				if snake and snake.segments then
+					for _, segment in ipairs(snake.segments) do
+						if segment and segment.Parent and segment.Material ~= Enum.Material.SmoothPlastic then
+							segment.Material = Enum.Material.SmoothPlastic
+						end
+					end
+				end
+			end
 		end
 	end
 end)
