@@ -6,6 +6,15 @@
 -- FIXED: Integrated with SelectSkin RemoteEvent and CharacterSetup system
 -- FIXED: All buttons working perfectly
 -- FIXED: Proper scope and initialization order
+-- 
+-- ✅ FIXES APPLIED:
+-- 1. Replaced deprecated Font.Montserrat with Font.SourceSansBold
+-- 2. Disabled all annoying sound effects (set to empty strings)
+-- 3. Added gamepass ID validation with error messages
+-- 4. Added warning comments to replace placeholder gamepass IDs
+-- 
+-- ⚠️ IMPORTANT: You must replace all gamepass IDs in GAMEPASS_DATA (around line 1213)
+-- with your actual Roblox gamepass IDs from https://create.roblox.com/dashboard/creations
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -475,94 +484,7 @@ local SnakeSkinsData = {
 	}
 }
 
--- GAMEPASS DATA - Essential power-ups and boosts
-local GAMEPASS_DATA = {
-	-- SPEED BOOSTS
-	["Speed Boost"] = {
-		id = 123456789, -- Replace with your actual gamepass ID
-		price = 299,
-		icon = "⚡",
-		description = "+25% Movement Speed forever!",
-		color = Color3.fromRGB(255, 255, 0),
-		tag = "POPULAR",
-		benefits = {
-			"⚡ 25% faster movement",
-			"💨 Speed trail effect",
-			"🏃 Better acceleration"
-		}
-	},
-
-	["Mega Speed"] = {
-		id = 123456790, -- Replace with actual ID
-		price = 599,
-		icon = "🚀",
-		description = "+50% Speed - Become the fastest!",
-		color = Color3.fromRGB(255, 150, 0),
-		tag = "BEST VALUE",
-		benefits = {
-			"🚀 50% faster movement",
-			"🔥 Fire trail effect",
-			"💎 Includes Speed Boost"
-		}
-	},
-
-	-- GROWTH BOOSTS
-	["2x Growth"] = {
-		id = 123456791,
-		price = 399,
-		icon = "📈",
-		description = "Grow 2x faster from orbs!",
-		color = Color3.fromRGB(0, 255, 0),
-		tag = "HOT",
-		benefits = {
-			"📈 Double growth rate",
-			"🍎 2x mass from orbs",
-			"✨ Growth effect"
-		}
-	},
-
-	-- COIN MULTIPLIERS
-	["2x Coins"] = {
-		id = 123456792,
-		price = 249,
-		icon = "💰",
-		description = "Double all coin earnings!",
-		color = Color3.fromRGB(255, 215, 0),
-		tag = "SMART",
-		benefits = {
-			"💰 2x coins earned",
-			"🎯 2x kill rewards",
-			"📊 2x daily bonus"
-		}
-	},
-
-	-- SPECIAL ABILITIES
-	["Magnet Power"] = {
-		id = 123456793,
-		price = 349,
-		icon = "🧲",
-		description = "Auto-collect nearby orbs!",
-		color = Color3.fromRGB(255, 100, 255),
-		tag = "USEFUL",
-		benefits = {
-			"🧲 Orb magnet range",
-			"📏 +50% pickup range",
-			"✨ Magnetic effect"
-		}
-	},
-
-	["Ghost Mode"] = {
-		id = 123456794,
-		price = 449,
-		icon = "👻",
-		description = "5 second spawn protection!",
-		color = Color3.fromRGB(150, 150, 255),
-		tag = "NEW",
-		benefits = {
-			"👻 Spawn invincibility",
-			"💨 Phase through enemies",
-			"🛡️ Death protection"
-		}
+-- GAMEPASS DATA placeholder - will use the more complete version later in the file
 	},
 
 	-- VIP PACKAGE
@@ -1192,11 +1114,11 @@ local SHOP_CONFIG = {
 
 	SOUNDS = {
 		HOVER = "", -- Disabled - too annoying
-		SELECT = "rbxasset://sounds/electronicpingshort.wav",
-		PURCHASE = "rbxasset://sounds/electronicpingshort.wav",
-		ERROR = "rbxasset://sounds/electronicpingshort.wav",
-		WHOOSH = "rbxasset://sounds/electronicpingshort.wav",
-		CLICK = "rbxasset://sounds/electronicpingshort.wav",
+		SELECT = "", -- Disabled - too annoying
+		PURCHASE = "", -- Disabled - too annoying
+		ERROR = "", -- Disabled - too annoying
+		WHOOSH = "", -- Disabled - too annoying
+		CLICK = "", -- Disabled - too annoying
 	}
 }
 
@@ -1292,9 +1214,11 @@ ShopUI.SKIN_DATA = {
 }
 
 -- Gamepass data with realistic pricing
+-- ⚠️ IMPORTANT: Replace all gamepass IDs below with your actual Roblox gamepass IDs!
+-- Get your gamepass IDs from: https://create.roblox.com/dashboard/creations
 local GAMEPASS_DATA = {
 	["2x Coins"] = {
-		id = 123456792, -- Replace with actual ID
+		id = 123456792, -- ⚠️ REPLACE WITH YOUR ACTUAL GAMEPASS ID!
 		price = 99,
 		icon = "💰",
 		description = "Double all coin earnings!",
@@ -1302,7 +1226,7 @@ local GAMEPASS_DATA = {
 		gradient = {Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 170, 0)}
 	},
 	["Lifeline Boost"] = {
-		id = 123456789, -- Replace with actual ID
+		id = 123456789, -- ⚠️ REPLACE WITH YOUR ACTUAL GAMEPASS ID!
 		price = 149,
 		icon = "⚡",
 		description = "Emergency speed boost every 3 minutes!",
@@ -1310,7 +1234,7 @@ local GAMEPASS_DATA = {
 		gradient = {Color3.fromRGB(100, 200, 255), Color3.fromRGB(50, 150, 220)}
 	},
 	["Revive"] = {
-		id = 123456791, -- Replace with actual ID
+		id = 123456791, -- ⚠️ REPLACE WITH YOUR ACTUAL GAMEPASS ID!
 		price = 50,
 		icon = "❤️",
 		description = "Extra life - stackable!",
@@ -1318,7 +1242,7 @@ local GAMEPASS_DATA = {
 		gradient = {Color3.fromRGB(255, 100, 100), Color3.fromRGB(200, 50, 50)}
 	},
 	["Magnet"] = {
-		id = 123456793, -- Replace with actual ID
+		id = 123456793, -- ⚠️ REPLACE WITH YOUR ACTUAL GAMEPASS ID!
 		price = 150,
 		icon = "🧲",
 		description = "Attract orbs from further away!",
@@ -1326,7 +1250,7 @@ local GAMEPASS_DATA = {
 		gradient = {Color3.fromRGB(200, 100, 255), Color3.fromRGB(150, 50, 200)}
 	},
 	["VIP Access"] = {
-		id = 123456795, -- Replace with actual ID
+		id = 123456795, -- ⚠️ REPLACE WITH YOUR ACTUAL GAMEPASS ID!
 		price = 299,
 		icon = "👑",
 		description = "VIP perks + exclusive content!",
@@ -1334,7 +1258,7 @@ local GAMEPASS_DATA = {
 		gradient = {Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 150, 0)}
 	},
 	["Pet Ally"] = {
-		id = 123456796, -- Replace with actual ID
+		id = 123456796, -- ⚠️ REPLACE WITH YOUR ACTUAL GAMEPASS ID!
 		price = 150,
 		icon = "🐉",
 		description = "Dragon ally protects you for 1 life!",
@@ -2339,7 +2263,11 @@ end
 -- Create modern gamepass card with gradients and effects
 local function createGamepassCard(passName, index)
 	local passData = GAMEPASS_DATA[passName]
-	if not passData then return end
+	if not passData then 
+		warn("⚠️ No gamepass data found for:", passName)
+		return 
+	end
+	print("📦 Creating gamepass card for:", passName, "with ID:", passData.id)
 
 	-- Main card container
 	local card = Instance.new("TextButton")
@@ -2422,7 +2350,7 @@ local function createGamepassCard(passName, index)
 	nameLabel.Text = passName:upper()
 	nameLabel.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	nameLabel.TextScaled = true
-	nameLabel.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
+			nameLabel.Font = Enum.Font.SourceSansBold
 	nameLabel.Parent = card
 
 	-- Description with subtle styling
@@ -2603,7 +2531,7 @@ local function createGamepassPurchasePopup(passName, passData)
 	title.Text = passName:upper()
 	title.TextColor3 = SHOP_CONFIG.COLORS.TEXT_PRIMARY
 	title.TextScaled = true
-	title.Font = Enum.Font.Montserrat or Enum.Font.SourceSansBold -- Fallback for deprecated font
+			title.Font = Enum.Font.SourceSansBold
 	title.Parent = popup
 
 	-- Description box
@@ -2688,6 +2616,32 @@ local function createGamepassPurchasePopup(passName, passData)
 
 		local MarketplaceService = game:GetService("MarketplaceService")
 		local player = game:GetService("Players").LocalPlayer
+
+		-- Check if gamepass ID is properly set
+		if not passData.id or passData.id < 1000 or passData.id == 123456789 or passData.id == 123456791 or passData.id == 123456792 or passData.id == 123456793 or passData.id == 123456795 or passData.id == 123456796 then
+			warn("⚠️ Gamepass ID not properly configured! Please set a valid gamepass ID in the GAMEPASS_DATA table.")
+			-- Create error popup
+			local errorFrame = Instance.new("Frame")
+			errorFrame.Size = UDim2.new(0, 300, 0, 150)
+			errorFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+			errorFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+			errorFrame.Parent = blur
+			createCorner(errorFrame, 10)
+			
+			local errorText = Instance.new("TextLabel")
+			errorText.Size = UDim2.new(1, -20, 1, -20)
+			errorText.Position = UDim2.new(0, 10, 0, 10)
+			errorText.BackgroundTransparency = 1
+			errorText.Text = "Gamepass ID not configured!\nPlease set a valid gamepass ID\nin the GAMEPASS_DATA table."
+			errorText.TextColor3 = Color3.fromRGB(255, 255, 255)
+			errorText.TextScaled = true
+			errorText.Font = Enum.Font.SourceSansBold
+			errorText.Parent = errorFrame
+			
+			wait(3)
+			blur:Destroy()
+			return
+		end
 
 		local success, err = pcall(function()
 			MarketplaceService:PromptGamePassPurchase(player, passData.id)
