@@ -780,7 +780,14 @@ task.spawn(function()
 			local validOrbs = {}
 			for _, orb in ipairs(orbs) do
 				if orb and orb.Parent then
-					table.insert(validOrbs, orb)
+					-- Don't clean up death orbs for at least 5 seconds
+					local isDeathOrb = orb:GetAttribute("DeathOrb")
+					local spawnTime = orb:GetAttribute("SpawnTime")
+					if not isDeathOrb or not spawnTime or (tick() - spawnTime) > 5 then
+						table.insert(validOrbs, orb)
+					else
+						table.insert(validOrbs, orb) -- Keep death orbs
+					end
 				else
 					-- Clean up references for destroyed orbs
 					orbDebounce[orb] = nil

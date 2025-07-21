@@ -468,7 +468,12 @@ local function spawnOrbDirect(position, value)
 		-- Clamp value to reasonable range
 		value = math.clamp(value or 1, 1, 50)
 
-		OrbUtils.spawnOrbAt(position, value)
+		local orb = OrbUtils.spawnOrbAt(position, value)
+		if orb then
+			-- Mark as death orb so it won't be cleaned up too quickly
+			orb:SetAttribute("DeathOrb", true)
+			orb:SetAttribute("SpawnTime", tick())
+		end
 	end)
 
 	if not success then
@@ -1847,8 +1852,11 @@ RunService.Stepped:Connect(function()
 							end
 
 							if collision then
-								queuePlayerDeath(player)
-								break
+								-- Validate collision is real (not a glitch)
+								if headPos.Y > -10 and collision.distance < BODY_COLLISION_DISTANCE * 1.5 then
+									queuePlayerDeath(player)
+									break
+								end
 							end
 						end
 					end

@@ -427,8 +427,9 @@ local function checkPlayerBoundaries()
 			local pos = root.Position
 
 			-- Check if player is outside map boundaries or fell below
-			local halfMap = MAP_SIZE / 2 + 50
-			if math.abs(pos.X) > halfMap or math.abs(pos.Z) > halfMap or pos.Y < -10 then
+			local halfMap = MAP_SIZE / 2 + 100 -- More lenient boundary
+			if math.abs(pos.X) > halfMap or math.abs(pos.Z) > halfMap or pos.Y < -50 then
+				print("Player", player.Name, "out of bounds at", pos)
 				-- Teleport back to spawn
 				root.CFrame = CFrame.new(0, 10, 0)
 				root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
