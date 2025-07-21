@@ -208,20 +208,21 @@ local function createDecor()
                 
                 local line = Instance.new("Part")
                 line.Name = "HexLine"
+                line.Shape = Enum.PartType.Cylinder  -- Use cylinder for smoother edges
                 line.Size = Vector3.new(
-                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 2,  -- Length with small overlap
-                    0.1,
-                    3  -- Line thickness
+                    4,  -- Line thickness (cylinder diameter)
+                    math.sqrt((x2-x1)^2 + (z2-z1)^2) + 3,  -- Length with overlap
+                    4  -- Same as thickness for round appearance
                 )
                 line.CFrame = CFrame.lookAt(
                     Vector3.new((x1+x2)/2, MAP_HEIGHT + 0.1, (z1+z2)/2),
                     Vector3.new(x2, MAP_HEIGHT + 0.1, z2)
-                ) * CFrame.Angles(0, math.pi/2, 0)
+                ) * CFrame.Angles(0, 0, math.pi/2)  -- Rotate cylinder to lie flat
                 line.Anchored = true
                 line.CanCollide = false
                 line.Transparency = 0.62  -- User's preferred transparency
                 line.Color = Color3.fromRGB(60, 60, 70)
-                line.Material = Enum.Material.SmoothPlastic
+                line.Material = Enum.Material.Neon  -- Smoother material with glow
                 line.Parent = decorGroup
             end
         end
