@@ -97,26 +97,8 @@ local function createGround()
     ground.Material = Enum.Material.SmoothPlastic
     ground.Color = Color3.fromRGB(45, 45, 55)  -- Dark blue-gray like real slither.io
     ground.Parent = Workspace
-
-    -- Use a grid texture that's actually visible
-    local texture = Instance.new("Texture")
-    texture.Texture = "rbxasset://textures/SpawnLocation.png"  -- Checkered pattern
-    texture.Face = Enum.NormalId.Top
-    texture.StudsPerTileU = 40  -- Size of pattern
-    texture.StudsPerTileV = 40  
-    texture.Transparency = 0.8  -- Make it subtle
-    texture.Color3 = Color3.fromRGB(60, 60, 70)
-    texture.Parent = ground
     
-    -- Add another texture layer for variation
-    local texture2 = Instance.new("Texture")
-    texture2.Texture = "rbxasset://textures/grid.png"  -- Grid overlay
-    texture2.Face = Enum.NormalId.Top
-    texture2.StudsPerTileU = 80
-    texture2.StudsPerTileV = 80
-    texture2.Transparency = 0.85
-    texture2.Color3 = Color3.fromRGB(55, 55, 65)
-    texture2.Parent = ground
+    -- No textures - keep ground clean
 end
 
 -- Helper: Create invisible boundary walls with better collision
@@ -205,22 +187,22 @@ local function createDecor()
                 line.Name = "HexLine"
                 line.Size = Vector3.new(
                     math.sqrt((x2-x1)^2 + (z2-z1)^2),
-                    0.1,  -- Thin but visible
-                    4  -- Width
+                    0.05,  -- Very thin
+                    3  -- Width
                 )
                 
                 local midX = (x1 + x2) / 2
                 local midZ = (z1 + z2) / 2
-                line.CFrame = CFrame.new(midX, MAP_HEIGHT - 0.05, midZ) *  -- BELOW ground surface
+                line.CFrame = CFrame.new(midX, MAP_HEIGHT + 0.01, midZ) *  -- Just barely above to prevent z-fighting
                              CFrame.Angles(0, math.atan2(z2 - z1, x2 - x1), 0)
                 
                 line.Anchored = true
                 line.CanCollide = false
                 line.CanTouch = false
                 line.CanQuery = false
-                line.Transparency = 0.4  -- More visible
-                line.Color = Color3.fromRGB(55, 55, 65)
-                line.Material = Enum.Material.Neon  -- Slight glow for visibility
+                line.Transparency = 0.5  -- Adjust visibility
+                line.Color = Color3.fromRGB(60, 60, 70)
+                line.Material = Enum.Material.SmoothPlastic  -- No glow for cleaner look
                 line.CastShadow = false
                 line.Parent = decorGroup
             end
