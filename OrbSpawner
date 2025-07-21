@@ -446,11 +446,19 @@ local function removeOrb(orb)
 	OrbUtils.removeOrb(orb)
 	
 	-- CRITICAL FIX: Remove from OrbSpawner's main orbs array
+	local orbCountBefore = #orbs
 	for i = #orbs, 1, -1 do
 		if orbs[i] == orb then
 			table.remove(orbs, i)
 			break
 		end
+	end
+	
+	-- Debug: Log orb removal
+	if #orbs < orbCountBefore then
+		print("Orb removed. Total orbs:", #orbs, "/", ORB_MAX)
+	else
+		warn("Failed to remove orb from array! Still have:", #orbs)
 	end
 	
 	-- Remove from upgrade orbs if applicable
@@ -723,6 +731,7 @@ local function createOrb()
 		if orb then
 			-- CRITICAL FIX: Add regular orbs to the orbs array!
 			orbs[#orbs + 1] = orb
+			print("Created regular orb, total:", #orbs)
 			
 			-- Start orbs visible at medium distance
 			orb.Transparency = 0.3
@@ -760,10 +769,32 @@ task.spawn(function()
 end)
 
 task.spawn(function()
+	local lastOrbCount = 0
 	while true do 
 		task.wait(ORB_SPAWN_INTERVAL)
+		
+		-- Clean up any destroyed orbs that weren't properly removed
+		local validOrbs = {}
+		for _, orb in ipairs(orbs) do
+			if orb and orb.Parent then
+				table.insert(validOrbs, orb)
+			end
+		end
+		if #validOrbs < #orbs then
+			print("Cleaned up", #orbs - #validOrbs, "destroyed orbs")
+			orbs = validOrbs
+		end
+		
 		if #orbs < ORB_MAX then 
-			createOrb() 
+			createOrb()
+			-- Debug: Log spawn
+			if #orbs ~= lastOrbCount then
+				print("Spawned orb. Total orbs:", #orbs, "/", ORB_MAX)
+				lastOrbCount = #orbs
+			end
+		elseif #orbs >= ORB_MAX and #orbs ~= lastOrbCount then
+			print("Orb limit reached:", #orbs, "/", ORB_MAX)
+			lastOrbCount = #orbs
 		end 
 	end
 end)
