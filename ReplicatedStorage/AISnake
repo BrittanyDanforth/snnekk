@@ -8,6 +8,12 @@ local Players = game:GetService("Players")
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
 
+-- Load SnakeSkins module for consistent skins with players
+local SnakeSkins
+pcall(function()
+	SnakeSkins = require(ReplicatedStorage:WaitForChild("SnakeSkins"))
+end)
+
 -- Load the orb pickup module
 local AISnakeOrbPickup
 pcall(function()
@@ -44,7 +50,9 @@ local SPATIAL_GRID_UPDATE_RATE = 0.5  -- Increased from 0.2 (update less often)
 local BRAIN_UPDATES_PER_FRAME = 1
 local DEBUG_UPDATE_RATE = 2.0  -- Increased from 1.0
 local AI_HEIGHT = 5
-local SEGMENT_UPDATE_SKIP = 2  -- Only update every 2nd segment for visuals
+local SEGMENT_UPDATE_SKIP = 3  -- Increased from 2 - only update every 3rd segment for long snakes
+local LONG_SNAKE_THRESHOLD = 100  -- Snakes longer than this use more aggressive optimization
+local VERY_LONG_SNAKE_THRESHOLD = 300  -- Even more optimization for very long snakes
 
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
@@ -119,14 +127,17 @@ local function resetSegment(segment, config)
 	segment.CanQuery = false  -- Segments don't need query
 	segment.Transparency = 0
 	segment.Size = config.SegmentSize
-	segment.Material = config.BodyMaterial
+	segment.Material = config.BodyMaterial or Enum.Material.Neon
 	segment.Shape = Enum.PartType.Ball
 	segment.TopSurface = Enum.SurfaceType.Smooth
 	segment.BottomSurface = Enum.SurfaceType.Smooth
 	segment.Color = config.BodyColors[1]
 	segment.Name = "AISegment"
+	-- Clean up children efficiently
 	for _, child in segment:GetChildren() do
-		child:Destroy()
+		if child:IsA("PointLight") or child:IsA("Attachment") then
+			child:Destroy()
+		end
 	end
 end
 
@@ -187,36 +198,54 @@ local function getOrCreateSnakeModel(aiId)
 	return model
 end
 
-local AISnakeColorCombos = {
-	{
-		HeadColor = Color3.fromRGB(120, 0, 255),
-		BodyColors = {
-			Color3.fromRGB(25, 0, 51), Color3.fromRGB(75, 0, 130),
-			Color3.fromRGB(139, 0, 255), Color3.fromRGB(0, 0, 128), Color3.fromRGB(25, 0, 51),
+-- Get random skin from SnakeSkins module
+local function getRandomSnakeSkin()
+	if not SnakeSkins then
+		-- Fallback to default if SnakeSkins not loaded
+		return {
+			HeadColor = Color3.fromRGB(255, 255, 0), -- Yellow
+			BodyColors = {
+				Color3.fromRGB(255, 255, 0), -- Yellow
+				Color3.fromRGB(255, 223, 0), -- Golden yellow
+				Color3.fromRGB(255, 255, 0), -- Yellow
+				Color3.fromRGB(255, 255, 224), -- Light yellow
+			}
 		}
-	},
-	{
-		HeadColor = Color3.fromRGB(102, 255, 102),
-		BodyColors = {
-			Color3.fromRGB(102, 255, 102), Color3.fromRGB(153, 255, 153),
-			Color3.fromRGB(204, 255, 204), Color3.fromRGB(153, 255, 153), Color3.fromRGB(102, 255, 102),
+	end
+	
+	-- Get list of available skins (excluding special ones)
+	local availableSkins = {}
+	for skinName, skinData in pairs(SnakeSkins) do
+		-- Prefer Yellow skin and other smooth skins, avoid Purple
+		if skinName ~= "Purple" and skinName ~= "Galaxy" and skinName ~= "Void" then
+			-- Add Yellow skin multiple times to increase its chance
+			if skinName == "Yellow" then
+				for i = 1, 3 do
+					table.insert(availableSkins, skinData)
+				end
+			else
+				table.insert(availableSkins, skinData)
+			end
+		end
+	end
+	
+	-- Return random skin
+	if #availableSkins > 0 then
+		local skin = availableSkins[math.random(1, #availableSkins)]
+		return {
+			HeadColor = skin.HeadColor,
+			BodyColors = skin.BodyColors,
+			HeadMaterial = skin.HeadMaterial or Enum.Material.Neon,
+			BodyMaterial = skin.BodyMaterial or Enum.Material.Neon
 		}
-	},
-	{
-		HeadColor = Color3.fromRGB(255, 102, 102),
-		BodyColors = {
-			Color3.fromRGB(255, 51, 51), Color3.fromRGB(255, 102, 102),
-			Color3.fromRGB(255, 153, 153), Color3.fromRGB(255, 102, 102), Color3.fromRGB(255, 51, 51),
-		}
-	},
-	{
-		HeadColor = Color3.fromRGB(255, 255, 102),
-		BodyColors = {
-			Color3.fromRGB(255, 255, 51), Color3.fromRGB(255, 255, 102),
-			Color3.fromRGB(255, 255, 153), Color3.fromRGB(255, 255, 102), Color3.fromRGB(255, 255, 51),
-		}
-	},
-}
+	end
+	
+	-- Ultimate fallback
+	return {
+		HeadColor = Color3.fromRGB(255, 255, 0),
+		BodyColors = {Color3.fromRGB(255, 255, 0)}
+	}
+end
 
 local function deepCopy(orig)
 	local orig_type = type(orig)
@@ -369,27 +398,34 @@ local function createSegment(index, position, color, config, parentModel)
 	local segment = getSegment(config)
 	segment.Name = "AISegment" .. index
 	segment.Size = config.SegmentSize
-	segment.Material = config.BodyMaterial
+	segment.Material = config.BodyMaterial or Enum.Material.Neon
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
 	segment.Parent = parentModel
 	segment.Transparency = 0
 
-	local light = segment:FindFirstChild("Glow") or Instance.new("PointLight")
-	light.Name = "Glow"
-	light.Color = color
-	light.Range = config.GlowRange
-	light.Brightness = config.GlowIntensity
-	light.Enabled = true
-	light.Parent = segment
+	-- Only add lights to every 3rd segment to reduce lag
+	if index % 3 == 0 then
+		local light = segment:FindFirstChild("Glow") or Instance.new("PointLight")
+		light.Name = "Glow"
+		light.Color = color
+		light.Range = config.GlowRange * 0.7  -- Slightly reduced range
+		light.Brightness = config.GlowIntensity * 0.8  -- Slightly reduced brightness
+		light.Enabled = true
+		light.Parent = segment
+	else
+		-- Remove light if it exists on non-3rd segments
+		local existingLight = segment:FindFirstChild("Glow")
+		if existingLight then
+			existingLight:Destroy()
+		end
+	end
 
-	local outline = segment:FindFirstChild("Outline") or Instance.new("SelectionBox")
-	outline.Name = "Outline"
-	outline.Adornee = segment
-	outline.Color3 = Color3.fromRGB(255,255,255)
-	outline.LineThickness = 0.05
-	outline.Transparency = 1
-	outline.Parent = segment
+	-- Skip outline for AI snakes - reduces lag
+	local existingOutline = segment:FindFirstChild("Outline")
+	if existingOutline then
+		existingOutline:Destroy()
+	end
 
 	return segment
 end
@@ -1058,9 +1094,11 @@ function AISnake.new(startPosition)
 	local self = setmetatable({}, AISnake)
 	self.Config = deepCopy(SnakeConfig)
 
-	local combo = AISnakeColorCombos[mathRandom(1, #AISnakeColorCombos)]
+	local combo = getRandomSnakeSkin()
 	self.Config.HeadColor = combo.HeadColor
 	self.Config.BodyColors = combo.BodyColors
+	self.Config.HeadMaterial = combo.HeadMaterial
+	self.Config.BodyMaterial = combo.BodyMaterial
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
@@ -1449,10 +1487,19 @@ function AISnake:updateMovement(dt)
 	-- Initialize frame counter if needed
 	self._segmentUpdateFrame = (self._segmentUpdateFrame or 0) + 1
 	
-	-- Update different segments on different frames to spread the load
-	local updateOffset = self._segmentUpdateFrame % SEGMENT_UPDATE_SKIP
+	-- Adaptive segment update skip based on snake length
+	local segmentSkip = SEGMENT_UPDATE_SKIP
+	if self.CurrentLength > VERY_LONG_SNAKE_THRESHOLD then
+		segmentSkip = 6  -- Update every 6th segment for very long snakes
+	elseif self.CurrentLength > LONG_SNAKE_THRESHOLD then
+		segmentSkip = 4  -- Update every 4th segment for long snakes
+	end
 	
-	for i = 1 + updateOffset, self.CurrentLength, SEGMENT_UPDATE_SKIP do
+	-- Update different segments on different frames to spread the load
+	local updateOffset = self._segmentUpdateFrame % segmentSkip
+	
+	-- Update segments with adaptive skipping
+	for i = 1 + updateOffset, self.CurrentLength, segmentSkip do
 		local segment = self.Segments[i]
 		if segment and segment.Parent then
 			local delay = mathFloor(i * 1.2)
@@ -1462,6 +1509,25 @@ function AISnake:updateMovement(dt)
 				local currentSegmentPos = segment.Position
 				local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 				segment.CFrame = CFramenew(newPos)
+			end
+		end
+	end
+	
+	-- For very long snakes, use even more aggressive optimization
+	if self.CurrentLength > VERY_LONG_SNAKE_THRESHOLD then
+		-- Only update tail segments every 10 frames
+		if self._segmentUpdateFrame % 10 == 0 then
+			local tailStart = mathFloor(self.CurrentLength * 0.7)  -- Last 30% is tail
+			for i = tailStart, self.CurrentLength, 10 do
+				local segment = self.Segments[i]
+				if segment and segment.Parent then
+					local delay = mathFloor(i * 1.2)
+					local targetData = self:getFromHistory(delay)
+					if targetData then
+						local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
+						segment.Position = segmentPos  -- Direct position set for tail
+					end
+				end
 			end
 		end
 	end
