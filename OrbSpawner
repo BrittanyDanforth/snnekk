@@ -54,14 +54,42 @@ local ORB_MAX             = 950  -- More orbs available!
 local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
--- Server uses aggressive LOD to reduce lag
-local RENDER_DISTANCE = 120  -- Reduced for better performance
-local FAR_DISTANCE = 180     -- Hide orbs beyond this
-local FADE_DISTANCE = 60     -- Start fading at this distance
-local NEAR_DISTANCE = 30     -- Full quality within this range
-local MIN_ORB_SIZE = 0.5
-local MAX_ORB_SIZE = 1.5
-local LOD_UPDATE_RATE = 0.15 -- Update less frequently
+-- Different settings based on graphics mode
+local LOD_SETTINGS = {
+	High = {
+		RENDER_DISTANCE = 200,
+		FAR_DISTANCE = 300,
+		FADE_DISTANCE = 80,
+		NEAR_DISTANCE = 40,
+		MIN_ORB_SIZE = 0.8,
+		MAX_ORB_SIZE = 2.0,
+		LOD_UPDATE_RATE = 0.1,
+		ORBS_PER_FRAME = 100
+	},
+	Medium = {
+		RENDER_DISTANCE = 120,
+		FAR_DISTANCE = 180,
+		FADE_DISTANCE = 60,
+		NEAR_DISTANCE = 30,
+		MIN_ORB_SIZE = 0.5,
+		MAX_ORB_SIZE = 1.5,
+		LOD_UPDATE_RATE = 0.15,
+		ORBS_PER_FRAME = 50
+	},
+	Low = {
+		RENDER_DISTANCE = 80,
+		FAR_DISTANCE = 120,
+		FADE_DISTANCE = 40,
+		NEAR_DISTANCE = 20,
+		MIN_ORB_SIZE = 0.3,
+		MAX_ORB_SIZE = 1.0,
+		LOD_UPDATE_RATE = 0.2,
+		ORBS_PER_FRAME = 25
+	}
+}
+
+-- Default to Medium settings
+local currentSettings = LOD_SETTINGS.Medium
 
 ---------------------------------------------------------------------
 -- Dynamic spawn area
@@ -155,6 +183,28 @@ local function getPlayerHeads()
 end
 
 ---------------------------------------------------------------------
+-- Update graphics settings based on player modes
+---------------------------------------------------------------------
+local function updateGraphicsSettings()
+	local playerModes = {}
+	
+	-- Collect all player graphics modes
+	for _, player in ipairs(Players:GetPlayers()) do
+		local mode = player:GetAttribute("GraphicsMode") or "High"
+		table.insert(playerModes, mode)
+	end
+	
+	-- Use the lowest graphics mode among all players
+	if table.find(playerModes, "Low") then
+		currentSettings = LOD_SETTINGS.Low
+	elseif table.find(playerModes, "Medium") then
+		currentSettings = LOD_SETTINGS.Medium
+	else
+		currentSettings = LOD_SETTINGS.High
+	end
+end
+
+---------------------------------------------------------------------
 -- Get all viewing positions (players + AI snakes)
 ---------------------------------------------------------------------
 local function getAllViewingPositions()
@@ -193,16 +243,16 @@ local function calculateOrbLOD(orb, viewPositions)
 		if dist < closestDist then closestDist = dist end
 	end
 
-	if closestDist <= NEAR_DISTANCE then
+	if closestDist <= currentSettings.NEAR_DISTANCE then
 		return "full", 1.0  -- Full visibility
-	elseif closestDist <= FADE_DISTANCE then
+	elseif closestDist <= currentSettings.FADE_DISTANCE then
 		-- Smooth fade from near to fade distance
-		local fade = 1 - ((closestDist - NEAR_DISTANCE) / (FADE_DISTANCE - NEAR_DISTANCE))
+		local fade = 1 - ((closestDist - currentSettings.NEAR_DISTANCE) / (currentSettings.FADE_DISTANCE - currentSettings.NEAR_DISTANCE))
 		return "fading", math.max(0.3, fade)
-	elseif closestDist <= RENDER_DISTANCE then
+	elseif closestDist <= currentSettings.RENDER_DISTANCE then
 		-- Very faded but still visible
 		return "far", 0.15
-	elseif closestDist <= FAR_DISTANCE then
+	elseif closestDist <= currentSettings.FAR_DISTANCE then
 		-- Barely visible - just a hint
 		return "far", 0.05
 	else
@@ -237,7 +287,7 @@ local function applyOrbLOD(orb, state, fadeValue)
 		-- Death orbs stay bigger for better collision
 		targetSize = Vector3.new(2.5, 2.5, 2.5) * fadeValue
 	else
-		targetSize = Vector3.new(1,1,1) * (MIN_ORB_SIZE + (MAX_ORB_SIZE - MIN_ORB_SIZE) * fadeValue)
+		targetSize = Vector3.new(1,1,1) * (currentSettings.MIN_ORB_SIZE + (currentSettings.MAX_ORB_SIZE - currentSettings.MIN_ORB_SIZE) * fadeValue)
 	end
 	local targetTransparency = 1 - fadeValue
 
@@ -623,12 +673,11 @@ end
 ---------------------------------------------------------------------
 local lastLODUpdate = 0
 local orbUpdateIndex = 1
-local ORBS_PER_FRAME = 50 -- Process this many orbs per update
 
 task.spawn(function()
 	RunService.Heartbeat:Connect(function()
 		local now = tick()
-		if now - lastLODUpdate < LOD_UPDATE_RATE then return end
+		if now - lastLODUpdate < currentSettings.LOD_UPDATE_RATE then return end
 		lastLODUpdate = now
 
 		local viewPositions = getAllViewingPositions()
@@ -638,7 +687,7 @@ task.spawn(function()
 		local processed = 0
 		local totalOrbs = #orbs
 		
-		while processed < ORBS_PER_FRAME and orbUpdateIndex <= totalOrbs do
+		while processed < currentSettings.ORBS_PER_FRAME and orbUpdateIndex <= totalOrbs do
 			local orb = orbs[orbUpdateIndex]
 			if orb and orb.Parent then
 				local state, fade = calculateOrbLOD(orb, viewPositions)
@@ -863,15 +912,31 @@ local OrbSpawner = {
 	spawnDeathOrbsForSnake = spawnDeathOrbsForSnake,
 	createSafeOrb = createSafeOrb,
 	registerExternalOrb = registerExternalOrb,
-	-- New exports for LOD control
-	setRenderDistance = function(dist) RENDER_DISTANCE = dist end,
-	setFadeDistance = function(dist) FADE_DISTANCE = dist end,
+	updateGraphicsSettings = updateGraphicsSettings,
 }
 
 -- Set the attachOrbTouched function for OrbUtils
 OrbUtils.attachOrbTouched = attachOrbTouched
 
+-- Update graphics settings periodically
+task.spawn(function()
+	while true do
+		updateGraphicsSettings()
+		task.wait(2) -- Check every 2 seconds
+	end
+end)
+
+-- Listen for player attribute changes
+Players.PlayerAdded:Connect(function(player)
+	player:GetAttributeChangedSignal("GraphicsMode"):Connect(function()
+		updateGraphicsSettings()
+	end)
+end)
+
+-- Initial update
+updateGraphicsSettings()
+
 _G.OrbSpawner = OrbSpawner
-print("OrbSpawner loaded successfully - Fixed attachment and remote event issues")
+print("OrbSpawner loaded successfully - LOD now respects graphics settings!")
 
 return OrbSpawner
