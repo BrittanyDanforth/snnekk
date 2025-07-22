@@ -232,12 +232,20 @@ end
 
 -- Helper: Create map decorations (only in High graphics)
 local function createDecor()
+	-- PERFORMANCE FIX: Set to false to disable hexagon decorations
+	local ENABLE_HEXAGONS = false
+	
+	if not ENABLE_HEXAGONS then
+		print("⚡ Hexagon decorations disabled for better performance")
+		return
+	end
+	
 	local decorGroup = Instance.new("Folder")
 	decorGroup.Name = DECOR_GROUP_NAME
 	decorGroup.Parent = Workspace
 
 	-- Create proper tessellating hexagonal pattern like slither.io
-	local hexRadius = 50  -- Distance from center to vertex
+	local hexRadius = 100  -- Larger hexagons = fewer needed
 	local hexHeight = hexRadius * math.sqrt(3)  -- Height of hexagon
 	local hexWidth = hexRadius * 2  -- Width of hexagon
 
@@ -245,9 +253,9 @@ local function createDecor()
 	local xSpacing = hexWidth * 3/4  -- Hexagons overlap horizontally
 	local ySpacing = hexHeight  -- Vertical spacing
 
-	-- Create hexagonal grid across the map
-	for row = -20, 20 do
-		for col = -20, 20 do
+	-- Create hexagonal grid across the map (REDUCED FOR PERFORMANCE)
+	for row = -8, 8, 2 do  -- Much fewer rows, skip every other
+		for col = -8, 8, 2 do  -- Much fewer columns, skip every other
 			-- Calculate position with offset for odd rows
 			local xOffset = (row % 2) * (xSpacing / 2)
 			local x = col * xSpacing + xOffset
@@ -290,7 +298,7 @@ local function createDecor()
 	end
 
 	-- Add some circular spots like slither.io
-	for i = 1, 40 do
+	for i = 1, 15 do  -- Reduced from 40 to 15
 		local spot = Instance.new("Part")
 		spot.Name = "GroundSpot"
 		spot.Shape = Enum.PartType.Cylinder

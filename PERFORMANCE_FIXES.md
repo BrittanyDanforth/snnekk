@@ -1,6 +1,17 @@
 # Slither.io Performance Optimizations
 
-## Changes Made to Reduce Ping/Lag:
+## UPDATE: Fixed Hexagon Lag Issue!
+
+### 🎯 **MAIN CULPRIT: SlitherIOMapBuilder Hexagons**
+The hexagon grid was creating **10,086 parts**! This was the primary cause of lag.
+
+#### Fixes Applied:
+1. **Disabled hexagons entirely** - Set `ENABLE_HEXAGONS = false`
+2. **Reduced hexagon grid** - From 41x41 to 9x9 (if re-enabled)
+3. **Larger hexagons** - Radius increased from 50 to 100
+4. **Fewer ground spots** - Reduced from 40 to 15
+
+## Previous Changes Made to Reduce Ping/Lag:
 
 ### 1. **Reduced Orb Count** (OrbSpawner)
 - **Before**: 600 max orbs
