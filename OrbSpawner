@@ -49,22 +49,22 @@ if not OrbCollectedEvent then
 	OrbCollectedEvent.Parent = ReplicatedStorage
 end
 
-local ORB_SPAWN_INTERVAL  = 0.5  -- Balanced for performance
-local ORB_MAX             = 600  -- Reduced for better performance
+local ORB_SPAWN_INTERVAL  = 1.0  -- Increased for better performance
+local ORB_MAX             = 300  -- Significantly reduced to fix lag
 local UPGRADE_ORB_CHANCE  = 0.13
 
 -- LOD (Level of Detail) settings for performance
 -- Different settings based on graphics mode
 local LOD_SETTINGS = {
 	High = {
-		RENDER_DISTANCE = 200,
-		FAR_DISTANCE = 300,
-		FADE_DISTANCE = 80,
-		NEAR_DISTANCE = 40,
+		RENDER_DISTANCE = 150,      -- Reduced from 200
+		FAR_DISTANCE = 200,         -- Reduced from 300
+		FADE_DISTANCE = 60,         -- Reduced from 80
+		NEAR_DISTANCE = 30,         -- Reduced from 40
 		MIN_ORB_SIZE = 0.8,
 		MAX_ORB_SIZE = 2.0,
-		LOD_UPDATE_RATE = 0.15,  -- 6.7 FPS updates
-		ORBS_PER_FRAME = 75      -- Process fewer orbs per frame
+		LOD_UPDATE_RATE = 0.25,     -- Slower updates (4 FPS instead of 6.7)
+		ORBS_PER_FRAME = 40         -- Process fewer orbs per frame
 	},
 	Medium = {
 		RENDER_DISTANCE = 120,
@@ -614,7 +614,13 @@ local function atomicCollectOrb(orb, collType, collObj)
 		if OrbCollectedEvent and p and p:IsA("Player") then
 			-- Use pcall to prevent errors if client doesn't handle it
 			pcall(function()
-				OrbCollectedEvent:FireClient(p, orb.Position, orb.Name)
+										-- Rate limit remote events to reduce network traffic
+						task.spawn(function()
+							task.wait(0.05) -- Small delay to batch events
+							if orb.Parent then
+								OrbCollectedEvent:FireClient(p, orb.Position, orb.Name)
+							end
+						end)
 			end)
 		end
 		if orb.Name == "UpgradeOrb" then

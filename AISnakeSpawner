@@ -7,7 +7,7 @@ local RunService        = game:GetService("RunService")
 local AISnake = require(ReplicatedStorage:WaitForChild("AISnake"))
 
 -- === CONFIGURATION ===
-local NUM_SNAKES   = 8          -- reduced from 10+ for better performance
+local NUM_SNAKES   = 4          -- reduced to 4 for much better performance
 local SPAWN_RADIUS = 250        -- ↑ bump this up to spread them out
 local SPAWN_HEIGHT = 5
 local SPAWN_CENTER = Vector3.new(0, SPAWN_HEIGHT, 0)
