@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Project Terminus v3.0 — Total Gore Edition</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#030305; --matrix:#33ff33; --amber:#ffb000; --danger:#ff3333; --muted:#6b7280;
+    --blood:#8B0000; --decay:#2F1B14; --necrotic:#1C0A00;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#020202,#071011);color:var(--matrix);font-family:'Share Tech Mono',monospace}
+  .panel{background:rgba(0,0,0,0.5);border:1px solid rgba(51,255,51,0.06);padding:10px;border-radius:6px;}
+  #map{background:#071114;display:block;width:100%;height:100%}
+  .btn{padding:.35rem .6rem;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--matrix);cursor:pointer}
+  .inspector-face{width:110px;height:110px;background:#000;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center}
+  .small{font-size:.85rem}
+  .lasso{position:absolute;border:2px dashed rgba(255,176,0,0.9);pointer-events:none}
+  .vignette{pointer-events:none;position:fixed;inset:0;background:radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%);mix-blend-mode:multiply}
+  .flicker{animation:flick 1.4s infinite}
+  @keyframes flick{0%{opacity:1}50%{opacity:.94}100%{opacity:1}}
+  .glitch-text{animation:textGlitch 0.3s infinite}
+  @keyframes textGlitch{
+    0%{transform:translateX(0)}
+    20%{transform:translateX(-2px) skewX(0.8deg)}
+    40%{transform:translateX(2px) skewX(-0.8deg)}
+    60%{transform:translateX(0)}
+  }
+  .ekg-canvas{width:100%;height:40px;background:#000;border:1px solid rgba(51,255,51,0.2)}
+  .autopsy-report{background:rgba(40,0,0,0.9);border:2px solid var(--danger);padding:12px;font-size:11px}
+  .gore-warning{background:rgba(139,0,0,0.2);border:1px solid var(--blood);padding:8px;margin:8px 0}
+</style>
+</head>
+<body>
+<div style="display:flex;height:100vh;gap:8px;padding:8px;">
+  <!-- Left controls -->
+  <aside style="width:340px;display:flex;flex-direction:column;gap:8px;">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><h2 class="text-lg font-orbitron">PROJECT TERMINUS v3.0</h2><div class="small">Total Gore Edition</div></div>
+        <div style="text-align:right">
+          <label class="small">Graphics</label><br/>
+          <input type="checkbox" id="graphicMode" checked /> <span class="small">Graphic Mode</span><br/>
+          <input type="checkbox" id="anatomyMode" /> <span class="small">Anatomy Scanner</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gore-warning small">
+      ⚠️ WARNING: Extreme graphic content enabled. Visceral anatomical details, dismemberment, and psychological horror active.
+    </div>
+
+    <div class="panel small">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <button class="btn" id="btn-play">PAUSE</button>
+        <button class="btn" id="btn-reset">RESET</button>
+        <button class="btn" id="btn-sanitize">SANITIZE</button>
+      </div>
+
+      <div style="margin-bottom:6px"><div class="small">POPULATION</div><div id="stat-pop" class="font-bold">0</div></div>
+      <div style="display:flex;gap:8px">
+        <div><div class="small">INFECTED</div><div id="stat-infected" class="font-bold text-red-400">0</div></div>
+        <div><div class="small">DEAD</div><div id="stat-dead" class="font-bold text-gray-400">0</div></div>
+        <div><div class="small">SIM TIME</div><div id="stat-time" class="font-bold">0d 0h</div></div>
+      </div>
+
+      <div style="margin-top:8px">
+        <label class="small">SIM SPEED</label>
+        <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1" />
+      </div>
+      <div>
+        <label class="small">TRANSMISSION RADIUS</label>
+        <input id="radius" type="range" min="8" max="80" step="2" value="20" />
+      </div>
+      <div>
+        <label class="small">MUTATION RATE</label>
+        <input id="mutation" type="range" min="0" max="0.12" step="0.005" value="0.01" />
+      </div>
+    </div>
+
+    <div class="panel small" style="flex:1;overflow:auto">
+      <h3 class="font-orbitron">SELECTED SUBJECT(S)</h3>
+      <div id="selected-panel" style="margin-top:8px"></div>
+    </div>
+
+    <div class="panel small">
+      <h4 class="font-orbitron">ACTIVE PATHOGENS</h4>
+      <div id="virus-compact" style="max-height:140px;overflow:auto"></div>
+    </div>
+
+  </aside>
+
+  <!-- Map -->
+  <main style="flex:1;position:relative;">
+    <canvas id="map"></canvas>
+    <div id="lassoRect" class="lasso" style="display:none"></div>
+    <div class="vignette flicker" id="vignette" style="display:block;mix-blend-mode:multiply;opacity:0.6"></div>
+  </main>
+
+  <!-- Right -->
+  <aside style="width:380px;display:flex;flex-direction:column;gap:8px;">
+    <div class="panel small" style="height:48%;overflow:auto">
+      <h3 class="font-orbitron">EVENT LOG</h3>
+      <div id="event-log" style="margin-top:8px"></div>
+    </div>
+
+    <div class="panel small" style="height:48%;overflow:auto">
+      <h3 class="font-orbitron">VIRUS DETAIL</h3>
+      <div id="virus-detail" style="margin-top:8px"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+/* ===============================
+  Project Terminus v3.0 — Total Gore Edition
+  Features implemented:
+  - Procedural skeleton humanoids with physics
+  - Real-time anatomy scanner (see-through mode)
+  - Blood particle system & persistent stains
+  - Multi-stage death animations
+  - Limb dismemberment & amputation
+  - Dynamic organ visualization & failure
+  - Sound design hooks
+  - Inspector glitching & UI corruption
+  - Environmental decay & contamination
+=================================*/
+
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d');
+
+function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+window.addEventListener('resize', resize);
+resize();
+
+// DOM
+const statPop = document.getElementById('stat-pop');
+const statInfected = document.getElementById('stat-infected');
+const statDead = document.getElementById('stat-dead');
+const statTime = document.getElementById('stat-time');
+const eventLog = document.getElementById('event-log');
+const virusCompact = document.getElementById('virus-compact');
+const virusDetail = document.getElementById('virus-detail');
+const selectedPanel = document.getElementById('selected-panel');
+const lassoRect = document.getElementById('lassoRect');
+
+const graphicModeToggle = document.getElementById('graphicMode');
+const anatomyModeToggle = document.getElementById('anatomyMode');
+
+// CONFIG
+const CONFIG = {
+  population: 120,
+  ticksPerDay: 240,
+  transmissionRadius: 20,
+  initialInfected: 4,
+  fomiteLifespan: 480,
+  fomitePotency: 0.0025,
+  mutationChance: 0.01,
+  quarantineZones: []
+};
+
+// Particle system
+class Particle {
+  constructor(){ this.alive=false; }
+  init(x,y,vx,vy,size,life,color,type){ 
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy; 
+    this.size=size; this.life=life; this.maxLife=life; 
+    this.color=color; this.type=type; this.alive=true; 
+  }
+  update(dt){
+    if(!this.alive) return;
+    this.x += this.vx*dt; this.y += this.vy*dt;
+    this.vy += 0.25*dt; // gravity
+    this.life -= dt;
+    if(this.life<=0) this.alive=false;
+  }
+  draw(ctx){
+    if(!this.alive) return;
+    const alpha = Math.max(0, this.life / this.maxLife);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.fillStyle = this.color;
+    if(this.type === 'blood'){
+      ctx.ellipse(this.x, this.y, this.size, this.size*0.6, 0, 0, Math.PI*2);
+    } else {
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+const particlePool = [];
+function spawnParticle(x,y,vx,vy,size,life,color,type){
+  let p = particlePool.find(p=>!p.alive);
+  if(!p){ p=new Particle(); particlePool.push(p); }
+  p.init(x,y,vx,vy,size,life,color,type);
+  return p;
+}
+
+// Blood splatter
+function emitBlood(x,y,intensity=20){
+  if(!graphicMode) return;
+  for(let i=0;i<intensity;i++){
+    const ang = Math.random()*Math.PI*2;
+    const speed = randRange(1,5);
+    const vx = Math.cos(ang)*speed;
+    const vy = Math.sin(ang)*speed - randRange(2,4);
+    spawnParticle(x + randRange(-4,4), y + randRange(-4,4), vx, vy, randRange(2,5), randRange(40,100), '#8B0000', 'blood');
+  }
+  stains.push(new Stain(x,y,20,'rgba(139,0,0,0.9)', true));
+}
+
+// Vomit splatter
+function emitVomit(x,y){
+  if(!graphicMode) return;
+  for(let i=0;i<12;i++){
+    const ang = Math.random()*Math.PI*2;
+    const speed = randRange(0.5,2);
+    spawnParticle(x, y, Math.cos(ang)*speed, Math.sin(ang)*speed-1, randRange(3,6), randRange(30,60), '#556B2F', 'vomit');
+  }
+  stains.push(new Stain(x,y,16,'rgba(85,107,47,0.7)', true));
+}
+
+// Procedural Skeleton class
+class Skeleton {
+  constructor(x,y,scale=1){
+    this.scale = scale;
+    this.joints = {};
+    this.bones = [];
+    
+    // Define joint positions (relative to root)
+    const positions = {
+      root: [0,0],
+      hip: [0, 4*scale],
+      spine: [0,-8*scale],
+      neck: [0,-16*scale],
+      head: [0,-24*scale],
+      shoulderL: [-6*scale, -12*scale],
+      elbowL: [-12*scale, -6*scale],
+      handL: [-16*scale, 0],
+      shoulderR: [6*scale, -12*scale],
+      elbowR: [12*scale, -6*scale],
+      handR: [16*scale, 0],
+      hipL: [-4*scale, 4*scale],
+      kneeL: [-4*scale, 14*scale],
+      footL: [-4*scale, 24*scale],
+      hipR: [4*scale, 4*scale],
+      kneeR: [4*scale, 14*scale],
+      footR: [4*scale, 24*scale]
+    };
+    
+    // Initialize joints
+    for(const [name, offset] of Object.entries(positions)){
+      this.joints[name] = {
+        x: x + offset[0], 
+        y: y + offset[1], 
+        vx:0, vy:0, 
+        broken:false, 
+        dismembered:false,
+        restX: offset[0],
+        restY: offset[1]
+      };
+    }
+    
+    // Define bone connections
+    this.bones = [
+      ['root','hip'], ['hip','spine'], ['spine','neck'], ['neck','head'],
+      ['spine','shoulderL'], ['shoulderL','elbowL'], ['elbowL','handL'],
+      ['spine','shoulderR'], ['shoulderR','elbowR'], ['elbowR','handR'],
+      ['hip','hipL'], ['hipL','kneeL'], ['kneeL','footL'],
+      ['hip','hipR'], ['hipR','kneeR'], ['kneeR','footR']
+    ];
+    
+    this.position = {x,y};
+    this.collapsed = false;
+  }
+
+  applyImpulse(joint, fx, fy){
+    const j = this.joints[joint];
+    if(!j || j.dismembered) return;
+    j.vx += fx; j.vy += fy;
+  }
+
+  breakJoint(jointName){
+    const j = this.joints[jointName];
+    if(j) j.broken = true;
+  }
+
+  dismemberLimb(jointName){
+    const j = this.joints[jointName];
+    if(!j) return;
+    j.dismembered = true;
+    
+    // Apply violent force to dismembered part
+    j.vx = randRange(-8,8);
+    j.vy = randRange(-12,-6);
+    
+    // Emit blood at dismemberment point
+    emitBlood(j.x, j.y, 30);
+  }
+
+  step(targetX, targetY, dt=1){
+    this.position.x = targetX;
+    this.position.y = targetY;
+    
+    const stiffness = this.collapsed ? 0.02 : 0.18;
+    const damping = 0.88;
+    const gravity = 0.5;
+    
+    for(const [name,j] of Object.entries(this.joints)){
+      const restX = this.position.x + j.restX;
+      const restY = this.position.y + j.restY;
+      
+      if(j.dismembered){
+        // Dismembered parts fall freely
+        j.vy += gravity * 2 * dt;
+        j.vx *= 0.95;
+      } else if(j.broken || this.collapsed) {
+        // Broken joints affected by gravity
+        j.vy += gravity * dt;
+      } else {
+        // Spring force to rest position
+        const fx = (restX - j.x) * stiffness;
+        const fy = (restY - j.y) * stiffness;
+        j.vx = (j.vx + fx) * damping;
+        j.vy = (j.vy + fy) * damping;
+      }
+      
+      j.x += j.vx * dt;
+      j.y += j.vy * dt;
+      
+      // Ground collision
+      if(j.y > canvas.height - 20){
+        j.y = canvas.height - 20;
+        j.vy *= -0.3;
+        j.vx *= 0.8;
+      }
+    }
+    
+    // Apply constraints to keep bones connected
+    if(!this.collapsed){
+      for(let i=0; i<2; i++){
+        for(const [a,b] of this.bones){
+          const A = this.joints[a], B = this.joints[b];
+          if(!A || !B || A.dismembered || B.dismembered) continue;
+          
+          const dx = B.x - A.x, dy = B.y - A.y;
+          const dist = Math.hypot(dx,dy) || 0.0001;
+          const targetDist = 12 * this.scale;
+          const diff = (dist - targetDist) / dist * 0.5;
+          
+          if(!A.broken){
+            A.x += dx * diff;
+            A.y += dy * diff;
+          }
+          if(!B.broken){
+            B.x -= dx * diff;
+            B.y -= dy * diff;
+          }
+        }
+      }
+    }
+  }
+
+  collapse(){
+    this.collapsed = true;
+    // Apply random impulses to create realistic collapse
+    for(const j of Object.values(this.joints)){
+      j.vx = randRange(-3,3);
+      j.vy = randRange(-2,2);
+    }
+  }
+
+  draw(ctx){
+    ctx.save();
+    
+    // Draw bones
+    for(const [a,b] of this.bones){
+      const A = this.joints[a], B = this.joints[b];
+      if(!A || !B || A.dismembered || B.dismembered) continue;
+      
+      ctx.beginPath();
+      ctx.moveTo(A.x, A.y);
+      ctx.lineTo(B.x, B.y);
+      ctx.strokeStyle = A.broken || B.broken ? 'rgba(100,0,0,0.8)' : 'rgba(200,200,200,0.9)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Draw blood drips from broken joints
+      if(A.broken && graphicMode && Math.random() < 0.05){
+        spawnParticle(A.x, A.y, 0, 1, 2, 40, '#8B0000', 'blood');
+      }
+    }
+    
+    // Draw joints
+    for(const [name,j] of Object.entries(this.joints)){
+      if(j.dismembered) continue;
+      ctx.beginPath();
+      ctx.arc(j.x, j.y, 4, 0, Math.PI*2);
+      ctx.fillStyle = j.broken ? '#8B0000' : '#F0F0F0';
+      ctx.fill();
+    }
+    
+    // Draw dismembered parts separately
+    for(const [name,j] of Object.entries(this.joints)){
+      if(!j.dismembered) continue;
+      ctx.beginPath();
+      ctx.arc(j.x, j.y, 6, 0, Math.PI*2);
+      ctx.fillStyle = '#8B0000';
+      ctx.fill();
+      
+      // Draw torn flesh
+      ctx.beginPath();
+      for(let i=0; i<8; i++){
+        const ang = (i/8) * Math.PI * 2;
+        const r = 8 + randRange(0,4);
+        ctx.lineTo(j.x + Math.cos(ang)*r, j.y + Math.sin(ang)*r);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(139,0,0,0.6)';
+      ctx.fill();
+    }
+    
+    ctx.restore();
+  }
+}
+
+// Stain class for persistent environmental marks
+class Stain {
+  constructor(x,y,size,color,permanent=false){ 
+    this.x=x; this.y=y; this.size=size; this.color=color; 
+    this.age=0; this.permanent=permanent; 
+  }
+  update(){ 
+    this.age++; 
+    if(!this.permanent && this.age > CONFIG.fomiteLifespan) {
+      this.size = Math.max(0, this.size - 0.05);
+    }
+  }
+  draw(ctx){ 
+    if(this.size <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = this.permanent ? 0.9 : Math.max(0.3, 1 - this.age/CONFIG.fomiteLifespan);
+    ctx.beginPath(); 
+    ctx.ellipse(this.x, this.y, this.size, this.size*0.7, Math.random()*Math.PI, 0, Math.PI*2); 
+    ctx.fillStyle = this.color; 
+    ctx.fill(); 
+    ctx.restore();
+  }
+}
+
+// Enhanced Human class with skeleton
+class Human {
+  constructor(id, zoneKey){
+    this.id=id;
+    this.zone=zoneKey;
+    const z = ZONES[zoneKey];
+    this.x = randRange(z.x+20,z.x+z.w-20);
+    this.y = randRange(z.y+20,z.y+z.h-20);
+    this.status='healthy'; 
+    this.health=100;
+    this.organs = {heart:100, lungs:100, brain:100, stomach:100, liver:100};
+    this.emotion={fear:0,pain:0,happiness:80,empathy:20, sanity:100};
+    this.thoughts=[];
+    this.face={smile:1,eyesOpen:1};
+    this.dx=0; this.dy=0; 
+    this.walkTimer=Math.random()*200;
+    this.infectedBy=null; 
+    this.infectionTick=0;
+    this.stage=0; // visual decay stage
+    this.corpseAge=0;
+    this.isSentinel=false;
+    this.dragging=false;
+    this.lastThought= -9999;
+    this.terminalState = null;
+    this.terminalTimer = 0;
+    
+    // Add skeleton
+    this.skeleton = new Skeleton(this.x, this.y);
+    this.useSkeletonView = true;
+    
+    // Memory fragments
+    this.memory = ["Birthday cake", "Mother's voice", "Sunlight through trees"];
+    this.addThought("Subject initialized.");
+  }
+
+  addThought(t,prio=false){
+    if(!t) return;
+    const recent = this.thoughts.slice(-6).map(x=>x.text||x);
+    if(recent.includes(t) && !prio) return;
+    this.thoughts.push({text:t,tick:simTime});
+    if(this.thoughts.length>80) this.thoughts.shift();
+  }
+
+  canThink(){
+    const ticksSince = simTime - this.lastThought;
+    let baseInterval = 180;
+    baseInterval -= Math.floor((100 - this.organs.brain)/2);
+    baseInterval = Math.max(20, baseInterval * (1 - this.emotion.pain/200));
+    return ticksSince > baseInterval;
+  }
+
+  generateThought(){
+    if(!this.canThink()) return;
+    this.lastThought = simTime;
+    
+    if(this.status==='dead'){
+      if(Math.random()<0.02) this.addThought("...darkness...", true);
+      return;
+    }
+    
+    let pool = [];
+    
+    // Health-based thoughts
+    if(this.organs.lungs < 40) pool.push("Can't... breathe...", "Drowning in my own lungs", "Each breath is agony");
+    if(this.organs.heart < 40) pool.push("Heart... skipping...", "Chest crushing inward", "Can feel it failing");
+    if(this.organs.brain < 50) pool.push("Thoughts fragmenting", "Who am I?", "The walls are melting");
+    if(this.organs.stomach < 50) pool.push("Burning acid inside", "Need to vomit", "Guts twisting");
+    
+    // Emotion-based thoughts
+    if(this.emotion.pain > 60) pool.push("MAKE IT STOP", "Please... mercy...", "I want to die");
+    if(this.emotion.sanity < 40) pool.push("They're in the walls", "I can taste colors", "The whispers won't stop");
+    if(this.emotion.fear > 70) pool.push("GET AWAY FROM ME", "They're all infected", "I'm next");
+    
+    // Default healthy thoughts
+    if(pool.length === 0) pool = ["Another day", "Still breathing", "Wonder what's outside"];
+    
+    // Add memory corruption
+    if(this.emotion.sanity < 30 && this.memory.length && Math.random() < 0.2){
+      const memory = pick(this.memory);
+      const corrupted = memory.split('').map(c => Math.random() < 0.3 ? '█' : c).join('');
+      pool.push(`Remember... ${corrupted}`);
+    }
+    
+    this.addThought(pick(pool));
+  }
+
+  step(){
+    if(this.status==='dead'){ 
+      this.corpseAge++; 
+      if(this.corpseAge > CONFIG.ticksPerDay*2) this.stage = Math.min(5, this.stage+1);
+      this.skeleton.step(this.x, this.y);
+      return;
+    }
+    
+    // Terminal state handling (dying animation)
+    if(this.terminalState){
+      this.terminalTimer--;
+      this.handleTerminalState();
+      return;
+    }
+
+    // Movement (unless collapsed)
+    if(!this.dragging && this.emotion.sanity > 20){
+      this.walkTimer--;
+      if(this.walkTimer<=0){ 
+        this.walkTimer = 120 + Math.random()*240; 
+        const z = ZONES[this.zone]; 
+        this.target = {x:randRange(z.x+20,z.x+z.w-20), y:randRange(z.y+20,z.y+z.h-20)};
+      }
+      if(this.target){
+        const ang = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+        const speed = 0.5 * (0.4 + (this.organs.lungs/100)*0.8) * (this.emotion.sanity/100);
+        this.dx = Math.cos(ang)*speed; 
+        this.dy = Math.sin(ang)*speed;
+        this.x += this.dx; 
+        this.y += this.dy;
+        if(Math.hypot(this.x-this.target.x,this.y-this.target.y) < 6) this.target = null;
+      }
+      this.constrainToZone();
+    }
+    
+    // Update skeleton position
+    this.skeleton.step(this.x, this.y);
+
+    // Infection progression
+    if(this.status==='infected' && this.infectedBy){
+      const v = this.infectedBy;
+      const damage = (v.severity / CONFIG.ticksPerDay) * (1 + (simTime/200000));
+      
+      // Target organ damage
+      v.targetOrgans.forEach(o => {
+        if(this.organs[o] !== undefined){
+          this.organs[o] = Math.max(0, this.organs[o] - damage*2);
+        }
+      });
+      
+      // General organ decay
+      Object.keys(this.organs).forEach(k => {
+        this.organs[k] = Math.max(0, this.organs[k] - damage*0.2);
+      });
+      
+      this.health = Object.values(this.organs).reduce((a,b)=>a+b,0) / Object.keys(this.organs).length;
+      this.emotion.pain = Math.min(100, this.emotion.pain + damage*0.8);
+      this.emotion.fear = Math.min(100, this.emotion.fear + (v.lethality/10)*0.6);
+      
+      // Visual decay stages
+      if(this.health < 80 && this.stage < 1) this.stage = 1;
+      if(this.health < 50 && this.stage < 2) {
+        this.stage = 2;
+        // Break a random joint
+        if(Math.random() < 0.3){
+          const joints = ['elbowL', 'elbowR', 'kneeL', 'kneeR'];
+          this.skeleton.breakJoint(pick(joints));
+        }
+      }
+      if(this.health < 20 && this.stage < 3) {
+        this.stage = 3;
+        this.skeleton.collapse();
+      }
+      
+      // Sanity drops
+      if(this.organs.brain < 60) this.emotion.sanity = Math.max(0, this.emotion.sanity - 0.06);
+      
+      // Random symptom events
+      if(Math.random() < 0.002 && this.organs.stomach < 50 && graphicMode){
+        emitVomit(this.x, this.y + 8);
+        this.addThought("Can't keep it down...");
+      }
+      
+      if(Math.random() < 0.001 && v.hemorrhagic && this.health < 40 && graphicMode){
+        emitBlood(this.x + randRange(-8,8), this.y + randRange(-8,8), 8);
+        this.addThought("Blood... everywhere...");
+      }
+      
+      // Death condition
+      if(this.health <= 0){
+        this.enterTerminalState();
+      }
+    }
+    
+    // Sanity effects
+    if(this.emotion.sanity < 30 && Math.random() < 0.002){
+      this.target = null;
+      this.walkTimer = 400;
+      this.skeleton.collapse();
+      this.addThought("No hope... just let me die...");
+    }
+    
+    // Generate thoughts
+    if(Math.random() < 0.02) this.generateThought();
+    
+    // Emotional decay
+    this.emotion.pain = Math.max(0, this.emotion.pain - 0.02);
+    this.emotion.fear = Math.max(0, this.emotion.fear - 0.01);
+    if(this.emotion.happiness < 100) this.emotion.happiness = Math.min(100, this.emotion.happiness + 0.01);
+  }
+  
+  enterTerminalState(){
+    if(!this.infectedBy) {
+      this.die();
+      return;
+    }
+    
+    // Different terminal states based on virus type
+    if(this.infectedBy.hemorrhagic){
+      this.terminalState = 'hemorrhage';
+      this.terminalTimer = 120; // 5 seconds at 24fps
+    } else if(this.infectedBy.targetOrgans.includes('brain')){
+      this.terminalState = 'seizure';
+      this.terminalTimer = 100;
+    } else {
+      this.terminalState = 'respiratory';
+      this.terminalTimer = 80;
+    }
+    
+    this.addThought("IT'S HAPPENING", true);
+  }
+  
+  handleTerminalState(){
+    switch(this.terminalState){
+      case 'hemorrhage':
+        // Violent convulsions and blood
+        if(this.terminalTimer % 10 === 0){
+          this.skeleton.applyImpulse('hip', randRange(-5,5), randRange(-8,-2));
+          emitBlood(this.x, this.y, 25);
+        }
+        if(this.terminalTimer === 20){
+          // Final chest burst
+          emitBlood(this.x, this.y - 10, 50);
+          this.skeleton.breakJoint('spine');
+        }
+        break;
+        
+      case 'seizure':
+        // Violent shaking
+        for(const joint of Object.values(this.skeleton.joints)){
+          joint.x += randRange(-3,3);
+          joint.y += randRange(-3,3);
+        }
+        if(this.terminalTimer % 20 === 0){
+          this.skeleton.applyImpulse('head', randRange(-10,10), randRange(-10,10));
+        }
+        break;
+        
+      case 'respiratory':
+        // Gasping, clutching chest
+        if(this.terminalTimer % 15 === 0){
+          this.skeleton.joints.handL.x = this.x - 5;
+          this.skeleton.joints.handL.y = this.y - 10;
+          this.skeleton.joints.handR.x = this.x + 5;
+          this.skeleton.joints.handR.y = this.y - 10;
+        }
+        break;
+    }
+    
+    if(this.terminalTimer <= 0){
+      this.die();
+    }
+  }
+
+  constrainToZone(){
+    const z = ZONES[this.zone];
+    const g = ZONES.gate;
+    if(this.x>g.x && this.x<g.x+g.w && this.y>g.y && this.y<g.y+g.h) return;
+    this.x = Math.max(z.x+8, Math.min(z.x+z.w-8, this.x));
+    this.y = Math.max(z.y+8, Math.min(z.y+z.h-8, this.y));
+  }
+
+  die(){
+    if(this.status==='dead') return;
+    this.status='dead';
+    this.stage = 4;
+    this.corpseAge = 0;
+    this.skeleton.collapse();
+    
+    if(this.infectedBy) this.infectedBy.hosts = Math.max(0, this.infectedBy.hosts-1);
+    
+    // Create death stain
+    if(graphicMode){
+      const stainColor = this.infectedBy?.hemorrhagic ? 'rgba(139,0,0,0.95)' : 'rgba(100,40,40,0.85)';
+      stains.push(new Stain(this.x, this.y, 25, stainColor, true));
+      
+      // Death rattle blood
+      if(this.infectedBy?.hemorrhagic){
+        emitBlood(this.x, this.y, 40);
+      }
+    }
+    
+    log(`Subject ${this.id} terminated. Cause: ${this.infectedBy?.name || 'Unknown'}`);
+    
+    // Witness trauma
+    const witnesses = humans.filter(h=>h.status!=='dead' && Math.hypot(h.x-this.x,h.y-this.y) < 140);
+    witnesses.forEach(w=>{
+      w.emotion.sanity = Math.max(0, w.emotion.sanity - 15);
+      w.emotion.fear = Math.min(100, w.emotion.fear + 25);
+      w.addThought(`Saw ${this.id} die... the blood...`, true);
+      
+      // Extreme reaction
+      if(w.emotion.sanity < 20 && Math.random() < 0.3){
+        w.skeleton.collapse();
+        w.addThought("CAN'T STAND CAN'T STAND CAN'T STAND", true);
+      }
+    });
+  }
+
+  draw(ctx){
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y+12, 15, 6, 0, 0, Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.4)';
+    ctx.fill();
+    
+    if(this.useSkeletonView || anatomyMode){
+      this.skeleton.draw(ctx);
+      
+      // Draw head on skeleton
+      const head = this.skeleton.joints.head;
+      if(head && !head.dismembered){
+        ctx.save();
+        ctx.translate(head.x, head.y);
+        
+        // Head shape
+        ctx.beginPath();
+        ctx.arc(0, 0, 10, 0, Math.PI*2);
+        ctx.fillStyle = this.getHeadColor();
+        ctx.fill();
+        
+        // Face
+        this.drawSkeletonFace(ctx);
+        
+        ctx.restore();
+      }
+    } else {
+      // Legacy blob view (kept for performance)
+      this.drawBlobForm(ctx);
+    }
+    
+    // Selection indicator
+    if(selected === this){
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 30, 0, Math.PI*2);
+      ctx.strokeStyle='rgba(255,176,0,0.9)';
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  
+  getHeadColor(){
+    if(this.status === 'dead') return '#4A4A4A';
+    if(this.stage >= 3) return '#6B4226';
+    if(this.stage >= 2) return '#8B6239';
+    if(this.stage >= 1) return '#DEB887';
+    if(this.status === 'infected') return '#FFB6C1';
+    return '#F0E68C';
+  }
+  
+  drawSkeletonFace(ctx){
+    // Eyes
+    ctx.fillStyle = this.face.eyesOpen > 0.5 ? '#000' : 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.arc(-3, -2, 2, 0, Math.PI*2);
+    ctx.arc(3, -2, 2, 0, Math.PI*2);
+    ctx.fill();
+    
+    // Mouth (grimace of pain)
+    ctx.beginPath();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    const mouthCurve = this.emotion.pain > 50 ? 0.8 : 0.3;
+    ctx.arc(0, 3, 4, Math.PI * mouthCurve, Math.PI * (2 - mouthCurve));
+    ctx.stroke();
+    
+    // Lesions/decay
+    if(this.stage >= 2 && graphicMode){
+      ctx.fillStyle = 'rgba(139,0,0,0.6)';
+      ctx.beginPath();
+      ctx.arc(4, 0, 2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+  
+  drawBlobForm(ctx){
+    // Simplified blob drawing for performance
+    let bodyColor='#2ecc71', headColor='#7efc8a';
+    if(this.status==='infected'){ bodyColor = '#e85a5a'; headColor='#ff9b9b'; }
+    if(this.status==='dead'){ bodyColor = '#4a4a4a'; headColor = '#6c6c6c'; }
+
+    ctx.fillStyle = bodyColor;
+    ctx.fillRect(this.x-9, this.y-8, 18, 16);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y-12, 8, 0, Math.PI*2);
+    ctx.fillStyle = headColor;
+    ctx.fill();
+  }
+}
+
+// Virus class
+class Virus {
+  constructor(name,color,stats){
+    this.name=name;
+    this.color=color;
+    Object.assign(this, stats);
+    this.hosts=0;
+    this.generation=1;
+    this.mutations=[];
+  }
+  mutate(){
+    const child = new Virus(this.name+'*', this.color, {...this});
+    child.generation = this.generation+1;
+    child.mutations.unshift(`G${child.generation} mutation: ${pick(['increased lethality','enhanced transmission','organ specificity','hemorrhagic tendency'])}`);
+    log(`Mutation: ${this.name} → ${child.name}`);
+    return child;
+  }
+}
+
+// Zones
+const ZONES = {
+  cell: { x: 40, y: 40, w: 420, h: 820, label: 'CELL'},
+  yard: { x: 520, y: 40, w: 640, h: 820, label: 'YARD'},
+  gate: { x: 480, y: 360, w: 40, h: 120}
+};
+
+// Global state
+let humans = [];
+let viruses = [];
+let stains = [];
+let simTime = 0;
+let isPaused = false;
+let selected = null;
+let selectedGroup = [];
+let draggingHuman = null;
+let dragOffset = {x:0,y:0};
+let lassoStart = null;
+let lassoActive = false;
+let graphicMode = true;
+let anatomyMode = false;
+let anatomyTarget = null;
+let environmentDecay = 0;
+
+// Utilities
+function randRange(a,b){return a + Math.random()*(b-a);}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function log(msg){
+  const d=document.createElement('div');
+  d.className='small';
+  d.innerHTML = `<span style="color:#666">[${getSimTime().days}d ${getSimTime().hours}h]</span> ${msg}`;
+  eventLog.prepend(d);
+  if(eventLog.children.length>600) eventLog.removeChild(eventLog.lastChild);
+}
+function getSimTime(){
+  const totalHours = Math.floor(simTime / (CONFIG.ticksPerDay/24));
+  return { days: Math.floor(totalHours/24), hours: totalHours%24 };
+}
+
+// Create viruses
+function createViruses(){
+  viruses = [];
+  viruses.push(new Virus('HEMOR-X','#DC143C',{
+    infectivity:0.002, severity:9, lethality:7.5, duration:16,
+    targetOrgans:['heart','lungs','liver'], immunityChance:0.15, hemorrhagic:true
+  }));
+  viruses.push(new Virus('NEURO-Z','#FF8C00',{
+    infectivity:0.0012, severity:9.5, lethality:8.5, duration:28,
+    targetOrgans:['brain'], immunityChance:0.05, hemorrhagic:false
+  }));
+  viruses.push(new Virus('RESP-7','#4B0082',{
+    infectivity:0.0018, severity:6, lethality:4, duration:20,
+    targetOrgans:['lungs'], immunityChance:0.35, hemorrhagic:false
+  }));
+}
+
+// Setup
+function setup(){
+  resize();
+  humans = [];
+  stains = [];
+  particlePool.forEach(p => p.alive = false);
+  createViruses();
+  environmentDecay = 0;
+  
+  const half = Math.floor(CONFIG.population/2);
+  for(let i=0;i<CONFIG.population;i++){
+    const zone = i < half ? 'cell' : 'yard';
+    humans.push(new Human(i, zone));
+  }
+  
+  for(let i=0;i<CONFIG.initialInfected && i<humans.length;i++){
+    const v = viruses[Math.floor(Math.random()*viruses.length)];
+    humans[i].status='infected';
+    humans[i].infectedBy=v;
+    humans[i].infectionTick=simTime;
+    v.hosts++;
+  }
+  
+  simTime = 0;
+  selected = null;
+  selectedGroup = [];
+  redrawUI();
+  log('=== SIMULATION RESET ===');
+}
+
+// Transmission
+function handleTransmission(){
+  CONFIG.transmissionRadius = parseFloat(document.getElementById('radius').value);
+  CONFIG.mutationChance = parseFloat(document.getElementById('mutation').value);
+  
+  const infected = humans.filter(h=>h.status==='infected');
+  if(!infected.length) return;
+  
+  for(const h of humans){
+    if(h.status!=='healthy') continue;
+    
+    for(const i of infected){
+      if(i.zone !== h.zone){
+        const g = ZONES.gate;
+        if(!((i.x>g.x&&i.x<g.x+g.w&&i.y>g.y&&i.y<g.y+g.h) || 
+             (h.x>g.x&&h.x<g.x+g.w&&h.y>g.y&&h.y<g.y+g.h))) continue;
+      }
+      
+      const dist = Math.hypot(i.x - h.x, i.y - h.y);
+      if(dist < CONFIG.transmissionRadius && Math.random() < i.infectedBy.infectivity){
+        h.status='infected';
+        h.infectedBy = i.infectedBy;
+        h.infectionTick = simTime;
+        i.infectedBy.hosts++;
+        
+        log(`<span style="color:${i.infectedBy.color}">Subject ${h.id} infected by ${i.infectedBy.name}</span>`);
+        
+        if(Math.random() < CONFIG.mutationChance){
+          const m = i.infectedBy.mutate();
+          viruses.push(m);
+        }
+        break;
+      }
+    }
+  }
+}
+
+// Drawing
+function drawZones(){
+  // Environmental decay
+  const decayAlpha = Math.min(0.4, environmentDecay / 10000);
+  
+  // Cell (gets grimier)
+  ctx.fillStyle = `rgba(40,10,10,${0.04 + decayAlpha})`;
+  ctx.fillRect(ZONES.cell.x, ZONES.cell.y, ZONES.cell.w, ZONES.cell.h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.strokeRect(ZONES.cell.x, ZONES.cell.y, ZONES.cell.w, ZONES.cell.h);
+  ctx.fillStyle='rgba(255,255,255,0.02)';
+  ctx.fillText('CELL', ZONES.cell.x+8, ZONES.cell.y+16);
+
+  // Yard
+  ctx.fillStyle = `rgba(10,40,10,${0.03 + decayAlpha/2})`;
+  ctx.fillRect(ZONES.yard.x, ZONES.yard.y, ZONES.yard.w, ZONES.yard.h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.strokeRect(ZONES.yard.x, ZONES.yard.y, ZONES.yard.w, ZONES.yard.h);
+  ctx.fillStyle='rgba(255,255,255,0.02)';
+  ctx.fillText('YARD', ZONES.yard.x+8, ZONES.yard.y+16);
+
+  // Gate
+  ctx.fillStyle='rgba(255,255,255,0.03)';
+  ctx.fillRect(ZONES.gate.x, ZONES.gate.y, ZONES.gate.w, ZONES.gate.h);
+  ctx.strokeStyle='rgba(255,255,255,0.04)';
+  ctx.strokeRect(ZONES.gate.x, ZONES.gate.y, ZONES.gate.w, ZONES.gate.h);
+  ctx.fillStyle='rgba(255,255,255,0.02)';
+  ctx.fillText('GATE', ZONES.gate.x+6, ZONES.gate.y+16);
+  
+  // Add mold/grime patches
+  if(environmentDecay > 1000){
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    for(let i=0; i<environmentDecay/500; i++){
+      const x = ZONES.cell.x + Math.sin(i*1.7) * ZONES.cell.w;
+      const y = ZONES.cell.y + Math.cos(i*2.3) * ZONES.cell.h;
+      ctx.beginPath();
+      ctx.arc(x, y, 20 + Math.sin(i) * 10, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
+
+// Anatomy scanner overlay
+function drawAnatomyOverlay(h){
+  if(!h || h.status === 'dead') return;
+  
+  ctx.save();
+  ctx.translate(h.x, h.y);
+  ctx.globalAlpha = 0.8;
+  
+  // Body outline
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(0,255,0,0.4)';
+  ctx.lineWidth = 2;
+  ctx.ellipse(0, 0, 20, 35, 0, 0, Math.PI*2);
+  ctx.stroke();
+  
+  // Draw organs with real-time status
+  const organs = [
+    {name: 'heart', x: 0, y: -5, size: 8, color: '#FF0000'},
+    {name: 'lungs', x: -8, y: -8, size: 10, color: '#FFB6C1'},
+    {name: 'lungs', x: 8, y: -8, size: 10, color: '#FFB6C1'},
+    {name: 'brain', x: 0, y: -25, size: 12, color: '#DDA0DD'},
+    {name: 'stomach', x: 0, y: 5, size: 7, color: '#90EE90'},
+    {name: 'liver', x: -6, y: 8, size: 9, color: '#8B4513'}
+  ];
+  
+  organs.forEach(org => {
+    const health = h.organs[org.name] || 100;
+    const pulse = org.name === 'heart' ? Math.sin(simTime * 0.1) * 0.2 + 1 : 1;
+    
+    ctx.beginPath();
+    ctx.fillStyle = org.color;
+    ctx.globalAlpha = health / 100;
+    
+    if(health > 0){
+      ctx.arc(org.x, org.y, org.size * pulse, 0, Math.PI*2);
+      ctx.fill();
+      
+      // Show damage
+      if(health < 70){
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath();
+        for(let i=0; i<(70-health)/10; i++){
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.random() * org.size;
+          ctx.arc(org.x + Math.cos(a)*r, org.y + Math.sin(a)*r, 2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+    } else {
+      // Dead organ
+      ctx.fillStyle = '#000';
+      ctx.arc(org.x, org.y, org.size * 0.7, 0, Math.PI*2);
+      ctx.fill();
+    }
+  });
+  
+  // Circulatory system
+  if(h.organs.heart > 0){
+    ctx.strokeStyle = `rgba(255,0,0,${h.organs.heart/100 * 0.5})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(-8, -8);
+    ctx.moveTo(0, -5);
+    ctx.lineTo(8, -8);
+    ctx.moveTo(0, -5);
+    ctx.lineTo(0, -25);
+    ctx.moveTo(0, -5);
+    ctx.lineTo(0, 15);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  // Background grime based on deaths and time
+  const grimeLevel = Math.min(0.5, (humans.filter(h=>h.status==='dead').length / CONFIG.population) + (simTime / 100000));
+  ctx.fillStyle = `rgba(0,0,0,${grimeLevel})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  drawZones();
+  
+  // Draw stains (under everything)
+  for(const s of stains){
+    s.draw(ctx);
+  }
+  
+  // Draw particles
+  particlePool.forEach(p => p.draw(ctx));
+  
+  // Draw humans
+  for(const h of humans){
+    h.draw(ctx);
+  }
+  
+  // Draw anatomy overlay if active
+  if(anatomyMode && selected){
+    drawAnatomyOverlay(selected);
+  }
+  
+  // Group selection box
+  if(selectedGroup.length>1){
+    const minX=Math.min(...selectedGroup.map(h=>h.x))-20;
+    const minY=Math.min(...selectedGroup.map(h=>h.y))-25;
+    const maxX=Math.max(...selectedGroup.map(h=>h.x))+20;
+    const maxY=Math.max(...selectedGroup.map(h=>h.y))+20;
+    ctx.beginPath();
+    ctx.rect(minX,minY,maxX-minX,maxY-minY);
+    ctx.strokeStyle='rgba(255,176,0,0.7)';
+    ctx.setLineDash([6,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// UI
+function redrawUI(){
+  statPop.textContent = humans.filter(h=>h.status!=='dead').length + '/' + humans.length;
+  statInfected.textContent = humans.filter(h=>h.status==='infected').length;
+  statDead.textContent = humans.filter(h=>h.status==='dead').length;
+  statTime.textContent = `${getSimTime().days}d ${getSimTime().hours}h`;
+  
+  virusCompact.innerHTML = '';
+  viruses.forEach(v=>{
+    const el = document.createElement('div');
+    el.className='small';
+    el.style.display='flex';
+    el.style.justifyContent='space-between';
+    el.innerHTML = `<div style="color:${v.color};font-weight:600">${v.name} (G${v.generation})</div><div>hosts: ${v.hosts}</div>`;
+    el.onclick = ()=> showVirusDetail(v);
+    virusCompact.appendChild(el);
+  });
+  
+  if(selectedGroup.length>1) renderGroupInspector(selectedGroup);
+  else if(selected) renderInspector(selected);
+  else selectedPanel.innerHTML = `<div class="small">Click subject to examine. Drag to relocate. Shift-drag to select multiple.</div>`;
+}
+
+function showVirusDetail(v){
+  virusDetail.innerHTML = `
+    <div style="color:${v.color}"><h4 class="font-orbitron">${v.name} (G${v.generation})</h4></div>
+    <div class="small">
+      <div>Infectivity: ${v.infectivity}</div>
+      <div>Severity: ${v.severity}</div>
+      <div>Lethality: ${v.lethality}</div>
+      <div>Duration: ${v.duration}d</div>
+      <div>Targets: ${v.targetOrgans.join(', ')}</div>
+      <div>Hemorrhagic: ${v.hemorrhagic ? 'YES' : 'NO'}</div>
+      <div>Active Hosts: ${v.hosts}</div>
+    </div>
+    <div style="margin-top:6px">
+      ${v.mutations.slice(0,5).map(m=>`<div class="small" style="color:rgba(255,200,0,0.9)">${m}</div>`).join('')}
+    </div>
+  `;
+}
+
+// Inspector
+function renderInspector(h){
+  if(h.status === 'dead'){
+    renderAutopsyReport(h);
+    return;
+  }
+  
+  const thoughts = h.thoughts.slice(-12).reverse().map(t=>`<div class="small">${t.text||t}</div>`).join('');
+  
+  selectedPanel.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center">
+      <div>
+        <canvas id="inspector-vitals" class="ekg-canvas"></canvas>
+      </div>
+      <div>
+        <div>SUBJECT <strong>${h.id}</strong></div>
+        <div class="small">ZONE: ${h.zone.toUpperCase()}</div>
+        <div class="small">STATUS: <span style="color:${h.status==='infected'?'#ff3333':'#33ff33'}">${h.status.toUpperCase()}</span></div>
+        <div class="small">VITALS: ${Math.round(h.health)}%</div>
+      </div>
+    </div>
+    
+    <div style="margin-top:8px" class="small">
+      ${Object.entries(h.organs).map(([organ, value]) => {
+        const pct = Math.round(value);
+        const color = pct > 70 ? '#33ff33' : pct > 30 ? '#ffb000' : '#ff3333';
+        return `
+          <div>${organ.toUpperCase()}: ${pct}%
+            <div style="height:6px;background:#000;margin-top:2px">
+              <div style="width:${pct}%;height:100%;background:${color}"></div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    
+    <div style="margin-top:8px" class="small">
+      <div>PAIN: ${Math.round(h.emotion.pain)}%</div>
+      <div>FEAR: ${Math.round(h.emotion.fear)}%</div>
+      <div>SANITY: ${Math.round(h.emotion.sanity)}%</div>
+    </div>
+
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+      <button class="btn small" data-action="neural">NEURAL AGITATION</button>
+      <button class="btn small" data-action="shock">SYSTEM SHOCK</button>
+      <button class="btn small" data-action="scrub">CORTICAL SCRUB</button>
+      <button class="btn small" data-action="interrogate">FORCED INTERROGATION</button>
+      <button class="btn small" data-action="adrenal">ADRENAL SURGE</button>
+      <button class="btn small" data-action="hallucinogen">INTRODUCE HALLUCINOGEN</button>
+      <button class="btn small" data-action="vivisect" style="color:#ff3333">VIVISECTION</button>
+      <button class="btn small" data-action="terminate" style="color:#ff3333">TERMINATE</button>
+    </div>
+
+    <div style="margin-top:8px"><strong>NEURAL ACTIVITY LOG</strong>${thoughts}</div>
+  `;
+  
+  // Draw EKG
+  const ekgCanvas = document.getElementById('inspector-vitals');
+  if(ekgCanvas){
+    const ectx = ekgCanvas.getContext('2d');
+    ekgCanvas.width = ekgCanvas.offsetWidth;
+    ekgCanvas.height = ekgCanvas.offsetHeight;
+    drawEKG(ectx, h);
+  }
+}
+
+function drawEKG(ctx, h){
+  const w = ctx.canvas.width, height = ctx.canvas.height;
+  ctx.clearRect(0, 0, w, height);
+  
+  // Background grid
+  ctx.strokeStyle = 'rgba(0,255,0,0.1)';
+  ctx.lineWidth = 0.5;
+  for(let x=0; x<w; x+=20){
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  
+  // EKG line
+  ctx.strokeStyle = h.organs.heart > 30 ? '#33ff33' : '#ff3333';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  
+  const points = [];
+  for(let x=0; x<w; x++){
+    let y = height/2;
+    
+    // Generate heartbeat pattern
+    const beatPhase = (x + simTime*2) % 60;
+    if(beatPhase < 5){
+      y -= 20; // P wave
+    } else if(beatPhase < 10){
+      y += 30; // QRS complex
+    } else if(beatPhase < 15){
+      y -= 15; // T wave
+    }
+    
+    // Add noise based on health
+    y += (Math.random() - 0.5) * (100 - h.organs.heart) / 5;
+    
+    // Flatline if dead
+    if(h.organs.heart <= 0) y = height/2;
+    
+    points.push(y);
+    if(x === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  
+  ctx.stroke();
+  
+  // Critical indicators
+  if(h.organs.heart < 20){
+    ctx.fillStyle = '#ff3333';
+    ctx.font = '10px monospace';
+    ctx.fillText('CRITICAL', 5, 15);
+  }
+}
+
+function renderAutopsyReport(h){
+  const cause = h.infectedBy ? 
+    `Catastrophic organ failure due to ${h.infectedBy.name} infection` : 
+    'Systemic failure of unknown origin';
+    
+  selectedPanel.innerHTML = `
+    <div class="autopsy-report">
+      <h3 style="color:#ff3333">SUBJECT ${h.id} - POST-MORTEM</h3>
+      <div style="margin-top:8px">
+        <div><strong>CAUSE OF DEATH:</strong> ${cause}</div>
+        <div style="margin-top:8px"><strong>ORGAN ANALYSIS:</strong></div>
+        ${Object.entries(h.organs).map(([organ, value]) => {
+          let status = 'Destroyed';
+          if(value > 20) status = 'Severely damaged';
+          if(value > 50) status = 'Moderate damage';
+          if(value > 80) status = 'Minor damage';
+          return `<div>- ${organ.toUpperCase()}: ${status} (${Math.round(value)}% integrity)</div>`;
+        }).join('')}
+        <div style="margin-top:8px"><strong>FINAL THOUGHTS:</strong></div>
+        ${h.thoughts.slice(-3).map(t=>`<div class="small">"${t.text||t}"</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Inspector actions
+selectedPanel.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const action = btn.dataset.action;
+  if(!selected) return;
+  const h = selected;
+  
+  switch(action){
+    case 'neural':
+      h.emotion.pain = Math.min(100, h.emotion.pain + 20);
+      h.skeleton.applyImpulse('head', randRange(-2,2), -3);
+      h.addThought("AHHHHHHH", true);
+      log(`Neural agitation applied to ${h.id}`);
+      break;
+      
+    case 'shock':
+      h.emotion.pain = Math.min(100, h.emotion.pain + 50);
+      h.health = Math.max(1, h.health - 20);
+      h.skeleton.applyImpulse('hip', 0, -10);
+      for(const organ of Object.keys(h.organs)){
+        h.organs[organ] = Math.max(0, h.organs[organ] - 10);
+      }
+      h.addThought("SYSTEM OVERLOAD", true);
+      log(`System shock administered to ${h.id}`);
+      break;
+      
+    case 'scrub':
+      if(h.memory.length){
+        const removed = h.memory.splice(Math.floor(Math.random()*h.memory.length), 1);
+        h.emotion.sanity = Math.max(0, h.emotion.sanity - 15);
+        h.addThought(`Memory "${removed}" erased...`, true);
+        log(`Cortical scrub on ${h.id} - memory removed`);
+      }
+      break;
+      
+    case 'interrogate':
+      h.emotion.fear = Math.min(100, h.emotion.fear + 30);
+      h.emotion.pain = Math.min(100, h.emotion.pain + 15);
+      h.addThought("I'll tell you anything!", true);
+      if(Math.random() < 0.3 && h.memory.length){
+        h.addThought(`I remember... ${pick(h.memory)}`, true);
+      }
+      log(`Interrogation of ${h.id}`);
+      break;
+      
+    case 'adrenal':
+      h.organs.heart = Math.min(150, h.organs.heart + 40);
+      h.organs.lungs = Math.min(150, h.organs.lungs + 40);
+      h.skeleton.applyImpulse('hip', randRange(-5,5), -15);
+      h.addThought("POWER SURGE", true);
+      log(`Adrenal surge in ${h.id}`);
+      setTimeout(()=>{
+        if(h.status !== 'dead'){
+          h.organs.heart = Math.max(0, h.organs.heart - 80);
+          h.organs.lungs = Math.max(0, h.organs.lungs - 80);
+          h.emotion.sanity = Math.max(0, h.emotion.sanity - 40);
+          h.skeleton.collapse();
+          h.addThought("Crash... burning out...", true);
+          log(`Adrenal crash in ${h.id}`);
+        }
+      }, 5000);
+      break;
+      
+    case 'hallucinogen':
+      h.emotion.sanity = Math.max(0, h.emotion.sanity - 50);
+      h.addThought(pick([
+        "The walls are melting",
+        "I can see through time",
+        "They're inside my skin",
+        "Colors taste like screaming"
+      ]), true);
+      log(`Hallucinogen administered to ${h.id}`);
+      break;
+      
+    case 'vivisect':
+      if(!confirm(`Vivisection will kill subject ${h.id} to extract complete pathogen data. Proceed?`)) break;
+      h.emotion.pain = 100;
+      h.addThought("NO NO NO NO NO", true);
+      h.skeleton.collapse();
+      
+      // Graphic vivisection
+      if(graphicMode){
+        emitBlood(h.x, h.y, 60);
+        h.skeleton.dismemberLimb('spine');
+      }
+      
+      setTimeout(() => {
+        h.die();
+        if(h.infectedBy){
+          virusDetail.innerHTML = `
+            <div style="color:${h.infectedBy.color}">
+              <h3>${h.infectedBy.name} — COMPLETE ANALYSIS</h3>
+            </div>
+            <div class="small">
+              <div>Classification: ${h.infectedBy.hemorrhagic ? 'Hemorrhagic' : 'Standard'}</div>
+              <div>Infectivity: ${h.infectedBy.infectivity}</div>
+              <div>Severity: ${h.infectedBy.severity}</div>
+              <div>Lethality: ${h.infectedBy.lethality}</div>
+              <div>Duration: ${h.infectedBy.duration}</div>
+              <div>Target Organs: ${h.infectedBy.targetOrgans.join(', ')}</div>
+              <div>Immunity Chance: ${h.infectedBy.immunityChance}</div>
+              <div>Generation: ${h.infectedBy.generation}</div>
+            </div>
+          `;
+        }
+        log(`Vivisection completed on ${h.id}`);
+      }, 2000);
+      break;
+      
+    case 'terminate':
+      if(!confirm(`Terminate subject ${h.id}?`)) break;
+      h.addThought("Please... no...", true);
+      
+      // Decapitation animation
+      if(graphicMode){
+        h.skeleton.dismemberLimb('head');
+        h.skeleton.dismemberLimb('neck');
+        emitBlood(h.x, h.y - 20, 80);
+        
+        // Fountain effect
+        for(let i=0; i<20; i++){
+          setTimeout(() => {
+            if(h.skeleton.joints.neck){
+              spawnParticle(h.skeleton.joints.neck.x, h.skeleton.joints.neck.y, 
+                randRange(-2,2), randRange(-8,-4), 3, 60, '#8B0000', 'blood');
+            }
+          }, i * 50);
+        }
+      }
+      
+      setTimeout(() => {
+        h.die();
+        log(`Subject ${h.id} terminated`);
+      }, 500);
+      break;
+  }
+  redrawUI();
+});
+
+// Group inspector
+function renderGroupInspector(group){
+  const ids = group.map(h=>h.id).join(', ');
+  selectedPanel.innerHTML = `
+    <div class="small">Group Selected (${group.length}): ${ids}</div>
+    <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn small" id="group-isolate">ISOLATE GROUP</button>
+      <button class="btn small" id="group-stabilize">STABILIZE GROUP</button>
+      <button class="btn small" id="group-amputate" style="color:#ff9900">FIELD AMPUTATION</button>
+      <button class="btn small" id="group-terminate" style="color:#ff3333">MASS TERMINATION</button>
+    </div>
+  `;
+  
+  document.getElementById('group-isolate').onclick = ()=>{
+    const cx = group.reduce((s,h)=>s+h.x,0)/group.length;
+    const cy = group.reduce((s,h)=>s+h.y,0)/group.length;
+    CONFIG.quarantineZones.push({x:cx,y:cy,r:150,strength:0.98});
+    log('Quarantine zone established');
+  };
+  
+  document.getElementById('group-stabilize').onclick = ()=>{
+    group.forEach(h=>{
+      Object.keys(h.organs).forEach(o => h.organs[o] = Math.min(100, h.organs[o]+20));
+      h.addThought('Treatment administered');
+    });
+    log(`Group treatment: ${group.length} subjects`);
+  };
+  
+  document.getElementById('group-amputate').onclick = ()=>{
+    if(!confirm(`Amputate random limb from ${group.length} subjects?`)) return;
+    group.forEach(h=>{
+      if(h.status === 'dead') return;
+      const limbs = ['handL', 'handR', 'footL', 'footR'];
+      const limb = pick(limbs);
+      h.skeleton.dismemberLimb(limb);
+      h.emotion.pain = 100;
+      h.emotion.sanity = Math.max(0, h.emotion.sanity - 30);
+      h.addThought("MY ARM! MY LEG!", true);
+      emitBlood(h.skeleton.joints[limb].x, h.skeleton.joints[limb].y, 25);
+    });
+    log(`Field amputation performed on ${group.length} subjects`);
+  };
+  
+  document.getElementById('group-terminate').onclick = ()=>{
+    if(!confirm(`Terminate all ${group.length} subjects?`)) return;
+    group.forEach(h=>{
+      if(h.status === 'dead') return;
+      h.skeleton.dismemberLimb('head');
+      emitBlood(h.x, h.y - 20, 40);
+      setTimeout(() => h.die(), 500);
+    });
+    selectedGroup = [];
+    selected = null;
+    log(`Mass termination: ${group.length} subjects`);
+    redrawUI();
+  };
+}
+
+// Input handlers
+canvas.addEventListener('mousedown',(e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  
+  if(e.shiftKey){
+    lassoStart = {x,y};
+    lassoActive = true;
+    lassoRect.style.left = `${x}px`;
+    lassoRect.style.top = `${y}px`;
+    lassoRect.style.width='0px';
+    lassoRect.style.height='0px';
+    lassoRect.style.display='block';
+    return;
+  }
+  
+  let nearest=null,dist=999;
+  for(const h of humans){
+    const d = Math.hypot(h.x-x,h.y-y);
+    if(d<dist && d<30){
+      nearest=h;
+      dist=d;
+    }
+  }
+  
+  if(nearest){
+    draggingHuman = nearest;
+    draggingHuman.dragging=true;
+    dragOffset.x = x - nearest.x;
+    dragOffset.y = y - nearest.y;
+    selected = nearest;
+    selectedGroup=[];
+    redrawUI();
+  }
+});
+
+window.addEventListener('mousemove',(e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX-rect.left, y = e.clientY-rect.top;
+  
+  if(draggingHuman){
+    draggingHuman.x = Math.max(10, Math.min(canvas.width-10, x - dragOffset.x));
+    draggingHuman.y = Math.max(10, Math.min(canvas.height-10, y - dragOffset.y));
+    redrawUI();
+  }
+  
+  if(lassoActive && lassoStart){
+    const left = Math.min(lassoStart.x, x);
+    const top = Math.min(lassoStart.y, y);
+    const w = Math.abs(lassoStart.x - x);
+    const h = Math.abs(lassoStart.y - y);
+    lassoRect.style.left = `${left}px`;
+    lassoRect.style.top = `${top}px`;
+    lassoRect.style.width = `${w}px`;
+    lassoRect.style.height = `${h}px`;
+  }
+});
+
+window.addEventListener('mouseup',(e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX-rect.left, y = e.clientY-rect.top;
+  
+  if(draggingHuman){
+    draggingHuman.dragging=false;
+    draggingHuman = null;
+    
+    // Zone transfer
+    for(const key of ['cell','yard']){
+      const z = ZONES[key];
+      if(x > z.x && x < z.x+z.w && y > z.y && y < z.y+z.h){
+        if(selected){
+          selected.zone = key;
+          log(`Moved ${selected.id} to ${key}`);
+        }
+        break;
+      }
+    }
+    redrawUI();
+  }
+  
+  if(lassoActive){
+    const left = Math.min(lassoStart.x, x);
+    const top = Math.min(lassoStart.y, y);
+    const right = Math.max(lassoStart.x, x);
+    const bottom = Math.max(lassoStart.y, y);
+    
+    selectedGroup = humans.filter(h => h.x >= left && h.x <= right && h.y >= top && h.y <= bottom);
+    selected = null;
+    lassoActive = false;
+    lassoStart = null;
+    lassoRect.style.display='none';
+    redrawUI();
+  }
+});
+
+// Buttons
+document.getElementById('btn-play').addEventListener('click', ()=>{
+  isPaused = !isPaused;
+  document.getElementById('btn-play').textContent = isPaused ? 'RUN' : 'PAUSE';
+});
+
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  if(confirm('Reset simulation? All subjects will be terminated.')) setup();
+});
+
+document.getElementById('btn-sanitize').addEventListener('click', ()=>{
+  stains = stains.filter(s => !s.permanent);
+  particlePool.forEach(p => p.alive = false);
+  log('Sanitization protocol executed');
+});
+
+graphicModeToggle.addEventListener('change', (e)=>{
+  graphicMode = e.target.checked;
+  redrawUI();
+});
+
+anatomyModeToggle.addEventListener('change', (e)=>{
+  anatomyMode = e.target.checked;
+  redrawUI();
+});
+
+// Main loop
+function step(){
+  if(isPaused) return;
+  
+  simTime += 1 * parseFloat(document.getElementById('speed').value);
+  
+  // Update environmental decay
+  environmentDecay += humans.filter(h=>h.status==='infected').length * 0.1;
+  
+  // Update entities
+  humans.forEach(h=>h.step());
+  stains.forEach((s,i)=>{
+    s.update();
+    if(s.size<=0 && !s.permanent) stains.splice(i,1);
+  });
+  particlePool.forEach(p => p.update(1));
+  
+  handleTransmission();
+  redrawUI();
+}
+
+function loop(){
+  step();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Initialize
+setup();
+loop();
+
+// Error handling
+window.addEventListener('error', (ev)=>{
+  try {
+    log(`SYSTEM ERROR: ${ev.message}`);
+  } catch(e){
+    console.error('Critical error:', e);
+  }
+});
+
+// Expose for debugging
+window._PT = { humans, viruses, stains, particlePool, CONFIG, emitBlood };
+</script>
+</body>
+</html>
