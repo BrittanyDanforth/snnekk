@@ -13,10 +13,20 @@ OrbUtils.orbs = {}
 -- Debounce table to prevent double-collection (shared for all orbs)
 local orbDebounce = {}
 
--- Batch registration system for performance
-local pendingRegistrations = {}
-local registrationTimer = nil
-local BATCH_REGISTRATION_DELAY = 0.1 -- Register orbs in batches
+-- Clean up debounce table periodically to prevent memory leaks
+task.spawn(function()
+	while true do
+		task.wait(30) -- Clean every 30 seconds
+		local now = tick()
+		for key, timestamp in pairs(orbDebounce) do
+			if now - timestamp > 5 then -- Remove entries older than 5 seconds
+				orbDebounce[key] = nil
+			end
+		end
+	end
+end)
+
+
 
 -- Forward declaration for attachOrbTouched (set by OrbSpawner)
 OrbUtils.attachOrbTouched = nil
@@ -24,41 +34,7 @@ OrbUtils.attachOrbTouched = nil
 -- Callback for orb removal, for AI snakes to clear orb targets
 OrbUtils.onOrbRemoved = nil
 
--- Batch registration function
-local function processPendingRegistrations()
-	if #pendingRegistrations == 0 then
-		registrationTimer = nil
-		return
-	end
-	
-	-- Get OrbSpawner
-	local OrbSpawner
-	if _G.OrbSpawner then
-		OrbSpawner = _G.OrbSpawner
-	else
-		local success, result = pcall(function()
-			return require(game.ServerScriptService:WaitForChild("OrbSpawner", 1))
-		end)
-		if success then
-			OrbSpawner = result
-		end
-	end
-	
-	if OrbSpawner and OrbSpawner.registerExternalOrb then
-		-- Register all pending orbs at once
-		for _, orb in ipairs(pendingRegistrations) do
-			if orb and orb.Parent then
-				pcall(function()
-					OrbSpawner.registerExternalOrb(orb)
-				end)
-			end
-		end
-	end
-	
-	-- Clear the pending list
-	pendingRegistrations = {}
-	registrationTimer = nil
-end
+
 
 -- Helper: Get all AI snake heads
 local function getAISnakeHeads()
@@ -250,7 +226,7 @@ function OrbUtils.spawnOrbAt(position, value)
 	orb.Anchored = true
 	orb.CanCollide = false
 	orb.CanTouch = true  -- Important for touch detection
-	orb.CanQuery = true
+	orb.CanQuery = false -- Optimize raycasting performance
 	orb.Material = Enum.Material.Neon
 	orb.Color = Color3.fromHSV(math.random(), 0.7, 1)
 	-- Ensure orbs spawn at AI snake height (Y=5) for proper collection
@@ -272,14 +248,24 @@ function OrbUtils.spawnOrbAt(position, value)
 	-- Attach .Touched event for collection
 	OrbUtils.attachOrbTouched(orb)
 	
-	-- Queue for batch registration (optimized)
-	table.insert(pendingRegistrations, orb)
-	
-	-- Start batch timer if not already running
-	if not registrationTimer then
-		registrationTimer = task.wait(BATCH_REGISTRATION_DELAY)
-		task.spawn(processPendingRegistrations)
-	end
+	-- Register immediately but without spam
+	task.spawn(function()
+		local OrbSpawner = _G.OrbSpawner
+		if not OrbSpawner then
+			local success, result = pcall(function()
+				return require(game.ServerScriptService:FindFirstChild("OrbSpawner"))
+			end)
+			if success then
+				OrbSpawner = result
+			end
+		end
+		
+		if OrbSpawner and OrbSpawner.registerExternalOrb then
+			pcall(function()
+				OrbSpawner.registerExternalOrb(orb)
+			end)
+		end
+	end)
 
 	return orb
 end

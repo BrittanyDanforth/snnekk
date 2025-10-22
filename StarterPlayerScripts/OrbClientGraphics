@@ -1,7 +1,8 @@
 --[[
-CLIENT GRAPHICS HANDLER V2.0 - ENHANCED & STABILIZED
+CLIENT GRAPHICS HANDLER V2.1 - FIXED INITIAL LOAD ISSUE
 Handles client-side graphics for orbs and snake glows
 Features:
+- Fixed initial load graphics mode application
 - Smooth transitions between graphics modes
 - Performance optimizations with caching
 - Error handling for stability
@@ -20,33 +21,33 @@ local LocalPlayer = Players.LocalPlayer
 local GRAPHICS_PRESETS = {
 	Low = {
 		-- Orb settings
-		RENDER_DISTANCE = 80,
+		RENDER_DISTANCE = 60,  -- Very short for potato PCs
 		MATERIAL = Enum.Material.SmoothPlastic,
 		DISABLE_LIGHTS = true,
 		PARTICLE_RATE_MULTIPLIER = 0.3,
 		DISABLE_SHADOWS = true,
-		ORB_TRANSPARENCY_MODIFIER = 0.2,
+		ORB_TRANSPARENCY_MODIFIER = 0.3,
 		-- Snake settings
 		SNAKE_GLOW_ENABLED = false,
 		SNAKE_MATERIAL = Enum.Material.SmoothPlastic,
-		SNAKE_RENDER_DISTANCE = 100,  -- Hide distant snakes
+		SNAKE_RENDER_DISTANCE = 80,  -- Hide distant snakes
 		-- Performance
-		UPDATE_RATE = 0.2,  -- Slower updates for better FPS
+		UPDATE_RATE = 0.1,  -- Balanced for smooth transitions
 	},
 	Medium = {
 		-- Orb settings
-		RENDER_DISTANCE = 120,
+		RENDER_DISTANCE = 100,
 		MATERIAL = Enum.Material.Neon,
 		DISABLE_LIGHTS = false,
 		PARTICLE_RATE_MULTIPLIER = 0.7,
 		DISABLE_SHADOWS = false,
-		ORB_TRANSPARENCY_MODIFIER = 0,
+		ORB_TRANSPARENCY_MODIFIER = 0.1,
 		-- Snake settings
 		SNAKE_GLOW_MULTIPLIER = 0.5,
 		SNAKE_MATERIAL = Enum.Material.Neon,
-		SNAKE_RENDER_DISTANCE = 150,
+		SNAKE_RENDER_DISTANCE = 120,
 		-- Performance
-		UPDATE_RATE = 0.15,
+		UPDATE_RATE = 0.067, -- 15 FPS smooth transitions
 	},
 	High = {
 		-- Orb settings
@@ -61,7 +62,7 @@ local GRAPHICS_PRESETS = {
 		SNAKE_MATERIAL = Enum.Material.Neon,
 		SNAKE_RENDER_DISTANCE = 200,
 		-- Performance
-		UPDATE_RATE = 0.1,
+		UPDATE_RATE = 0.05, -- 20 FPS for smoothest transitions
 	}
 }
 
@@ -114,20 +115,37 @@ local function applyOrbGraphics(orb, distance)
 		end
 	end
 	
-	-- Smooth transparency for distant orbs
+	-- Enhanced LOD system with size scaling
 	if distance then
 		local targetTransparency = 0
+		local targetSize = orb.Size
 		
-		-- Calculate transparency based on distance
+		-- Different LOD zones based on graphics mode
+		local nearDistance = preset.RENDER_DISTANCE * 0.2  -- 20% of render distance
+		local fadeDistance = preset.RENDER_DISTANCE * 0.5  -- 50% of render distance
+		
 		if distance > preset.RENDER_DISTANCE then
-			targetTransparency = 1  -- Completely hide
-		elseif preset.ORB_TRANSPARENCY_MODIFIER > 0 and distance > 50 then
-			local fadeFactor = math.clamp((distance - 50) / (preset.RENDER_DISTANCE - 50), 0, 1)
-			targetTransparency = preset.ORB_TRANSPARENCY_MODIFIER * fadeFactor
+			-- Beyond render distance - completely hide
+			targetTransparency = 1
+			orb.LocalTransparencyModifier = 1
+		elseif distance > fadeDistance then
+			-- Fade zone - progressive transparency
+			local fadeFactor = (distance - fadeDistance) / (preset.RENDER_DISTANCE - fadeDistance)
+			targetTransparency = 0.3 + (0.7 * fadeFactor)
+			orb.LocalTransparencyModifier = targetTransparency
+		elseif distance > nearDistance then
+			-- Medium distance - slightly transparent
+			targetTransparency = 0.1
+			orb.LocalTransparencyModifier = targetTransparency
+		else
+			-- Near distance - full visibility
+			orb.LocalTransparencyModifier = 0
 		end
 		
-		-- Apply transparency
-		orb.LocalTransparencyModifier = targetTransparency
+		-- Apply additional transparency modifier for Low graphics
+		if preset.ORB_TRANSPARENCY_MODIFIER > 0 then
+			orb.LocalTransparencyModifier = math.min(1, orb.LocalTransparencyModifier + preset.ORB_TRANSPARENCY_MODIFIER)
+		end
 	end
 end
 
@@ -244,11 +262,24 @@ local function handleSnakeGlows(mode, playerPos)
 	end
 	
 	lastMode = mode
+end
+
+-- Apply low graphics to all snake segments
+local function applyLowGraphicsToAllSnakes()
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	if mode ~= "Low" then return end
 	
-	-- Only print if there's a significant change
-	if math.abs(glowCount - processedCount) > 10 then
-		print(string.format("Graphics: %s | Glows: %d | Processed: %d | Cached: %d", 
-			mode, glowCount, processedCount, #snakeGlowCache))
+	-- Apply to all snake segments in workspace
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("BasePart") and (obj.Name:match("Segment") or obj.Name == "SnakeHead") then
+			obj.Material = Enum.Material.SmoothPlastic
+			
+			-- Disable any glows
+			local glow = obj:FindFirstChild("Glow")
+			if glow then
+				glow.Enabled = false
+			end
+		end
 	end
 end
 
@@ -295,16 +326,54 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Handle graphics mode changes with smooth transitions
+-- Monitor for new segments and apply correct material
+workspace.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("BasePart") then
+		-- First check if this is a player character part
+		local isPlayerBodyPart = false
+		for _, player in pairs(Players:GetPlayers()) do
+			if player.Character and descendant:IsDescendantOf(player.Character) then
+				-- This is a character body part - ensure it stays transparent
+				descendant.Transparency = 1
+				isPlayerBodyPart = true
+				break
+			end
+		end
+		
+		-- Only apply graphics settings to actual snake segments
+		if not isPlayerBodyPart and (descendant.Name:match("Segment") or descendant.Name == "SnakeHead") then
+			-- Apply correct material based on current graphics mode
+			task.wait() -- Wait a frame for parent to be set
+			local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+			if mode == "Low" then
+				descendant.Material = Enum.Material.SmoothPlastic
+				
+				-- Monitor this specific segment for material changes
+				local connection
+				connection = descendant:GetPropertyChangedSignal("Material"):Connect(function()
+					if descendant.Parent and mode == "Low" then
+						if descendant.Material ~= Enum.Material.SmoothPlastic then
+							descendant.Material = Enum.Material.SmoothPlastic
+						end
+					elseif not descendant.Parent then
+						connection:Disconnect()
+					end
+				end)
+			end
+		end
+	end
+end)
+
+-- Handle graphics mode changes
 LocalPlayer.AttributeChanged:Connect(function(attribute)
 	if attribute == "GraphicsMode" then
 		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
 		print("🎮 Graphics mode changed to:", mode)
 		
-		-- Immediately update current preset
+		-- Update preset
 		currentPreset = GRAPHICS_PRESETS[mode] or GRAPHICS_PRESETS.High
 		
-		-- Update all cached orbs
+		-- Update orbs
 		local playerPos = getPlayerPosition()
 		if playerPos then
 			for orb, _ in pairs(orbCache) do
@@ -318,8 +387,13 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 		-- Adjust particle effects
 		adjustParticleEffects(mode)
 		
-		-- Immediately handle snake glows with transition
+		-- Handle snake glows
 		handleSnakeGlows(mode, playerPos)
+		
+		-- Apply low graphics to all snakes if needed
+		if mode == "Low" then
+			applyLowGraphicsToAllSnakes()
+		end
 		
 		-- Performance feedback
 		local perfMsg = mode == "Low" and "🚀 Maximum Performance Mode" or
@@ -329,19 +403,94 @@ LocalPlayer.AttributeChanged:Connect(function(attribute)
 	end
 end)
 
--- Initial setup with error handling
+-- FIXED: Wait for character and apply graphics mode properly on spawn
+local function onCharacterAdded(character)
+	-- Wait for character to be fully loaded
+	local humanoid = character:WaitForChild("Humanoid", 5)
+	local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+	
+	if humanoid and rootPart then
+		-- Ensure all character parts are transparent
+		task.spawn(function()
+			task.wait(0.1)
+			for _, part in pairs(character:GetChildren()) do
+				if part:IsA("BasePart") then
+					part.Transparency = 1
+				end
+			end
+		end)
+		
+		-- Apply graphics mode after a short delay to ensure snake is created
+		task.wait(0.5)
+		
+		local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+		print("🎮 Applying graphics mode on spawn:", mode)
+		
+		-- Force apply low graphics if needed
+		if mode == "Low" then
+			applyLowGraphicsToAllSnakes()
+			
+			-- Also apply to player's own snake
+			task.spawn(function()
+				-- Multiple attempts to ensure it sticks
+				for i = 1, 5 do
+					task.wait(0.2)
+					if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+						local snake = _G.PlayerSnakes[LocalPlayer]
+						if snake and snake.segments then
+							for _, segment in ipairs(snake.segments) do
+								if segment and segment.Parent then
+									segment.Material = Enum.Material.SmoothPlastic
+								end
+							end
+						end
+						-- Also apply to head parts
+						if snake.headParts then
+							for name, part in pairs(snake.headParts) do
+								if part and part.Parent and part:IsA("BasePart") then
+									part.Material = Enum.Material.SmoothPlastic
+								end
+							end
+						end
+					end
+					
+					-- Re-ensure character parts are transparent
+					for _, part in pairs(character:GetChildren()) do
+						if part:IsA("BasePart") then
+							part.Transparency = 1
+						end
+					end
+				end
+			end)
+		end
+	end
+end
+
+-- Connect character spawning
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+if LocalPlayer.Character then
+	onCharacterAdded(LocalPlayer.Character)
+end
+
+-- Initial setup
 local function safeInitialize()
 	local success, err = pcall(function()
 		local initialMode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
 		currentPreset = GRAPHICS_PRESETS[initialMode] or GRAPHICS_PRESETS.High
+		lastMode = initialMode
 		adjustParticleEffects(initialMode)
 		
-		-- Wait a bit for world to load
 		task.wait(0.5)
 		handleSnakeGlows(initialMode, getPlayerPosition())
 		
-		print("✅ Client Graphics Handler V2.0 initialized for:", LocalPlayer.Name)
-		print("🎮 Current mode:", initialMode)
+		-- Apply low graphics if needed
+		if initialMode == "Low" then
+			applyLowGraphicsToAllSnakes()
+		end
+		
+		print("✅ Client Graphics Handler V2.1 initialized for:", LocalPlayer.Name)
+print("🎮 Current mode:", initialMode)
+print("🔍 Client LOD: Orbs render up to", currentPreset.RENDER_DISTANCE, "studs")
 	end)
 	
 	if not success then
@@ -350,3 +499,44 @@ local function safeInitialize()
 end
 
 safeInitialize()
+
+print("✅ Orb graphics system ready with fixed initial load!")
+
+-- Simple material fix for Low graphics mode
+local lowGraphicsActive = false
+
+-- Check graphics mode
+local function updateGraphicsMode()
+	local mode = LocalPlayer:GetAttribute("GraphicsMode") or "High"
+	lowGraphicsActive = (mode == "Low")
+end
+
+-- Apply materials to player snake
+local function applyMaterials()
+	if not lowGraphicsActive then return end
+	
+	if _G.PlayerSnakes and _G.PlayerSnakes[LocalPlayer] then
+		local snake = _G.PlayerSnakes[LocalPlayer]
+		if snake and snake.segments then
+			for _, segment in ipairs(snake.segments) do
+				if segment and segment.Parent then
+					segment.Material = Enum.Material.SmoothPlastic
+				end
+			end
+		end
+	end
+end
+
+-- Initial check
+updateGraphicsMode()
+
+-- Monitor graphics changes
+LocalPlayer:GetAttributeChangedSignal("GraphicsMode"):Connect(updateGraphicsMode)
+
+-- Apply materials periodically (not too often to avoid lag)
+task.spawn(function()
+	while true do
+		task.wait(0.5) -- Only check twice per second
+		applyMaterials()
+	end
+end)

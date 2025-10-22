@@ -1,0 +1,53 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Simple function to remove RootOutline
+local function cleanRootPart(rootPart)
+    if not rootPart then return end
+    
+    -- Check for RootOutline
+    local rootOutline = rootPart:FindFirstChild("RootOutline")
+    if rootOutline then
+        rootOutline:Destroy()
+    end
+    
+    -- Also remove any selection visuals
+    for _, child in ipairs(rootPart:GetChildren()) do
+        if child:IsA("SelectionBox") or child:IsA("Highlight") or child:IsA("SelectionSphere") then
+            child:Destroy()
+        end
+    end
+end
+
+-- When character spawns, set up ONE connection to handle new children
+player.CharacterAdded:Connect(function(character)
+    local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+    if not rootPart then return end
+    
+    -- Initial cleanup
+    cleanRootPart(rootPart)
+    
+    -- Set up ONE connection to catch any new additions
+    local connection = rootPart.ChildAdded:Connect(function(child)
+        if child.Name == "RootOutline" or 
+           child:IsA("SelectionBox") or 
+           child:IsA("Highlight") or 
+           child:IsA("SelectionSphere") then
+            task.wait() -- Wait one frame to ensure it's fully created
+            child:Destroy()
+        end
+    end)
+    
+    -- Clean up connection when character is removed
+    character.AncestryChanged:Connect(function()
+        if not character.Parent then
+            connection:Disconnect()
+        end
+    end)
+end)
+
+-- If character already exists, clean it once
+if player.Character then
+    local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+    cleanRootPart(rootPart)
+end

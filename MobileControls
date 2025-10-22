@@ -1,0 +1,190 @@
+-- 🎮 SLITHER.IO MOBILE CONTROLS - COMPLETE SYSTEM
+-- Place in StarterPlayerScripts as LocalScript
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- 📱 STRICT MOBILE DETECTION
+local function isMobileDevice()
+	-- Check if we have touch but NO mouse (most reliable)
+	if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
+		return true
+	end
+	
+	-- Check for mobile-specific sensors
+	if UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled then
+		return true
+	end
+	
+	-- Check if on console (not mobile)
+	if GuiService:IsTenFootInterface() then
+		return false
+	end
+	
+	-- Additional check for touch-only devices
+	local hasMouse = UserInputService.MouseEnabled
+	local hasKeyboard = UserInputService.KeyboardEnabled
+	local hasTouch = UserInputService.TouchEnabled
+	local hasGamepad = UserInputService.GamepadEnabled
+	
+	-- If we only have touch and nothing else, it's likely mobile
+	if hasTouch and not hasMouse and not hasKeyboard and not hasGamepad then
+		return true
+	end
+	
+	return false
+end
+
+-- Exit if not mobile
+if not isMobileDevice() then
+	print("Not a mobile device (PC detected), MobileControls disabled")
+	_G.IsMobile = false -- Explicitly set to false for PC
+	return
+end
+
+print("Mobile device detected! Disabling default controls...")
+
+-- 🚫 PROPERLY DISABLE DEFAULT MOBILE CONTROLS
+task.spawn(function()
+	-- Disable Core GUI mobile controls
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) -- Disable all CoreGui
+		-- Re-enable only what we need
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
+		
+		-- Specifically disable TouchGui and TouchControlFrame
+		StarterGui:SetCore("TouchGui", false)
+		
+		-- Extra aggressive removal of touch controls
+		local touchGui = playerGui:FindFirstChild("TouchGui")
+		if touchGui then
+			touchGui:Destroy()
+		end
+		
+		-- Remove TouchControlFrame if it exists
+		for _, gui in pairs(playerGui:GetChildren()) do
+			if gui.Name == "TouchGui" or gui.Name == "ControlGui" or gui.Name == "TouchControlFrame" then
+				gui:Destroy()
+			end
+		end
+	end)
+	
+	-- Wait for player scripts to load
+	local playerScripts = player:WaitForChild("PlayerScripts")
+	local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
+	local controls = playerModule:GetControls()
+	
+	-- Disable default movement controls completely
+	controls:Disable()
+	print("Default mobile controls disabled successfully!")
+	
+	-- Also set modal to false
+	UserInputService.ModalEnabled = false
+end)
+
+-- 📐 MOBILE CONFIGURATION
+local MobileConfig = {
+	-- Touch sensitivity
+	TouchSensitivity = 1.2,
+	DeadZone = 0.1,
+	
+	-- Camera settings
+	CameraDistance = 30,
+	CameraHeight = 25,
+	CameraSmoothing = 0.85,
+}
+
+-- Export config for other scripts
+_G.MobileConfig = MobileConfig
+_G.IsMobile = true
+
+-- 🎯 MOBILE OPTIMIZATIONS
+-- Reduce graphics for better performance
+if workspace:FindFirstChild("Terrain") then
+	workspace.Terrain.WaterTransparency = 0.5
+	workspace.Terrain.WaterWaveSize = 0.1
+	workspace.Terrain.WaterWaveSpeed = 5
+end
+
+-- Graphics settings removed (client scripts can't access settings())
+
+-- 📱 MOBILE INPUT HANDLER
+local MobileInput = {
+	active = false,
+	touchPos = Vector2.new(),
+	direction = Vector2.new(),
+}
+
+-- Export for snake movement
+_G.MobileInput = MobileInput
+
+-- Handle character spawning
+player.CharacterAdded:Connect(function(character)
+	-- Ensure mobile settings persist
+	_G.IsMobile = true
+	
+	-- Re-disable default controls after respawn
+	task.wait(0.5)
+	task.spawn(function()
+		pcall(function()
+			-- Re-disable TouchGui
+			StarterGui:SetCore("TouchGui", false)
+			UserInputService.ModalEnabled = false
+			
+			-- Re-disable player controls
+			local playerScripts = player:WaitForChild("PlayerScripts")
+			local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
+			local controls = playerModule:GetControls()
+			controls:Disable()
+			
+			-- Remove any touch UI that spawned
+			for _, gui in pairs(playerGui:GetChildren()) do
+				if gui.Name == "TouchGui" or gui.Name == "ControlGui" or gui.Name == "TouchControlFrame" then
+					gui:Destroy()
+				end
+			end
+			
+			print("Re-disabled controls after respawn")
+		end)
+	end)
+end)
+
+print("Mobile controls initialized! Touch anywhere to move, use boost button to speed up.")
+
+-- Continuously remove any default touch UI that might appear
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		
+		-- Remove any touch control UI
+		for _, gui in pairs(playerGui:GetDescendants()) do
+			if gui:IsA("GuiObject") then
+				local name = gui.Name:lower()
+				if name:find("touch") or name:find("thumbstick") or name:find("dpad") or name:find("jump") then
+					-- Check if it's not part of our MobileHUD
+					if gui.Parent and gui.Parent.Name ~= "MobileHUD" then
+						gui.Visible = false
+						gui:Destroy()
+					end
+				end
+			end
+		end
+		
+		-- Also check workspace for any touch visualizers
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj:IsA("SurfaceGui") or obj:IsA("BillboardGui") then
+				local name = obj.Name:lower()
+				if name:find("touch") or name:find("control") then
+					obj:Destroy()
+				end
+			end
+		end
+	end
+end)

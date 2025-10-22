@@ -1,4 +1,3 @@
--- THIS GOES INTO ReplicatedStorage As a ModuleScript
 -- AISnake Module: SMOOTH AI MOVEMENT V4.0 - FIXED ERRATIC BEHAVIOR
 -- Completely redesigned AI brain for smooth, intelligent movement
 local RunService = game:GetService("RunService")
@@ -8,6 +7,15 @@ local Players = game:GetService("Players")
 
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
 local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
+
+-- Load the orb pickup module
+local AISnakeOrbPickup
+pcall(function()
+	local module = game.ServerScriptService:FindFirstChild("AISnakeOrbPickup")
+	if module then
+		AISnakeOrbPickup = require(module)
+	end
+end)
 
 local Vector3new = Vector3.new
 local CFramenew = CFrame.new
@@ -32,9 +40,13 @@ AISnake.__index = AISnake
 
 -- === OPTIMIZED SETTINGS ===
 local MAX_AI_SNAKES = 14
-local SPATIAL_GRID_UPDATE_RATE = 0.2
+local SPATIAL_GRID_UPDATE_RATE = 0.5  -- Increased from 0.2 (update less often)
 local BRAIN_UPDATES_PER_FRAME = 1
-local DEBUG_UPDATE_RATE = 1.0
+local DEBUG_UPDATE_RATE = 2.0  -- Increased from 1.0
+local AI_HEIGHT = 5
+local SEGMENT_UPDATE_SKIP = 1  -- Update every segment for no gaps
+local LONG_SNAKE_THRESHOLD = 100  -- Snakes longer than this use more aggressive optimization
+local VERY_LONG_SNAKE_THRESHOLD = 300  -- Even more optimization for very long snakes
 
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
@@ -95,25 +107,31 @@ do
 	end
 end
 
--- === SEGMENT POOLING (unchanged) ===
+-- === SEGMENT POOLING (shared with players) ===
 local SegmentPool = {}
 local PoolSize = 0
+local MAX_POOL_SIZE = 1000 -- Increased pool size
 local SEGMENT_PARENT = Workspace:FindFirstChild("AISegmentContainer") or Instance.new("Folder", Workspace)
 SEGMENT_PARENT.Name = "AISegmentContainer"
 
 local function resetSegment(segment, config)
 	segment.Anchored = true
 	segment.CanCollide = false
+	segment.CanTouch = false  -- Only head needs touch
+	segment.CanQuery = false  -- Segments don't need query
 	segment.Transparency = 0
 	segment.Size = config.SegmentSize
-	segment.Material = config.BodyMaterial
+	segment.Material = config.BodyMaterial or Enum.Material.Neon
 	segment.Shape = Enum.PartType.Ball
 	segment.TopSurface = Enum.SurfaceType.Smooth
 	segment.BottomSurface = Enum.SurfaceType.Smooth
 	segment.Color = config.BodyColors[1]
 	segment.Name = "AISegment"
+	-- Clean up children efficiently
 	for _, child in segment:GetChildren() do
-		child:Destroy()
+		if child:IsA("PointLight") or child:IsA("Attachment") then
+			child:Destroy()
+		end
 	end
 end
 
@@ -132,20 +150,30 @@ local function getSegment(config)
 end
 
 local function returnSegment(segment)
+	if not segment then return end
+	
+	-- Clean up all children first
+	for _, child in ipairs(segment:GetChildren()) do
+		child:Destroy()
+	end
+	
+	-- If pool is full or segment is problematic, just destroy it
+	if PoolSize >= MAX_POOL_SIZE then
+		segment:Destroy()
+		return
+	end
+	
+	-- Reset segment properties
 	segment.Transparency = 1
 	segment.CanCollide = false
+	segment.CanQuery = false
+	segment.CanTouch = false
 	segment.Anchored = true
 	segment.Color = Color3.new()
-
-	local light = segment:FindFirstChild("Glow")
-	if light then light.Enabled = false end
-
-	local outline = segment:FindFirstChild("Outline")
-	if outline then
-		outline.Adornee = nil
-		outline.Parent = nil
-	end
-
+	segment.Material = Enum.Material.Neon
+	segment.Size = Vector3.new(3.5, 3.5, 4)
+	
+	-- Return to pool
 	segment.Parent = SEGMENT_PARENT
 	PoolSize = PoolSize + 1
 	SegmentPool[PoolSize] = segment
@@ -164,36 +192,73 @@ local function getOrCreateSnakeModel(aiId)
 	return model
 end
 
-local AISnakeColorCombos = {
+
+
+
+-- AI Snake color combinations - using patterns similar to SnakeData
+local AISnakeColors = {
 	{
-		HeadColor = Color3.fromRGB(120, 0, 255),
-		BodyColors = {
-			Color3.fromRGB(25, 0, 51), Color3.fromRGB(75, 0, 130),
-			Color3.fromRGB(139, 0, 255), Color3.fromRGB(0, 0, 128), Color3.fromRGB(25, 0, 51),
-		}
-	},
-	{
-		HeadColor = Color3.fromRGB(102, 255, 102),
-		BodyColors = {
-			Color3.fromRGB(102, 255, 102), Color3.fromRGB(153, 255, 153),
-			Color3.fromRGB(204, 255, 204), Color3.fromRGB(153, 255, 153), Color3.fromRGB(102, 255, 102),
-		}
-	},
-	{
-		HeadColor = Color3.fromRGB(255, 102, 102),
-		BodyColors = {
-			Color3.fromRGB(255, 51, 51), Color3.fromRGB(255, 102, 102),
-			Color3.fromRGB(255, 153, 153), Color3.fromRGB(255, 102, 102), Color3.fromRGB(255, 51, 51),
-		}
-	},
-	{
+		-- Yellow (Classic smooth)
 		HeadColor = Color3.fromRGB(255, 255, 102),
 		BodyColors = {
-			Color3.fromRGB(255, 255, 51), Color3.fromRGB(255, 255, 102),
-			Color3.fromRGB(255, 255, 153), Color3.fromRGB(255, 255, 102), Color3.fromRGB(255, 255, 51),
-		}
+			Color3.fromRGB(255, 255, 51), 
+			Color3.fromRGB(255, 255, 102),
+			Color3.fromRGB(255, 255, 153), 
+			Color3.fromRGB(255, 255, 102), 
+			Color3.fromRGB(255, 255, 51),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
 	},
+	{
+		-- Green (Nature)
+		HeadColor = Color3.fromRGB(102, 255, 102),
+		BodyColors = {
+			Color3.fromRGB(60, 180, 80),
+			Color3.fromRGB(80, 200, 100),
+			Color3.fromRGB(100, 220, 120),
+			Color3.fromRGB(80, 200, 100),
+			Color3.fromRGB(60, 180, 80),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
+	},
+	{
+		-- Blue (Ocean)
+		HeadColor = Color3.fromRGB(102, 178, 255),
+		BodyColors = {
+			Color3.fromRGB(51, 153, 255),
+			Color3.fromRGB(102, 178, 255),
+			Color3.fromRGB(153, 204, 255),
+			Color3.fromRGB(102, 178, 255),
+			Color3.fromRGB(51, 153, 255),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
+	},
+	{
+		-- Orange (Sunset)
+		HeadColor = Color3.fromRGB(255, 178, 102),
+		BodyColors = {
+			Color3.fromRGB(255, 153, 51),
+			Color3.fromRGB(255, 178, 102),
+			Color3.fromRGB(255, 204, 153),
+			Color3.fromRGB(255, 178, 102),
+			Color3.fromRGB(255, 153, 51),
+		},
+		HeadMaterial = Enum.Material.Neon,
+		BodyMaterial = Enum.Material.Neon
+	}
 }
+
+local function getRandomAIColor()
+	-- 50% yellow, 50% others
+	if math.random() < 0.5 then
+		return AISnakeColors[1] -- Yellow
+	else
+		return AISnakeColors[math.random(2, #AISnakeColors)]
+	end
+end
 
 local function deepCopy(orig)
 	local orig_type = type(orig)
@@ -218,10 +283,15 @@ local function createVisualHead(config, parentModel)
 	headPart.Color = config.HeadColor
 	headPart.Shape = Enum.PartType.Ball
 	headPart.CanCollide = false
+	headPart.CanTouch = true  -- CRITICAL: Enable touch detection for orb collection
+	headPart.CanQuery = true   -- Enable for raycasts
 	headPart.Anchored = true
 	headPart.TopSurface = Enum.SurfaceType.Smooth
 	headPart.BottomSurface = Enum.SurfaceType.Smooth
 	headPart.Parent = parentModel
+	
+	-- MAKE AI SNAKE HEAD COMPLETELY INVISIBLE (like player snakes)
+	headPart.Transparency = 1
 
 	local headLight = Instance.new("PointLight")
 	headLight.Color = config.HeadColor
@@ -337,31 +407,43 @@ local function createVisualHead(config, parentModel)
 	}
 end
 
-local function createSegment(index, position, color, config, parentModel)
+local function createSegment(index, position, color, config, parentModel, currentLength)
 	local segment = getSegment(config)
 	segment.Name = "AISegment" .. index
-	segment.Size = config.SegmentSize
-	segment.Material = config.BodyMaterial
+	
+	-- Apply growth factor based on current snake length (same as players)
+	local growthFactor = 1
+	if currentLength and currentLength > 200 then
+		growthFactor = 1 + ((currentLength - 200) / 2800) * 1.0  -- Match moderate growth
+	end
+	
+	segment.Size = config.SegmentSize * mathMin(growthFactor, 2.0)  -- Match new max
+	segment.Material = config.BodyMaterial or Enum.Material.Neon
 	segment.Color = color
 	segment.CFrame = CFramenew(position)
 	segment.Parent = parentModel
 	segment.Transparency = 0
+	
+	segment:SetAttribute("IsSnakeSegment", true)
+	segment:SetAttribute("SegmentIndex", index)
+	segment:SetAttribute("IsAISnake", true)
 
-	local light = segment:FindFirstChild("Glow") or Instance.new("PointLight")
-	light.Name = "Glow"
-	light.Color = color
-	light.Range = config.GlowRange
-	light.Brightness = config.GlowIntensity
-	light.Enabled = true
-	light.Parent = segment
-
-	local outline = segment:FindFirstChild("Outline") or Instance.new("SelectionBox")
-	outline.Name = "Outline"
-	outline.Adornee = segment
-	outline.Color3 = Color3.fromRGB(255,255,255)
-	outline.LineThickness = 0.05
-	outline.Transparency = 1
-	outline.Parent = segment
+	-- Add glow to head segments and every 10th segment for performance (same as players)
+	if index <= 30 or index % 10 == 0 then
+		local light = segment:FindFirstChild("Glow") or Instance.new("PointLight")
+		light.Name = "Glow"
+		light.Color = color
+		light.Range = config.GlowRange * 0.7  -- Slightly reduced for AI
+		light.Brightness = config.GlowIntensity * 0.8  -- Slightly reduced for AI
+		light.Enabled = true
+		light.Parent = segment
+	else
+		-- Remove light if it exists on other segments
+		local existingLight = segment:FindFirstChild("Glow")
+		if existingLight then
+			existingLight:Destroy()
+		end
+	end
 
 	return segment
 end
@@ -459,9 +541,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.2,
 		TurnBias = 0.05, -- REDUCED from 0.1
 		BoostChance = 0.08, -- REDUCED from 0.15
-		CombatRadius = 70, -- REDUCED from 80
-		RandomTurnInterval = 3.0, -- INCREASED from 1.5
-		OrbSeekRadius = 50, -- INCREASED from 40
+		CombatRadius = 40, -- MUCH REDUCED
+		RandomTurnInterval = 4.0, -- INCREASED
+		OrbSeekRadius = 120, -- MUCH INCREASED
 		Description = "Aggressive but controlled hunter",
 		Erratic = false,
 		PackHunter = false,
@@ -476,9 +558,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.1, -- INCREASED from 1.0
 		TurnBias = 0.1, -- REDUCED from 0.2
 		BoostChance = 0.05, -- REDUCED from 0.1
-		CombatRadius = 50, -- REDUCED from 60
-		RandomTurnInterval = 4.0, -- INCREASED from 2.0
-		OrbSeekRadius = 100, -- INCREASED from 80
+		CombatRadius = 30, -- MUCH REDUCED  
+		RandomTurnInterval = 5.0, -- INCREASED
+		OrbSeekRadius = 150, -- MUCH INCREASED
 		Description = "Orb-focused with smooth movement",
 		Erratic = false,
 		PackHunter = false,
@@ -493,9 +575,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.15, -- REDUCED from 1.2
 		TurnBias = 0.1, -- REDUCED from 0.3
 		BoostChance = 0.1, -- REDUCED from 0.2
-		CombatRadius = 60,
-		RandomTurnInterval = 2.0, -- INCREASED from 0.6
-		OrbSeekRadius = 40, -- INCREASED from 30
+		CombatRadius = 30,
+		RandomTurnInterval = 4.0,
+		OrbSeekRadius = 150,
 		Description = "Unpredictable but smoother",
 		Erratic = false, -- CHANGED from true
 		PackHunter = false,
@@ -510,9 +592,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.0, -- INCREASED from 0.9
 		TurnBias = 0.1, -- REDUCED from 0.25
 		BoostChance = 0.15, -- REDUCED from 0.3
-		CombatRadius = 80, -- INCREASED from 70
-		RandomTurnInterval = 3.0, -- INCREASED from 1.8
-		OrbSeekRadius = 80, -- INCREASED from 60
+		CombatRadius = 30,
+		RandomTurnInterval = 5.0,
+		OrbSeekRadius = 180,
 		Description = "Cautious but efficient",
 		Erratic = false,
 		PackHunter = false,
@@ -527,9 +609,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.2, -- REDUCED from 1.25
 		TurnBias = 0.02, -- REDUCED from 0.05
 		BoostChance = 0.08, -- REDUCED from 0.12
-		CombatRadius = 80, -- REDUCED from 90
-		RandomTurnInterval = 4.0, -- INCREASED from 3.0
-		OrbSeekRadius = 35, -- INCREASED from 25
+		CombatRadius = 40,
+		RandomTurnInterval = 5.0,
+		OrbSeekRadius = 140,
 		Description = "Strategic and smooth",
 		Erratic = false,
 		PackHunter = true,
@@ -544,9 +626,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.1, -- REDUCED from 1.15
 		TurnBias = 0.01, -- REDUCED from 0.02
 		BoostChance = 0.05, -- REDUCED from 0.08
-		CombatRadius = 70,
-		RandomTurnInterval = 5.0, -- INCREASED from 4.0
-		OrbSeekRadius = 40, -- INCREASED from 30
+		CombatRadius = 35,
+		RandomTurnInterval = 6.0,
+		OrbSeekRadius = 160,
 		Description = "Patient spiral trapper",
 		Erratic = false,
 		PackHunter = false,
@@ -561,9 +643,9 @@ AISnake.PersonalityDefinitions = {
 		SpeedMultiplier = 1.25, -- REDUCED from 1.3
 		TurnBias = 0.0,
 		BoostChance = 0.03, -- REDUCED from 0.05
-		CombatRadius = 90, -- REDUCED from 100
-		RandomTurnInterval = 6.0, -- INCREASED from 5.0
-		OrbSeekRadius = 30, -- INCREASED from 20
+		CombatRadius = 45,
+		RandomTurnInterval = 7.0,
+		OrbSeekRadius = 130,
 		Description = "Patient stalker",
 		Erratic = false,
 		PackHunter = false,
@@ -663,12 +745,12 @@ function AISnake:findNearbyThreats()
 			local lengthDiff = enemyLength - self.CurrentLength
 			local isThreat = false
 
-			-- MORE SELECTIVE threat detection
-			if lengthDiff > 30 or (dist < 15 and lengthDiff > 10) then
+			-- More balanced threat detection
+			if lengthDiff > 20 or (dist < 20 and lengthDiff > 5) then
 				isThreat = true
 			end
 
-			if not isThreat and dist < 25 and lengthDiff > 20 then
+			if not isThreat and dist < 30 and lengthDiff > 15 then
 				local enemyVel = Vector3new(0, 0, 0)
 				if entity.type == "PLAYER_HEAD" then
 					enemyVel = getPlayerVelocity(entity.owner)
@@ -762,24 +844,35 @@ function AISnake:getFleeVector()
 		end
 	end
 
-	-- Default behavior - move toward center
+	-- Default behavior - prefer center when fleeing
 	if not fleeDir then
 		local mapCenter = Vector3new(0, headPos.Y, 0)
 		local toCenter = (mapCenter - headPos)
 		local distFromCenter = toCenter.Magnitude
 
 		if distFromCenter > 150 then
+			-- Too far - flee toward center
 			fleeDir = toCenter.Unit
 		else
-			-- Random direction with slight center bias
+			-- Random direction with MORE center bias
 			local randomAngle = mathRandom() * 2 * mathPi
 			local randomDir = Vector3new(mathSin(randomAngle), 0, mathCos(randomAngle))
-			if distFromCenter > 80 then
+			if distFromCenter > 100 then
+				fleeDir = (randomDir + toCenter.Unit * 0.5).Unit
+			elseif distFromCenter > 60 then
 				fleeDir = (randomDir + toCenter.Unit * 0.3).Unit
 			else
 				fleeDir = randomDir
 			end
 		end
+	end
+	
+	-- ADD center bias to ALL flee directions if far from center
+	local mapCenter = Vector3new(0, headPos.Y, 0)
+	local distFromCenter = (mapCenter - headPos).Magnitude
+	if distFromCenter > 180 and fleeDir then
+		local toCenter = (mapCenter - headPos).Unit
+		fleeDir = (fleeDir + toCenter * 0.4).Unit
 	end
 
 	return fleeDir
@@ -831,23 +924,23 @@ function AISnake:_determineAction()
 	if #threats > 0 then
 		local closestThreat = threats[1]
 
-		-- MUCH more selective fleeing
-		if closestThreat.distance < 12 and closestThreat.lengthDiff > 15 then
+		-- More balanced fleeing decisions
+		if closestThreat.distance < 20 and closestThreat.lengthDiff > 10 then
 			shouldFlee = true
 			fleeReason = "immediate_danger"
-		elseif closestThreat.lengthDiff > 40 and closestThreat.distance < 25 then
+		elseif closestThreat.lengthDiff > 30 and closestThreat.distance < 35 then
 			shouldFlee = true
 			fleeReason = "giant_enemy"
-		elseif #threats >= 4 and closestThreat.distance < 15 then
+		elseif #threats >= 3 and closestThreat.distance < 25 then
 			shouldFlee = true
 			fleeReason = "surrounded"
-		elseif p.Type == "Coward" and closestThreat.lengthDiff > 20 and closestThreat.distance < 30 then
+		elseif p.Type == "Coward" and closestThreat.lengthDiff > 15 and closestThreat.distance < 40 then
 			shouldFlee = true
 			fleeReason = "coward_instinct"
 		end
 
-		-- Aggressive types are braver
-		if shouldFlee and (p.Type == "Aggressor" or p.Type == "Hunter") and closestThreat.lengthDiff < 25 then
+		-- Aggressive types are braver but still cautious
+		if shouldFlee and (p.Type == "Aggressor" or p.Type == "Hunter") and closestThreat.lengthDiff < 15 then
 			shouldFlee = false
 		end
 	end
@@ -863,10 +956,11 @@ function AISnake:_determineAction()
 		return "FLEE", fleeVec
 	end
 
-	-- Priority 3: Target acquisition (LESS aggressive)
+	-- Priority 3: Target acquisition (ONLY if no orbs nearby AND very close)
 	local nearestSnake, nearestDist = self:findNearestSnakeHead()
 
-	if nearestSnake and nearestDist < (p.CombatRadius or 60) then
+	-- Only target snakes if VERY close and no orbs
+	if nearestSnake and nearestDist < 25 and not self.TargetOrb then
 		self.TargetSnake = nearestSnake
 	else
 		self.TargetSnake = nil
@@ -886,49 +980,17 @@ function AISnake:_determineAction()
 		local targetPos = self.TargetSnake.part.Position
 		local decision = "WANDER"
 
-		-- SIMPLIFIED personality decisions
-		if p.Type == "Aggressor" then
-			if lengthAdvantage > 10 then
-				decision = nearestDist < 30 and "CIRCLE" or "HUNT"
-			elseif lengthAdvantage > -10 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
-
-		elseif p.Type == "Hunter" then
-			if lengthAdvantage > 15 then
-				decision = "CIRCLE"
-			elseif lengthAdvantage > 0 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
-
-		elseif p.Type == "Scavenger" then
-			if lengthAdvantage > 40 then
-				decision = "HUNT"
-			else
-				decision = "SCAVENGE_WANDER"
-				self.scavengerWanderTime = (self.scavengerWanderTime or 0) + 0.016
-			end
-
-		elseif p.Type == "Coward" then
-			local braveryBonus = self.killCount * 10
-			if lengthAdvantage + braveryBonus > 30 then
-				decision = "CIRCLE"
-			else
-				decision = "FLEE"
-			end
-
-		else -- Trickster, Trapper, Assassin
-			if lengthAdvantage > 5 then
-				decision = nearestDist < 25 and "CIRCLE" or "HUNT"
-			elseif lengthAdvantage > -15 then
-				decision = "HUNT"
-			else
-				decision = "FLEE"
-			end
+		-- SUPER SIMPLIFIED decisions - focus on orbs!
+		if lengthAdvantage > 20 and nearestDist < 20 then
+			-- Only attack if we're much bigger and very close
+			decision = "HUNT"
+		elseif lengthAdvantage < -10 then
+			-- Flee if they're bigger
+			decision = "FLEE"
+		else
+			-- Otherwise just wander and look for orbs
+			decision = "WANDER"
+			self.TargetSnake = nil
 		end
 
 		-- Execute decisions (SIMPLIFIED)
@@ -937,20 +999,9 @@ function AISnake:_determineAction()
 			steer = (targetPos - headPos).Unit
 
 		elseif decision == "CIRCLE" then
-			state = "CIRCLE"
-			self.circleAngle = self.circleAngle + 2.0 * 0.016 -- SLOWER circling
-			local radius = mathMax(25, nearestDist * 0.9)
-			local circlePoint = targetPos + Vector3new(
-				mathCos(self.circleAngle) * radius,
-				0,
-				mathSin(self.circleAngle) * radius
-			)
-			steer = (circlePoint - headPos).Unit
-
-			-- REDUCED boost chance
-			if mathRandom() < 0.05 then
-				self:startBoost(0.8)
-			end
+			-- Just convert circling to hunting for simplicity
+			state = "HUNT"
+			steer = (targetPos - headPos).Unit
 
 		elseif decision == "FLEE" then
 			state = "FLEE"
@@ -965,19 +1016,36 @@ function AISnake:_determineAction()
 		end
 	end
 
-	-- Priority 5: Orb seeking (IMPROVED)
-	if state == "WANDER" and p.TargetOrbs then
+	-- Priority 5: Orb seeking (TOP PRIORITY!)
+	if p.TargetOrbs then
 		if not self.TargetOrb then
 			local orb, dist = self:findBestOrb()
-			if orb and dist < p.OrbSeekRadius then
+			if orb and dist < p.OrbSeekRadius * 1.5 then  -- Increased range
 				self.TargetOrb = orb
-				self.TargetOrbExpire = now + mathRandom(30, 60) / 10 -- LONGER targeting
+				self.TargetOrbExpire = now + mathRandom(50, 80) / 10 -- Even longer targeting
 				AISnake._orbTargets[self] = orb
 			end
 		end
 		if self.TargetOrb and self.TargetOrb.Parent then
 			state = "SEEK_ORB"
-			steer = (self.TargetOrb.Position - headPos).Unit
+			local toOrb = self.TargetOrb.Position - headPos
+			local orbDist = toOrb.Magnitude
+			
+			-- Smart orb approach - predict where to aim based on distance
+			if orbDist < 15 then
+				-- Very close - aim directly at orb
+				steer = toOrb.Unit
+			elseif orbDist < 30 then
+				-- Medium distance - aim slightly ahead of current direction for smoother approach
+				local predictedPos = self.TargetOrb.Position + self.Direction * 2
+				steer = (predictedPos - headPos).Unit
+			else
+				-- Far away - just head towards it
+				steer = toOrb.Unit
+			end
+			
+			-- Clear any combat targets when seeking orbs
+			self.TargetSnake = nil
 		end
 	end
 
@@ -997,15 +1065,25 @@ function AISnake:_determineAction()
 
 		local baseSteer = Vector3new(mathSin(self.TargetYaw), 0, mathCos(self.TargetYaw))
 
-		-- Center bias (SMOOTHER)
-		if distFromCenter > 120 then
+		-- Center bias (ADJUSTED FOR MORE CENTER PREFERENCE)
+		if distFromCenter > 200 then
+			-- Far from center - strong pull back
 			steer = toCenter.Unit
-		elseif distFromCenter > 80 then 
-			local centerBias = toCenter.Unit * 0.4
+		elseif distFromCenter > 150 then
+			-- Getting far - moderate center bias
+			local centerBias = toCenter.Unit * 0.6
+			steer = (baseSteer + centerBias).Unit
+		elseif distFromCenter > 100 then 
+			-- Medium distance - light center bias
+			local centerBias = toCenter.Unit * 0.3
+			steer = (baseSteer + centerBias).Unit
+		elseif distFromCenter > 60 then
+			-- Good distance - very light center bias
+			local centerBias = toCenter.Unit * 0.15
 			steer = (baseSteer + centerBias).Unit
 		else
-			local centerBias = toCenter.Unit * 0.1
-			steer = (baseSteer + centerBias).Unit
+			-- Close to center - mostly random movement
+			steer = baseSteer
 		end
 	end
 
@@ -1034,16 +1112,19 @@ function AISnake.new(startPosition)
 	local self = setmetatable({}, AISnake)
 	self.Config = deepCopy(SnakeConfig)
 
-	local combo = AISnakeColorCombos[mathRandom(1, #AISnakeColorCombos)]
-	self.Config.HeadColor = combo.HeadColor
-	self.Config.BodyColors = combo.BodyColors
+	-- Get random AI color (50% yellow, 50% others)
+	local colorData = getRandomAIColor()
+	self.Config.HeadColor = colorData.HeadColor
+	self.Config.BodyColors = colorData.BodyColors
+	self.Config.HeadMaterial = colorData.HeadMaterial
+	self.Config.BodyMaterial = colorData.BodyMaterial
 
 	self.Position = startPosition or Vector3new(0, 5, 0)
 	self.Direction = Vector3new(0, 0, 1)
 	self.Speed = self.Config.BaseSpeed or 10
 	self.NormalSpeed = self.Config.BaseSpeed or 10
 	self.BoostSpeed = self.Config.BoostSpeed or 24
-	self.TurnSpeed = self.Config.TurnSpeed or 1.2 -- REDUCED for smoother turning
+	self.TurnSpeed = self.Config.TurnSpeed or 1.8 -- Better turning for orb collection
 	self.RandomTurnInterval = 1.5
 	self.LastTurn = tick()
 	self.TargetYaw = 0
@@ -1121,7 +1202,7 @@ function AISnake.new(startPosition)
 		local pos = self.Position - self.Direction * (i * self.Config.SegmentSpacing)
 		local colorIndex = ((i - 1) % #self.Config.BodyColors) + 1
 		local color = self.Config.BodyColors[colorIndex]
-		local segment = createSegment(i, pos, color, self.Config, self.Model)
+		local segment = createSegment(i, pos, color, self.Config, self.Model, i)
 		self.Segments[i] = segment
 	end
 
@@ -1141,26 +1222,34 @@ function AISnake:grow(amount)
 			local color = self.Config.BodyColors[colorIndex]
 			local lastSegment = self.Segments[#self.Segments]
 			local newPos = lastSegment and lastSegment.Position or self.Position
-			local segment = createSegment(self.CurrentLength, newPos, color, self.Config, self.Model)
+			local segment = createSegment(self.CurrentLength, newPos, color, self.Config, self.Model, self.CurrentLength)
 			self.Segments[self.CurrentLength] = segment
 
+			-- Match CharacterSetup's segment growth exactly
 			segment.Transparency = 1
 			segment.Size = Vector3new(0.1, 0.1, 0.1)
+			
+			-- Apply growth factor for the final size
+			local growthFactor = 1
+			if self.CurrentLength > 200 then
+				growthFactor = 1 + ((self.CurrentLength - 200) / 2800) * 1.0
+			end
+			local finalSize = self.Config.SegmentSize * mathMin(growthFactor, 2.0)
+			
 			task.spawn(function()
 				if not segment or not segment.Parent then return end
 				local growTime = 0.18
 				local t = 0
 				local startSize = Vector3new(0.1, 0.1, 0.1)
-				local endSize = self.Config.SegmentSize
 				while t < growTime do
 					t = t + RunService.Heartbeat:Wait()
 					if not segment or not segment.Parent then return end
 					local alpha = mathMin(t / growTime, 1)
-					segment.Size = startSize:Lerp(endSize, alpha)
+					segment.Size = startSize:Lerp(finalSize, alpha)
 					segment.Transparency = 1 - alpha
 				end
 				if segment and segment.Parent then
-					segment.Size = endSize
+					segment.Size = finalSize
 					segment.Transparency = 0
 				end
 			end)
@@ -1175,17 +1264,29 @@ function AISnake:setConfidenceBuff()
 	self.killCount = self.killCount + 1
 	self.lastKillTime = tick()
 
-	if self.HeadParts and self.HeadParts.headOutline then
-		self.HeadParts.headOutline.Color3 = Color3.fromRGB(255, 255, 0)
-		self.HeadParts.headOutline.LineThickness = 0.3
-		self.HeadParts.headOutline.Transparency = 0.3
-	end
+	-- REMOVED: Debug yellow outline - keep it invisible
+	-- if self.HeadParts and self.HeadParts.headOutline then
+	--	self.HeadParts.headOutline.Color3 = Color3.fromRGB(255, 255, 0)
+	--	self.HeadParts.headOutline.LineThickness = 0.3
+	--	self.HeadParts.headOutline.Transparency = 0.3
+	-- end
 end
 
 function AISnake:Destroy()
 	if not self._active then return end
 	self._active = false
+	
+	-- Immediately mark as destroyed to prevent any updates
+	self._destroyed = true
+	
+	-- Untrack snake from orb pickup system
+	if AISnakeOrbPickup then
+		pcall(function()
+			AISnakeOrbPickup.UntrackSnake(self)
+		end)
+	end
 
+	-- Remove from active snakes list
 	for i = #AISnake._activeSnakes, 1, -1 do
 		if AISnake._activeSnakes[i] == self then
 			table.remove(AISnake._activeSnakes, i)
@@ -1194,50 +1295,87 @@ function AISnake:Destroy()
 	end
 	AISnake._orbTargets[self] = nil
 
+	-- Spawn orbs before destroying segments
 	local orbSpawnData = {}
 	if self.HeadParts and self.HeadParts.head and self.HeadParts.head.Parent then
 		local head = self.HeadParts.head
-		table.insert(orbSpawnData, {position = head.Position, size = 5, color = head.Color})
+		table.insert(orbSpawnData, {position = head.Position, size = 3.5, color = head.Color})
 	end
-	local ORB_SPAWN_DENSITY = 3
+	
+	local ORB_SPAWN_DENSITY = 5
 	for i = 1, #self.Segments do
 		if i % ORB_SPAWN_DENSITY == 1 then
 			local segment = self.Segments[i]
 			if segment and segment.Parent then
-				table.insert(orbSpawnData, {position = segment.Position, size = 2.5, color = segment.Color})
+				table.insert(orbSpawnData, {position = segment.Position, size = 1.8, color = segment.Color})
 			end
 		end
 	end
 
+	-- Spawn orbs asynchronously
 	task.spawn(function()
 		if OrbUtils and OrbUtils.spawnOrb then
 			for i = 1, #orbSpawnData do
 				local data = orbSpawnData[i]
-				OrbUtils.spawnOrb(data.position, data.size, data.color)
+				pcall(function()
+					OrbUtils.spawnOrb(data.position, data.size, data.color)
+				end)
 			end
 		end
 	end)
 
+	-- IMMEDIATE CLEANUP - Destroy all segments right away
 	for i = 1, #self.Segments do
 		local segment = self.Segments[i]
 		if segment then
-			returnSegment(segment)
+			-- Don't use returnSegment for death, just destroy
+			pcall(function()
+				segment:Destroy()
+			end)
 		end
 	end
 	self.Segments = {}
 
-	if self.Model and self.Model.Parent then
-		self.Model:Destroy()
+	-- Destroy head parts
+	if self.HeadParts then
+		for name, part in pairs(self.HeadParts) do
+			if typeof(part) == "Instance" and part.Parent then
+				pcall(function()
+					part:Destroy()
+				end)
+			end
+		end
 	end
+
+	-- Destroy model and all its descendants
+	if self.Model and self.Model.Parent then
+		pcall(function()
+			-- First destroy all descendants to ensure nothing is left
+			for _, descendant in ipairs(self.Model:GetDescendants()) do
+				if descendant:IsA("BasePart") then
+					descendant:Destroy()
+				end
+			end
+			self.Model:Destroy()
+		end)
+	end
+	
+	-- Clear all references
 	self.Model = nil
 	self.HeadParts = nil
 	self.RootPart = nil
+	self.Segments = nil
 end
 
 -- === SMOOTHER MOVEMENT ===
 function AISnake:updateMovement(dt)
+	-- Check if destroyed
+	if self._destroyed then return end
+	
 	if not self._active or not self.HeadParts or not self.HeadParts.head or not self.HeadParts.head.Parent then
-		if self._active then self:Destroy() end
+		if self._active and not self._destroyed then 
+			self:Destroy() 
+		end
 		return
 	end
 	local now = tick()
@@ -1259,23 +1397,31 @@ function AISnake:updateMovement(dt)
 	local desiredYaw = self.CurrentYaw + angle
 	self.TargetYaw = desiredYaw
 
-	-- MUCH smoother turn speed
+	-- BALANCED TURN SPEED - Good for orb collection but still fair
 	local turnSpeed = self.TurnSpeed
-	if state == "AVOID_WALL" then
-		turnSpeed = turnSpeed * 3.0 -- REDUCED from 5.0
-	elseif state == "FLEE" then
-		turnSpeed = turnSpeed * 1.8 -- REDUCED from 2.2
-	elseif state == "CIRCLE" then
-		turnSpeed = turnSpeed * 1.5 -- REDUCED from 2.5
+	
+	-- Special case for orb seeking - need better turning to actually collect them!
+	if state == "SEEK_ORB" and self.TargetOrb then
+		-- Calculate angle to orb
+		local toOrb = (self.TargetOrb.Position - self.Position)
+		local dist = toOrb.Magnitude
+		if dist < 20 then
+			-- Close to orb - allow sharper turns to grab it
+			turnSpeed = turnSpeed * 1.5
+		end
+	elseif state == "AVOID_WALL" then
+		-- Still need to avoid walls effectively
+		turnSpeed = turnSpeed * 1.3
 	end
-
-	-- SMOOTHER boost turning
+	
+	-- When boosting, turn slightly slower like players do
 	if self.Boosting then
-		turnSpeed = turnSpeed * 0.7 -- INCREASED from 0.5
+		turnSpeed = turnSpeed * 0.85
 	end
 
 	local yawDiff = self.TargetYaw - self.CurrentYaw
-	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.8) -- CAPPED at 0.8
+	-- Better turn rate cap for effective orb collection
+	self.CurrentYaw = self.CurrentYaw + yawDiff * mathMin(dt * turnSpeed, 0.5)
 
 	local cf = CFramenew(self.Position) * CFrame.Angles(0, self.CurrentYaw, 0)
 	self.Direction = cf.LookVector
@@ -1286,7 +1432,7 @@ function AISnake:updateMovement(dt)
 		self.IsBoosting = false
 	end
 
-	-- REDUCED boost frequency
+	-- SMART boost usage - less boosting when collecting orbs
 	if not self.Boosting and now > self.BoostCooldown then
 		local shouldBoost = false
 		local boostDuration = 1.2
@@ -1294,8 +1440,23 @@ function AISnake:updateMovement(dt)
 		if state == "AVOID_WALL" then
 			shouldBoost = true
 			boostDuration = 0.8
-		elseif mathRandom() < (p.BoostChance or 0) * 0.5 then -- HALVED boost chance
-			shouldBoost = true
+		elseif state == "SEEK_ORB" then
+			-- RARELY boost when seeking orbs - they need control, not speed
+			if mathRandom() < 0.02 then -- Only 2% chance when orb seeking
+				shouldBoost = true
+				boostDuration = 0.5 -- Very short boost
+			end
+		elseif state == "FLEE" then
+			-- Higher chance to boost when fleeing
+			if mathRandom() < 0.3 then
+				shouldBoost = true
+				boostDuration = 1.5
+			end
+		else
+			-- Normal wandering/hunting boost chance
+			if mathRandom() < (p.BoostChance or 0) * 0.3 then -- Reduced general boost chance
+				shouldBoost = true
+			end
 		end
 
 		if shouldBoost then
@@ -1303,17 +1464,16 @@ function AISnake:updateMovement(dt)
 		end
 	end
 
-	-- Speed calculation
+	-- Speed calculation - NO SLOWING DOWN!
 	local speedMultiplier = p.SpeedMultiplier or 1
 
-	if state == "SEEK_ORB" then
-		speedMultiplier = speedMultiplier * 1.1
-	end
+	-- No speed boost for orb seeking - they need control, not extra speed
 
+	-- Always maintain at least normal speed
 	if self.Boosting then
 		self.Speed = self.BoostSpeed * speedMultiplier
 	else
-		self.Speed = self.NormalSpeed * speedMultiplier
+		self.Speed = mathMax(self.NormalSpeed, self.NormalSpeed * speedMultiplier)
 	end
 
 	self.Position = self.Position + self.Direction * self.Speed * dt
@@ -1322,14 +1482,26 @@ function AISnake:updateMovement(dt)
 	local headOffset = self.Direction * 1.5
 	local newHeadPos = self.Position + headOffset
 	self.HeadParts.head.CFrame = CFramelookAt(newHeadPos, newHeadPos + self.Direction)
+	
+	-- ENSURE AI SNAKE HEAD STAYS INVISIBLE
+	if self.HeadParts.head.Transparency ~= 1 then
+		self.HeadParts.head.Transparency = 1
+	end
+
+	-- Set velocity for collision detection
+	self.HeadParts.head.AssemblyLinearVelocity = self.Direction * self.Speed
 
 	-- History management
 	local lastHistoryPoint = self:getFromHistory(1)
 	local dist = (self.Position - lastHistoryPoint.position).Magnitude
 
-	if dist > 0.01 then
-		if dist > self.SegmentSpacing * 0.75 then
-			local numInterpolations = math.floor(dist / (self.SegmentSpacing * 0.5))
+	-- EXACT same interpolation as CharacterSetup
+	if dist > 0.02 then
+		-- Balanced interpolations (from CharacterSetup)
+		if dist > self.Config.SegmentSpacing * 0.7 then
+			local isBoosting = self.Speed > 16  -- AI boost check
+			local maxInterp = isBoosting and 6 or 3
+			local numInterpolations = mathMin(mathFloor(dist / (self.Config.SegmentSpacing * 0.35)), maxInterp)
 			for i = 1, numInterpolations do
 				local fraction = i / (numInterpolations + 1)
 				local interpPos = lastHistoryPoint.position:Lerp(self.Position, fraction)
@@ -1340,29 +1512,100 @@ function AISnake:updateMovement(dt)
 		self:addToHistory({ position = self.Position, lookVector = self.Direction })
 	end
 
-	-- Segment following
+	-- Segment following (OPTIMIZED)
 	local followSpeed = self.IsBoosting and self.BoostFollowSpeed or self.FollowSpeed
-
-	for i = 1, self.CurrentLength do
+	
+	-- Initialize frame counter if needed
+	self._segmentUpdateFrame = (self._segmentUpdateFrame or 0) + 1
+	
+	-- Adaptive segment update skip based on snake length (less aggressive)
+	local segmentSkip = SEGMENT_UPDATE_SKIP
+	if self.CurrentLength > VERY_LONG_SNAKE_THRESHOLD then
+		segmentSkip = 2  -- Only skip every other segment even for very long snakes
+	elseif self.CurrentLength > LONG_SNAKE_THRESHOLD then
+		segmentSkip = 1  -- No skipping for medium-long snakes
+	end
+	
+	-- Update different segments on different frames to spread the load
+	local updateOffset = self._segmentUpdateFrame % segmentSkip
+	
+	-- Update segments with adaptive skipping
+	for i = 1 + updateOffset, self.CurrentLength, segmentSkip do
 		local segment = self.Segments[i]
 		if segment and segment.Parent then
 			local delay = mathFloor(i * 1.2)
 			local targetData = self:getFromHistory(delay)
 			if targetData then
-				local segmentPos = targetData.position - targetData.lookVector * (self.SegmentSpacing * 0.1)
+				-- Use EXACT same spacing as CharacterSetup
+				local spacingMultiplier = 0.15  -- Base spacing from CharacterSetup
+				if self.CurrentLength > 1500 then
+					spacingMultiplier = 0.2  -- More spacing to show pattern
+				end
+				local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * spacingMultiplier)
 				local currentSegmentPos = segment.Position
+				
+				-- Anti-gap check (from CharacterSetup)
+				if i > 1 then
+					local prevSegment = self.Segments[i - 1]
+					if prevSegment and prevSegment.Parent then
+						local gap = (currentSegmentPos - prevSegment.Position).Magnitude
+						if gap > self.Config.SegmentSpacing * 1.5 then
+							-- Too far, pull it closer
+							local dir = (prevSegment.Position - currentSegmentPos).Unit
+							segmentPos = prevSegment.Position - dir * self.Config.SegmentSpacing
+						end
+					end
+				end
+				
 				local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
 				segment.CFrame = CFramenew(newPos)
 			end
 		end
 	end
+	
+	-- For very long snakes, use even more aggressive optimization
+	if self.CurrentLength > VERY_LONG_SNAKE_THRESHOLD then
+		-- Only update tail segments every 10 frames
+		if self._segmentUpdateFrame % 10 == 0 then
+			local tailStart = mathFloor(self.CurrentLength * 0.7)  -- Last 30% is tail
+			for i = tailStart, self.CurrentLength, 10 do
+				local segment = self.Segments[i]
+				if segment and segment.Parent then
+					local delay = mathFloor(i * 1.2)
+					local targetData = self:getFromHistory(delay)
+					if targetData then
+						-- Same spacing as main segments
+						local spacingMultiplier = 0.15
+						if self.CurrentLength > 1500 then
+							spacingMultiplier = 0.2
+						end
+						local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * spacingMultiplier)
+						
+						-- Anti-gap for tail too
+						if i > 300 then
+							local prevSegment = self.Segments[i - 1]
+							if prevSegment and prevSegment.Parent then
+								local gap = (segment.Position - prevSegment.Position).Magnitude
+								if gap > self.Config.SegmentSpacing * 1.5 then
+									local dir = (prevSegment.Position - segment.Position).Unit
+									segmentPos = prevSegment.Position - dir * self.Config.SegmentSpacing
+								end
+							end
+						end
+						
+						segment.Position = segmentPos  -- Direct position set for tail
+					end
+				end
+			end
+		end
+	end
 
-	-- Collision detection (unchanged)
+	-- Collision detection (handled by SnakeCollisionHandler)
 	local myHead = self.HeadParts and self.HeadParts.head
 	if not myHead or not myHead.Parent then return end
 
 	self._collisionCheckFrame = (self._collisionCheckFrame or 0) + 1
-	if self._collisionCheckFrame % 3 ~= 0 then return end
+	if self._collisionCheckFrame % 4 ~= 0 then return end  -- Check less often
 
 	local searchRadius = 3.5
 	local nearbyEntities = SpatialGrid.QueryRadius(myHead.Position, searchRadius)
@@ -1407,8 +1650,8 @@ function AISnake:updateMovement(dt)
 		end
 	end
 
-	-- Debug display (simplified)
-	if self.HeadParts and self.HeadParts.debugLabel then
+	-- Debug display (DISABLED FOR PERFORMANCE)
+	if false and self.HeadParts and self.HeadParts.debugLabel then
 		local label = self.HeadParts.debugLabel
 
 		if not self._lastDebugUpdate or now - self._lastDebugUpdate > DEBUG_UPDATE_RATE then
@@ -1532,5 +1775,7 @@ AISnake._brainConnection = RunService.Stepped:Connect(function(time, deltaTime)
 	end
 end)
 
-return AISnake
 
+
+
+return AISnake
