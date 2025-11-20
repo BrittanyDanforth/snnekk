@@ -9,12 +9,16 @@ local GuiService = game:GetService("GuiService")
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 
 local CharacterPreview
+local previewWarningShown = false
 do
 	local previewModule = ReplicatedStorage:FindFirstChild("CharacterPreview")
 	if previewModule then
 		CharacterPreview = require(previewModule)
 	else
-		warn("[Leaderboard] CharacterPreview module not found – continuing without previews")
+		if not previewWarningShown then
+			previewWarningShown = true
+			warn("[Leaderboard] CharacterPreview module not found – continuing without previews")
+		end
 		CharacterPreview = {
 			update = function() end,
 			destroy = function() end,
