@@ -8,7 +8,19 @@ local GuiService = game:GetService("GuiService")
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 
-local CharacterPreview = require(ReplicatedStorage:WaitForChild("CharacterPreview"))
+local CharacterPreview
+do
+	local previewModule = ReplicatedStorage:FindFirstChild("CharacterPreview")
+	if previewModule then
+		CharacterPreview = require(previewModule)
+	else
+		warn("[Leaderboard] CharacterPreview module not found – continuing without previews")
+		CharacterPreview = {
+			update = function() end,
+			destroy = function() end,
+		}
+	end
+end
 
 local localPlayer = Players.LocalPlayer
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
