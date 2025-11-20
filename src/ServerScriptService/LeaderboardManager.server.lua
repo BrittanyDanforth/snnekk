@@ -16,7 +16,7 @@ while true do
 
     local leaderboardData = {}
 
-    for _, snakeModel in SNAKES_FOLDER:GetChildren() do
+	for _, snakeModel in SNAKES_FOLDER:GetChildren() do
         if not snakeModel:IsA("Model") or not snakeModel:FindFirstChild("Head") then
             continue
         end
@@ -24,7 +24,9 @@ while true do
         local snakeName = "AI Snake"
         local isPlayer = false
 
-        local player = Players:GetPlayerByUserId(tonumber(snakeModel.Name))
+		local userIdAttr = snakeModel:GetAttribute("PlayerUserId")
+		local numericId = tonumber(userIdAttr) or tonumber(snakeModel.Name)
+		local player = numericId and Players:GetPlayerByUserId(numericId) or nil
         if player then
             snakeName = player.DisplayName
             isPlayer = true
@@ -38,7 +40,7 @@ while true do
             Name = snakeName,
             Score = snakeLength,
             IsPlayer = isPlayer,
-            PlayerId = player and player.UserId or -1
+			PlayerId = player and player.UserId or (numericId or -1)
         })
     end
 
