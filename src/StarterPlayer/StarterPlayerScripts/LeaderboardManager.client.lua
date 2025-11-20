@@ -28,7 +28,7 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 local LeaderboardUpdated = ReplicatedStorage:WaitForChild("LeaderboardUpdated")
 
 local UPDATE_INTERVAL = 1.5
-local MAX_VISIBLE_PLAYERS = 10
+local MAX_VISIBLE_PLAYERS = 5
 local lastUpdateTime = 0
 local isUpdating = false
 
@@ -345,6 +345,9 @@ end
 headerButton.MouseButton1Click:Connect(toggleExpansion)
 
 local function updateLeaderboard(entries)
+	if not entries or #entries == 0 then
+		return
+	end
     if isUpdating then return end
     local currentTime = tick()
     if currentTime - lastUpdateTime < UPDATE_INTERVAL then
@@ -435,13 +438,6 @@ end)
 leaderboardGui.AncestryChanged:Connect(function()
     if not leaderboardGui.Parent then
         CharacterPreview.destroy()
-    end
-end)
-
-local updateConnection
-updateConnection = RunService.Heartbeat:Connect(function()
-    if leaderboardGui.Enabled then
-        updateLeaderboard()
     end
 end)
 
