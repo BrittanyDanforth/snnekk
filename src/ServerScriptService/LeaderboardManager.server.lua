@@ -44,6 +44,20 @@ while true do
         })
     end
 
+	-- Include player snakes using leaderstats length so local players always appear
+	for _, player in ipairs(Players:GetPlayers()) do
+		local leaderstats = player:FindFirstChild("leaderstats")
+		local lengthValue = leaderstats and leaderstats:FindFirstChild("Length")
+		local score = lengthValue and lengthValue.Value or 0
+
+		table.insert(leaderboardData, {
+			Name = player.DisplayName,
+			Score = score,
+			IsPlayer = true,
+			PlayerId = player.UserId
+		})
+	end
+
     table.sort(leaderboardData, function(a, b)
         return a.Score > b.Score
     end)
