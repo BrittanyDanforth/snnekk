@@ -325,6 +325,13 @@ local isExpanded = not isMobile
 
 local lastPlayerData = { skin = nil }
 
+local function getEntryKey(data)
+	if data.IsPlayer and data.PlayerId and data.PlayerId ~= -1 then
+		return ("player_%s"):format(data.PlayerId)
+	end
+	return ("ai_%s"):format(data.Name or "AI")
+end
+
 local function toggleExpansion()
     if container:GetAttribute("Animating") then return end
     container:SetAttribute("Animating", true)
@@ -379,11 +386,15 @@ local function updateLeaderboard(entries)
         lastPlayerData.skin = localPlayerSkin
     end
 
-    local activePlayers = {}
+	local activePlayers = {}
     for rank, data in ipairs(topPlayers) do
         if rank > MAX_VISIBLE_PLAYERS then break end
-        local entry = playerEntries[data.PlayerId] or template:Clone()
-        playerEntries[data.PlayerId] = entry
+		local entryKey = getEntryKey(data)
+		local entry = playerEntries[entryKey]
+		if not entry then
+			entry = template:Clone()
+			playerEntries[entryKey] = entry
+		end
         entry.Parent = playerList
         entry.Visible = true
 
@@ -406,13 +417,13 @@ local function updateLeaderboard(entries)
 
         entry.BackgroundColor3 = (data.PlayerId == localPlayer.UserId) and Color3.fromRGB(50, 50, 70) or Color3.fromRGB(30, 30, 40)
 
-        activePlayers[data.PlayerId] = true
+		activePlayers[entryKey] = true
     end
 
-    for playerId, entry in pairs(playerEntries) do
-        if not activePlayers[playerId] then
+	for entryKey, entry in pairs(playerEntries) do
+		if not activePlayers[entryKey] then
             entry:Destroy()
-            playerEntries[playerId] = nil
+			playerEntries[entryKey] = nil
         end
     end
 
