@@ -1722,20 +1722,22 @@ function AISnake.new(startPosition, preservedPersonalityType)
         self._lastBrainUpdate = tick()
         self:updateBrain()
 
-        for i, segment in ipairs(self.Segments) do
-            if segment and segment.Parent then
-                task.spawn(function()
-                    local fadeSteps = 10
-                    for step = 1, fadeSteps do
-                        if segment and segment.Parent then
-                            segment.Transparency = 1 - (step / fadeSteps)
+        if typeof(self.Segments) == "table" then
+            for _, segment in pairs(self.Segments) do
+                if segment and segment.Parent then
+                    task.spawn(function()
+                        local fadeSteps = 10
+                        for step = 1, fadeSteps do
+                            if segment and segment.Parent then
+                                segment.Transparency = 1 - (step / fadeSteps)
+                            end
+                            task.wait(0.02)
                         end
-                        task.wait(0.02)
-                    end
-                    if segment and segment.Parent then
-                        segment.Transparency = 0
-                    end
-                end)
+                        if segment and segment.Parent then
+                            segment.Transparency = 0
+                        end
+                    end)
+                end
             end
         end
     end)
