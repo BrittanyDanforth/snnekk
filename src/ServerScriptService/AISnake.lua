@@ -1691,7 +1691,9 @@ function AISnake.new(startPosition, preservedPersonalityType)
             local moveDistance = self.SegmentSpacing * 0.1
             local newPos = self.Position + self.Direction * moveDistance
             self.Position = newPos
-            self.RootPart.Position = newPos
+            if self.RootPart and self.RootPart.Parent then
+                self.RootPart.Position = newPos
+            end
 
             if self.HeadParts and self.HeadParts.head then
                 local headOffset = self.Direction * 1.5
