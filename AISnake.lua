@@ -1753,7 +1753,7 @@ function AISnake:_determineAction()
 
 		if self.TargetOrb and self.TargetOrb.Parent then
 			state = "SEEK_ORB"
-			local toOrb = self.TargetOrb.Position - headPos
+			local toOrb = Vector3new(self.TargetOrb.Position.X, headPos.Y, self.TargetOrb.Position.Z) - headPos
 			local orbDist = toOrb.Magnitude
 
 			if orbDist < 50 then
@@ -2572,15 +2572,19 @@ function AISnake:updateMovement(dt)
 	local currentDir = motion.currentDirection or self.Direction
 	local desiredDir = sanitizeVector(steer, self.Direction).Unit
 	
+	-- Force Y=0 for planar movement
+	currentDir = Vector3new(currentDir.X, 0, currentDir.Z).Unit
+	desiredDir = Vector3new(desiredDir.X, 0, desiredDir.Z).Unit
+	
 	local allowHardTurn = motion.allowHardTurnUntil and motion.allowHardTurnUntil > now
 	desiredDir = limitTurnAngle(currentDir, desiredDir, allowHardTurn)
 
 	-- Lerp logic
 	local newDirection = currentDir:Lerp(desiredDir, turnRate)
 	if newDirection.Magnitude > 0.001 then
-		motion.currentDirection = newDirection.Unit
+		motion.currentDirection = Vector3new(newDirection.X, 0, newDirection.Z).Unit
 	else
-		motion.currentDirection = self.Direction
+		motion.currentDirection = Vector3new(self.Direction.X, 0, self.Direction.Z).Unit
 	end
 	
 	self.Direction = motion.currentDirection
@@ -2739,9 +2743,9 @@ function AISnake:updateMovement(dt)
 			self.State = "WANDER"
 		end
 
-		self.Position = Vector3new(clampedX, newPosition.Y, clampedZ)
+		self.Position = Vector3new(clampedX, AI_HEIGHT, clampedZ)
 	else
-		self.Position = newPosition
+		self.Position = Vector3new(newPosition.X, AI_HEIGHT, newPosition.Z)
 	end
 
 	local actualDelta = (self.Position - previousPosition).Magnitude
@@ -2780,7 +2784,10 @@ function AISnake:updateMovement(dt)
 
 	for _, obj in pairs(Workspace:GetChildren()) do
 		if obj:IsA("BasePart") and (obj.Name == "Orb" or obj.Name == "UpgradeOrb" or obj.Name == "DeathOrb") then
-			table.insert(orbsToCheck, obj)
+			-- Filter out orbs that are too high or low
+			if mathAbs(obj.Position.Y - AI_HEIGHT) < 15 then
+				table.insert(orbsToCheck, obj)
+			end
 		end
 	end
 
@@ -2788,7 +2795,9 @@ function AISnake:updateMovement(dt)
 	if orbFolder then
 		for _, orb in ipairs(orbFolder:GetChildren()) do
 			if orb:IsA("BasePart") then
-				table.insert(orbsToCheck, orb)
+				if mathAbs(orb.Position.Y - AI_HEIGHT) < 15 then
+					table.insert(orbsToCheck, orb)
+				end
 			end
 		end
 	end
