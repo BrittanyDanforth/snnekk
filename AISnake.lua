@@ -2180,8 +2180,37 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self._stuckCheckTime = 0
 	self._lastStuckCheck = tick()
 
-	self._spawnProtection = tick() + 3
+	local spawnDuration = 5 -- Increased to 5 seconds
+	self._spawnProtection = tick() + spawnDuration
 	self._spawnStabilizing = tick() + 0.5
+
+	-- Set attribute for collision handler (using os.clock() for consistency)
+	if self.HeadParts and self.HeadParts.head then
+		self.HeadParts.head:SetAttribute("SpawnProtectionExpiry", os.clock() + spawnDuration)
+		
+		-- Visual feedback for spawn protection (Ghost Mode)
+		task.spawn(function()
+			local head = self.HeadParts.head
+			if not head then return end
+			
+			-- Make semi-transparent
+			head.Transparency = 0.5
+			
+			-- Wait for protection to expire
+			task.wait(spawnDuration)
+			
+			if self._active and not self._destroyed and head and head.Parent then
+				head.Transparency = 0
+				-- Ensure segments are also reset if we add segment transparency later
+				if self.Segments then
+					for _, seg in pairs(self.Segments) do
+						if seg and seg.Parent then seg.Transparency = 0 end
+					end
+				end
+			end
+		end)
+	end
+
 	self.ProgressWatch = {
 		lastPos = self.Position,
 		stagnation = 0,

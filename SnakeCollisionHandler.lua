@@ -166,6 +166,15 @@ local function isPlayerInvincible(player)
 	return false
 end
 
+local function isAIInvincible(aiHead)
+	if not aiHead then return false end
+	local expiry = aiHead:GetAttribute("SpawnProtectionExpiry")
+	if expiry and os.clock() < expiry then
+		return true
+	end
+	return false
+end
+
 local function clearPlayerInvincibility(player)
 	invinciblePlayers[player] = nil
 end
@@ -1569,6 +1578,12 @@ trackConnection(RunService.Stepped:Connect(function(_, deltaTime)
 						if snake.HeadParts and snake.HeadParts.head and deadAISnakes[snake.HeadParts.head] then
 							continue
 						end
+
+						-- INVINCIBILITY CHECK: If AI is spawn protected, it's a ghost
+						if snake.HeadParts and isAIInvincible(snake.HeadParts.head) then
+							continue
+						end
+
 						local segmentData = getAISnakeSegments(snake)
 						if segmentData and segmentData.segments then
 							if segmentData.bounds and not checkBoundsOverlap(
@@ -1710,6 +1725,11 @@ trackConnection(RunService.Stepped:Connect(function(_, deltaTime)
 			local aiPos = aiHead.Position
 
 			if deadAISnakes[aiHead] then
+				continue
+			end
+
+			-- INVINCIBILITY CHECK: AI attacker is invincible
+			if isAIInvincible(aiHead) then
 				continue
 			end
 
@@ -1867,9 +1887,14 @@ trackConnection(RunService.Stepped:Connect(function(_, deltaTime)
 	for i = 1, #aiHeads - 1 do
 		local headA = aiHeads[i]
 		if headA and headA.Parent then
+			local invA = isAIInvincible(headA)
+			
 			for j = i + 1, #aiHeads do
 				local headB = aiHeads[j]
 				if headB and headB.Parent then
+					local invB = isAIInvincible(headB)
+					if invA or invB then continue end
+					
 					local dist = (headA.Position - headB.Position).Magnitude
 					if dist < HEAD_COLLISION_DISTANCE + NETWORK_COMPENSATION then
 						local velA = headA.AssemblyLinearVelocity or headA.Velocity
@@ -1900,12 +1925,18 @@ trackConnection(RunService.Stepped:Connect(function(_, deltaTime)
 	-- AI vs other AI bodies
 	for _, aiHead in ipairs(aiHeads) do
 		if aiHead and aiHead.Parent and AISnakeModule._activeSnakes then
+			-- INVINCIBILITY CHECK: Attacker
+			if isAIInvincible(aiHead) then continue end
+
 			for _, snake in AISnakeModule._activeSnakes do
 				if snake and snake._active and snake.HeadParts and snake.HeadParts.head == aiHead then
 					continue
 				end
 
 				if snake and snake._active then
+					-- INVINCIBILITY CHECK: Victim
+					if snake.HeadParts and isAIInvincible(snake.HeadParts.head) then continue end
+
 					local segmentData = getAISnakeSegments(snake)
 					if segmentData and segmentData.segments then
 						if segmentData.bounds and not checkBoundsOverlap(
