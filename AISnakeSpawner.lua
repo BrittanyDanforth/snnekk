@@ -97,6 +97,10 @@ local function spawnSnake(slotIndex)
 		end
 		
 		local snake = AISnake.new(position, slot.lastPersonality, slot.lastSkillTier)
+		if not snake then
+			-- If new() returns nil (limit reached), we shouldn't crash
+			error("AISnake.new returned nil (limit reached?)")
+		end
 		
 		-- FORCE UPDATE: If the snake model spawns at 0,0,0, move it
 		if snake and snake.Model and snake.Model:GetPivot().Position.Magnitude < 1 then

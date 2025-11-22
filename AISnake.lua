@@ -212,6 +212,24 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	if #AISnake._activeSnakes >= MAX_AI_SNAKES then return nil end
 	local self = setmetatable({}, AISnake)
 
+	-- Config
+	local colorData = AISnakeColors[mathRandom(1, #AISnakeColors)]
+	self.Config = deepCopy(SnakeConfig)
+	self.Config.HeadColor = colorData.HeadColor
+	self.Config.BodyColors = colorData.BodyColors
+	
+	-- Length & Growth (INITIALIZE THESE FIRST)
+	self.CurrentLength = self.Config.InitialLength or 10
+	self.TargetLength = self.CurrentLength
+	self.growthFactor = 1
+	
+	-- Arrays (INITIALIZE BEFORE BODY CREATION)
+	self.Segments = {}
+	self.Beams = {}
+	self.Attachments = {}
+	self.Glows = {}
+	self.visibleSegmentCount = 0
+
 	-- Personality & Skill
 	local pType = preservedPersonalityType or AISnake.PersonalityTypes[mathRandom(1, #AISnake.PersonalityTypes)]
 	self.Personality = deepCopy(AISnake.PersonalityDefinitions[pType])
@@ -223,14 +241,8 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 		end
 	end
 	self.SkillTier = self.SkillProfile.label
-	self.SkillReactionLag = self.SkillProfile.reactionLag
+	self.SkillReactionLag = self.SkillProfile.reactionLag or 0.1 -- FALLBACK TO PREVENT NIL ARITHMETIC
 
-	-- Config
-	local colorData = AISnakeColors[mathRandom(1, #AISnakeColors)]
-	self.Config = deepCopy(SnakeConfig)
-	self.Config.HeadColor = colorData.HeadColor
-	self.Config.BodyColors = colorData.BodyColors
-	
 	-- State
 	self.Position = startPosition or Vector3new(0, AI_HEIGHT, 0)
 	self.Direction = Vector3new(0, 0, 1)
@@ -240,11 +252,6 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	self.State = "WANDER"
 	self._active = true
 	self._destroyed = false
-	
-	-- Length & Growth
-	self.CurrentLength = self.Config.InitialLength or 10
-	self.TargetLength = self.CurrentLength
-	self.growthFactor = 1
 	
 	-- Movement History (Distance Based - AAA Feature)
 	self.pathPoints = {} 
@@ -262,12 +269,6 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	
 	self.Model:SetAttribute("AIName", self.DisplayName)
 	self.Model:SetAttribute("IsAI", true)
-	
-	self.Segments = {}
-	self.Beams = {}
-	self.Attachments = {}
-	self.Glows = {}
-	self.visibleSegmentCount = 0
 	
 	self:createUnifiedBody()
 	
@@ -678,6 +679,7 @@ end
 
 function AISnake:grow(amount)
 	self.TargetLength = mathMin(self.TargetLength + (amount or 1), MAX_SEGMENTS)
+	self.Model:SetAttribute("Length", self.CurrentLength) -- Ensure length attribute is updated for leaderboard
 end
 
 -- === LOOP ===
@@ -699,7 +701,41 @@ AISnake._movementConnection = RunService.Heartbeat:Connect(function(dt)
 end)
 
 AISnake._spatialConnection = RunService.Stepped:Connect(function(t, dt)
-	-- Spatial Grid logic for brain (Optimized out for brevity, relying on existing UpdateBrain calls)
+	-- Spatial Grid logic for brain
+	if not AISnake._activeSnakes or #AISnake._activeSnakes == 0 then return end
+	
+	SpatialGrid.Clear()
+	
+	for _, snake in ipairs(AISnake._activeSnakes) do
+		if snake._active and snake.HeadParts and snake.HeadParts.head then
+			SpatialGrid.Insert(snake.HeadParts.head, snake, "AI_HEAD")
+			
+			-- Only insert a few segments for efficiency
+			if snake.Segments then
+				for i = 1, snake.visibleSegmentCount, 4 do
+					local seg = snake.Segments[i]
+					if seg then
+						SpatialGrid.Insert(seg, snake, "AI_SEGMENT")
+					end
+				end
+			end
+		end
+	end
+	
+	-- Insert Players
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.Character then
+			local head = player.Character:FindFirstChild("HumanoidRootPart")
+			if head then SpatialGrid.Insert(head, player, "PLAYER_HEAD") end
+			
+			-- Simplified player segment insertion
+			for _, part in ipairs(player.Character:GetChildren()) do
+				if part:IsA("BasePart") and part.Name:match("Segment") then
+					SpatialGrid.Insert(part, player, "PLAYER_SEGMENT")
+				end
+			end
+		end
+	end
 end)
 
 return AISnake
