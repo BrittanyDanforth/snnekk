@@ -117,6 +117,10 @@ local function limitTurnAngle(currentDir, desiredDir, allowHardTurn)
 	return Vector3new(mathSin(limitedAngle), 0, mathCos(limitedAngle))
 end
 
+local function perpendicular(vector)
+	return Vector3new(-vector.Z, 0, vector.X)
+end
+
 -- Naming
 local LETTERS = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
 local usedAINames = {}
@@ -323,6 +327,31 @@ function AISnake:findBestOrb()
 	return bestOrb, bestDist
 end
 
+function AISnake:findNearestSnakeHead()
+	local myHead = self.HeadParts and self.HeadParts.head
+	if not myHead then return nil, math.huge end
+	local myPos = myHead.Position
+	local minDist = math.huge
+	local nearest = nil
+
+	local nearbyEntities = SpatialGrid.QueryRadius(myPos, self.Personality.CombatRadius or 60)
+
+	for _, entity in ipairs(nearbyEntities) do
+		if entity.owner ~= self and (entity.type == "AI_HEAD" or entity.type == "PLAYER_HEAD") then
+			local dist = (entity.part.Position - myPos).Magnitude
+			if dist < minDist then
+				minDist = dist
+				if entity.type == "AI_HEAD" then
+					nearest = {part = entity.part, isPlayer = false, snake = entity.owner}
+				else
+					nearest = {part = entity.part, isPlayer = true, player = entity.owner}
+				end
+			end
+		end
+	end
+	return nearest, minDist
+end
+
 function AISnake:findNearbyThreats()
 	local headPos = self.Position
 	local threats = {}
@@ -331,8 +360,20 @@ function AISnake:findNearbyThreats()
 	for _, e in ipairs(nearby) do
 		if (e.type == "AI_HEAD" or e.type == "PLAYER_HEAD") and e.owner ~= self then
 			local dist = (e.part.Position - headPos).Magnitude
-			local threatLevel = (e.owner.CurrentLength or 100) - self.CurrentLength
-			table.insert(threats, {part=e.part, distance=dist, lengthDiff=threatLevel})
+			local threatLevel = 0
+			
+			-- Handle different owner types safely
+			local enemyLength = 0
+			if e.type == "AI_HEAD" and e.owner.CurrentLength then
+				enemyLength = e.owner.CurrentLength
+			elseif e.type == "PLAYER_HEAD" then
+				local leaderstats = e.owner:FindFirstChild("leaderstats")
+				local lengthStat = leaderstats and leaderstats:FindFirstChild("Length")
+				enemyLength = lengthStat and lengthStat.Value or 10
+			end
+			
+			local lengthDiff = enemyLength - self.CurrentLength
+			table.insert(threats, {part=e.part, distance=dist, lengthDiff=lengthDiff})
 		end
 	end
 	return threats
@@ -366,6 +407,144 @@ function AISnake:getSmartFleeDirection(threats)
 		fleeDir = fleeDir + away
 	end
 	return fleeDir.Unit
+end
+
+function AISnake:_ensureMotionState()
+	if self.MotionState then
+		return self.MotionState
+	end
+
+	local initialDir = sanitizeVector(self.Direction, Vector3new(0, 0, 1)).Unit
+	self.MotionState = {
+		currentDirection = initialDir,
+		smoothedSteer = initialDir,
+		desiredDirection = initialDir,
+		lastPosition = self.Position,
+		stuckTime = 0,
+	}
+	return self.MotionState
+end
+
+function AISnake:_setSteerTarget(steer)
+	local fallback = self.Direction or Vector3new(0, 0, 1)
+	local sanitized = sanitizeVector(steer, fallback)
+	if sanitized.Magnitude > 0 then
+		sanitized = sanitized.Unit
+	else
+		sanitized = fallback
+	end
+
+	local motion = self:_ensureMotionState()
+	motion.desiredDirection = sanitized
+	self.SteerDirection = sanitized
+end
+
+function AISnake:_updateStuckTimer(dt, moveDelta)
+	local motion = self:_ensureMotionState()
+	local minDelta = mathMax(0.35, self.Speed * dt * 0.35)
+	if moveDelta < minDelta then
+		motion.stuckTime = (motion.stuckTime or 0) + dt
+		if motion.stuckTime > 0.55 then
+			self:forceCourseCorrection("stuck")
+			motion.stuckTime = 0
+		end
+	else
+		motion.stuckTime = mathMax(0, (motion.stuckTime or 0) - dt * 0.5)
+	end
+end
+
+function AISnake:forceCourseCorrection(reason)
+	if self._destroyed then return end
+
+	local turnSign = mathRandom(0, 1) == 0 and -1 or 1
+	local turnDegrees = randomFloat(25, 45) * turnSign
+	local turnRadians = mathRad(turnDegrees)
+	local motion = self:_ensureMotionState()
+	local currentDir = motion.currentDirection or self.Direction
+	local cosAngle = mathCos(turnRadians)
+	local sinAngle = mathSin(turnRadians)
+	local rotatedDir = Vector3new(
+		currentDir.X * cosAngle - currentDir.Z * sinAngle,
+		0,
+		currentDir.X * sinAngle + currentDir.Z * cosAngle
+	).Unit
+	self.Direction = rotatedDir
+	self.TargetYaw = mathAtan2(rotatedDir.X, rotatedDir.Z)
+	self.CurrentYaw = self.TargetYaw
+	self.TargetOrb = nil
+	self.TargetSnake = nil
+	self.Avoiding = false
+	motion.currentDirection = self.Direction
+	motion.smoothedSteer = self.Direction
+	motion.desiredDirection = self.Direction
+	motion.allowHardTurnUntil = tick() + 0.25
+
+	if self.ProgressWatch then
+		self.ProgressWatch.stagnation = 0
+		self.ProgressWatch.lastPos = self.Position
+		self.ProgressWatch.oscillationTimer = 0
+		self.ProgressWatch.oscillationAnchor = self.Position
+	end
+
+	if not self.Boosting then
+		self:startBoost(randomFloat(0.5, 1))
+	end
+
+	if self.SkillMistakeChance and mathRandom() < self.SkillMistakeChance * 0.25 then
+		self.SkillMistakeChance = math.max(self.SkillMistakeChance - 0.02, 0.05)
+	end
+end
+
+function AISnake:applySafetySteer(steerVector)
+	if not steerVector or steerVector.Magnitude < 0.01 then
+		return self.Direction
+	end
+
+	local safeProbe = self.Position + steerVector.Unit * 28
+	if self:isPathSafe(safeProbe, 28) then
+		return steerVector
+	end
+
+	local left = perpendicular(steerVector).Unit
+	if self:isPathSafe(self.Position + left * 24, 24) then
+		return left
+	end
+
+	local right = perpendicular(-steerVector).Unit
+	if self:isPathSafe(self.Position + right * 24, 24) then
+		return right
+	end
+
+	return steerVector
+end
+
+function AISnake:monitorProgress(dt)
+	if not self.ProgressWatch then
+		return
+	end
+
+	local watch = self.ProgressWatch
+	local delta = (self.Position - watch.lastPos).Magnitude
+	if delta < (self.Config.SegmentSpacing or 2) * 0.5 then
+		watch.stagnation = watch.stagnation + dt
+	else
+		watch.stagnation = 0
+		watch.lastPos = self.Position
+	end
+
+	watch.oscillationTimer = watch.oscillationTimer + dt
+	if watch.oscillationTimer >= 3.0 then
+		local drift = (self.Position - watch.oscillationAnchor).Magnitude
+		if drift < 45 then
+			self:forceCourseCorrection("oscillation")
+		end
+		watch.oscillationAnchor = self.Position
+		watch.oscillationTimer = 0
+	end
+
+	if watch.stagnation > 2.4 then
+		self:forceCourseCorrection("stagnation")
+	end
 end
 
 function AISnake:_determineAction()
@@ -466,21 +645,6 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	self.CurrentLength = self.Config.InitialLength or 10
 	self.TargetLength = self.CurrentLength
 	self.growthFactor = 1
-
-	self.MotionState = {
-		currentDirection = self.Direction,
-		smoothedSteer = self.Direction,
-		desiredDirection = self.Direction,
-		lastPosition = self.Position,
-		stuckTime = 0,
-	}
-
-	self.ProgressWatch = {
-		lastPos = self.Position,
-		stagnation = 0,
-		oscillationAnchor = self.Position,
-		oscillationTimer = 0
-	}
 	
 	-- === AAA DISTANCE PATHING ===
 	self.pathPoints = {} 
@@ -521,6 +685,22 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 		task.wait(5)
 		if self._active and self.HeadParts.head then self.HeadParts.head.Transparency = 0 end
 	end)
+	
+	-- === INIT BRAIN HELPERS ===
+	self.MotionState = {
+		currentDirection = self.Direction,
+		smoothedSteer = self.Direction,
+		desiredDirection = self.Direction,
+		lastPosition = self.Position,
+		stuckTime = 0,
+	}
+
+	self.ProgressWatch = {
+		lastPos = self.Position,
+		stagnation = 0,
+		oscillationAnchor = self.Position,
+		oscillationTimer = 0
+	}
 	
 	table.insert(AISnake._activeSnakes, self)
 	return self
@@ -899,7 +1079,6 @@ function AISnake:updateMovement(dt)
 	local speed = self.Speed
 	if self.Boosting then speed = self.BoostSpeed end
 	local moveDist = speed * dt
-	local previousPosition = self.Position
 	local newPos = self.Position + self.Direction * moveDist
 	
 	-- Bounds
@@ -922,7 +1101,7 @@ function AISnake:updateMovement(dt)
 	self.Position = newPos
 	
 	-- Stuck Check
-	local actualDelta = (self.Position - previousPosition).Magnitude
+	local actualDelta = (self.Position - (self.MotionState and self.MotionState.lastPosition or self.Position)).Magnitude
 	self:_updateStuckTimer(dt, actualDelta)
 	if self.MotionState then self.MotionState.lastPosition = self.Position end
 	
