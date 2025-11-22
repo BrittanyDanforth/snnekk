@@ -17,7 +17,8 @@ for i = 1, NUM_SNAKES do
 		snake = nil,
 		deathTime = nil,
 		spawning = false,
-		lastPersonality = nil  -- Track personality for respawn
+		lastPersonality = nil,  -- Track personality for respawn
+		lastSkillTier = nil     -- Track skill tier for respawn
 	}
 end
 
@@ -47,7 +48,9 @@ local function cleanupSnake(slot)
 		-- Save personality before cleanup
 		if slot.snake.Personality and slot.snake.Personality.Type then
 			slot.lastPersonality = slot.snake.Personality.Type
-			print("💾 Saved personality:", slot.lastPersonality)
+			-- Save skill tier
+			slot.lastSkillTier = slot.snake.SkillTier
+			-- print("💾 Saved personality:", slot.lastPersonality, "Tier:", slot.lastSkillTier)
 		end
 
 		-- Try multiple cleanup methods
@@ -93,7 +96,7 @@ local function spawnSnake(slotIndex)
 			position = Vector3.new(100, 5, 100)
 		end
 		
-		local snake = AISnake.new(position, slot.lastPersonality)
+		local snake = AISnake.new(position, slot.lastPersonality, slot.lastSkillTier)
 		
 		-- FORCE UPDATE: If the snake model spawns at 0,0,0, move it
 		if snake and snake.Model and snake.Model:GetPivot().Position.Magnitude < 1 then
@@ -112,7 +115,7 @@ local function spawnSnake(slotIndex)
 		slot.snake = result
 		slot.deathTime = nil
 		local personality = result.Personality and result.Personality.Type or "Unknown"
-		print("✅ Spawned AI Snake #" .. slotIndex .. " at", position, "with personality:", personality)
+		-- print("✅ Spawned AI Snake #" .. slotIndex .. " at", position, "with personality:", personality)
 	else
 		if not success then
 			warn("❌ Failed to spawn AI Snake #" .. slotIndex .. " Error: " .. tostring(result))

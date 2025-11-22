@@ -1900,7 +1900,7 @@ function AISnake:updateBrain()
 	self.State = state
 	self:_setSteerTarget(steer)
 end
-function AISnake.new(startPosition, preservedPersonalityType)
+function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier)
 	if #AISnake._activeSnakes >= MAX_AI_SNAKES then
 		warn("AI Snake limit reached", MAX_AI_SNAKES)
 		return nil
@@ -1999,6 +1999,21 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	end
 
 	self.SkillProfile = buildSkillProfile()
+	if preservedSkillTier then
+		-- Try to restore skill tier logic
+		if preservedSkillTier == "Elite" or preservedSkillTier == "Veteran" or preservedSkillTier == "Nominal" or preservedSkillTier == "Rookie" then
+			-- We don't have the exact numbers, but we can regenerate a profile of that tier
+			-- Loop until we get the right tier (simple hack)
+			local maxTries = 20
+			for i=1, maxTries do
+				if self.SkillProfile.label == preservedSkillTier then
+					break
+				end
+				self.SkillProfile = buildSkillProfile()
+			end
+		end
+	end
+
 	self.SkillTier = self.SkillProfile.label
 	self.SkillMistakeChance = self.SkillProfile.errorChance
 	self.SkillTurnMultiplier = self.SkillProfile.turnMultiplier
