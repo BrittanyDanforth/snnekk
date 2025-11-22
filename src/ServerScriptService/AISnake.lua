@@ -99,6 +99,20 @@ local function releaseAIName(name)
 	end
 end
 
+local function getUniqueAIName()
+	for _ = 1, 8 do
+		local candidate = generateAIUsername()
+		if not usedAINames[candidate] then
+			usedAINames[candidate] = true
+			return candidate
+		end
+	end
+
+	local fallback = string.format("AISnake%05d", mathRandom(10000, 99999))
+	usedAINames[fallback] = true
+	return fallback
+end
+
 local AISnake = {}
 AISnake.__index = AISnake
 

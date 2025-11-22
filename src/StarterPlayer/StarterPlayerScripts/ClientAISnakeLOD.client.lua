@@ -1,140 +1,124 @@
--- ClientAISnakeLOD v3.0: Slither.io-inspired ultra-smooth LOD system (stabilized)
+-- ClientAISnakeLOD v5.0 – Cinematic-quality streaming for massive snakes
 
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 -- ==================================
--- SLITHER.IO STYLE CONFIGURATION
+-- GLOBAL SETTINGS
 -- ==================================
-local UPDATE_RATE = 30
-local UPDATE_INTERVAL = 1 / UPDATE_RATE
+local MAX_VISIBLE_SNAKES = 220
+local MAX_STREAM_DISTANCE = 1800
+local HEARTBEAT_SAMPLE = 1 / 30
+local TRANSPARENCY_LERP = 0.18
 
-local FADE_START_DISTANCE = 150
-local FADE_END_DISTANCE = 1200
-local OUTLINE_FADE_DISTANCE = 1500
+local LOD_PROFILES = {
+	{distance = 200, stride = 1, fade = 1.0, beamFade = 1.0, maxSegments = math.huge, headFocus = 12},
+	{distance = 400, stride = 2, fade = 0.92, beamFade = 0.85, maxSegments = 400, headFocus = 10},
+	{distance = 650, stride = 3, fade = 0.75, beamFade = 0.65, maxSegments = 250, headFocus = 8},
+	{distance = 900, stride = 5, fade = 0.55, beamFade = 0.45, maxSegments = 150, headFocus = 6},
+	{distance = 1200, stride = 7, fade = 0.35, beamFade = 0.25, maxSegments = 100, headFocus = 4},
+	{distance = 1500, stride = 12, fade = 0.18, beamFade = 0.12, maxSegments = 60, headFocus = 3},
+}
 
-local COMPRESSION_START = 400
-local MAX_COMPRESSION_RATIO = 0.3
+local HIDDEN_PROFILE = {distance = math.huge, stride = math.huge, fade = 0, beamFade = 0, maxSegments = 0, headFocus = 0, forceHide = true}
 
-local MAX_VISIBLE_SNAKES = 200
-local VISIBILITY_CHECK_RADIUS = 1800
-
-local FADE_SMOOTHNESS = 0.15
-local GLOW_DISTANCE_MULTIPLIER = 1.2
-local MIN_HEAD_VISIBILITY = 0.15
-
--- ==================================
--- Utility Functions
--- ==================================
-local function smoothStep(edge0, edge1, x)
-	x = math.clamp((x - edge0) / (edge1 - edge0), 0, 1)
-	return x * x * (3 - 2 * x)
-end
-
-local function calculateSegmentVisibility(segmentDistance, isHead)
-	if segmentDistance < FADE_START_DISTANCE then
-		return 1
-	elseif segmentDistance > FADE_END_DISTANCE then
-		return isHead and MIN_HEAD_VISIBILITY or 0
-	else
-		local fade = smoothStep(FADE_START_DISTANCE, FADE_END_DISTANCE, segmentDistance)
-		if isHead then
-			return math.max(MIN_HEAD_VISIBILITY, 1 - fade)
-		else
-			return 1 - fade
+local function getLodProfile(distance)
+	for _, profile in ipairs(LOD_PROFILES) do
+		if distance <= profile.distance then
+			return profile
 		end
 	end
+	return HIDDEN_PROFILE
 end
 
-local function calculateCompressionRatio(distance)
-	if distance < COMPRESSION_START then
+local function lerpNumber(current, target, alpha)
+	return current + (target - current) * alpha
+end
+
+local function smoothVisibility(distance, isHead)
+	if distance <= 150 then
 		return 1
+	elseif distance >= 1200 then
+		return isHead and 0.2 or 0
 	else
-		local compressionFactor = smoothStep(COMPRESSION_START, FADE_END_DISTANCE, distance)
-		return math.max(MAX_COMPRESSION_RATIO, 1 - compressionFactor * (1 - MAX_COMPRESSION_RATIO))
+		local alpha = (distance - 150) / (1200 - 150)
+		local eased = alpha * alpha * (3 - 2 * alpha)
+		local value = 1 - eased
+		return isHead and math.max(0.2, value) or value
 	end
 end
 
-local function getHeadPosition(model, snake)
-	local attr = model:GetAttribute("HeadPosition")
-	if typeof(attr) == "Vector3" then
-		return attr
-	elseif snake and snake.head then
-		return snake.head.Position
-	end
-	return model:GetPivot().Position
-end
-
--- ==================================
--- ClientSnake Class (Slither.io Style)
--- ==================================
 local ClientSnake = {}
 ClientSnake.__index = ClientSnake
 
 function ClientSnake.new(model)
-	local head = model:FindFirstChild("Segment0_Head")
-	if not head then
-		head = model:FindFirstChild("Head")
-	end
-
-	if not head then
-		-- Head might not be replicated yet; defer tracking
-		return nil, "no_head"
-	end
-
 	local self = setmetatable({}, ClientSnake)
-
 	self.model = model
-	self.head = head
-
+	self.head = nil
 	self.segments = {}
-	self.segmentData = {}
 	self.segmentOrder = {}
+	self.segmentState = {}
 	self.beams = {}
 	self.beamBaseWidths = {}
 	self.glows = {}
 	self.eyes = {}
+	self.lastDistance = math.huge
+	self.accumulator = 0
+	self.lodProfile = HIDDEN_PROFILE
+	self.dead = false
 
-	-- Collect segments
-	local partsToSort = {}
-	for _, child in ipairs(model:GetChildren()) do
+	self:_hydrate()
+	return self
+end
+
+function ClientSnake:_resolveHead()
+	return self.model:FindFirstChild("Segment0_Head") or self.model:FindFirstChild("Head")
+end
+
+function ClientSnake:_hydrate()
+	self.head = self:_resolveHead()
+	if not self.head then
+		return
+	end
+
+	self.segments = {}
+	self.segmentOrder = {}
+	self.segmentState = {}
+	self.glows = {}
+
+	local parts = {}
+	for _, child in ipairs(self.model:GetChildren()) do
 		if child:IsA("BasePart") and child.Name:match("^Segment") then
 			local index = tonumber(child.Name:match("%d+"))
 			if index then
-				table.insert(partsToSort, {index = index, part = child})
+				parts[#parts + 1] = {index = index, part = child}
 			end
 		end
 	end
-	table.sort(partsToSort, function(a, b) return a.index < b.index end)
+	table.sort(parts, function(a, b)
+		return a.index < b.index
+	end)
 
-	for _, data in ipairs(partsToSort) do
-		local part = data.part
-		local index = data.index
-
-		self.segments[index] = part
-		table.insert(self.segmentOrder, index)
-		self.segmentData[index] = {
-			lastTransparency = 1,
-			targetTransparency = 1,
-			currentTransparency = 1,
+	for _, info in ipairs(parts) do
+		self.segments[info.index] = info.part
+		self.segmentOrder[#self.segmentOrder + 1] = info.index
+		self.segmentState[info.index] = {
+			current = 1,
+			target = 1,
 		}
-
-		local glow = part:FindFirstChild("Glow")
+		local glow = info.part:FindFirstChild("Glow")
 		if glow then
-			self.glows[index] = glow
-			glow.Brightness = 2
+			self.glows[info.index] = glow
 		end
 	end
 
-	self.totalLength = #self.segmentOrder
-
-	-- Collect beams
-	local beamHolder = model:FindFirstChild("BeamHolder")
+	self.beams = {}
+	self.beamBaseWidths = {}
+	local beamHolder = self.model:FindFirstChild("BeamHolder")
 	if beamHolder then
 		for _, beam in ipairs(beamHolder:GetChildren()) do
 			if beam:IsA("Beam") then
@@ -147,32 +131,25 @@ function ClientSnake.new(model)
 		end
 	end
 
+	self.eyes = {}
 	for _, name in ipairs({"LeftEye", "RightEye", "LeftEyePupil", "RightEyePupil"}) do
-		local eye = model:FindFirstChild(name)
+		local eye = self.model:FindFirstChild(name)
 		if eye then
 			table.insert(self.eyes, eye)
 		end
 	end
-
-	self.lastHeadDistance = math.huge
-	self.updateAccumulator = 0
-	self.compressionRatio = 1
-
-	self:SetInitialVisibility()
-
-	return self
 end
 
-function ClientSnake:SetInitialVisibility()
+function ClientSnake:_setInvisible()
 	for _, index in ipairs(self.segmentOrder) do
-		local segment = self.segments[index]
-		if segment then
-			segment.Transparency = 1
+		local seg = self.segments[index]
+		if seg then
+			seg.Transparency = 1
 		end
-		local data = self.segmentData[index]
-		if data then
-			data.currentTransparency = 1
-			data.targetTransparency = 1
+		local state = self.segmentState[index]
+		if state then
+			state.current = 1
+			state.target = 1
 		end
 		local glow = self.glows[index]
 		if glow then
@@ -189,233 +166,222 @@ function ClientSnake:SetInitialVisibility()
 	end
 end
 
-function ClientSnake:UpdateSegmentVisibility(dt, cameraPos)
-	local headPos = getHeadPosition(self.model, self)
-	local headDistance = (cameraPos - headPos).Magnitude
+function ClientSnake:_applySegmentVisibility(cameraPos)
+	local headPos = self.head.Position
+	local distance = (cameraPos - headPos).Magnitude
+	self.lastDistance = distance
 
-	if headDistance > VISIBILITY_CHECK_RADIUS then
-		if self.lastHeadDistance <= VISIBILITY_CHECK_RADIUS then
-			self:SetInitialVisibility()
-		end
-		self.lastHeadDistance = headDistance
+	if not self.head.Parent or distance > MAX_STREAM_DISTANCE then
+		self.lodProfile = HIDDEN_PROFILE
+		self:_setInvisible()
 		return
 	end
 
-	self.lastHeadDistance = headDistance
-	self.compressionRatio = calculateCompressionRatio(headDistance)
+	local profile = getLodProfile(distance)
+	self.lodProfile = profile
 
-	local totalSegments = math.max(1, #self.segmentOrder)
-	local visibleSegmentCount = math.max(1, math.floor(totalSegments * self.compressionRatio))
-	local segmentStep = totalSegments / visibleSegmentCount
-	local visibleIndex = 0
+	local visibleBudget = profile.maxSegments
+	local stride = profile.stride
+	local headFocus = profile.headFocus
+	local processed = 0
 
 	for orderIndex, segmentIndex in ipairs(self.segmentOrder) do
-		local segment = self.segments[segmentIndex]
-		local data = self.segmentData[segmentIndex]
+		local seg = self.segments[segmentIndex]
+		if not seg or not seg.Parent then
+			continue
+		end
 
-		if segment and data then
-			local shouldShow = true
-			local compressionAlpha = 1
+		local isHead = segmentIndex <= headFocus
+		local renderSlot = (orderIndex % stride == 0) or isHead
 
-			if self.compressionRatio < 1 then
-				local targetIndex = math.floor(visibleIndex * segmentStep) + 1
-				shouldShow = (orderIndex >= targetIndex and orderIndex <= targetIndex + 1) and (visibleIndex < visibleSegmentCount)
-
-				if shouldShow then
-					local nextTargetIndex = math.floor((visibleIndex + 1) * segmentStep) + 1
-					if orderIndex > targetIndex and nextTargetIndex > targetIndex then
-						compressionAlpha = 1 - (orderIndex - targetIndex) / (nextTargetIndex - targetIndex)
-					end
-					visibleIndex = visibleIndex + 1
-				end
-			end
-
-			local segmentDistance = (cameraPos - segment.Position).Magnitude
-			local distanceAlpha = calculateSegmentVisibility(segmentDistance, segmentIndex == 0)
-			local targetAlpha = shouldShow and (distanceAlpha * compressionAlpha) or 0
-			data.targetTransparency = 1 - targetAlpha
-
-			local diff = data.targetTransparency - data.currentTransparency
-			if math.abs(diff) > 0.001 then
-				data.currentTransparency += diff * FADE_SMOOTHNESS
-				segment.Transparency = data.currentTransparency
-				self:UpdateSegmentVisuals(segmentIndex, data.currentTransparency, segmentDistance)
+		if profile.forceHide then
+			renderSlot = false
+		elseif renderSlot then
+			processed += 1
+			if processed > visibleBudget then
+				renderSlot = false
 			end
 		end
+
+		local state = self.segmentState[segmentIndex]
+		if not state then
+			state = {current = 1, target = 1}
+			self.segmentState[segmentIndex] = state
+		end
+
+		local targetAlpha = 0
+		if renderSlot then
+			local distanceAlpha = smoothVisibility((cameraPos - seg.Position).Magnitude, segmentIndex == 0)
+			targetAlpha = distanceAlpha * profile.fade
+		end
+
+		state.target = 1 - targetAlpha
+		state.current = lerpNumber(state.current, state.target, TRANSPARENCY_LERP)
+		seg.Transparency = state.current
+
+		local glow = self.glows[segmentIndex]
+		if glow then
+			if targetAlpha <= 0.05 then
+				glow.Enabled = false
+			else
+				glow.Enabled = true
+				glow.Brightness = 1.5 * targetAlpha
+				glow.Range = 12 * targetAlpha
+			end
+		end
+
+		local beam = self.beams[segmentIndex]
+		if beam then
+			local base = self.beamBaseWidths[segmentIndex]
+			if base then
+				local widthMultiplier = 0.5 + targetAlpha * 0.5
+				beam.Width0 = base.Width0 * widthMultiplier
+				beam.Width1 = base.Width1 * widthMultiplier
+			end
+			beam.Transparency = NumberSequence.new(1 - (targetAlpha * profile.beamFade))
+		end
+	end
+
+	for _, eye in ipairs(self.eyes) do
+		eye.Transparency = lerpNumber(eye.Transparency, 1 - profile.fade, 0.25)
 	end
 end
 
-function ClientSnake:UpdateSegmentVisuals(index, transparency, distance)
-	local beam = self.beams[index]
-	if beam then
-		local baseWidth = self.beamBaseWidths[index]
-		if baseWidth then
-			local widthMultiplier = math.max(0.5, 1 - (distance / FADE_END_DISTANCE) * 0.5)
-			beam.Width0 = baseWidth.Width0 * widthMultiplier
-			beam.Width1 = baseWidth.Width1 * widthMultiplier
-		end
-
-		local nextData = self.segmentData[index + 1]
-		local beamTransparency = transparency
-		if nextData then
-			beamTransparency = (transparency + nextData.currentTransparency) / 2
-		end
-		beam.Transparency = NumberSequence.new(beamTransparency)
+function ClientSnake:step(dt, cameraPos)
+	if self.dead then
+		return
 	end
 
-	local glow = self.glows[index]
-	if glow then
-		local glowDistance = distance * GLOW_DISTANCE_MULTIPLIER
-		local glowAlpha = calculateSegmentVisibility(glowDistance, index == 0)
-		glow.Enabled = glowAlpha > 0.1
-		if glow.Enabled then
-			glow.Brightness = 2 * glowAlpha
-			glow.Range = 15 * glowAlpha
+	if not self.head or not self.head.Parent then
+		self.head = self:_resolveHead()
+		if not self.head then
+			self:_setInvisible()
+			return
 		end
 	end
 
-	if index == 0 then
-		local eyeAlpha = 1 - transparency
-		for _, eye in ipairs(self.eyes) do
-			eye.Transparency = math.max(0.8, 1 - eyeAlpha)
-		end
+	self.accumulator += dt
+	if self.accumulator < HEARTBEAT_SAMPLE then
+		return
 	end
+	self.accumulator = 0
+
+	self:_applySegmentVisibility(cameraPos)
 end
 
-function ClientSnake:Update(dt, cameraPos)
-	self.updateAccumulator += dt
-
-	if self.updateAccumulator >= UPDATE_INTERVAL then
-		self:UpdateSegmentVisibility(self.updateAccumulator, cameraPos)
-		self.updateAccumulator = 0
-	end
-end
-
-function ClientSnake:Destroy()
-	self:SetInitialVisibility()
+function ClientSnake:destroy()
+	self.dead = true
+	self:_setInvisible()
 	for k in pairs(self) do
 		self[k] = nil
 	end
 end
 
 -- ==================================
--- SnakeManager (Performance Optimized)
+-- Snake Manager
 -- ==================================
 local SnakeManager = {}
-local trackedSnakes = {}
-local snakeArray = {}
-local pendingHeadConnections = {}
-local lastUpdateTime = 0
+SnakeManager.__index = SnakeManager
 
-local function waitForHeadAndTrack(model)
-	if pendingHeadConnections[model] then
-		return
-	end
-
-	local connection
-	connection = model.ChildAdded:Connect(function(child)
-		if child.Name == "Segment0_Head" or child.Name == "Head" then
-			connection:Disconnect()
-			pendingHeadConnections[model] = nil
-			SnakeManager.Track(model)
-		end
-	end)
-	pendingHeadConnections[model] = connection
-
-	task.delay(5, function()
-		if pendingHeadConnections[model] == connection then
-			connection:Disconnect()
-			pendingHeadConnections[model] = nil
-		end
-	end)
+function SnakeManager.new()
+	return setmetatable({
+		tracked = {},
+		sorted = {},
+		lastSort = 0,
+	}, SnakeManager)
 end
 
-function SnakeManager.Track(model)
-	if trackedSnakes[model] then
+function SnakeManager:_track(model)
+	if self.tracked[model] then
 		return
 	end
 
-	local snake, reason = ClientSnake.new(model)
+	local snake = ClientSnake.new(model)
+	if not snake.head then
+		local connection
+		connection = model.ChildAdded:Connect(function(child)
+			if child.Name == "Segment0_Head" or child.Name == "Head" then
+				connection:Disconnect()
+				self:_track(model)
+			end
+		end)
+		task.delay(5, function()
+			if connection.Connected then
+				connection:Disconnect()
+			end
+		end)
+		return
+	end
+
+	self.tracked[model] = snake
+	table.insert(self.sorted, snake)
+end
+
+function SnakeManager:_untrack(model)
+	local snake = self.tracked[model]
 	if not snake then
-		if reason == "no_head" then
-			waitForHeadAndTrack(model)
-		end
 		return
 	end
 
-	trackedSnakes[model] = snake
-	table.insert(snakeArray, {model = model, snake = snake})
-	SnakeManager.SortSnakes()
-end
+	snake:destroy()
+	self.tracked[model] = nil
 
-function SnakeManager.Untrack(model)
-	if trackedSnakes[model] then
-		trackedSnakes[model]:Destroy()
-		trackedSnakes[model] = nil
-	end
-
-	for i = #snakeArray, 1, -1 do
-		if snakeArray[i].model == model then
-			table.remove(snakeArray, i)
+	for i = #self.sorted, 1, -1 do
+		if self.sorted[i] == snake then
+			table.remove(self.sorted, i)
 			break
 		end
 	end
+end
 
-	if pendingHeadConnections[model] then
-		pendingHeadConnections[model]:Disconnect()
-		pendingHeadConnections[model] = nil
+function SnakeManager:_resort()
+	local cameraPos = camera.CFrame.Position
+	table.sort(self.sorted, function(a, b)
+		return a.lastDistance < b.lastDistance
+	end)
+
+	for i = MAX_VISIBLE_SNAKES + 1, #self.sorted do
+		self.sorted[i]:_setInvisible()
 	end
 end
 
-function SnakeManager.SortSnakes()
-	local cameraPos = camera.CFrame.Position
-	table.sort(snakeArray, function(a, b)
-		local headPosA = getHeadPosition(a.model, a.snake)
-		local headPosB = getHeadPosition(b.model, b.snake)
-		return (headPosA - cameraPos).Magnitude < (headPosB - cameraPos).Magnitude
+function SnakeManager:start()
+	for _, model in ipairs(CollectionService:GetTagged("AISnake")) do
+		self:_track(model)
+	end
+
+	CollectionService:GetInstanceAddedSignal("AISnake"):Connect(function(model)
+		self:_track(model)
+	end)
+
+	CollectionService:GetInstanceRemovedSignal("AISnake"):Connect(function(model)
+		self:_untrack(model)
+	end)
+
+	RunService.Heartbeat:Connect(function(dt)
+		self:update(dt)
 	end)
 end
 
-function SnakeManager.Update()
-	local currentTime = tick()
-	local dt = currentTime - lastUpdateTime
-	lastUpdateTime = currentTime
-
+function SnakeManager:update(dt)
 	local cameraPos = camera.CFrame.Position
-	local processed = 0
 
-	for i = #snakeArray, 1, -1 do
-		local data = snakeArray[i]
-		if not data.model or not data.model.Parent then
-			SnakeManager.Untrack(data.model)
+	for model, snake in pairs(self.tracked) do
+		if not model.Parent then
+			self:_untrack(model)
+		else
+			snake:step(dt, cameraPos)
 		end
 	end
 
-	for _, data in ipairs(snakeArray) do
-		if data.model and data.model.Parent then
-			if processed < MAX_VISIBLE_SNAKES then
-				data.snake:Update(dt, cameraPos)
-				processed += 1
-			else
-				data.snake:SetInitialVisibility()
-			end
-		end
-	end
-
-	if currentTime % 1 < dt then
-		SnakeManager.SortSnakes()
+	self.lastSort += dt
+	if self.lastSort >= 0.5 then
+		self.lastSort = 0
+		self:_resort()
 	end
 end
 
-lastUpdateTime = tick()
+local manager = SnakeManager.new()
+manager:start()
 
-for _, model in ipairs(CollectionService:GetTagged("AISnake")) do
-	SnakeManager.Track(model)
-end
-
-CollectionService:GetInstanceAddedSignal("AISnake"):Connect(SnakeManager.Track)
-CollectionService:GetInstanceRemovedSignal("AISnake"):Connect(SnakeManager.Untrack)
-RunService.Heartbeat:Connect(SnakeManager.Update)
-
-print("🐍 ClientAISnakeLOD v3.0: Slither.io-style ultra-smooth LOD initialized!")
-print("   ✨ Distance-based fading | 🎯 Segment compression | ⚡ 30Hz updates")
+print("🐍 ClientAISnakeLOD v5.0 initialized – ultra-smooth streaming engaged.")
