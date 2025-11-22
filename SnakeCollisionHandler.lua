@@ -309,6 +309,13 @@ trackConnection(Players.PlayerAdded:Connect(function(player)
 
 		-- Set invincibility for spawn protection
 		setPlayerInvincible(player)
+		
+		-- Set spawn time attribute for safety net
+		local root = character:WaitForChild("HumanoidRootPart", 5)
+		if root then
+			root:SetAttribute("SpawnTime", os.clock())
+		end
+		
 		print("🛡️ Set spawn invincibility for", player.Name)
 
 		-- Clear invincibility after duration
@@ -650,6 +657,22 @@ local function queuePlayerDeath(player)
 		return
 	end
 
+	-- SAFETY NET: Prevent death if spawned < 5 seconds ago, regardless of invincibility flag
+	if player.Character then
+		local root = player.Character:FindFirstChild("HumanoidRootPart")
+		if root then
+			local spawnTime = root:GetAttribute("SpawnTime")
+			if not spawnTime then
+				root:SetAttribute("SpawnTime", os.clock())
+				spawnTime = os.clock()
+			end
+			if os.clock() - spawnTime < 5 then
+				print("🛡️ SAVED Player", player.Name, "from instant death (Spawn Safety Net)")
+				return
+			end
+		end
+	end
+
 	for _, death in ipairs(deathQueue) do
 		if death.type == "player" and death.target == player then
 			return
@@ -685,6 +708,7 @@ local function queuePlayerDeath(player)
 
 	-- IMMEDIATE NUCLEAR CAMERA FREEZE
 	task.spawn(function()
+		print("🚨 NUCLEAR DEATH TRIGGERED for", player.Name, "Reason:", "Unknown") -- Added logging
 		freezeCameraRemote:FireClient(player, true)
 		stopCameraRemote:FireClient(player)
 
@@ -1586,7 +1610,7 @@ trackConnection(RunService.Stepped:Connect(function(_, deltaTime)
 							end
 
 							if collision then
-								print(string.format("💥 [COLLISION] Player %s hit AI snake body!", player.Name))
+								print(string.format("💥 [COLLISION] Player %s hit AI snake body! (AI: %s)", player.Name, snake.DisplayName or "Unknown"))
 								if not playerInvincible then
 									queuePlayerDeath(player)
 								elseif DEBUG_COLLISIONS then
@@ -2092,7 +2116,19 @@ function SnakeCollisionHandler:destroy()
 	end
 end
 
-print("⚡ SnakeCollisionHandler V10 FIXED")
+-- === AUTO-INITIALIZATION (For Script Mode) ===
+if script and script.ClassName == "Script" then
+	print("🚀 SnakeCollisionHandler running in SCRIPT mode (Auto-Init)")
+	local handler = SnakeCollisionHandler.new()
+	_G.CollisionHandler = handler
+	
+	-- Cleanup on close
+	game:BindToClose(function()
+		if handler then handler:destroy() end
+	end)
+end
+
+print("⚡ SnakeCollisionHandler V10.1 ULTRA-STABLE")
 print("✅ FIXED: Death orbs now spawn on PVP deaths (captured immediately)")
 print("✅ FIXED: ReviveUI always shows for both AI and PVP deaths")
 print("✅ FIXED: Segment positions captured IMMEDIATELY in queuePlayerDeath")

@@ -1,6 +1,12 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+-- Check if already initialized by the script itself
+if _G.CollisionHandler then
+	print("✅ CollisionHandler already initialized by script!")
+	return
+end
+
 -- Robust error handling for module loading
 local function loadModule()
 	local moduleName = "SnakeCollisionHandler"
@@ -20,12 +26,12 @@ local function loadModule()
 	end
 	
 	if not module then
-		warn("❌ InitializeCollisionHandler: Could not find " .. moduleName)
+		warn("⚠️ InitializeCollisionHandler: Could not find " .. moduleName .. " (May be running as a Script?)")
 		return nil
 	end
 	
 	if not module:IsA("ModuleScript") then
-		warn("❌ InitializeCollisionHandler: " .. moduleName .. " is a " .. module.ClassName .. ", not a ModuleScript! Please convert it to a ModuleScript.")
+		print("ℹ️ InitializeCollisionHandler: " .. moduleName .. " is a " .. module.ClassName .. " - It should auto-initialize.")
 		return nil
 	end
 	
@@ -41,8 +47,7 @@ if SnakeCollisionHandler then
 	-- Optional: Store reference globally for other scripts
 	_G.CollisionHandler = collisionHandler
 
-	print("✅ Snake game collision system initialized!")
-	print("📋 Features: Modern spatial queries, Trove pattern, Fixed death orbs, ReviveUI")
+	print("✅ Snake game collision system initialized (External)!")
 
 	-- Optional: Cleanup on server shutdown
 	game:BindToClose(function()
@@ -50,6 +55,4 @@ if SnakeCollisionHandler then
 			collisionHandler:destroy()
 		end
 	end)
-else
-	warn("⚠️ SnakeCollisionHandler failed to load - Collision system may be inactive")
 end
