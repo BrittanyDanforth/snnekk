@@ -23,6 +23,10 @@ local WALL_AVOIDANCE_DISTANCE = 30
 local BOUNDARY_MARGIN = 50
 local UPDATE_INTERVAL = 0.1
 local SEGMENT_UPDATE_INTERVAL = 0.05
+local SPAWN_INVINCIBILITY_DURATION = 5
+local SPAWN_PROTECTION_TRANSPARENCY = 0.35
+local SPAWN_PROTECTION_PULSE_SPEED = 6
+local SPAWN_PROTECTION_OUTLINE_COLOR = Color3.fromRGB(255, 255, 255)
 
 -- LOD Constants
 local LOD_DISTANCE_NEAR = 50
@@ -255,11 +259,43 @@ local function getPooledSegment()
 end
 
 local function returnSegmentToPool(segment)
-	if segment and segment.Parent then
-		segment:ClearAllChildren()
-		segment.Parent = nil
-		table.insert(segmentPool, segment)
+	if not segment then
+		return
 	end
+
+	segment:ClearAllChildren()
+	segment.Parent = nil
+	segment.Transparency = 0
+	segment.CanTouch = true
+	segment.CanQuery = true
+	segment:SetAttribute("SpawnProtected", nil)
+	segment:SetAttribute("BaseTransparency", nil)
+	segment:SetAttribute("BaseCanTouch", nil)
+	segment:SetAttribute("BaseCanQuery", nil)
+
+	table.insert(segmentPool, segment)
+end
+
+local function ensureBaseSpawnProtectionState(part)
+	if not part or not part:IsA("BasePart") then
+		return
+	end
+
+	if part:GetAttribute("BaseTransparency") == nil then
+		part:SetAttribute("BaseTransparency", part.Transparency)
+	end
+
+	if part:GetAttribute("BaseCanTouch") == nil then
+		part:SetAttribute("BaseCanTouch", part.CanTouch)
+	end
+
+	if part:GetAttribute("BaseCanQuery") == nil then
+		part:SetAttribute("BaseCanQuery", part.CanQuery)
+	end
+end
+
+local function isModelSpawnProtected(model)
+	return model and model:GetAttribute("SpawnProtected") == true
 end
 
 -- AISnake Module
@@ -371,6 +407,10 @@ function AISnake.new(spawnPosition, personalityName)
 	self.nearbyThreats = {}
 	self.isDead = false
 	self.wanderTarget = nil
+	self.isSpawnProtected = false
+	self.spawnProtectionEndTime = nil
+	self.spawnProtectionPulse = 0
+	self.spawnProtectionHighlight = nil
 	
 	-- Spatial grid reference (shared)
 	if not AISnake.spatialGrid then
@@ -391,7 +431,112 @@ function AISnake.new(spawnPosition, personalityName)
 		end
 	end)
 	
+	self:setSpawnProtection(true)
+	
 	return self
+end
+
+function AISnake:updateSpawnProtection(dt)
+	if not self.isSpawnProtected then
+		return
+	end
+
+	self.spawnProtectionPulse = (self.spawnProtectionPulse or 0) + (dt or 0)
+
+	if self.spawnProtectionHighlight then
+		local pulse = 0.25 + 0.15 * math.sin(self.spawnProtectionPulse * SPAWN_PROTECTION_PULSE_SPEED)
+		self.spawnProtectionHighlight.OutlineTransparency = math.clamp(pulse, 0.05, 0.55)
+	end
+
+	if os.clock() >= (self.spawnProtectionEndTime or 0) then
+		self:setSpawnProtection(false)
+	end
+end
+
+function AISnake:ensureSpawnProtectionHighlight()
+	if not self.model then
+		return
+	end
+
+	if self.spawnProtectionHighlight and self.spawnProtectionHighlight.Parent then
+		return
+	end
+
+	local highlight = Instance.new("Highlight")
+	highlight.Adornee = self.model
+	highlight.FillTransparency = 1
+	highlight.OutlineColor = SPAWN_PROTECTION_OUTLINE_COLOR
+	highlight.OutlineTransparency = 0.25
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	highlight.Parent = self.model
+
+	self.spawnProtectionHighlight = highlight
+end
+
+function AISnake:cleanupSpawnProtectionHighlight()
+	if self.spawnProtectionHighlight then
+		self.spawnProtectionHighlight:Destroy()
+		self.spawnProtectionHighlight = nil
+	end
+end
+
+function AISnake:updatePartSpawnProtection(part, isProtected)
+	if not part or not part:IsA("BasePart") then
+		return
+	end
+	
+	ensureBaseSpawnProtectionState(part)
+	part:SetAttribute("SpawnProtected", isProtected)
+	
+	if isProtected then
+		part.CanTouch = false
+		part.CanQuery = false
+	else
+		local baseCanTouch = part:GetAttribute("BaseCanTouch")
+		local baseCanQuery = part:GetAttribute("BaseCanQuery")
+		if baseCanTouch ~= nil then
+			part.CanTouch = baseCanTouch
+		end
+		if baseCanQuery ~= nil then
+			part.CanQuery = baseCanQuery
+		end
+	end
+
+	if isProtected then
+		local baseTransparency = part:GetAttribute("BaseTransparency") or 0
+		part.Transparency = math.clamp(baseTransparency + SPAWN_PROTECTION_TRANSPARENCY, 0, 0.85)
+	else
+		local baseTransparency = part:GetAttribute("BaseTransparency")
+		if baseTransparency ~= nil then
+			part.Transparency = baseTransparency
+		end
+	end
+end
+
+function AISnake:setSpawnProtection(isEnabled)
+	if isEnabled then
+		self.spawnProtectionEndTime = os.clock() + SPAWN_INVINCIBILITY_DURATION
+		self.spawnProtectionPulse = 0
+		self:ensureSpawnProtectionHighlight()
+	else
+		self.spawnProtectionEndTime = nil
+		self.spawnProtectionPulse = 0
+		self:cleanupSpawnProtectionHighlight()
+	end
+
+	self.isSpawnProtected = isEnabled and true or false
+
+	if self.model then
+		self.model:SetAttribute("SpawnProtected", self.isSpawnProtected)
+	end
+
+	self:updatePartSpawnProtection(self.head, self.isSpawnProtected)
+	self:updatePartSpawnProtection(self.leftEye, self.isSpawnProtected)
+	self:updatePartSpawnProtection(self.rightEye, self.isSpawnProtected)
+
+	for _, segment in ipairs(self.segments) do
+		self:updatePartSpawnProtection(segment, self.isSpawnProtected)
+	end
 end
 
 function AISnake:update(dt)
@@ -400,6 +545,8 @@ function AISnake:update(dt)
 	end
 	
 	local currentTime = os.clock()
+	
+	self:updateSpawnProtection(dt)
 	
 	-- Check collisions and death
 	if currentTime - self.lastCollisionCheck >= self.collisionCheckInterval then
@@ -564,7 +711,7 @@ function AISnake:findNearbyThreats()
 	local nearbySnakes = AISnake.spatialGrid:query(self.position, THREAT_DETECTION_RANGE)
 	
 	for _, snake in ipairs(nearbySnakes) do
-		if snake ~= self and snake.length and snake.length > self.length * 0.8 then
+		if snake ~= self and not snake.isSpawnProtected and snake.length and snake.length > self.length * 0.8 then
 			local distance = (snake.position - self.position).Magnitude
 			if distance < THREAT_DETECTION_RANGE then
 				table.insert(threats, {
@@ -580,7 +727,7 @@ function AISnake:findNearbyThreats()
 	local snakesFolder = Workspace:FindFirstChild("Snakes")
 	if snakesFolder then
 		for _, snakeModel in ipairs(snakesFolder:GetChildren()) do
-			if snakeModel ~= self.model and snakeModel:FindFirstChild("Head") then
+			if snakeModel ~= self.model and not isModelSpawnProtected(snakeModel) and snakeModel:FindFirstChild("Head") then
 				local head = snakeModel.Head
 				local distance = (head.Position - self.position).Magnitude
 				if distance < THREAT_DETECTION_RANGE then
@@ -866,6 +1013,7 @@ function AISnake:grow()
 	newSegment.Size = self:getSegmentSize()
 	newSegment.BrickColor = BrickColor.new(self.personality.color)
 	newSegment.Parent = self.model
+	self:updatePartSpawnProtection(newSegment, self.isSpawnProtected)
 	
 	-- Add beam between segments
 	if #self.segments > 0 then
@@ -941,11 +1089,15 @@ function AISnake:endBoost()
 end
 
 function AISnake:checkCollisions()
+	if self.isSpawnProtected then
+		return false
+	end
+
 	-- Check collision with other snakes (head collision)
 	local snakesFolder = Workspace:FindFirstChild("Snakes")
 	if snakesFolder then
 		for _, snakeModel in ipairs(snakesFolder:GetChildren()) do
-			if snakeModel ~= self.model and snakeModel.Parent then
+			if snakeModel ~= self.model and snakeModel.Parent and not isModelSpawnProtected(snakeModel) then
 				local head = snakeModel:FindFirstChild("Head")
 				if head and head.Parent then
 					local distance = (head.Position - self.position).Magnitude
@@ -958,15 +1110,15 @@ function AISnake:checkCollisions()
 						end
 					end
 				end
-				
-				-- Check collision with body segments (more efficient check)
 				if snakeModel:IsA("Model") then
 					for _, part in ipairs(snakeModel:GetDescendants()) do
 						if part:IsA("BasePart") and part.Name ~= "Head" and part.Name ~= "LeftEye" and part.Name ~= "RightEye" then
-							local distance = (part.Position - self.position).Magnitude
-							local collisionRadius = (self.head.Size.X + part.Size.X) * 0.4
-							if distance < collisionRadius then
-								return true -- Hit body = death
+							if not part:GetAttribute("SpawnProtected") then
+								local distance = (part.Position - self.position).Magnitude
+								local collisionRadius = (self.head.Size.X + part.Size.X) * 0.4
+								if distance < collisionRadius then
+									return true -- Hit body = death
+								end
 							end
 						end
 					end
@@ -1054,6 +1206,7 @@ function AISnake:die()
 	end
 	
 	self.isDead = true
+	self:setSpawnProtection(false)
 	
 	-- Visual death effect
 	if self.head then
@@ -1083,6 +1236,12 @@ function AISnake:die()
 end
 
 function AISnake:Destroy()
+	self:cleanupSpawnProtectionHighlight()
+	self.isSpawnProtected = false
+	if self.model then
+		self.model:SetAttribute("SpawnProtected", false)
+	end
+	
 	-- Disconnect update loop
 	if self.connection then
 		self.connection:Disconnect()
