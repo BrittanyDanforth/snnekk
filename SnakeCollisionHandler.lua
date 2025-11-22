@@ -986,7 +986,7 @@ task.spawn(function()
 									-- Fire death event for cleanup
 									local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
 									if deathEvent then
-										deathEvent:Fire(player)
+										deathEvent:FireClient(player)
 									end
 
 									-- CRITICAL: Actually respawn the player (not just mark as dead)
@@ -1045,7 +1045,7 @@ task.spawn(function()
 							-- Fire death event for cleanup
 							local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
 							if deathEvent then
-								deathEvent:Fire(player)
+								deathEvent:FireClient(player)
 							end
 
 							-- CRITICAL: Actually respawn the player

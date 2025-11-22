@@ -193,7 +193,7 @@ local AI_HEIGHT = 5
 local SEGMENT_UPDATE_SKIP = 2
 local LONG_SNAKE_THRESHOLD = 100
 local VERY_LONG_SNAKE_THRESHOLD = 300
-local AI_UPDATE_DISTANCE = 300 -- Increased
+local AI_UPDATE_DISTANCE = 1500 -- Increased significantly to keep distant AI active
 local SEGMENT_POOL_MAX = 500
 
 -- LOD Constants
@@ -275,7 +275,7 @@ do
 	local CELL_SIZE = 75
 	local grid = {}
 	local ground = Workspace:FindFirstChild("SlitherIOGround")
-	local mapSize = ground and ground.Size or Vector3new(1000, 10, 1000)
+	local mapSize = ground and ground.Size or Vector3new(3000, 10, 3000) -- Default larger map if not found
 	local minX, minZ = -mapSize.X / 2, -mapSize.Z / 2
 
 	local function getCellCoords(position)
@@ -647,10 +647,10 @@ task.spawn(function()
 end)
 
 local MAP_BOUNDS = {
-	minX = -350,
-	maxX = 350,
-	minZ = -350,
-	maxZ = 350
+	minX = -1450,
+	maxX = 1450,
+	minZ = -1450,
+	maxZ = 1450
 }
 
 local function updateMapBounds()
@@ -664,6 +664,7 @@ local function updateMapBounds()
 		MAP_BOUNDS.maxZ = ground.Position.Z + halfSizeZ - 30
 		return true
 	end
+	-- Fallback: Keep default large bounds
 	return false
 end
 
@@ -755,7 +756,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.015,
 		BoostChance = 0.04,
 		CombatRadius = 20,
-		RandomTurnInterval = 8.0,
+		RandomTurnInterval = 4.0,
 		OrbSeekRadius = 300,
 		Description = "Efficient orb collector",
 		FleeThreshold = 10,
@@ -774,7 +775,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.02,
 		BoostChance = 0.05,
 		CombatRadius = 30,
-		RandomTurnInterval = 12.0,
+		RandomTurnInterval = 5.0,
 		OrbSeekRadius = 200,
 		Description = "Map explorer",
 		FleeThreshold = 15,
@@ -794,7 +795,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.025,
 		BoostChance = 0.08,
 		CombatRadius = 60,
-		RandomTurnInterval = 6.0,
+		RandomTurnInterval = 3.0,
 		OrbSeekRadius = 400, -- Increased from 150
 		Description = "Smart hunter",
 		FleeThreshold = 20,
@@ -814,7 +815,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.03,
 		BoostChance = 0.07,
 		CombatRadius = 50,
-		RandomTurnInterval = 7.0,
+		RandomTurnInterval = 3.5,
 		OrbSeekRadius = 450, -- Increased from 180
 		Description = "Adaptive hunter",
 		FleeThreshold = 15,
@@ -833,7 +834,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.01,
 		BoostChance = 0.02,
 		CombatRadius = 15,
-		RandomTurnInterval = 10.0,
+		RandomTurnInterval = 5.0,
 		OrbSeekRadius = 600, -- Increased from 400
 		Description = "Peaceful farmer",
 		FleeThreshold = 5,
@@ -854,7 +855,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.04,
 		BoostChance = 0.1,
 		CombatRadius = 45,
-		RandomTurnInterval = 5.0,
+		RandomTurnInterval = 2.5,
 		OrbSeekRadius = 350, -- Increased from 120
 		Description = "Aggressive raider",
 		FleeThreshold = 25,
@@ -874,7 +875,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.02,
 		BoostChance = 0.05,
 		CombatRadius = 70,
-		RandomTurnInterval = 8.0,
+		RandomTurnInterval = 4.0,
 		OrbSeekRadius = 400, -- Increased from 160
 		Description = "Territory defender",
 		FleeThreshold = 30,
@@ -895,7 +896,7 @@ AISnake.PersonalityDefinitions = {
 		TurnBias = 0.025,
 		BoostChance = 0.06,
 		CombatRadius = 35,
-		RandomTurnInterval = 15.0,
+		RandomTurnInterval = 6.0,
 		OrbSeekRadius = 500, -- Increased from 220
 		Description = "Wandering nomad",
 		FleeThreshold = 20,
@@ -1838,7 +1839,15 @@ function AISnake:_determineAction()
 			steer = (targetPos - headPos).Unit
 
 		else
-			if (now - (self.LastTurn or 0) > p.RandomTurnInterval) and distanceSinceTurn > minStraight then
+			-- FORCE turn if wandering too long in same direction regardless of personality
+			if distanceSinceTurn > 600 then
+				-- Force a 90 degree turn if we've gone 600 studs straight
+				local forceTurn = mathRandom(0, 1) == 0 and mathPi/2 or -mathPi/2
+				self.TargetYaw = self.TargetYaw + forceTurn
+				self.LastTurn = now
+				self._lastTurnPosition = headPos
+				steer = Vector3new(mathSin(self.TargetYaw), 0, mathCos(self.TargetYaw))
+			elseif (now - (self.LastTurn or 0) > p.RandomTurnInterval) and distanceSinceTurn > minStraight then
 				local maxTurn = 30
 				local turnAmount = mathRandom(-maxTurn, maxTurn)
 
