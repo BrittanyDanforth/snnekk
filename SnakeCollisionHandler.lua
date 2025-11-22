@@ -55,12 +55,12 @@ local ULTRA_LENGTH_THRESHOLD = 1000
 local CACHE_EXPIRY = 1.5
 local YIELD_INTERVAL = 150
 local NETWORK_COMPENSATION = 0.1
-local COLLISION_FRAME_SKIP = 5
-local MAX_CHECKS_PER_FRAME = 50
+local COLLISION_FRAME_SKIP = 2 -- AAA Quality: Check every 2 frames (was 5)
+local MAX_CHECKS_PER_FRAME = 100 -- Increased to handle higher frequency
 
--- === COLLISION CONSTANTS (unchanged) ===
-local HEAD_COLLISION_DISTANCE = 3.5
-local BODY_COLLISION_DISTANCE = 2.8
+-- === COLLISION CONSTANTS (optimized for tighter hitboxes) ===
+local HEAD_COLLISION_DISTANCE = 3.8 -- Slightly larger head hitbox
+local BODY_COLLISION_DISTANCE = 3.0 -- Tighter body hitbox (was 2.8)
 local MIN_COLLISION_DISTANCE = 2.0
 local COLLISION_BUFFER = 0.5
 local SELF_COLLISION_IGNORE_SEGMENTS = 10

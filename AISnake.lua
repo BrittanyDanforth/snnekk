@@ -1924,7 +1924,7 @@ function AISnake.new(startPosition, preservedPersonalityType)
 
 	self.FollowSpeed = self.Config.FollowSpeed or 0.95
 	self.BoostFollowSpeed = self.Config.BoostFollowSpeed or 0.98
-	self.SegmentSpacing = self.Config.SegmentSpacing or 2.2
+	self.SegmentSpacing = self.Config.SegmentSpacing or 1.8 -- Reduced from 2.2 for better compression
 	self.VisualSpacingFactor = mathClamp(self.Config.VisualSpacingFactor or 0.4, 0.15, 1)
 	self.PathSpacing = mathMax(self.SegmentSpacing * self.VisualSpacingFactor, 0.2)
 	self.IsBoosting = false
