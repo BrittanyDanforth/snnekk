@@ -7,7 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Wait for modules
-local SnakeCollisionHandler = require(script.Parent:WaitForChild("SnakeCollisionHandler_V10_Fixed"))
+local SnakeCollisionHandler = require(script.Parent:WaitForChild("SnakeCollisionHandler"))
 
 -- Initialize the collision handler
 local collisionHandler = SnakeCollisionHandler.new()
