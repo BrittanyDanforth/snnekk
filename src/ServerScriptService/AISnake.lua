@@ -47,6 +47,58 @@ local mathClamp = math.clamp
 local mathFloor = math.floor
 local mathSqrt = math.sqrt
 
+local function randomFloat(minValue, maxValue)
+	return minValue + (maxValue - minValue) * mathRandom()
+end
+
+local function sanitizeNumber(value, defaultValue)
+	if typeof(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge then
+		return value
+	end
+	return defaultValue or 0
+end
+
+local LETTERS = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
+local NAME_SUFFIXES = {"x","z","n","l","r","q","k"}
+local usedAINames = {}
+
+local function generateAIUsername()
+	local baseLength = mathRandom(8, 10)
+	local chars = {}
+
+	for i = 1, baseLength do
+		local letter = LETTERS[mathRandom(#LETTERS)]
+		if i == 1 then
+			letter = letter:upper()
+		elseif mathRandom() < 0.15 then
+			letter = letter:upper()
+		end
+		chars[i] = letter
+	end
+
+	if mathRandom() < 0.45 and #chars < 12 then
+		local suffix = tostring(mathRandom(10, 99))
+		for i = 1, #suffix do
+			if #chars >= 12 then break end
+			chars[#chars + 1] = suffix:sub(i, i)
+		end
+	elseif #chars < 10 then
+		chars[#chars + 1] = NAME_SUFFIXES[mathRandom(#NAME_SUFFIXES)]
+	end
+
+	local username = table.concat(chars)
+	if #username > 12 then
+		username = username:sub(1, 12)
+	end
+	return username
+end
+
+local function releaseAIName(name)
+	if name then
+		usedAINames[name] = nil
+	end
+end
+
 local AISnake = {}
 AISnake.__index = AISnake
 
@@ -123,20 +175,6 @@ local BEAM_TEXTURES = {
 
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
-
--- Leaderboard friendly AI names
-local AI_NAMES = {
-    "Neon Viper",
-    "Plasma Coil",
-    "Vector Fang",
-    "Circuit Serpent",
-    "Nova Coil",
-    "Spectra Boa",
-    "Pulse Python",
-    "Flux Asp",
-    "Cosmic Mamba",
-    "Aurora Constrictor"
-}
 
 -- Snakes folder support
 local SnakesFolder = Workspace:FindFirstChild("Snakes")
