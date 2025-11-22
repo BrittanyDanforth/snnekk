@@ -466,6 +466,21 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	self.CurrentLength = self.Config.InitialLength or 10
 	self.TargetLength = self.CurrentLength
 	self.growthFactor = 1
+
+	self.MotionState = {
+		currentDirection = self.Direction,
+		smoothedSteer = self.Direction,
+		desiredDirection = self.Direction,
+		lastPosition = self.Position,
+		stuckTime = 0,
+	}
+
+	self.ProgressWatch = {
+		lastPos = self.Position,
+		stagnation = 0,
+		oscillationAnchor = self.Position,
+		oscillationTimer = 0
+	}
 	
 	-- === AAA DISTANCE PATHING ===
 	self.pathPoints = {} 
@@ -884,6 +899,7 @@ function AISnake:updateMovement(dt)
 	local speed = self.Speed
 	if self.Boosting then speed = self.BoostSpeed end
 	local moveDist = speed * dt
+	local previousPosition = self.Position
 	local newPos = self.Position + self.Direction * moveDist
 	
 	-- Bounds
@@ -894,10 +910,21 @@ function AISnake:updateMovement(dt)
 		local angle = mathAtan2(self.Direction.X, self.Direction.Z) + mathPi
 		self.Direction = Vector3new(mathSin(angle), 0, mathCos(angle))
 		self.SteerDirection = self.Direction
+		
+		-- Fix: Reset motion state on boundary hit
+		if self.MotionState then
+			self.MotionState.currentDirection = self.Direction
+			self.MotionState.smoothedSteer = self.Direction
+		end
 	else
 		newPos = Vector3new(newPos.X, AI_HEIGHT, newPos.Z)
 	end
 	self.Position = newPos
+	
+	-- Stuck Check
+	local actualDelta = (self.Position - previousPosition).Magnitude
+	self:_updateStuckTimer(dt, actualDelta)
+	if self.MotionState then self.MotionState.lastPosition = self.Position end
 	
 	-- RECORD HISTORY
 	self:_recordPathPoint(self.Position)
@@ -935,6 +962,8 @@ function AISnake:updateMovement(dt)
 	end
 	
 	self.Model:SetAttribute("Length", mathFloor(self.CurrentLength))
+	
+	self:monitorProgress(dt)
 end
 
 -- === LOOPS ===
