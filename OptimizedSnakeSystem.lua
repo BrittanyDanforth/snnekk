@@ -315,6 +315,34 @@ function Snake:createUnifiedBody()
 	self.headGlow = glow
 	self.glows[0] = glow
 	
+	-- Eyes
+	local function createEye(xOffset)
+		local eye = Instance.new("Part")
+		eye.Name = xOffset > 0 and "RightEye" or "LeftEye"
+		eye.Shape = Enum.PartType.Ball
+		eye.Material = Enum.Material.Neon
+		eye.Color = Color3.new(1, 1, 1)
+		eye.Size = Vector3.one * 0.5
+		eye.CanCollide = false
+		eye.Anchored = true
+		eye.Parent = self.model
+		
+		local pupil = Instance.new("Part")
+		pupil.Name = eye.Name .. "Pupil"
+		pupil.Shape = Enum.PartType.Ball
+		pupil.Material = Enum.Material.Neon
+		pupil.Color = Color3.new(0, 0, 0)
+		pupil.Size = Vector3.one * 0.25
+		pupil.CanCollide = false
+		pupil.Anchored = true
+		pupil.Parent = self.model
+		
+		return eye, pupil
+	end
+	
+	self.leftEye, self.leftPupil = createEye(-0.6)
+	self.rightEye, self.rightPupil = createEye(0.6)
+	
 	-- Attachments
 	local att = Instance.new("Attachment")
 	att.Name = "Attachment0"
@@ -415,6 +443,25 @@ function Snake:updateUnifiedBody()
 	self.head.Color = self:getSegmentColor(0)
 	self.headGlow.Color = self.head.Color
 	self.attachments[0].WorldPosition = self.head.Position
+	
+	-- Update Eyes
+	if self.leftEye and self.rightEye then
+		local headSize = self.head.Size.X
+		local eyeScale = headSize / BASE_SIZE * 0.5
+		local eyeOffset = headSize * 0.3
+		local eyeForward = -headSize * 0.35
+		local cf = self.head.CFrame
+		
+		self.leftEye.Size = Vector3.one * eyeScale
+		self.rightEye.Size = Vector3.one * eyeScale
+		self.leftPupil.Size = Vector3.one * eyeScale * 0.5
+		self.rightPupil.Size = Vector3.one * eyeScale * 0.5
+		
+		self.leftEye.CFrame = cf * CFrame.new(-eyeOffset, eyeOffset * 0.5, eyeForward)
+		self.rightEye.CFrame = cf * CFrame.new(eyeOffset, eyeOffset * 0.5, eyeForward)
+		self.leftPupil.CFrame = self.leftEye.CFrame * CFrame.new(0, 0, -eyeScale * 0.3)
+		self.rightPupil.CFrame = self.rightEye.CFrame * CFrame.new(0, 0, -eyeScale * 0.3)
+	end
 	
 	-- 4. Bulk Update Body
 	local bulkParts = {}
