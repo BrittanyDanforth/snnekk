@@ -1282,13 +1282,13 @@ function AISnake:getSmartFleeDirection(threats)
 end
 
 function AISnake:_initPathSystem()
-    local spacing = self.Config.SegmentSpacing or 2.2
+    local spacing = self.PathSpacing or self.SegmentSpacing or 2.2
     local maxSegments = self.Config.MaxSegments or DYNAMIC_SEGMENT_LIMIT
     local path = {
         points = {},
         totalDistance = 0,
         lastRecordedPos = self.Position,
-        minRecordDistance = mathMax(spacing * 0.45, 0.6),
+        minRecordDistance = mathMax(spacing * 0.5, 0.35),
         maxDistance = spacing * (maxSegments + 25)
     }
     path.points[1] = {position = self.Position, distance = 0}
@@ -1917,6 +1917,8 @@ function AISnake.new(startPosition, preservedPersonalityType)
     self.FollowSpeed = self.Config.FollowSpeed or 0.95
     self.BoostFollowSpeed = self.Config.BoostFollowSpeed or 0.98
     self.SegmentSpacing = self.Config.SegmentSpacing or 2.2
+    self.VisualSpacingFactor = mathClamp(self.Config.VisualSpacingFactor or 0.4, 0.15, 1)
+    self.PathSpacing = mathMax(self.SegmentSpacing * self.VisualSpacingFactor, 0.2)
     self.IsBoosting = false
 
     self.TargetOrb = nil
@@ -2193,7 +2195,7 @@ function AISnake:grow(amount)
                 local currentBaseSize = BASE_SIZE * self.growthFactor
 
                 local color = self:getSegmentColor(self.CurrentLength)
-                local spawnDistance = self.CurrentLength * self.SegmentSpacing
+                local spawnDistance = self.CurrentLength * (self.PathSpacing or self.SegmentSpacing)
                 local samplePos, sampleDir = self:_samplePath(spawnDistance)
                 local lastSegment = self.Segments[self.CurrentLength - 1]
                 local newPos = samplePos or (lastSegment and lastSegment.Position) or self.Position
@@ -2814,7 +2816,7 @@ function AISnake:updateMovement(dt)
     for i = 1 + updateOffset, maxSegmentToUpdate, segmentSkip do
         local segment = self:ensureSegmentExists(i)
         if segment and segment.Parent then
-            local targetPos, targetDir = self:_samplePath(i * self.SegmentSpacing)
+            local targetPos, targetDir = self:_samplePath(i * (self.PathSpacing or self.SegmentSpacing))
             targetDir = targetDir or self.Direction
             if targetPos then
                 local newPos = segment.Position:Lerp(targetPos, followSpeed)
@@ -3050,7 +3052,7 @@ function AISnake:ensureSegmentExists(index)
         return segment
     end
 
-    local targetPos, targetDir = self:_samplePath(index * self.SegmentSpacing)
+    local targetPos, targetDir = self:_samplePath(index * (self.PathSpacing or self.SegmentSpacing))
     if not targetPos then
         return nil
     end
