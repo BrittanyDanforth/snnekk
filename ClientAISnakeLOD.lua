@@ -17,7 +17,7 @@ local MAX_VISIBLE_SNAKES = 220
 local MAX_STREAM_DISTANCE = 1800
 local HEARTBEAT_SAMPLE = 1 / 30
 local TRANSPARENCY_LERP = 0.18
-local BEAM_CUTOFF_DIST = 900 -- Hard cutoff for beams
+local BEAM_CUTOFF_DIST = 1500 -- Increased to match fade-out distance
 
 local LOD_PROFILES = {
 	{distance = 200, stride = 1, fade = 1.0, beamFade = 1.0, maxSegments = math.huge, headFocus = 12},
@@ -85,6 +85,9 @@ function ClientSnake:_onChildAdded(child)
 
 	-- New segment
 	if child:IsA("BasePart") and (child.Name:match("^AISegment") or child.Name:match("^Segment")) then
+		-- Init invisible to prevent flash
+		child.LocalTransparencyModifier = 1
+		
 		local index = tonumber(child.Name:match("%d+"))
 		if index and not self.segments[index] then
 			self.segments[index] = child
@@ -253,9 +256,7 @@ function ClientSnake:_setInvisible()
 end
 
 function ClientSnake:_applySegmentVisibility(cameraPos)
-	local headPos = self.head.Position
-	local distance = (cameraPos - headPos).Magnitude
-	self.lastDistance = distance
+	local distance = self.lastDistance or (cameraPos - self.head.Position).Magnitude
 
 	-- Fully hide if too far or head missing
 	if not self.head.Parent or distance > MAX_STREAM_DISTANCE then
@@ -380,7 +381,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 end
 
 function ClientSnake:step(dt, cameraPos)
-	if self.dead or self.culled then
+	if self.dead then
 		return
 	end
 
@@ -390,6 +391,13 @@ function ClientSnake:step(dt, cameraPos)
 			self:_setInvisible()
 			return
 		end
+	end
+
+	-- Always update distance for sorting, even if culled
+	self.lastDistance = (cameraPos - self.head.Position).Magnitude
+
+	if self.culled then
+		return
 	end
 
 	self.accumulator += dt
@@ -523,7 +531,7 @@ function SnakeManager:update(dt)
 	end
 
 	self.lastSort += dt
-	if self.lastSort >= 0.5 then
+	if self.lastSort >= 0.2 then
 		self.lastSort = 0
 		self:_resort()
 	end
