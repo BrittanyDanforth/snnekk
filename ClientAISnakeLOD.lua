@@ -87,7 +87,7 @@ function ClientSnake:_onChildAdded(child)
 	if child:IsA("BasePart") and (child.Name:match("^AISegment") or child.Name:match("^Segment")) then
 		-- Init invisible to prevent flash
 		child.LocalTransparencyModifier = 1
-		
+
 		local index = tonumber(child.Name:match("%d+"))
 		if index and not self.segments[index] then
 			self.segments[index] = child
@@ -116,7 +116,7 @@ function ClientSnake:_onChildAdded(child)
 			end
 		end
 
-	-- Beam added later (usually on head or previous segment)
+		-- Beam added later (usually on head or previous segment)
 	elseif child:IsA("Beam") then
 		local beamIdx = tonumber(child.Name:match("%d+"))
 		if beamIdx then
@@ -168,20 +168,13 @@ function ClientSnake:_hydrate()
 			current = 1,
 			target = 1,
 		}
-		
+
 		local glow = info.part:FindFirstChild("Glow")
 		if glow then
 			self.glows[info.index] = glow
 		end
 
 		-- Find beam (Beam{index}) inside Segment{index}
-		local beam = info.part:FindFirstChild("Beam" .. info.index) -- Beam0 is in Head, Beam1 in Seg1, etc.
-		-- Wait, Beam N is in Segment N? 
-		-- AISnake.lua: Beam i (for i>0) connects i-1 and i. 
-		-- For i=1 (Beam0 connecting Head and Seg1): Beam0 is in Head.
-		-- For i=2 (Beam1 connecting Seg1 and Seg2): Beam1 is in Seg1.
-		-- So Beam(index-1) is in Segment(index-1) or Head.
-		
 		-- Let's look for ANY beam inside the part and index it by name
 		for _, child in ipairs(info.part:GetChildren()) do
 			if child:IsA("Beam") then
@@ -193,9 +186,9 @@ function ClientSnake:_hydrate()
 			end
 		end
 	end
-    
-    -- 3. Find Beams inside Head (Beam0 usually)
-    for _, child in ipairs(self.head:GetChildren()) do
+
+	-- 3. Find Beams inside Head (Beam0 usually)
+	for _, child in ipairs(self.head:GetChildren()) do
 		if child:IsA("Beam") then
 			local beamIdx = tonumber(child.Name:match("%d+"))
 			if beamIdx then
@@ -247,7 +240,7 @@ function ClientSnake:_setInvisible()
 
 	for _, beam in pairs(self.beams) do
 		beam.Enabled = false
-        beam.Transparency = NumberSequence.new(1)
+		beam.Transparency = NumberSequence.new(1)
 	end
 
 	for _, eye in ipairs(self.eyes) do
@@ -267,7 +260,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 
 	local profile = getLodProfile(distance)
 	self.lodProfile = profile
-	
+
 	-- Head fade
 	local headAlpha = smoothVisibility(distance, true) * profile.fade
 	self.head.LocalTransparencyModifier = 1 - headAlpha

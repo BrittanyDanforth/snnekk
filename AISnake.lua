@@ -721,15 +721,8 @@ function AISnake:getSegmentColor(index)
 end
 
 function AISnake:createUnifiedBody()
-	local attachmentPart = Instance.new("Part")
-	attachmentPart.Name = "BeamHolder"
-	attachmentPart.Transparency = 1
-	attachmentPart.CanCollide = false
-	attachmentPart.Anchored = true
-	attachmentPart.Size = Vector3new(1,1,1)
-	attachmentPart.Parent = self.Model
-	self.AttachmentHolder = attachmentPart
-
+	-- Removed AttachmentPart logic to parent directly to segments
+	
 	-- Head
 	local head = Instance.new("Part")
 	head.Name = "Segment0_Head"
@@ -791,10 +784,10 @@ function AISnake:createUnifiedBody()
 	boostParticles.Parent = head
 	self.HeadParts.boostParticles = boostParticles
 	
-	-- Attachments
+	-- Attachments (Head)
 	local att = Instance.new("Attachment")
 	att.Name = "Attachment0"
-	att.Parent = attachmentPart
+	att.Parent = head
 	self.Attachments[0] = att
 	
 	self.visibleSegmentCount = 0
@@ -846,7 +839,7 @@ function AISnake:addSegments(count)
 		
 		local att = Instance.new("Attachment")
 		att.Name = "Attachment" .. i
-		att.Parent = self.AttachmentHolder
+		att.Parent = seg
 		self.Attachments[i] = att
 		
 		if self.Attachments[i-1] then
@@ -866,7 +859,12 @@ function AISnake:addSegments(count)
 				NumberSequenceKeypoint.new(0, 0),
 				NumberSequenceKeypoint.new(1, 0.1)
 			}
-			beam.Parent = self.AttachmentHolder
+			-- Parent beam to previous segment (or head)
+			if i-1 == 0 then
+				beam.Parent = self.HeadParts.head
+			else
+				beam.Parent = self.Segments[i-1]
+			end
 			self.Beams[i-1] = beam
 		end
 	end
@@ -890,7 +888,10 @@ function AISnake:updateUnifiedBody()
 		head.Size = Vector3new(1,1,1) * self:getSegmentSize(0, curBaseSize)
 		head.Color = self:getSegmentColor(0)
 		if self.Glows[0] then self.Glows[0].Color = head.Color end
-		self.Attachments[0].WorldPosition = head.Position
+		
+		-- Note: Attachment0 is parented to head, so it moves with head automatically. 
+		-- But we need to ensure it's centered.
+		if self.Attachments[0] then self.Attachments[0].Position = Vector3new(0,0,0) end
 		
 		if self.HeadParts.leftEye then
 			local hs = head.Size.X
@@ -928,7 +929,8 @@ function AISnake:updateUnifiedBody()
 				seg.Size = Vector3new(1,1,1) * self:getSegmentSize(i, curBaseSize)
 				seg.Color = self:getSegmentColor(i)
 				
-				if self.Attachments[i] then self.Attachments[i].WorldPosition = pos end
+				-- Attachments are parented to segments, so we don't need to move them explicitly
+				-- IF the segment moves correctly.
 				
 				local beam = self.Beams[i-1]
 				if beam then
