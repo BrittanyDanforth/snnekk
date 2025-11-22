@@ -24,6 +24,71 @@ local BOUNDARY_MARGIN = 50
 local UPDATE_INTERVAL = 0.1
 local SEGMENT_UPDATE_INTERVAL = 0.05
 
+local SnakeConfig
+pcall(function()
+	local configModule = ReplicatedStorage:FindFirstChild("SnakeConfig")
+	if configModule then
+		SnakeConfig = require(configModule)
+	end
+end)
+
+local DEFAULT_CONFIG = {
+	BaseSpeed = BASE_SPEED,
+	BoostSpeed = BASE_SPEED * BOOST_SPEED_MULTIPLIER,
+	TurnSpeed = 4.5,
+	SegmentGap = 3.0,
+	PathSmoothness = 0.85
+}
+
+local function cloneTable(source)
+	local copy = {}
+	for key, value in pairs(source) do
+		copy[key] = value
+	end
+	return copy
+end
+
+local Config = table.clone and table.clone(DEFAULT_CONFIG) or cloneTable(DEFAULT_CONFIG)
+if typeof(SnakeConfig) == "table" then
+	for key, value in pairs(DEFAULT_CONFIG) do
+		if typeof(SnakeConfig[key]) == "number" then
+			Config[key] = SnakeConfig[key]
+		end
+	end
+end
+
+local function sanitizeDirection(vector, fallback)
+	if typeof(vector) ~= "Vector3" then
+		return fallback or Vector3.new(0, 0, -1)
+	end
+	local flat = Vector3.new(vector.X, 0, vector.Z)
+	if flat.Magnitude < 0.001 or flat.Magnitude ~= flat.Magnitude then
+		if fallback then
+			return sanitizeDirection(fallback)
+		end
+		return Vector3.new(0, 0, -1)
+	end
+	return flat.Unit
+end
+
+local function limitHorizontalTurn(currentDir, desiredDir, maxDegrees)
+	currentDir = sanitizeDirection(currentDir, desiredDir)
+	desiredDir = sanitizeDirection(desiredDir, currentDir)
+
+	local maxAngle = math.rad(maxDegrees or 135)
+	local maxDot = math.cos(maxAngle)
+	local dot = math.clamp(currentDir:Dot(desiredDir), -1, 1)
+	if dot >= maxDot then
+		return desiredDir
+	end
+
+	local crossY = currentDir.X * desiredDir.Z - currentDir.Z * desiredDir.X
+	local turnSign = crossY >= 0 and 1 or -1
+	local currentYaw = math.atan2(currentDir.Z, currentDir.X)
+	local limitedYaw = currentYaw + maxAngle * turnSign
+	return Vector3.new(math.cos(limitedYaw), 0, math.sin(limitedYaw)).Unit
+end
+
 -- LOD Constants
 local LOD_DISTANCE_NEAR = 50
 local LOD_DISTANCE_MEDIUM = 150
@@ -344,13 +409,26 @@ function AISnake.new(spawnPosition, personalityName)
 	-- Movement
 	self.position = spawnPosition
 	self.velocity = Vector3.new(0, 0, 0)
-	self.direction = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
-	self.speed = BASE_SPEED * selectedPersonality.speedMultiplier
+	self.direction = sanitizeDirection(Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)), Vector3.new(0, 0, 1))
+	self.currentDirection = self.direction
 	self.targetDirection = self.direction
+	self.baseSpeed = (Config.BaseSpeed or BASE_SPEED) * selectedPersonality.speedMultiplier
+	self.boostSpeed = Config.BoostSpeed or (self.baseSpeed * BOOST_SPEED_MULTIPLIER)
+	self.turnSpeed = Config.TurnSpeed or 4.5
+	self.currentSpeed = self.baseSpeed
+	self.targetSpeed = self.baseSpeed
+	self.smoothSpeed = self.baseSpeed
+	self.segmentSpacing = math.max(Config.SegmentGap or 3.0, 1.5)
+	self.pathPoints = {
+		{position = self.position - self.currentDirection * self.segmentSpacing, distance = 0},
+		{position = self.position, distance = self.segmentSpacing}
+	}
+	self.totalPathDistance = self.segmentSpacing
+	self.maxPathDistance = self.segmentSpacing * (MAX_SEGMENTS + 10)
+	self.lastPathPosition = self.position
 	
 	-- Segments
 	self.segments = {}
-	self.segmentPositions = {}
 	self.length = 1
 	self.targetLength = 1
 	
@@ -472,6 +550,18 @@ function AISnake:updateAI()
 	
 	-- Update target direction based on state
 	self:updateTargetDirection()
+
+	if not self.isBoosting then
+		local stateSpeedMultiplier = 1
+		if self.state == State.FLEE then
+			stateSpeedMultiplier = 1.1
+		elseif self.state == State.AVOID_BOUNDARY or self.state == State.AVOID_WALL then
+			stateSpeedMultiplier = 1.05
+		elseif self.state == State.SEEK_ORB then
+			stateSpeedMultiplier = 1
+		end
+		self.targetSpeed = self.baseSpeed * stateSpeedMultiplier
+	end
 	
 	-- Boost logic
 	if not self.isBoosting and os.clock() - self.lastBoostTime >= BOOST_COOLDOWN then
@@ -545,17 +635,19 @@ function AISnake:updateTargetDirection()
 	if weightSum > 0 then
 		desiredDirection = desiredDirection / weightSum
 		if desiredDirection.Magnitude > 0.1 then
-			desiredDirection = desiredDirection.Unit
+			desiredDirection = sanitizeDirection(desiredDirection)
+			local referenceDir = self.currentDirection or self.direction
+			desiredDirection = limitHorizontalTurn(referenceDir, desiredDirection, 135)
 			-- Smooth direction change based on speed
-			local smoothFactor = self.isBoosting and 0.5 or 0.75
-			self.targetDirection = (self.targetDirection * smoothFactor + desiredDirection * (1 - smoothFactor)).Unit
+			local smoothFactor = self.isBoosting and 0.45 or Config.PathSmoothness
+			self.targetDirection = sanitizeDirection(self.targetDirection * smoothFactor + desiredDirection * (1 - smoothFactor), desiredDirection)
 		else
 			-- Very small direction change, maintain current
-			self.targetDirection = (self.targetDirection * 0.95 + self.direction * 0.05).Unit
+			self.targetDirection = sanitizeDirection(self.targetDirection * 0.95 + self.direction * 0.05, self.direction)
 		end
 	else
 		-- Default forward movement
-		self.targetDirection = (self.targetDirection * 0.9 + self.direction * 0.1).Unit
+		self.targetDirection = sanitizeDirection(self.targetDirection * 0.9 + self.direction * 0.1, self.direction)
 	end
 end
 
@@ -780,20 +872,31 @@ function AISnake:setState(newState)
 end
 
 function AISnake:updateMovement(dt)
-	-- Update direction
-	self.direction = self.targetDirection
-	
-	-- Calculate speed
-	local currentSpeed = self.speed
-	if self.isBoosting then
-		currentSpeed = currentSpeed * BOOST_SPEED_MULTIPLIER
+	if dt <= 0 then
+		return
 	end
-	
-	-- Update velocity
-	self.velocity = self.direction * currentSpeed
-	
-	-- Update position
+
+	local desiredDir = sanitizeDirection(self.targetDirection, self.currentDirection or self.direction)
+	desiredDir = limitHorizontalTurn(self.currentDirection or self.direction, desiredDir, 135)
+
+	local turnRate = math.clamp((self.turnSpeed or Config.TurnSpeed) * dt, 0, 1)
+	local blended = self.currentDirection:Lerp(desiredDir, turnRate)
+	if blended.Magnitude > 0.001 then
+		self.currentDirection = blended.Unit
+	end
+	self.direction = self.currentDirection
+
+	if self.isBoosting then
+		self.targetSpeed = self.boostSpeed
+	end
+
+	local accelRate = math.clamp(dt * 6, 0, 1)
+	self.smoothSpeed = self.smoothSpeed + (self.targetSpeed - self.smoothSpeed) * accelRate
+	self.currentSpeed = self.smoothSpeed
+
+	self.velocity = self.direction * self.currentSpeed
 	self.position = self.position + self.velocity * dt
+	self:_recordPathPoint(self.position)
 	
 	-- Update head
 	self.head.Position = self.position
@@ -815,49 +918,114 @@ function AISnake:updateMovement(dt)
 	AISnake.spatialGrid:insert(self, self.position)
 end
 
-function AISnake:updateSegments(dt)
-	-- Update segment positions
-	table.insert(self.segmentPositions, 1, self.position)
-	
-	-- Limit segment positions
-	local maxPositions = math.max(self.targetLength + 5, 10)
-	if #self.segmentPositions > maxPositions then
-		table.remove(self.segmentPositions)
+function AISnake:_recordPathPoint(newPosition)
+	if not self.pathPoints then
+		self.pathPoints = {{position = newPosition, distance = 0}}
+		self.totalPathDistance = 0
+		self.lastPathPosition = newPosition
 	end
-	
-	-- Ensure correct number of segments
-	while #self.segments < self.targetLength do
+
+	local delta = (newPosition - self.lastPathPosition).Magnitude
+	if delta < 0.001 then
+		local lastEntry = self.pathPoints[#self.pathPoints]
+		if lastEntry then
+			lastEntry.position = newPosition
+			lastEntry.distance = self.totalPathDistance or 0
+		end
+		return
+	end
+
+	self.totalPathDistance = (self.totalPathDistance or 0) + delta
+	table.insert(self.pathPoints, {position = newPosition, distance = self.totalPathDistance})
+	self.lastPathPosition = newPosition
+
+	local maxDistance = self.maxPathDistance or (self.segmentSpacing * (MAX_SEGMENTS + 10))
+	while #self.pathPoints > 2 and self.totalPathDistance - self.pathPoints[1].distance > maxDistance do
+		table.remove(self.pathPoints, 1)
+	end
+end
+
+function AISnake:_samplePath(distanceBehind)
+	if not self.pathPoints or #self.pathPoints == 0 then
+		return self.position
+	end
+
+	local history = self.pathPoints
+	local totalDistance = self.totalPathDistance or 0
+	local targetDistance = totalDistance - distanceBehind
+
+	if targetDistance <= history[1].distance then
+		return history[1].position
+	end
+
+	for idx = #history, 2, -1 do
+		local prev = history[idx - 1]
+		local curr = history[idx]
+		if targetDistance >= prev.distance then
+			local span = curr.distance - prev.distance
+			local alpha = span > 0 and (targetDistance - prev.distance) / span or 0
+			return prev.position:Lerp(curr.position, alpha)
+		end
+	end
+
+	return history[1].position
+end
+
+function AISnake:updateSegments(dt)
+	local desiredSegments = math.min(self.targetLength, MAX_SEGMENTS)
+
+	while #self.segments < desiredSegments do
 		self:grow()
 	end
-	
-	-- Remove excess segments if target length decreased
-	while #self.segments > self.targetLength do
+
+	while #self.segments > desiredSegments do
 		local lastSegment = table.remove(self.segments)
 		if lastSegment then
 			returnSegmentToPool(lastSegment)
 		end
 	end
-	
-	-- Update existing segments with smooth interpolation
+
+	if not self.pathPoints or #self.pathPoints < 2 then
+		self.length = #self.segments
+		return
+	end
+
+	local totalDistance = self.totalPathDistance or 0
+	local history = self.pathPoints
+	local historyIndex = #history
+	local followAlpha = self.isBoosting and 0.35 or 0.5
+
 	for i, segment in ipairs(self.segments) do
-		if i <= #self.segmentPositions then
-			local targetPos = self.segmentPositions[i]
-			if segment and segment.Parent then
-				-- Smooth movement towards target position
-				local currentPos = segment.Position
-				local distance = (targetPos - currentPos).Magnitude
-				if distance > 0.1 then
-					local moveSpeed = math.min(distance, 2.0) -- Cap movement speed
-					local direction = (targetPos - currentPos) / distance
-					segment.Position = currentPos + direction * moveSpeed
-				else
-					segment.Position = targetPos
-				end
+		local targetDistance = totalDistance - (i * self.segmentSpacing)
+		local targetPos
+
+		if targetDistance <= history[1].distance then
+			targetPos = history[1].position
+		else
+			while historyIndex > 1 and targetDistance < history[historyIndex - 1].distance do
+				historyIndex -= 1
+			end
+
+			if historyIndex < 2 then
+				historyIndex = 2
+			end
+
+			local newer = history[historyIndex]
+			local older = history[historyIndex - 1]
+			local span = newer.distance - older.distance
+			local alpha = span > 0 and (targetDistance - older.distance) / span or 0
+			targetPos = older.position:Lerp(newer.position, alpha)
+		end
+
+		if segment and segment.Parent and targetPos then
+			if segment.Position.Magnitude == segment.Position.Magnitude then
+				segment.Position = segment.Position:Lerp(targetPos, followAlpha)
+			else
+				segment.Position = targetPos
 			end
 		end
 	end
-	
-	-- Update length
+
 	self.length = #self.segments
 end
 
@@ -888,11 +1056,8 @@ function AISnake:grow()
 	table.insert(self.segments, newSegment)
 	
 	-- Set initial position
-	if #self.segmentPositions > 0 then
-		newSegment.Position = self.segmentPositions[#self.segmentPositions]
-	else
-		newSegment.Position = self.position
-	end
+	local spawnDistance = (#self.segments + 1) * self.segmentSpacing
+	newSegment.Position = self:_samplePath(spawnDistance) or self.position
 end
 
 function AISnake:getSegmentSize()
@@ -916,6 +1081,7 @@ function AISnake:startBoost()
 	end
 	
 	self.isBoosting = true
+	self.targetSpeed = self.boostSpeed
 	self.boostEndTime = os.clock() + BOOST_DURATION
 	self.lastBoostTime = os.clock()
 	
@@ -938,6 +1104,7 @@ end
 
 function AISnake:endBoost()
 	self.isBoosting = false
+	self.targetSpeed = self.baseSpeed
 end
 
 function AISnake:checkCollisions()
