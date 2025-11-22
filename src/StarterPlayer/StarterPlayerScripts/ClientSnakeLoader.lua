@@ -7,20 +7,34 @@ local RunService = game:GetService("RunService")
 
 local LOCAL_PLAYER = Players.LocalPlayer
 
+local MODULE_CANDIDATES = {
+	"OptimizedSnakeSystem",
+	"OptimizedSnakeSystemV9",
+	"OptimizedSnakeSystemV8_ContinuousBeam",
+}
+
+local activeModuleName
+
 local function requireBeamSystem()
-	local module = ReplicatedStorage:FindFirstChild("OptimizedSnakeSystemV8_ContinuousBeam")
-	if not module then
-		warn("[ClientSnakeLoader] OptimizedSnakeSystemV8_ContinuousBeam missing; using stub visuals.")
-		return nil
+	for _, moduleName in ipairs(MODULE_CANDIDATES) do
+		local module = ReplicatedStorage:FindFirstChild(moduleName)
+		if module and module:IsA("ModuleScript") then
+			local ok, lib = pcall(require, module)
+			if ok and type(lib) == "table" then
+				activeModuleName = moduleName
+				print(string.format("✅ ClientSnakeLoader: Loaded %s", moduleName))
+				return lib
+			else
+				warn(string.format("[ClientSnakeLoader] Failed to require %s: %s", moduleName, tostring(lib)))
+			end
+		end
 	end
 
-	local ok, lib = pcall(require, module)
-	if not ok or type(lib) ~= "table" or type(lib.new) ~= "function" then
-		warn("[ClientSnakeLoader] Failed to require beam system:", lib)
-		return nil
-	end
-
-	return lib
+	warn(string.format(
+		"[ClientSnakeLoader] No snake visual module found. Looked for: %s",
+		table.concat(MODULE_CANDIDATES, ", ")
+	))
+	return nil
 end
 
 local BeamSnakeSystem = requireBeamSystem()
@@ -30,7 +44,7 @@ local function getStubSystem()
 		init = function()
 			warn("[ClientSnakeLoader] Stub snake visuals active – drop the real beam module for effects.")
 		end,
-		new = function()
+		createSnake = function()
 			return {
 				destroy = function() end,
 				setLength = function() end,
@@ -42,6 +56,7 @@ end
 
 if not BeamSnakeSystem then
 	BeamSnakeSystem = getStubSystem()
+	activeModuleName = "stub"
 end
 
 local ok, initErr = pcall(function()
@@ -90,7 +105,23 @@ local function buildConfigForPlayer(targetPlayer)
 		InitialLength = targetPlayer:GetAttribute("SnakeLength") or 10,
 		HeadColor = targetPlayer:GetAttribute("HeadColor") or Color3.fromRGB(76, 217, 100),
 		SkinName = targetPlayer:GetAttribute("EquippedSkin") or "Default",
+		BodyColors = targetPlayer:GetAttribute("BodyColors"),
 	}
+end
+
+local function spawnVisualSnake(character, owner)
+	local config = buildConfigForPlayer(owner)
+
+	if type(BeamSnakeSystem) == "function" then
+		return BeamSnakeSystem(character, config)
+	end
+
+	local constructor = BeamSnakeSystem.createSnake or BeamSnakeSystem.new or BeamSnakeSystem.CreateSnake
+	if type(constructor) ~= "function" then
+		error(string.format("[ClientSnakeLoader] Module %s is missing createSnake/new constructor", tostring(activeModuleName)))
+	end
+
+	return constructor(character, config)
 end
 
 local function createVisualSnake(character)
@@ -105,7 +136,7 @@ local function createVisualSnake(character)
 
 	local snakeInstance
 	local success, err = pcall(function()
-		snakeInstance = BeamSnakeSystem.new(character, buildConfigForPlayer(owner))
+		snakeInstance = spawnVisualSnake(character, owner)
 	end)
 
 	if not success or not snakeInstance then

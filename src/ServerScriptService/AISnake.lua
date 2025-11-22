@@ -58,6 +58,43 @@ local function sanitizeNumber(value, defaultValue)
 	return defaultValue or 0
 end
 
+local function isValidVector(vec)
+	return typeof(vec) == "Vector3"
+		and vec.X == vec.X
+		and vec.Y == vec.Y
+		and vec.Z == vec.Z
+end
+
+local function sanitizeVector(vec, fallback)
+	if not isValidVector(vec) or vec.Magnitude < 0.0001 then
+		return fallback or Vector3new(0, 0, 1)
+	end
+	return vec
+end
+
+local function limitTurnAngle(currentDir, desiredDir, allowHardTurn)
+	if allowHardTurn or not (isValidVector(currentDir) and isValidVector(desiredDir)) then
+		return desiredDir
+	end
+
+	local dot = currentDir:Dot(desiredDir)
+	if dot >= -0.5 then
+		return desiredDir
+	end
+
+	local right = currentDir:Cross(Vector3new(0, 1, 0))
+	if right.Magnitude < 0.001 then
+		return desiredDir
+	end
+	right = right.Unit
+
+	local turnDir = right:Dot(desiredDir) >= 0 and 1 or -1
+	local maxTurnAngle = mathRad(120)
+	local currentAngle = mathAtan2(currentDir.X, currentDir.Z)
+	local limitedAngle = currentAngle + maxTurnAngle * turnDir
+	return Vector3new(mathSin(limitedAngle), 0, mathCos(limitedAngle))
+end
+
 local LETTERS = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
 local NAME_SUFFIXES = {"x","z","n","l","r","q","k"}
 local usedAINames = {}
@@ -1244,6 +1281,77 @@ function AISnake:getSmartFleeDirection(threats)
     return toCenter.Unit
 end
 
+function AISnake:_ensureMotionState()
+	if self.MotionState then
+		return self.MotionState
+	end
+
+	local initialDir = sanitizeVector(self.Direction, Vector3new(0, 0, 1)).Unit
+	self.MotionState = {
+		currentDirection = initialDir,
+		smoothedSteer = initialDir,
+		desiredDirection = initialDir,
+		lastPosition = self.Position,
+		stuckTime = 0,
+	}
+	return self.MotionState
+end
+
+function AISnake:_setSteerTarget(steer)
+	local fallback = self.Direction or Vector3new(0, 0, 1)
+	local sanitized = sanitizeVector(steer, fallback)
+	if sanitized.Magnitude > 0 then
+		sanitized = sanitized.Unit
+	else
+		sanitized = fallback
+	end
+
+	local motion = self:_ensureMotionState()
+	motion.desiredDirection = sanitized
+	self.SteerDirection = sanitized
+end
+
+function AISnake:_blendSteer(dt, baseSteer)
+	local motion = self:_ensureMotionState()
+	local fallback = self.Direction or Vector3new(0, 0, 1)
+	local sanitized = sanitizeVector(baseSteer, fallback).Unit
+
+	local now = tick()
+	local allowHardTurn = motion.allowHardTurnUntil and motion.allowHardTurnUntil > now
+	sanitized = limitTurnAngle(motion.currentDirection or fallback, sanitized, allowHardTurn)
+	if allowHardTurn and motion.allowHardTurnUntil < now - 0.25 then
+		motion.allowHardTurnUntil = nil
+	end
+
+	if not motion.smoothedSteer then
+		motion.smoothedSteer = sanitized
+	else
+		local smoothing = mathClamp(
+			(self.Config.PathSmoothness or 0.85) + (self.SkillReactionLag or 0) * 0.5,
+			0.2,
+			0.95
+		)
+		motion.smoothedSteer = motion.smoothedSteer:Lerp(sanitized, smoothing)
+	end
+
+	motion.desiredDirection = sanitized
+	return motion.smoothedSteer
+end
+
+function AISnake:_updateStuckTimer(dt, moveDelta)
+	local motion = self:_ensureMotionState()
+	local minDelta = mathMax(0.35, self.Speed * dt * 0.35)
+	if moveDelta < minDelta then
+		motion.stuckTime = (motion.stuckTime or 0) + dt
+		if motion.stuckTime > 0.55 then
+			self:forceCourseCorrection("stuck")
+			motion.stuckTime = 0
+		end
+	else
+		motion.stuckTime = mathMax(0, (motion.stuckTime or 0) - dt * 0.5)
+	end
+end
+
 function AISnake:forceCourseCorrection(reason)
 	if self._destroyed then return end
 
@@ -1255,6 +1363,11 @@ function AISnake:forceCourseCorrection(reason)
 	self.TargetOrb = nil
 	self.TargetSnake = nil
 	self.Avoiding = false
+	local motion = self:_ensureMotionState()
+	motion.currentDirection = self.Direction
+	motion.smoothedSteer = self.Direction
+	motion.desiredDirection = self.Direction
+	motion.allowHardTurnUntil = tick() + 0.4
 
 	if self.ProgressWatch then
 		self.ProgressWatch.stagnation = 0
@@ -1665,7 +1778,7 @@ function AISnake:updateBrain()
 
     local state, steer = self:_determineAction()
     self.State = state
-    self.SteerDirection = steer
+	self:_setSteerTarget(steer)
 end
 function AISnake.new(startPosition, preservedPersonalityType)
     if #AISnake._activeSnakes >= MAX_AI_SNAKES then
@@ -1725,6 +1838,14 @@ function AISnake.new(startPosition, preservedPersonalityType)
     self.circleAngle = mathRandom() * 2 * mathPi
     self.killCount = 0
     self.lastKillTime = 0
+
+	self.MotionState = {
+		currentDirection = self.Direction,
+		smoothedSteer = self.Direction,
+		desiredDirection = self.Direction,
+		lastPosition = self.Position,
+		stuckTime = 0,
+	}
 
     local pType
     if preservedPersonalityType and AISnake.PersonalityDefinitions[preservedPersonalityType] then
@@ -2285,13 +2406,15 @@ function AISnake:updateMovement(dt)
     end
 
     local state = self.State
-    local steer = self.SteerDirection
+	local motion = self:_ensureMotionState()
+	local steer = self.SteerDirection
 
     if not steer or steer.Magnitude < 0.1 then
         steer = self.Direction
     end
 
 	steer = self:applySafetySteer(steer)
+	steer = self:_blendSteer(dt, steer)
 
     if self._lastBrainUpdate then
         local timeSinceLastBrain = now - self._lastBrainUpdate
@@ -2329,7 +2452,7 @@ function AISnake:updateMovement(dt)
         end
     end
 
-	local forward = self.Direction or Vector3new(0, 0, 1)
+	local forward = motion.currentDirection or self.Direction or Vector3new(0, 0, 1)
 	local flatForward = Vector3new(forward.X, 0, forward.Z)
 	if flatForward.Magnitude < 0.0001 then
 		flatForward = Vector3new(0, 0, 1)
@@ -2383,7 +2506,8 @@ function AISnake:updateMovement(dt)
 	end
     self.CurrentYaw = self.CurrentYaw + yawDiff
 
-    self.Direction = Vector3new(mathSin(self.CurrentYaw), 0, mathCos(self.CurrentYaw))
+	self.Direction = Vector3new(mathSin(self.CurrentYaw), 0, mathCos(self.CurrentYaw))
+	motion.currentDirection = self.Direction
 
     if self.State == "WANDER" or self.State == "FLEE" then
         local wobbleTime = tick() * 2
@@ -2475,8 +2599,9 @@ function AISnake:updateMovement(dt)
         self.Speed = mathMax(self.NormalSpeed, self.NormalSpeed * speedMultiplier)
     end
 
-    local moveDistance = self.Speed * dt
-    local newPosition = self.Position + self.Direction * moveDistance
+	local moveDistance = self.Speed * dt
+	local previousPosition = self.Position
+	local newPosition = previousPosition + self.Direction * moveDistance
 
     if not isSpawnProtected then
         local margin = 20
@@ -2501,6 +2626,10 @@ function AISnake:updateMovement(dt)
     else
         self.Position = newPosition
     end
+
+	local actualDelta = (self.Position - previousPosition).Magnitude
+	self:_updateStuckTimer(dt, actualDelta)
+	motion.lastPosition = self.Position
 
     self.RootPart.Position = self.Position
 
