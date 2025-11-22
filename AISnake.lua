@@ -2077,49 +2077,67 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	for i = 0, initialSegmentCount - 1 do
 		local beam = Instance.new("Beam")
 		beam.Name = "Beam" .. i
-		beam.Attachment0 = self.Attachments[i]
-		beam.Attachment1 = self.Attachments[i + 1]
-
-		local beamWidth = self:getBeamWidth(i, currentBaseSize)
-		beam.Width0 = beamWidth
-		beam.Width1 = beamWidth
-		beam.CurveSize0 = 0
-		beam.CurveSize1 = 0
-		beam.FaceCamera = true
-		beam.Segments = BEAM_SEGMENTS
-		beam.Texture = BEAM_TEXTURES.gradient
-		beam.TextureMode = Enum.TextureMode.Wrap
-		beam.TextureLength = 2
-		beam.TextureSpeed = BEAM_TEXTURE_SPEED
-		beam.LightEmission = 1
-		beam.LightInfluence = 0
-						beam.Brightness = 2
-						beam.Transparency = NumberSequence.new{
-							NumberSequenceKeypoint.new(0, 0.5),
-							NumberSequenceKeypoint.new(0.5, 0.3),
-							NumberSequenceKeypoint.new(1, 0.5)
-						}
-
-						if i == 0 then
-			local headColor = self:getSegmentColor(0)
-			local seg1Color = self:getSegmentColor(1)
-			beam.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, headColor),
-				ColorSequenceKeypoint.new(0.3, headColor:Lerp(seg1Color, 0.3)),
-				ColorSequenceKeypoint.new(0.7, headColor:Lerp(seg1Color, 0.7)),
-				ColorSequenceKeypoint.new(1, seg1Color)
-			})
-		else
-			beam.Color = ColorSequence.new(self:getSegmentColor(i))
+		
+		-- Fix: Attachments table is not fully populated if initialSegmentCount > 1
+		-- We must ensure Attachments[i+1] exists for the beam to connect
+		if not self.Attachments[i+1] then
+			-- This should have been created in the loop above, but just in case:
+			warn("Missing attachment for beam", i, "creating fallback")
+			local nextSeg = self.Segments[i+1]
+			if nextSeg then
+				local att = Instance.new("Attachment")
+				att.Name = "Attachment" .. (i+1)
+				att.Parent = nextSeg
+				att.Position = Vector3.new(0,0,0)
+				self.Attachments[i+1] = att
+			end
 		end
 
-		-- Parent beam to the start segment of the pair (Head for 0, Segment i for others)
-		if i == 0 then
-			beam.Parent = self.HeadParts.head
-		else
-			beam.Parent = self.Segments[i]
+		if self.Attachments[i] and self.Attachments[i+1] then
+			beam.Attachment0 = self.Attachments[i]
+			beam.Attachment1 = self.Attachments[i+1]
+
+			local beamWidth = self:getBeamWidth(i, currentBaseSize)
+			beam.Width0 = beamWidth
+			beam.Width1 = beamWidth
+			beam.CurveSize0 = 0
+			beam.CurveSize1 = 0
+			beam.FaceCamera = true
+			beam.Segments = BEAM_SEGMENTS
+			beam.Texture = BEAM_TEXTURES.gradient
+			beam.TextureMode = Enum.TextureMode.Wrap
+			beam.TextureLength = 2
+			beam.TextureSpeed = BEAM_TEXTURE_SPEED
+			beam.LightEmission = 1
+			beam.LightInfluence = 0
+			beam.Brightness = 2
+			beam.Transparency = NumberSequence.new{
+				NumberSequenceKeypoint.new(0, 0.5),
+				NumberSequenceKeypoint.new(0.5, 0.3),
+				NumberSequenceKeypoint.new(1, 0.5)
+			}
+
+			if i == 0 then
+				local headColor = self:getSegmentColor(0)
+				local seg1Color = self:getSegmentColor(1)
+				beam.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, headColor),
+					ColorSequenceKeypoint.new(0.3, headColor:Lerp(seg1Color, 0.3)),
+					ColorSequenceKeypoint.new(0.7, headColor:Lerp(seg1Color, 0.7)),
+					ColorSequenceKeypoint.new(1, seg1Color)
+				})
+			else
+				beam.Color = ColorSequence.new(self:getSegmentColor(i))
+			end
+
+			-- Parent beam to the start segment of the pair (Head for 0, Segment i for others)
+			if i == 0 then
+				beam.Parent = self.HeadParts.head
+			else
+				beam.Parent = self.Segments[i]
+			end
+			self.Beams[i] = beam
 		end
-		self.Beams[i] = beam
 	end
 
 	self.actualSegmentCount = initialSegmentCount
