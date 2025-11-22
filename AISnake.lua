@@ -2093,14 +2093,14 @@ function AISnake.new(startPosition, preservedPersonalityType)
 		beam.TextureSpeed = BEAM_TEXTURE_SPEED
 		beam.LightEmission = 1
 		beam.LightInfluence = 0
-		beam.Brightness = 2
-		beam.Transparency = NumberSequence.new{
-			NumberSequenceKeypoint.new(0, 0),
-			NumberSequenceKeypoint.new(0.5, 0),
-			NumberSequenceKeypoint.new(1, 0.1)
-		}
+						beam.Brightness = 2
+						beam.Transparency = NumberSequence.new{
+							NumberSequenceKeypoint.new(0, 0.5),
+							NumberSequenceKeypoint.new(0.5, 0.3),
+							NumberSequenceKeypoint.new(1, 0.5)
+						}
 
-		if i == 0 then
+						if i == 0 then
 			local headColor = self:getSegmentColor(0)
 			local seg1Color = self:getSegmentColor(1)
 			beam.Color = ColorSequence.new({
@@ -2281,33 +2281,33 @@ function AISnake:grow(amount)
 						end
 
 						if prevAttachment then
-							local beam = Instance.new("Beam")
-							beam.Name = "Beam" .. prevIndex
-							beam.Attachment0 = prevAttachment
-							beam.Attachment1 = attachment
+						local beam = Instance.new("Beam")
+						beam.Name = "Beam" .. prevIndex
+						beam.Attachment0 = prevAttachment
+						beam.Attachment1 = attachment
 
-							local beamWidth = self:getBeamWidth(prevIndex, currentBaseSize)
-							beam.Width0 = beamWidth
-							beam.Width1 = beamWidth
-							beam.CurveSize0 = 0
-							beam.CurveSize1 = 0
-							beam.FaceCamera = true
-							beam.Segments = BEAM_SEGMENTS
-							beam.Texture = BEAM_TEXTURES.gradient
-							beam.TextureMode = Enum.TextureMode.Wrap
-							beam.TextureLength = 2
-							beam.TextureSpeed = BEAM_TEXTURE_SPEED
-							beam.LightEmission = 1
-							beam.LightInfluence = 0
-							beam.Brightness = 2
-							beam.Transparency = NumberSequence.new{
-								NumberSequenceKeypoint.new(0, 0),
-								NumberSequenceKeypoint.new(0.5, 0),
-								NumberSequenceKeypoint.new(1, 0.1)
-							}
+						local beamWidth = self:getBeamWidth(prevIndex, currentBaseSize)
+						beam.Width0 = beamWidth
+						beam.Width1 = beamWidth
+						beam.CurveSize0 = 0
+						beam.CurveSize1 = 0
+						beam.FaceCamera = true
+						beam.Segments = BEAM_SEGMENTS
+						beam.Texture = BEAM_TEXTURES.gradient
+						beam.TextureMode = Enum.TextureMode.Wrap
+						beam.TextureLength = 2
+						beam.TextureSpeed = BEAM_TEXTURE_SPEED
+						beam.LightEmission = 1
+						beam.LightInfluence = 0
+						beam.Brightness = 2
+						beam.Transparency = NumberSequence.new{
+							NumberSequenceKeypoint.new(0, 0.5),
+							NumberSequenceKeypoint.new(0.5, 0.3),
+							NumberSequenceKeypoint.new(1, 0.5)
+						}
 
-							local prevColor = self:getSegmentColor(prevIndex)
-							local currColor = self:getSegmentColor(self.CurrentLength)
+						local prevColor = self:getSegmentColor(prevIndex)
+						local currColor = self:getSegmentColor(self.CurrentLength)
 
 							if not prevColor or not currColor then
 								beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 51))
@@ -2847,6 +2847,22 @@ function AISnake:updateMovement(dt)
 
 	local currentBaseSize = BASE_SIZE * self.growthFactor
 
+	-- VISUAL POLISH: Check visibility and enforce it
+	if not isSpawnProtected then
+		if self.HeadParts and self.HeadParts.head then
+			self.HeadParts.head.Transparency = 0
+		end
+		-- Force segments visible if they might have stuck transparency
+		if self._segmentUpdateFrame % 30 == 0 then
+			for i = 1, self.CurrentLength do
+				local seg = self.Segments[i]
+				if seg and seg.Parent and seg.Transparency > 0.1 then
+					seg.Transparency = 0
+				end
+			end
+		end
+	end
+
 	local segmentSkip = 1
 	if self.CurrentLength > VERY_LONG_SNAKE_THRESHOLD then
 		segmentSkip = 4
@@ -2870,6 +2886,21 @@ function AISnake:updateMovement(dt)
 			if targetPos then
 				local newPos = segment.Position:Lerp(targetPos, followSpeed)
 				segment.CFrame = CFramenew(newPos, newPos + targetDir)
+				
+				-- Force visible if needed
+				if not isSpawnProtected and segment.Transparency > 0.1 then
+					segment.Transparency = 0
+				end
+			end
+		end
+	end
+
+	-- Re-validate visibility for skipped segments occasionally
+	if segmentSkip > 1 and self._segmentUpdateFrame % 10 == 0 then
+		for i = 1, maxSegmentToUpdate do
+			local segment = self.Segments[i]
+			if segment and segment.Parent and not isSpawnProtected and segment.Transparency > 0.1 then
+				segment.Transparency = 0
 			end
 		end
 	end
@@ -3079,7 +3110,7 @@ function AISnake:getBeamWidth(index, baseSize)
 	local avgSize = (segmentSize1 + segmentSize2) / 2
 	local beamTaper = 1 - (index / self.CurrentLength) * BEAM_TAPER_STRENGTH
 	local aiConfig = self.Config.AI or {}
-	local beamWidthBase = aiConfig.BeamWidthMultiplier or BEAM_WIDTH_BASE * 0.9
+	local beamWidthBase = aiConfig.BeamWidthMultiplier or BEAM_WIDTH_BASE * 0.7 -- Reduced from 0.9 to 0.7
 
 	return avgSize * beamWidthBase * beamTaper
 end
@@ -3145,9 +3176,9 @@ function AISnake:ensureSegmentExists(index)
 			beam.LightInfluence = 0
 			beam.Brightness = 2
 			beam.Transparency = NumberSequence.new{
-				NumberSequenceKeypoint.new(0, 0),
-				NumberSequenceKeypoint.new(0.5, 0),
-				NumberSequenceKeypoint.new(1, 0.1)
+				NumberSequenceKeypoint.new(0, 0.5),
+				NumberSequenceKeypoint.new(0.5, 0.3),
+				NumberSequenceKeypoint.new(1, 0.5)
 			}
 			beam.Color = ColorSequence.new(color)
 
