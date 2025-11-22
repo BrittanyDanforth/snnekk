@@ -72,13 +72,21 @@ local function sanitizeVector(vec, fallback)
 	return vec
 end
 
+local MAX_TURN_DEG = 45
+local HARD_TURN_DEG = 75
+
 local function limitTurnAngle(currentDir, desiredDir, allowHardTurn)
-	if allowHardTurn or not (isValidVector(currentDir) and isValidVector(desiredDir)) then
+	if not (isValidVector(currentDir) and isValidVector(desiredDir)) then
 		return desiredDir
 	end
 
-	local dot = currentDir:Dot(desiredDir)
-	if dot >= -0.5 then
+	currentDir = currentDir.Unit
+	desiredDir = desiredDir.Unit
+
+	local maxAngle = mathRad(allowHardTurn and HARD_TURN_DEG or MAX_TURN_DEG)
+	local cosMax = mathCos(maxAngle)
+	local dot = mathClamp(currentDir:Dot(desiredDir), -1, 1)
+	if dot >= cosMax then
 		return desiredDir
 	end
 
@@ -89,9 +97,8 @@ local function limitTurnAngle(currentDir, desiredDir, allowHardTurn)
 	right = right.Unit
 
 	local turnDir = right:Dot(desiredDir) >= 0 and 1 or -1
-	local maxTurnAngle = mathRad(120)
 	local currentAngle = mathAtan2(currentDir.X, currentDir.Z)
-	local limitedAngle = currentAngle + maxTurnAngle * turnDir
+	local limitedAngle = currentAngle + maxAngle * turnDir
 	return Vector3new(mathSin(limitedAngle), 0, mathCos(limitedAngle))
 end
 
@@ -1408,17 +1415,18 @@ function AISnake:_blendSteer(dt, baseSteer)
 	local now = tick()
 	local allowHardTurn = motion.allowHardTurnUntil and motion.allowHardTurnUntil > now
 	sanitized = limitTurnAngle(motion.currentDirection or fallback, sanitized, allowHardTurn)
-	if allowHardTurn and motion.allowHardTurnUntil < now - 0.25 then
+	if motion.allowHardTurnUntil and motion.allowHardTurnUntil <= now then
 		motion.allowHardTurnUntil = nil
 	end
 
 	if not motion.smoothedSteer then
 		motion.smoothedSteer = sanitized
 	else
+		local baseSmooth = self.Config.PathSmoothness or 0.85
 		local smoothing = mathClamp(
-			(self.Config.PathSmoothness or 0.85) + (self.SkillReactionLag or 0) * 0.5,
-			0.2,
-			0.95
+			baseSmooth + (self.SkillReactionLag or 0) * 0.5,
+			0.6,
+			0.97
 		)
 		motion.smoothedSteer = motion.smoothedSteer:Lerp(sanitized, smoothing)
 	end
@@ -1445,7 +1453,7 @@ function AISnake:forceCourseCorrection(reason)
 	if self._destroyed then return end
 
 	local turnSign = mathRandom(0, 1) == 0 and -1 or 1
-	local turnDegrees = randomFloat(60, 110) * turnSign
+	local turnDegrees = randomFloat(25, 45) * turnSign
 	local turnRadians = mathRad(turnDegrees)
 	local motion = self:_ensureMotionState()
 	local currentDir = motion.currentDirection or self.Direction
@@ -1465,7 +1473,7 @@ function AISnake:forceCourseCorrection(reason)
 	motion.currentDirection = self.Direction
 	motion.smoothedSteer = self.Direction
 	motion.desiredDirection = self.Direction
-	motion.allowHardTurnUntil = tick() + 0.4
+	motion.allowHardTurnUntil = tick() + 0.25
 
 	if self.ProgressWatch then
 		self.ProgressWatch.stagnation = 0
@@ -1977,7 +1985,7 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self.SkillReactionLag = self.SkillProfile.reactionLag
 	self.Personality.SpeedMultiplier = (self.Personality.SpeedMultiplier or 1) * self.SkillProfile.speedMultiplier
 	self.Personality.BoostChance = math.max(0.01, (self.Personality.BoostChance or 0.05) * self.SkillProfile.boostMultiplier)
-	self.TurnSpeed = self.TurnSpeed * self.SkillTurnMultiplier
+	self.TurnSpeed = self.TurnSpeed * self.SkillTurnMultiplier * 0.8
 	self.RandomTurnInterval = self.RandomTurnInterval * (1 + self.SkillReactionLag)
 
     self.DisplayName = pickAIName()
@@ -2504,18 +2512,18 @@ function AISnake:updateMovement(dt)
 	steer = self:applySafetySteer(steer)
 	steer = self:_blendSteer(dt, steer)
 
-    local baseTurnSpeed = sanitizeNumber(self.TurnSpeed, 1.8)
+    local baseTurnSpeed = sanitizeNumber(self.TurnSpeed, 1.4)
     if state == "SEEK_ORB" and self.TargetOrb then
         local dist = (self.TargetOrb.Position - self.Position).Magnitude
         if dist < 20 then
-            baseTurnSpeed = baseTurnSpeed * 1.5
+            baseTurnSpeed = baseTurnSpeed * 1.25
         end
     elseif state == "AVOID_WALL" then
-        baseTurnSpeed = baseTurnSpeed * 1.3
+        baseTurnSpeed = baseTurnSpeed * 1.15
     elseif state == "AVOID_BOUNDARY" then
-        baseTurnSpeed = baseTurnSpeed * 2.0
+        baseTurnSpeed = baseTurnSpeed * 1.2
     elseif state == "COLLISION_AVOID" then
-        baseTurnSpeed = baseTurnSpeed * 2.5
+        baseTurnSpeed = baseTurnSpeed * 1.4
     end
 
     if self.Boosting then
@@ -2603,9 +2611,10 @@ function AISnake:updateMovement(dt)
 
         if boundaryStrength > 0.1 then
             boundaryForce = boundaryForce.Unit
-            self.Direction = (self.Direction * (1 - boundaryStrength) + boundaryForce * boundaryStrength).Unit
+            local blend = mathClamp(boundaryStrength * 0.5, 0, 0.4)
+            self.Direction = (self.Direction * (1 - blend) + boundaryForce * blend).Unit
             motion.currentDirection = self.Direction
-            if boundaryStrength > 0.5 then
+            if boundaryStrength > 0.7 then
                 self.State = "AVOID_BOUNDARY"
                 self.TargetOrb = nil
                 self.TargetSnake = nil
