@@ -795,7 +795,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.08,
 		CombatRadius = 60,
 		RandomTurnInterval = 6.0,
-		OrbSeekRadius = 150,
+		OrbSeekRadius = 400, -- Increased from 150
 		Description = "Smart hunter",
 		FleeThreshold = 20,
 		AggressionLevel = 0.8,
@@ -815,7 +815,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.07,
 		CombatRadius = 50,
 		RandomTurnInterval = 7.0,
-		OrbSeekRadius = 180,
+		OrbSeekRadius = 450, -- Increased from 180
 		Description = "Adaptive hunter",
 		FleeThreshold = 15,
 		AggressionLevel = 0.6,
@@ -834,7 +834,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.02,
 		CombatRadius = 15,
 		RandomTurnInterval = 10.0,
-		OrbSeekRadius = 400,
+		OrbSeekRadius = 600, -- Increased from 400
 		Description = "Peaceful farmer",
 		FleeThreshold = 5,
 		AggressionLevel = 0.0,
@@ -855,7 +855,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.1,
 		CombatRadius = 45,
 		RandomTurnInterval = 5.0,
-		OrbSeekRadius = 120,
+		OrbSeekRadius = 350, -- Increased from 120
 		Description = "Aggressive raider",
 		FleeThreshold = 25,
 		AggressionLevel = 0.9,
@@ -875,7 +875,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.05,
 		CombatRadius = 70,
 		RandomTurnInterval = 8.0,
-		OrbSeekRadius = 160,
+		OrbSeekRadius = 400, -- Increased from 160
 		Description = "Territory defender",
 		FleeThreshold = 30,
 		AggressionLevel = 0.5,
@@ -896,7 +896,7 @@ AISnake.PersonalityDefinitions = {
 		BoostChance = 0.06,
 		CombatRadius = 35,
 		RandomTurnInterval = 15.0,
-		OrbSeekRadius = 220,
+		OrbSeekRadius = 500, -- Increased from 220
 		Description = "Wandering nomad",
 		FleeThreshold = 20,
 		AggressionLevel = 0.3,
@@ -975,10 +975,16 @@ function AISnake:findBestOrb()
 			return
 		end
 		local dist = (orb.Position - headPos).Magnitude
+		
+		-- Vision range check
 		if dist > scanRadius then
 			return
 		end
+		
 		local score = scoreOrbCandidate(orb, dist)
+		
+		-- Hysteresis: New orb must be significantly better than current target to switch
+		-- This prevents jittering but allows switching to high value targets
 		if score > bestScore then
 			bestScore = score
 			bestOrb = orb
@@ -1736,15 +1742,10 @@ function AISnake:_determineAction()
 	if p.TargetOrbs and not shouldFlee then
 		local orb, dist = self:findBestOrb()
 
-		if orb and dist < p.OrbSeekRadius * 2 then
-			if self.TargetOrb and self.TargetOrb.Parent then
-				local currentDist = (self.TargetOrb.Position - headPos).Magnitude
-				if dist < currentDist * 0.7 then
-					self.TargetOrb = orb
-					self.TargetOrbExpire = now + mathRandom(30, 60) / 10
-					AISnake._orbTargets[self] = orb
-				end
-			else
+		if orb then
+			-- Switch if we found a valid orb (it's already the best score)
+			-- We rely on findBestOrb to handle the scoring
+			if orb ~= self.TargetOrb then
 				self.TargetOrb = orb
 				self.TargetOrbExpire = now + mathRandom(30, 60) / 10
 				AISnake._orbTargets[self] = orb
