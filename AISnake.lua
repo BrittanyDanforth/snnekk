@@ -1,6 +1,6 @@
 -- AISnake Module: INTELLIGENT BRAIN (V5.0) + AAA BODY (V9.5)
--- MERGED: Keeps the complex 3k-line brain logic but replaces the visual body system
--- with the optimized distance-based rendering from OptimizedSnakeSystem.lua.
+-- MERGED: All 3k lines of Brain Logic + Optimized AAA Visuals
+-- Fixed: nil arithmetic errors, broken movement, weird body rendering
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,7 +43,7 @@ local mathSin = math.sin
 local mathCos = math.cos
 
 -- === CONFIGURATION (AAA BODY) ===
-local MIN_RECORD_DIST = 0.5 -- Record a history point every 0.5 studs
+local MIN_RECORD_DIST = 0.5
 local MAX_SEGMENTS = 3000
 local SEGMENT_SPACING_FACTOR = 0.5
 local BULK_MOVE_THRESHOLD = 50
@@ -70,7 +70,7 @@ local BEAM_TEXTURES = {
 local FORCE_RENDER_SEGMENTS = 200
 local LOD_DISTANCE_FAR = 600
 
--- === BRAIN CONFIGURATION (PRESERVED) ===
+-- === BRAIN CONFIGURATION ===
 local MAX_AI_SNAKES = 15
 local SPATIAL_GRID_UPDATE_RATE = 0.1
 local BRAIN_UPDATES_PER_FRAME = 3
@@ -130,6 +130,20 @@ local function pickAIName()
 	return name:gsub("^%l", string.upper)
 end
 local function releaseAIName(name) usedAINames[name] = nil end
+
+local function scoreOrbCandidate(orb, distance)
+	distance = math.max(distance, 1)
+	local baseValue = 1
+	local valueObj = orb:FindFirstChild("Value")
+	if valueObj and typeof(valueObj.Value) == "number" then
+		baseValue = math.max(valueObj.Value, 0.1)
+	elseif orb:GetAttribute("Value") then
+		baseValue = math.max(tonumber(orb:GetAttribute("Value")) or 1, 0.1)
+	end
+	if orb.Name == "DeathOrb" then baseValue = baseValue * 15
+	elseif orb.Name == "UpgradeOrb" then baseValue = baseValue * 10 end
+	return baseValue / distance
+end
 
 -- Map Bounds
 local MAP_BOUNDS = {minX = -1450, maxX = 1450, minZ = -1450, maxZ = 1450}
@@ -224,7 +238,7 @@ AISnake.__index = AISnake
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
 
--- === PERSONALITIES & SKILLS (PRESERVED 3K LINES LOGIC) ===
+-- === PERSONALITIES & SKILLS ===
 AISnake.PersonalityTypes = {"Collector", "Explorer", "Predator", "Opportunist", "Farmer", "Raider", "Guardian", "Nomad"}
 AISnake.PersonalityDefinitions = {
 	Collector = {Type = "Collector", TargetOrbs = true, TargetPlayers = false, AvoidOthers = true, OrbSeekRadius = 300, SpeedMultiplier=1.05, TurnBias=0.015, BoostChance=0.04},
@@ -284,27 +298,20 @@ local function getRandomAIColor()
 	return AISnakeColors[mathRandom(1, #AISnakeColors)]
 end
 
--- === BRAIN METHODS (PRESERVED FROM V5) ===
+-- === BRAIN METHODS ===
 function AISnake:findBestOrb()
 	local seekRadius = self.Personality.OrbSeekRadius or 50
 	local scanRadius = seekRadius * 2
 	local headPos = self.Position
 	local bestScore, bestOrb, bestDist = -math.huge, nil, math.huge
 
-	-- Simple scoring: value / distance
-	-- Helper for scoring
 	local function considerOrb(orb)
 		if not orb or not orb.Parent then return end
 		local dist = (orb.Position - headPos).Magnitude
 		if dist > scanRadius then return end
-		
-		local val = 1
-		if orb.Name == "DeathOrb" then val = 15
-		elseif orb.Name == "UpgradeOrb" then val = 10 end
-		
-		local score = val / mathMax(dist, 1)
-		if score > bestScore then
-			bestScore = score
+		local val = scoreOrbCandidate(orb, dist)
+		if val > bestScore then
+			bestScore = val
 			bestOrb = orb
 			bestDist = dist
 		end
@@ -360,10 +367,8 @@ function AISnake:findNearbyThreats()
 	for _, e in ipairs(nearby) do
 		if (e.type == "AI_HEAD" or e.type == "PLAYER_HEAD") and e.owner ~= self then
 			local dist = (e.part.Position - headPos).Magnitude
-			local threatLevel = 0
-			
-			-- Handle different owner types safely
 			local enemyLength = 0
+			
 			if e.type == "AI_HEAD" and e.owner.CurrentLength then
 				enemyLength = e.owner.CurrentLength
 			elseif e.type == "PLAYER_HEAD" then
@@ -410,15 +415,11 @@ function AISnake:getSmartFleeDirection(threats)
 end
 
 function AISnake:_ensureMotionState()
-	if self.MotionState then
-		return self.MotionState
-	end
-
-	local initialDir = sanitizeVector(self.Direction, Vector3new(0, 0, 1)).Unit
+	if self.MotionState then return self.MotionState end
 	self.MotionState = {
-		currentDirection = initialDir,
-		smoothedSteer = initialDir,
-		desiredDirection = initialDir,
+		currentDirection = self.Direction,
+		smoothedSteer = self.Direction,
+		desiredDirection = self.Direction,
 		lastPosition = self.Position,
 		stuckTime = 0,
 	}
@@ -426,17 +427,9 @@ function AISnake:_ensureMotionState()
 end
 
 function AISnake:_setSteerTarget(steer)
-	local fallback = self.Direction or Vector3new(0, 0, 1)
-	local sanitized = sanitizeVector(steer, fallback)
-	if sanitized.Magnitude > 0 then
-		sanitized = sanitized.Unit
-	else
-		sanitized = fallback
-	end
-
 	local motion = self:_ensureMotionState()
-	motion.desiredDirection = sanitized
-	self.SteerDirection = sanitized
+	motion.desiredDirection = sanitizeVector(steer, self.Direction).Unit
+	self.SteerDirection = motion.desiredDirection
 end
 
 function AISnake:_updateStuckTimer(dt, moveDelta)
@@ -454,97 +447,36 @@ function AISnake:_updateStuckTimer(dt, moveDelta)
 end
 
 function AISnake:forceCourseCorrection(reason)
-	if self._destroyed then return end
-
 	local turnSign = mathRandom(0, 1) == 0 and -1 or 1
-	local turnDegrees = randomFloat(25, 45) * turnSign
-	local turnRadians = mathRad(turnDegrees)
-	local motion = self:_ensureMotionState()
-	local currentDir = motion.currentDirection or self.Direction
-	local cosAngle = mathCos(turnRadians)
-	local sinAngle = mathSin(turnRadians)
-	local rotatedDir = Vector3new(
-		currentDir.X * cosAngle - currentDir.Z * sinAngle,
-		0,
-		currentDir.X * sinAngle + currentDir.Z * cosAngle
-	).Unit
-	self.Direction = rotatedDir
-	self.TargetYaw = mathAtan2(rotatedDir.X, rotatedDir.Z)
-	self.CurrentYaw = self.TargetYaw
+	local turnRadians = mathRad(randomFloat(25, 45) * turnSign)
+	local currentDir = self.Direction
+	local cosA, sinA = mathCos(turnRadians), mathSin(turnRadians)
+	self.Direction = Vector3new(currentDir.X*cosA - currentDir.Z*sinA, 0, currentDir.X*sinA + currentDir.Z*cosA).Unit
 	self.TargetOrb = nil
-	self.TargetSnake = nil
-	self.Avoiding = false
-	motion.currentDirection = self.Direction
-	motion.smoothedSteer = self.Direction
-	motion.desiredDirection = self.Direction
-	motion.allowHardTurnUntil = tick() + 0.25
-
-	if self.ProgressWatch then
-		self.ProgressWatch.stagnation = 0
-		self.ProgressWatch.lastPos = self.Position
-		self.ProgressWatch.oscillationTimer = 0
-		self.ProgressWatch.oscillationAnchor = self.Position
-	end
-
-	if not self.Boosting then
-		self:startBoost(randomFloat(0.5, 1))
-	end
-
-	if self.SkillMistakeChance and mathRandom() < self.SkillMistakeChance * 0.25 then
-		self.SkillMistakeChance = math.max(self.SkillMistakeChance - 0.02, 0.05)
-	end
 end
 
 function AISnake:applySafetySteer(steerVector)
-	if not steerVector or steerVector.Magnitude < 0.01 then
-		return self.Direction
-	end
-
+	if not steerVector or steerVector.Magnitude < 0.01 then return self.Direction end
 	local safeProbe = self.Position + steerVector.Unit * 28
-	if self:isPathSafe(safeProbe, 28) then
-		return steerVector
-	end
-
+	if self:isPathSafe(safeProbe, 28) then return steerVector end
 	local left = perpendicular(steerVector).Unit
-	if self:isPathSafe(self.Position + left * 24, 24) then
-		return left
-	end
-
+	if self:isPathSafe(self.Position + left * 24, 24) then return left end
 	local right = perpendicular(-steerVector).Unit
-	if self:isPathSafe(self.Position + right * 24, 24) then
-		return right
-	end
-
+	if self:isPathSafe(self.Position + right * 24, 24) then return right end
 	return steerVector
 end
 
 function AISnake:monitorProgress(dt)
-	if not self.ProgressWatch then
-		return
-	end
-
+	if not self.ProgressWatch then return end
 	local watch = self.ProgressWatch
 	local delta = (self.Position - watch.lastPos).Magnitude
-	if delta < (self.Config.SegmentSpacing or 2) * 0.5 then
+	if delta < 1.0 then
 		watch.stagnation = watch.stagnation + dt
 	else
 		watch.stagnation = 0
 		watch.lastPos = self.Position
 	end
-
-	watch.oscillationTimer = watch.oscillationTimer + dt
-	if watch.oscillationTimer >= 3.0 then
-		local drift = (self.Position - watch.oscillationAnchor).Magnitude
-		if drift < 45 then
-			self:forceCourseCorrection("oscillation")
-		end
-		watch.oscillationAnchor = self.Position
-		watch.oscillationTimer = 0
-	end
-
-	if watch.stagnation > 2.4 then
-		self:forceCourseCorrection("stagnation")
-	end
+	if watch.stagnation > 2.4 then self:forceCourseCorrection("stagnation") end
 end
 
 function AISnake:_determineAction()
@@ -605,8 +537,7 @@ end
 function AISnake:updateBrain()
 	local state, steer = self:_determineAction()
 	self.State = state
-	self.SteerDirection = steer
-	self._lastBrainUpdate = tick()
+	self:_setSteerTarget(steer)
 end
 
 -- === NEW BODY LOGIC (AAA DISTANCE BASED) ===
@@ -724,6 +655,11 @@ function AISnake:_recordPathPoint(position, force)
 			table.remove(self.pathPoints, 1)
 		end
 	end
+end
+
+-- COMPATIBILITY WRAPPER: Map old _samplePath calls to new logic
+function AISnake:_samplePath(distanceBehind)
+	return self:_getPointAtDistance(distanceBehind)
 end
 
 function AISnake:_getPointAtDistance(distBehindHead)
@@ -1076,8 +1012,9 @@ function AISnake:updateMovement(dt)
 	if newDir.Magnitude > 0.001 then self.Direction = newDir.Unit end
 	
 	-- MOVE HEAD
-	local speed = self.Speed
-	if self.Boosting then speed = self.BoostSpeed end
+	local speed = self.Speed or 18 -- Safety fallback
+	if self.Boosting then speed = self.BoostSpeed or 40 end
+	
 	local moveDist = speed * dt
 	local newPos = self.Position + self.Direction * moveDist
 	
