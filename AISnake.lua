@@ -2161,6 +2161,36 @@ function AISnake.new(startPosition, preservedPersonalityType)
 		end
 	end
 
+	-- Force create beams if they don't exist yet (sometimes initialization lag causes beams to be missed)
+	if self.Segments and self.Beams then
+		for i = 0, self.actualSegmentCount - 1 do
+			if not self.Beams[i] then
+				local beam = Instance.new("Beam")
+				beam.Name = "Beam" .. i
+				local att0 = self.Attachments[i]
+				local att1 = self.Attachments[i+1]
+				
+				if att0 and att1 then
+					beam.Attachment0 = att0
+					beam.Attachment1 = att1
+					
+					-- Basic visual setup for fallback beams
+					beam.Width0 = 2
+					beam.Width1 = 2
+					beam.FaceCamera = true
+					beam.Segments = 10
+					
+					if i == 0 then
+						beam.Parent = self.HeadParts.head
+					elseif self.Segments[i] then
+						beam.Parent = self.Segments[i]
+					end
+					self.Beams[i] = beam
+				end
+			end
+		end
+	end
+
 	task.defer(function()
 		task.wait(0.1)
 		
