@@ -9,7 +9,7 @@ local TweenService = game:GetService("TweenService")
 local CollectionService = game:GetService("CollectionService")
 
 local SnakeConfig = require(ReplicatedStorage:WaitForChild("SnakeConfig"))
-local OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils"))
+local OrbUtils -- Lazy loaded to prevent cyclic dependency
 
 -- Load the orb pickup module
 local AISnakeOrbPickup
@@ -995,6 +995,7 @@ function AISnake:findBestOrb()
 
 	local orbFolder = Workspace:FindFirstChild("OrbFolder")
 	if orbFolder then
+		if not OrbUtils then OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils")) end
 		for _, orb in ipairs(orbFolder:GetChildren()) do
 			if orb:IsA("BasePart") and (orb.Name == "UpgradeOrb" or orb.Name == "DeathOrb") then
 				considerOrb(orb)
@@ -2441,6 +2442,10 @@ function AISnake:Destroy()
 	end
 
 	task.spawn(function()
+		if not OrbUtils then
+			pcall(function() OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils")) end)
+		end
+		
 		if OrbUtils and OrbUtils.spawnOrb then
 			for i = 1, #orbSpawnData do
 				local data = orbSpawnData[i]
@@ -3011,8 +3016,14 @@ AISnake._brainConnection = RunService.Stepped:Connect(function(time, deltaTime)
 			end
 		end
 
-		for _, orb in ipairs(OrbUtils.orbs) do
-			SpatialGrid.Insert(orb, orb, "ORB")
+		if not OrbUtils then 
+			pcall(function() OrbUtils = require(ReplicatedStorage:WaitForChild("OrbUtils")) end)
+		end
+		
+		if OrbUtils and OrbUtils.orbs then
+			for _, orb in ipairs(OrbUtils.orbs) do
+				SpatialGrid.Insert(orb, orb, "ORB")
+			end
 		end
 	end
 
