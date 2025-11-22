@@ -79,6 +79,52 @@ function ClientSnake.new(model)
 	return self
 end
 
+function ClientSnake:_onChildAdded(child)
+	if self.dead then return end
+
+	-- New segment
+	if child:IsA("BasePart") and (child.Name:match("^AISegment") or child.Name:match("^Segment")) then
+		local index = tonumber(child.Name:match("%d+"))
+		if index and not self.segments[index] then
+			self.segments[index] = child
+			table.insert(self.segmentOrder, index)
+			table.sort(self.segmentOrder)
+
+			self.segmentState[index] = {current = 1, target = 1}
+
+			local glow = child:FindFirstChild("Glow")
+			if glow then
+				self.glows[index] = glow
+			end
+
+			-- Any beams added under this segment
+			for _, b in ipairs(child:GetChildren()) do
+				if b:IsA("Beam") then
+					local beamIdx = tonumber(b.Name:match("%d+"))
+					if beamIdx then
+						self.beams[beamIdx] = b
+						self.beamBaseWidths[beamIdx] = {
+							Width0 = b.Width0,
+							Width1 = b.Width1,
+						}
+					end
+				end
+			end
+		end
+
+	-- Beam added later (usually on head or previous segment)
+	elseif child:IsA("Beam") then
+		local beamIdx = tonumber(child.Name:match("%d+"))
+		if beamIdx then
+			self.beams[beamIdx] = child
+			self.beamBaseWidths[beamIdx] = {
+				Width0 = child.Width0,
+				Width1 = child.Width1,
+			}
+		end
+	end
+end
+
 function ClientSnake:_resolveHead()
 	return self.model:FindFirstChild("Head") or self.model:FindFirstChild("Segment0_Head")
 end
@@ -162,9 +208,23 @@ function ClientSnake:_hydrate()
 			table.insert(self.eyes, eye)
 		end
 	end
+
+	if not self._childConn then
+		self._childConn = self.model.ChildAdded:Connect(function(child)
+			self:_onChildAdded(child)
+		end)
+	end
 end
 
 function ClientSnake:_setInvisible()
+	if self.head then
+		self.head.LocalTransparencyModifier = 1
+		local headGlow = self.head:FindFirstChild("Glow")
+		if headGlow then
+			headGlow.Enabled = false
+		end
+	end
+
 	for _, index in ipairs(self.segmentOrder) do
 		local seg = self.segments[index]
 		if seg then
@@ -205,6 +265,10 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 
 	local profile = getLodProfile(distance)
 	self.lodProfile = profile
+	
+	-- Head fade
+	local headAlpha = smoothVisibility(distance, true) * profile.fade
+	self.head.LocalTransparencyModifier = 1 - headAlpha
 
 	-- Global flag: once we’re far enough, NO beams at all
 	local hideAllBeams = (distance > BEAM_CUTOFF_DIST) or profile.forceHide
@@ -290,8 +354,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 	-- HEAD BEAM (Beam0) – it wasn’t LOD’d before
 	local headBeam = self.beams[0]
 	if headBeam then
-		local headAlpha = smoothVisibility(distance, true) * profile.fade
-
+		-- Re-use headAlpha (calculated above)
 		if hideAllBeams or headAlpha <= 0.05 or profile.forceHide then
 			headBeam.Enabled = false
 			headBeam.Transparency = NumberSequence.new(1)
@@ -339,6 +402,10 @@ end
 function ClientSnake:destroy()
 	self.dead = true
 	self:_setInvisible()
+	if self._childConn then
+		self._childConn:Disconnect()
+		self._childConn = nil
+	end
 	for k in pairs(self) do
 		self[k] = nil
 	end
