@@ -1,9 +1,11 @@
---[[
 SnakeCollisionHandler V10 FIXED
 Fixes: Death orbs spawn properly, ReviveUI shows correctly
 Maintains V8.2 structure while fixing critical issues
 WORKS WITH OLD CharacterSetup (SnakeModel_UserId + SnakeHead naming)
 --]]
+
+local SnakeCollisionHandler = {}
+SnakeCollisionHandler.__index = SnakeCollisionHandler
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -72,6 +74,16 @@ local ORB_SPREAD_MULTIPLIER = 1.5
 
 -- === DEBUG SYSTEM ===
 local DEBUG_COLLISIONS = false
+local running = true
+local trackedConnections = {}
+local debugCommand
+
+local function trackConnection(connection)
+	if connection then
+		table.insert(trackedConnections, connection)
+	end
+	return connection
+end
 
 -- === DEATH PROCESSING ===
 local deathQueue = {}
@@ -80,6 +92,34 @@ local deadAISnakes = {}
 local deadPlayers = {}
 local deathTimestamps = {}
 local reviveSessions = {} -- FIX 3: Track revive sessions
+local REVIVE_TIMEOUT = 20
+local reviveSessionCounter = 0
+
+local function releaseDeathProcessingLock()
+	isProcessingDeaths = false
+end
+
+local NO_UNLOCK_REASONS = {
+	response = true,
+	new_session = true,
+}
+
+local function cancelReviveSession(player, reason)
+	local session = reviveSessions[player]
+	if not session then
+		return
+	end
+
+	if session.connection then
+		session.connection:Disconnect()
+	end
+
+	reviveSessions[player] = nil
+
+	if not NO_UNLOCK_REASONS[reason] then
+		releaseDeathProcessingLock()
+	end
+end
 
 -- === INVINCIBILITY SYSTEM ===
 local INVINCIBILITY_DURATION = 5
@@ -244,8 +284,11 @@ local function resetPlayerCollisionState(player)
 end
 
 -- Player spawn handling - CRITICAL FIX: Proper respawn cleanup
-Players.PlayerAdded:Connect(function(player)
+trackConnection(Players.PlayerAdded:Connect(function(player)
 	player.CharacterAdded:Connect(function(character)
+		if not running then
+			return
+		end
 		print("🔄 CharacterAdded for", player.Name, "- Resetting collision state")
 
 		-- CRITICAL: Immediately clear ALL death state (before any waits)
@@ -254,12 +297,7 @@ Players.PlayerAdded:Connect(function(player)
 		invinciblePlayers[player] = nil
 
 		-- Clear revive session if exists
-		if reviveSessions[player] then
-			if reviveSessions[player].connection then
-				reviveSessions[player].connection:Disconnect()
-			end
-			reviveSessions[player] = nil
-		end
+		cancelReviveSession(player, "character_added")
 
 		-- Wait a moment for character to fully load
 		task.wait(0.1)
@@ -283,15 +321,18 @@ Players.PlayerAdded:Connect(function(player)
 		end)
 	end)
 	player.AncestryChanged:Connect(function()
+		if not running then
+			return
+		end
 		if not player.Parent then
 			clearPlayerInvincibility(player)
 			deadPlayers[player] = nil
 			deathTimestamps[player] = nil
-			reviveSessions[player] = nil
+			cancelReviveSession(player, "player_removed")
 			disconnectPlayerCamera(player)
 		end
 	end)
-end)
+end))
 
 -- === SPATIAL GRID (keeping existing implementation) ===
 local SpatialGrid = {}
@@ -720,20 +761,21 @@ end
 
 -- === FIX 5: PROPERLY FIXED DEATH PROCESSING WITH REVIVE UI ===
 task.spawn(function()
-	while true do
+	while running do
 		task.wait(0.033)
+		if not running then
+			break
+		end
 
 		if #deathQueue > 0 and not isProcessingDeaths then
 			isProcessingDeaths = true
 			performanceStats.deathsProcessed = performanceStats.deathsProcessed + 1
 			local death = table.remove(deathQueue, 1)
 
-			-- Ensure we always reset isProcessingDeaths
-			local function resetProcessing()
-				isProcessingDeaths = false
-			end
-
 			task.wait(0.02)
+			if not running then
+				break
+			end
 
 			if death.type == "player" then
 				local player = death.target
@@ -865,12 +907,7 @@ task.spawn(function()
 					-- This ensures revive UI works for BOTH AI deaths and PVP deaths
 
 					-- Clear any existing revive session
-					if reviveSessions[player] then
-						if reviveSessions[player].connection then
-							reviveSessions[player].connection:Disconnect()
-						end
-						reviveSessions[player] = nil
-					end
+					cancelReviveSession(player, "new_session")
 
 					-- Set up response listener BEFORE firing prompt (prevents race condition)
 					local responseConnection
@@ -886,9 +923,7 @@ task.spawn(function()
 							end
 
 							-- Clear session
-							if reviveSessions[player] then
-								reviveSessions[player] = nil
-							end
+							cancelReviveSession(player, "response")
 
 							if response == "revive" or response == true then
 								-- Handle revive
@@ -967,14 +1002,17 @@ task.spawn(function()
 							end
 
 							-- CRITICAL: Reset processing flag
-							resetProcessing()
+							releaseDeathProcessingLock()
 						end
 					end)
 
 					-- Store session
+					reviveSessionCounter += 1
+					local sessionId = reviveSessionCounter
 					reviveSessions[player] = {
 						connection = responseConnection,
-						startTime = os.clock()
+						startTime = os.clock(),
+						id = sessionId
 					}
 
 					-- Fire the ReviveUI prompt (ALWAYS, regardless of revive availability)
@@ -983,52 +1021,55 @@ task.spawn(function()
 
 					-- Set up timeout with proper cleanup
 					task.spawn(function()
-						task.wait(60) -- 60 second timeout
+						task.wait(REVIVE_TIMEOUT)
 
-						if reviveSessions[player] and not responseReceived then
-							print("⏰ Revive timeout for", player.Name)
-
-							if responseConnection then
-								responseConnection:Disconnect()
-							end
-
-							reviveSessions[player] = nil
-
-							-- CRITICAL: Clear death state and respawn (same as decline)
-							resetPlayerCollisionState(player)
-
-							-- Destroy old snake model
-							if visualSnakeModel then
-								visualSnakeModel:Destroy()
-							end
-
-							-- Fire death event for cleanup
-							local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
-							if deathEvent then
-								deathEvent:Fire(player)
-							end
-
-							-- CRITICAL: Actually respawn the player
-							player:LoadCharacter()
-
-							-- Ensure state is cleared after respawn
-							task.spawn(function()
-								task.wait(0.5)
-								deadPlayers[player] = nil
-								deathTimestamps[player] = nil
-								-- Set invincibility for spawn protection
-								setPlayerInvincible(player)
-							end)
-
-							-- CRITICAL: Reset processing flag
-							resetProcessing()
+						if not running or responseReceived then
+							return
 						end
+
+						local activeSession = reviveSessions[player]
+						if not activeSession or activeSession.id ~= sessionId then
+							return
+						end
+
+						print("⏰ Revive timeout for", player.Name)
+
+						cancelReviveSession(player, "timeout")
+
+						-- CRITICAL: Clear death state and respawn (same as decline)
+						resetPlayerCollisionState(player)
+
+						-- Destroy old snake model
+						if visualSnakeModel then
+							visualSnakeModel:Destroy()
+						end
+
+						-- Fire death event for cleanup
+						local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
+						if deathEvent then
+							deathEvent:Fire(player)
+						end
+
+						-- CRITICAL: Actually respawn the player
+						player:LoadCharacter()
+
+						-- Ensure state is cleared after respawn
+						task.spawn(function()
+							task.wait(0.5)
+							deadPlayers[player] = nil
+							deathTimestamps[player] = nil
+							-- Set invincibility for spawn protection
+							setPlayerInvincible(player)
+						end)
+
+						-- CRITICAL: Reset processing flag
+						releaseDeathProcessingLock()
 					end)
 
 					-- DON'T reset isProcessingDeaths here - wait for response or timeout
 				else
 					-- No character, reset processing
-					resetProcessing()
+					releaseDeathProcessingLock()
 				end
 			elseif death.type == "ai" then
 				-- AI death processing remains the same
@@ -1073,10 +1114,10 @@ task.spawn(function()
 				end
 
 				-- CRITICAL: Reset processing flag
-				resetProcessing()
+				releaseDeathProcessingLock()
 			else
 				-- Unknown death type, reset processing
-				resetProcessing()
+				releaseDeathProcessingLock()
 			end
 		end
 	end
@@ -1471,7 +1512,10 @@ local frameCounter = 0
 local lastCollisionCheck = 0
 local checksThisFrame = 0
 
-RunService.Stepped:Connect(function(_, deltaTime)
+trackConnection(RunService.Stepped:Connect(function(_, deltaTime)
+	if not running then
+		return
+	end
 	performanceStats.frameTime = deltaTime
 
 	frameCounter = frameCounter + 1
@@ -1505,15 +1549,11 @@ RunService.Stepped:Connect(function(_, deltaTime)
 		local player = headData.player
 		local head = headData.part
 
-		-- CRITICAL PVP FIX: Only check invincibility for death, not collision detection
-		-- Invincible players can still be detected for collisions, they just won't die
-		if isPlayerInvincible(player) then
-			continue
-		end
-
 		if deadPlayers[player] then
 			continue
 		end
+
+		local playerInvincible = isPlayerInvincible(player)
 
 		if head and head.Parent then
 			if head:GetAttribute("Dead") then
@@ -1553,7 +1593,11 @@ RunService.Stepped:Connect(function(_, deltaTime)
 
 							if collision then
 								print(string.format("💥 [COLLISION] Player %s hit AI snake body!", player.Name))
-								queuePlayerDeath(player)
+								if not playerInvincible then
+									queuePlayerDeath(player)
+								elseif DEBUG_COLLISIONS then
+									print(string.format("[INVINCIBLE] %s ignored AI collision during spawn protection", player.Name))
+								end
 								break
 							end
 						end
@@ -1670,36 +1714,36 @@ RunService.Stepped:Connect(function(_, deltaTime)
 
 			for _, headData in ipairs(playerHeads) do
 				local player = headData.player
+				if deadPlayers[player] then
+					continue
+				end
 
-				-- CRITICAL: Only skip invincible players for death, not collision detection
-				if not isPlayerInvincible(player) then
-					local segmentData = getPlayerSegments(player)
-					if segmentData and segmentData.segments then
-						if segmentData.bounds and not checkBoundsOverlap(
-							{min = aiPos - Vector3.new(5,5,5), max = aiPos + Vector3.new(5,5,5)},
-							segmentData.bounds,
-							BODY_COLLISION_DISTANCE
-							) then
-							continue
-						end
+				local segmentData = getPlayerSegments(player)
+				if segmentData and segmentData.segments then
+					if segmentData.bounds and not checkBoundsOverlap(
+						{min = aiPos - Vector3.new(5,5,5), max = aiPos + Vector3.new(5,5,5)},
+						segmentData.bounds,
+						BODY_COLLISION_DISTANCE
+						) then
+						continue
+					end
 
-						local collision = false
-						if segmentData.chunks then
-							collision = findCollisionInChunks(aiPos, segmentData.chunks, BODY_COLLISION_DISTANCE, false)
-						else
-							collision = findCollisionInSegments(
-								aiPos,
-								segmentData.segments,
-								BODY_COLLISION_DISTANCE,
-								segmentData.length > 200,
-								false
-							)
-						end
+					local collision = false
+					if segmentData.chunks then
+						collision = findCollisionInChunks(aiPos, segmentData.chunks, BODY_COLLISION_DISTANCE, false)
+					else
+						collision = findCollisionInSegments(
+							aiPos,
+							segmentData.segments,
+							BODY_COLLISION_DISTANCE,
+							segmentData.length > 200,
+							false
+						)
+					end
 
-						if collision then
-							queueAIDeath(aiHead)
-							break
-						end
+					if collision then
+						queueAIDeath(aiHead)
+						break
 					end
 				end
 			end
@@ -1721,10 +1765,6 @@ RunService.Stepped:Connect(function(_, deltaTime)
 			local playerAInvincible = isPlayerInvincible(playerA)
 			local playerBInvincible = isPlayerInvincible(playerB)
 
-			if playerAInvincible or playerBInvincible then
-				continue
-			end
-
 			if not headA or not headA.Parent or not headB or not headB.Parent then
 				continue
 			end
@@ -1741,14 +1781,30 @@ RunService.Stepped:Connect(function(_, deltaTime)
 				local dotB = velB:Dot(dirBA)
 
 				if dotA > 2 and not (dotB > 2) then
-					queuePlayerDeath(playerA)
+					if not playerAInvincible then
+						queuePlayerDeath(playerA)
+					elseif DEBUG_COLLISIONS then
+						print(string.format("[INVINCIBLE] %s survived head collision vs %s", playerA.Name, playerB.Name))
+					end
 				elseif dotB > 2 and not (dotA > 2) then
-					queuePlayerDeath(playerB)
+					if not playerBInvincible then
+						queuePlayerDeath(playerB)
+					elseif DEBUG_COLLISIONS then
+						print(string.format("[INVINCIBLE] %s survived head collision vs %s", playerB.Name, playerA.Name))
+					end
 				elseif dotA > 2 and dotB > 2 then
-					queuePlayerDeath(playerA)
+					if not playerAInvincible then
+						queuePlayerDeath(playerA)
+					elseif DEBUG_COLLISIONS then
+						print(string.format("[INVINCIBLE] %s survived mutual head collision vs %s", playerA.Name, playerB.Name))
+					end
 					task.spawn(function()
 						task.wait(0.05)
-						queuePlayerDeath(playerB)
+						if not playerBInvincible then
+							queuePlayerDeath(playerB)
+						elseif DEBUG_COLLISIONS then
+							print(string.format("[INVINCIBLE] %s survived mutual head collision vs %s", playerB.Name, playerA.Name))
+						end
 					end)
 				end
 			end
@@ -1761,9 +1817,6 @@ RunService.Stepped:Connect(function(_, deltaTime)
 		local head = headData.part
 
 		local playerInvincible = isPlayerInvincible(player)
-		if playerInvincible then
-			continue
-		end
 
 		for _, aiHead in ipairs(aiHeads) do
 			if aiHead and aiHead.Parent then
@@ -1786,11 +1839,19 @@ RunService.Stepped:Connect(function(_, deltaTime)
 					local dotAI = velAI:Dot(dirAIToPlayer)
 
 					if dotPlayer > 2 and not (dotAI > 2) then
-						queuePlayerDeath(player)
+						if not playerInvincible then
+							queuePlayerDeath(player)
+						elseif DEBUG_COLLISIONS then
+							print(string.format("[INVINCIBLE] %s tanked AI head-on collision", player.Name))
+						end
 					elseif dotAI > 2 and not (dotPlayer > 2) then
 						queueAIDeath(aiHead)
 					elseif dotPlayer > 2 and dotAI > 2 then
-						queuePlayerDeath(player)
+						if not playerInvincible then
+							queuePlayerDeath(player)
+						elseif DEBUG_COLLISIONS then
+							print(string.format("[INVINCIBLE] %s tanked mutual head-on collision vs AI", player.Name))
+						end
 						task.spawn(function()
 							task.wait(0.05)
 							queueAIDeath(aiHead)
@@ -1835,7 +1896,7 @@ RunService.Stepped:Connect(function(_, deltaTime)
 		end
 	end
 
-	-- AI vs other AI bodies
+  -- AI vs other AI bodies
 	for _, aiHead in ipairs(aiHeads) do
 		if aiHead and aiHead.Parent and AISnakeModule._activeSnakes then
 			for _, snake in AISnakeModule._activeSnakes do
@@ -1878,12 +1939,15 @@ RunService.Stepped:Connect(function(_, deltaTime)
 	end
 
 	CollisionCache.spatialGrid:clear()
-end)
+end))
 
 -- === CACHE CLEANUP ===
 task.spawn(function()
-	while true do
+	while running do
 		task.wait(45)
+		if not running then
+			break
+		end
 
 		local currentTime = os.clock()
 
@@ -1920,10 +1984,7 @@ task.spawn(function()
 		-- Clean up revive sessions
 		for player, session in pairs(reviveSessions) do
 			if not player or not player.Parent or (os.clock() - session.startTime) > 120 then
-				if session.connection then
-					session.connection:Disconnect()
-				end
-				reviveSessions[player] = nil
+				cancelReviveSession(player, "cleanup")
 			end
 		end
 	end
@@ -1931,8 +1992,11 @@ end)
 
 -- === EMERGENCY RESET (in case death queue gets stuck) ===
 task.spawn(function()
-	while true do
+	while running do
 		task.wait(5) -- Check every 5 seconds
+		if not running then
+			break
+		end
 
 		-- If processing has been stuck for too long, force reset
 		if isProcessingDeaths then
@@ -1950,8 +2014,11 @@ end)
 
 -- === PERFORMANCE MONITORING ===
 task.spawn(function()
-	while true do
+	while running do
 		task.wait(60)
+		if not running then
+			break
+		end
 
 		local memoryMB = gcinfo() / 1024
 		local currentTime = os.clock()
@@ -1988,17 +2055,51 @@ local function toggleDebug()
 	end
 end
 
-local debugCommand = Instance.new("StringValue")
+debugCommand = Instance.new("StringValue")
 debugCommand.Name = "ToggleCollisionDebug"
 debugCommand.Value = "Run this to toggle collision debugging"
 debugCommand.Parent = workspace
 
-debugCommand.Changed:Connect(function()
+trackConnection(debugCommand.Changed:Connect(function()
 	if debugCommand.Value == "debug" then
 		toggleDebug()
 		debugCommand.Value = ""
 	end
-end)
+end))
+
+function SnakeCollisionHandler.new()
+	if SnakeCollisionHandler._instance then
+		return SnakeCollisionHandler._instance
+	end
+
+	local self = setmetatable({
+		_destroyed = false
+	}, SnakeCollisionHandler)
+
+	SnakeCollisionHandler._instance = self
+	return self
+end
+
+function SnakeCollisionHandler:destroy()
+	if self._destroyed then
+		return
+	end
+
+	self._destroyed = true
+	running = false
+
+	for _, connection in ipairs(trackedConnections) do
+		if connection then
+			connection:Disconnect()
+		end
+	end
+	table.clear(trackedConnections)
+
+	if debugCommand then
+		debugCommand:Destroy()
+		debugCommand = nil
+	end
+end
 
 print("⚡ SnakeCollisionHandler V10 FIXED")
 print("✅ FIXED: Death orbs now spawn on PVP deaths (captured immediately)")
@@ -2011,3 +2112,5 @@ print("✅ FIXED: Invincible players can collide but won't die (PVP works correc
 print("✅ FIXED: No orb color changes (uses OrbUtils default)")
 print("✅ All V8.2 optimizations preserved")
 print("🔧 Ready for production use!")
+
+return SnakeCollisionHandler
