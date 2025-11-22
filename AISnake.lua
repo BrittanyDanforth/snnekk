@@ -474,7 +474,7 @@ local function pickAIName()
 end
 
 -- === VISUAL CREATION ===
-local function createVisualHead(config, parentModel)
+local function createVisualHead(config, parentModel, position)
 	local headPart = Instance.new("Part")
 	headPart.Name = "Head"
 	headPart.Size = Vector3.new(BASE_SIZE * HEAD_SIZE_MULTIPLIER, BASE_SIZE * HEAD_SIZE_MULTIPLIER, BASE_SIZE * HEAD_SIZE_MULTIPLIER)
@@ -488,6 +488,9 @@ local function createVisualHead(config, parentModel)
 	headPart.TopSurface = Enum.SurfaceType.Smooth
 	headPart.BottomSurface = Enum.SurfaceType.Smooth
 	headPart.Transparency = 0
+	if position then
+		headPart.Position = position
+	end
 	headPart.Parent = parentModel
 
 	local headLight = Instance.new("PointLight")
@@ -1971,11 +1974,18 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	local pType
 	if preservedPersonalityType and AISnake.PersonalityDefinitions[preservedPersonalityType] then
 		pType = preservedPersonalityType
-		warn("Restoring personality", pType)
+		-- warn("Restoring personality", pType)
 	else
 		pType = AISnake.PersonalityTypes[mathRandom(1, #AISnake.PersonalityTypes)]
 	end
 	self.Personality = deepCopy(AISnake.PersonalityDefinitions[pType])
+	
+	if not self.Personality then
+		-- Fallback if deepCopy fails or pType somehow invalid
+		pType = AISnake.PersonalityTypes[mathRandom(1, #AISnake.PersonalityTypes)]
+		self.Personality = deepCopy(AISnake.PersonalityDefinitions[pType])
+	end
+	
 	self._personalityType = pType
 
 	if self.Personality.Type == "Guardian" then
@@ -2025,7 +2035,9 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self.RootPart.Position = self.Position
 	self.RootPart.Parent = self.Model
 
-	self.HeadParts = createVisualHead(self.Config, self.Model)
+	self.RootPart.Position = self.Position -- Ensure root part is also at spawn pos
+
+	self.HeadParts = createVisualHead(self.Config, self.Model, self.Position)
 
 	self.Segments = {}
 

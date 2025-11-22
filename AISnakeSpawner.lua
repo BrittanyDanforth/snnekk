@@ -86,7 +86,7 @@ local function spawnSnake(slotIndex)
 
 	-- Spawn new snake
 	local position = getRandomSpawnPosition()
-	local success, newSnake = pcall(function()
+	local success, result = pcall(function()
 		-- Create snake with preserved personality if available
 		-- FORCE POSITION: Ensure the position is valid and not near origin
 		if position.Magnitude < 50 then
@@ -108,13 +108,17 @@ local function spawnSnake(slotIndex)
 		return snake
 	end)
 
-	if success and newSnake then
-		slot.snake = newSnake
+	if success and result then
+		slot.snake = result
 		slot.deathTime = nil
-		local personality = newSnake.Personality and newSnake.Personality.Type or "Unknown"
+		local personality = result.Personality and result.Personality.Type or "Unknown"
 		print("✅ Spawned AI Snake #" .. slotIndex .. " at", position, "with personality:", personality)
 	else
-		warn("❌ Failed to spawn AI Snake #" .. slotIndex)
+		if not success then
+			warn("❌ Failed to spawn AI Snake #" .. slotIndex .. " Error: " .. tostring(result))
+		else
+			warn("❌ Failed to spawn AI Snake #" .. slotIndex .. " (Returned nil)")
+		end
 	end
 
 	slot.spawning = false
