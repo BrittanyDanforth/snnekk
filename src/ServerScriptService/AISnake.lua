@@ -388,7 +388,7 @@ local function deepCopy(orig)
 end
 
 local function pickAIName()
-    return AI_NAMES[mathRandom(1, #AI_NAMES)] .. " #" .. mathRandom(100, 999)
+	return getUniqueAIName()
 end
 
 -- === VISUAL CREATION ===
@@ -826,6 +826,51 @@ AISnake.PersonalityDefinitions = {
     },
 }
 
+local function buildSkillProfile()
+	local roll = randomFloat(0, 1)
+	if roll < 0.25 then
+		return {
+			label = "Rookie",
+			turnMultiplier = randomFloat(0.65, 0.85),
+			speedMultiplier = randomFloat(0.85, 0.95),
+			boostMultiplier = randomFloat(0.5, 0.75),
+			errorChance = randomFloat(0.3, 0.45),
+			reactionLag = randomFloat(0.12, 0.25),
+			dodgeBias = randomFloat(0.75, 0.9)
+		}
+	elseif roll < 0.7 then
+		return {
+			label = "Nominal",
+			turnMultiplier = randomFloat(0.85, 1.05),
+			speedMultiplier = randomFloat(0.95, 1.05),
+			boostMultiplier = randomFloat(0.8, 1.0),
+			errorChance = randomFloat(0.12, 0.25),
+			reactionLag = randomFloat(0.06, 0.14),
+			dodgeBias = randomFloat(0.9, 1.05)
+		}
+	elseif roll < 0.9 then
+		return {
+			label = "Veteran",
+			turnMultiplier = randomFloat(1.05, 1.2),
+			speedMultiplier = randomFloat(1.05, 1.15),
+			boostMultiplier = randomFloat(1.0, 1.2),
+			errorChance = randomFloat(0.05, 0.12),
+			reactionLag = randomFloat(0.04, 0.1),
+			dodgeBias = randomFloat(1.05, 1.2)
+		}
+	else
+		return {
+			label = "Elite",
+			turnMultiplier = randomFloat(1.2, 1.35),
+			speedMultiplier = randomFloat(1.1, 1.25),
+			boostMultiplier = randomFloat(1.1, 1.35),
+			errorChance = randomFloat(0.02, 0.08),
+			reactionLag = randomFloat(0.02, 0.06),
+			dodgeBias = randomFloat(1.15, 1.3)
+		}
+	end
+end
+
 -- === AI METHODS ===
 function AISnake:findBestOrb()
     local baseRadius = self.Personality.OrbSeekRadius or 50
@@ -1241,7 +1286,7 @@ function AISnake:_determineAction()
         return "AVOID_WALL", wallVec.Unit
     end
 
-    local lookAheadDist = self.Speed * 1.5
+	local lookAheadDist = self.Speed * 1.5 * (self.SkillDodgeBias or 1)
     local futurePos = headPos + self.Direction * lookAheadDist
 
     local nearbyDanger = SpatialGrid.QueryRadius(futurePos, 15)
@@ -1281,7 +1326,13 @@ function AISnake:_determineAction()
         end
     end
 
-    if collisionThreat and minCollisionTime < 1 then
+	if collisionThreat and minCollisionTime < 1 then
+		if self.SkillMistakeChance and mathRandom() < self.SkillMistakeChance * 0.5 then
+			collisionThreat = nil
+		end
+	end
+
+	if collisionThreat and minCollisionTime < 1 then
         local threatPos = collisionThreat.part.Position
         local avoidDir = (headPos - threatPos).Unit
         local perpDir = Vector3new(-avoidDir.Z, 0, avoidDir.X)
@@ -1332,7 +1383,11 @@ function AISnake:_determineAction()
         end
     end
 
-    if shouldFlee or self.Avoiding then
+	if shouldFlee and self.SkillMistakeChance and mathRandom() < self.SkillMistakeChance * 0.35 then
+		shouldFlee = false
+	end
+
+	if shouldFlee or self.Avoiding then
         self.TargetSnake = nil
         self.TargetOrb = nil
 
@@ -1577,6 +1632,17 @@ function AISnake.new(startPosition, preservedPersonalityType)
         )
     end
 
+	self.SkillProfile = buildSkillProfile()
+	self.SkillTier = self.SkillProfile.label
+	self.SkillMistakeChance = self.SkillProfile.errorChance
+	self.SkillTurnMultiplier = self.SkillProfile.turnMultiplier
+	self.SkillDodgeBias = self.SkillProfile.dodgeBias
+	self.SkillReactionLag = self.SkillProfile.reactionLag
+	self.Personality.SpeedMultiplier = (self.Personality.SpeedMultiplier or 1) * self.SkillProfile.speedMultiplier
+	self.Personality.BoostChance = math.max(0.01, (self.Personality.BoostChance or 0.05) * self.SkillProfile.boostMultiplier)
+	self.TurnSpeed = self.TurnSpeed * self.SkillTurnMultiplier
+	self.RandomTurnInterval = self.RandomTurnInterval * (1 + self.SkillReactionLag)
+
     self.DisplayName = pickAIName()
 
     self.Model = getOrCreateSnakeModel(tostring(self) .. "_" .. mathRandom(100000,999999))
@@ -1588,6 +1654,7 @@ function AISnake.new(startPosition, preservedPersonalityType)
     self.Model:SetAttribute("AIName", self.DisplayName)
     self.Model:SetAttribute("Length", 0)
     self.Model:SetAttribute("IsAI", true)
+	self.Model:SetAttribute("SkillTier", self.SkillTier)
 
     self.RootPart = Instance.new("Part")
     self.RootPart.Name = "AISnakeRoot"
@@ -1961,6 +2028,7 @@ function AISnake:Destroy()
     if not self._active then return end
     self._active = false
     self._destroyed = true
+	releaseAIName(self.DisplayName)
 
     if AISnakeOrbPickup then
         pcall(function()
@@ -2069,7 +2137,11 @@ function AISnake:Destroy()
     self.Segments = nil
 end
 function AISnake:updateMovement(dt)
-    if self._destroyed then return end
+	if self._destroyed then return end
+	dt = sanitizeNumber(dt, 0.033)
+	if dt <= 0 then
+		dt = 0.016
+	end
 
     if not self._active or not self.HeadParts or not self.HeadParts.head or not self.HeadParts.head.Parent then
         if self._active and not self._destroyed then
@@ -2135,8 +2207,13 @@ function AISnake:updateMovement(dt)
         end
     end
 
-    local forward = self.Direction
-    local flatForward = Vector3new(forward.X, 0, forward.Z).Unit
+	local forward = self.Direction or Vector3new(0, 0, 1)
+	local flatForward = Vector3new(forward.X, 0, forward.Z)
+	if flatForward.Magnitude < 0.0001 then
+		flatForward = Vector3new(0, 0, 1)
+	else
+		flatForward = flatForward.Unit
+	end
     local flatSteer = Vector3new(steer.X, 0, steer.Z)
     local angle = 0
     if flatSteer.Magnitude > 0.01 then
@@ -2148,7 +2225,7 @@ function AISnake:updateMovement(dt)
     local desiredYaw = self.CurrentYaw + angle
     self.TargetYaw = desiredYaw
 
-    local turnSpeed = self.TurnSpeed
+	local turnSpeed = sanitizeNumber(self.TurnSpeed, 1.8)
 
     if state == "SEEK_ORB" and self.TargetOrb then
         local toOrb = (self.TargetOrb.Position - self.Position)
@@ -2168,19 +2245,27 @@ function AISnake:updateMovement(dt)
         turnSpeed = turnSpeed * 0.85
     end
 
-    local yawDiff = self.TargetYaw - self.CurrentYaw
+	self.CurrentYaw = sanitizeNumber(self.CurrentYaw, 0)
+	self.TargetYaw = sanitizeNumber(self.TargetYaw, self.CurrentYaw)
+
+	local yawDiff = self.TargetYaw - self.CurrentYaw
     if yawDiff > mathPi then yawDiff = yawDiff - 2 * mathPi end
     if yawDiff < -mathPi then yawDiff = yawDiff + 2 * mathPi end
 
-    local maxTurn = turnSpeed * dt
-    yawDiff = mathClamp(yawDiff, -maxTurn, maxTurn)
+	yawDiff = sanitizeNumber(yawDiff, 0)
+	local maxTurn = mathMax(0, turnSpeed) * dt
+	if maxTurn > 0 then
+		yawDiff = mathClamp(yawDiff, -maxTurn, maxTurn)
+	else
+		yawDiff = 0
+	end
     self.CurrentYaw = self.CurrentYaw + yawDiff
 
     self.Direction = Vector3new(mathSin(self.CurrentYaw), 0, mathCos(self.CurrentYaw))
 
     if self.State == "WANDER" or self.State == "FLEE" then
         local wobbleTime = tick() * 2
-        local wobbleAmount = 0.1
+		local wobbleAmount = 0.1 + (self.SkillMistakeChance or 0) * 0.05
         local wobble = Vector3new(
             math.sin(wobbleTime) * wobbleAmount,
             0,
