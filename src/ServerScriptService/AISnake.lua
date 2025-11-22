@@ -113,6 +113,30 @@ local function getUniqueAIName()
 	return fallback
 end
 
+local function scoreOrbCandidate(orb, distance)
+	distance = math.max(distance, 1)
+	local baseValue = 1
+
+	local valueObj = orb:FindFirstChild("Value")
+	if valueObj and typeof(valueObj.Value) == "number" then
+		baseValue = math.max(valueObj.Value, 0.1)
+	elseif orb:GetAttribute("Value") then
+		baseValue = math.max(tonumber(orb:GetAttribute("Value")) or 1, 0.1)
+	end
+
+	if orb.Name == "DeathOrb" then
+		baseValue = baseValue * 3.5
+	elseif orb.Name == "UpgradeOrb" then
+		baseValue = baseValue * 4
+	end
+
+	return baseValue / distance
+end
+
+local function perpendicular(vector)
+	return Vector3new(-vector.Z, 0, vector.X)
+end
+
 local AISnake = {}
 AISnake.__index = AISnake
 
@@ -887,58 +911,54 @@ end
 
 -- === AI METHODS ===
 function AISnake:findBestOrb()
-    local baseRadius = self.Personality.OrbSeekRadius or 50
-    local minDist = baseRadius * 1.5
-    local nearest = nil
-    local headPos = self.HeadParts and self.HeadParts.head and self.HeadParts.head.Position or self.Position
+	local seekRadius = self.Personality.OrbSeekRadius or 50
+	local scanRadius = seekRadius * 2
+	local headPos = (self.HeadParts and self.HeadParts.head and self.HeadParts.head.Position) or self.Position
 
-    local nearbyEntities = SpatialGrid.QueryRadius(headPos, minDist)
+	local targetedOrbs = {}
+	for ai, orb in pairs(AISnake._orbTargets) do
+		if ai ~= self and orb and orb.Parent then
+			targetedOrbs[orb] = true
+		end
+	end
 
-    local targetedOrbs = {}
-    for ai, orb in pairs(AISnake._orbTargets) do
-        if ai ~= self and orb and orb.Parent then
-            targetedOrbs[orb] = true
-        end
-    end
+	local bestScore = -math.huge
+	local bestOrb = nil
+	local bestDistance = math.huge
 
-    local orbFolder = Workspace:FindFirstChild("OrbFolder")
-    if orbFolder then
-        for _, orb in pairs(orbFolder:GetChildren()) do
-            if orb:IsA("BasePart") and orb.Name == "UpgradeOrb" and not targetedOrbs[orb] then
-                local dist = (orb.Position - headPos).Magnitude
-                if dist < minDist then
-                    minDist = dist
-                    nearest = orb
-                end
-            end
-        end
-    end
+	local function considerOrb(orb)
+		if not orb or targetedOrbs[orb] then
+			return
+		end
+		local dist = (orb.Position - headPos).Magnitude
+		if dist > scanRadius then
+			return
+		end
+		local score = scoreOrbCandidate(orb, dist)
+		if score > bestScore then
+			bestScore = score
+			bestOrb = orb
+			bestDistance = dist
+		end
+	end
 
-    if not nearest and #nearbyEntities > 0 then
-        for _, entity in ipairs(nearbyEntities) do
-            if entity.type == "ORB" and not targetedOrbs[entity.part] then
-                local dist = (entity.part.Position - headPos).Magnitude
-                if dist < minDist then
-                    minDist = dist
-                    nearest = entity.part
-                end
-            end
-        end
+	local orbFolder = Workspace:FindFirstChild("OrbFolder")
+	if orbFolder then
+		for _, orb in ipairs(orbFolder:GetChildren()) do
+			if orb:IsA("BasePart") and (orb.Name == "UpgradeOrb" or orb.Name == "DeathOrb") then
+				considerOrb(orb)
+			end
+		end
+	end
 
-        if not nearest then
-            for _, entity in ipairs(nearbyEntities) do
-                if entity.type == "ORB" then
-                    local dist = (entity.part.Position - headPos).Magnitude
-                    if dist < minDist then
-                        minDist = dist
-                        nearest = entity.part
-                    end
-                end
-            end
-        end
-    end
+	local nearbyEntities = SpatialGrid.QueryRadius(headPos, scanRadius)
+	for _, entity in ipairs(nearbyEntities) do
+		if entity.type == "ORB" and entity.part then
+			considerOrb(entity.part)
+		end
+	end
 
-    return nearest, minDist
+	return bestOrb, bestDistance
 end
 
 function AISnake:findNearestSnakeHead()
@@ -1222,6 +1242,86 @@ function AISnake:getSmartFleeDirection(threats)
     end
 
     return toCenter.Unit
+end
+
+function AISnake:forceCourseCorrection(reason)
+	if self._destroyed then return end
+
+	local turnSign = mathRandom(0, 1) == 0 and -1 or 1
+	local turnDegrees = randomFloat(135, 210) * turnSign
+	self.TargetYaw = self.TargetYaw + mathRad(turnDegrees)
+	self.CurrentYaw = self.TargetYaw
+	self.Direction = Vector3new(mathSin(self.CurrentYaw), 0, mathCos(self.CurrentYaw))
+	self.TargetOrb = nil
+	self.TargetSnake = nil
+	self.Avoiding = false
+
+	if self.ProgressWatch then
+		self.ProgressWatch.stagnation = 0
+		self.ProgressWatch.lastPos = self.Position
+		self.ProgressWatch.oscillationTimer = 0
+		self.ProgressWatch.oscillationAnchor = self.Position
+	end
+
+	if not self.Boosting then
+		self:startBoost(randomFloat(0.5, 1))
+	end
+
+	if self.SkillMistakeChance and mathRandom() < self.SkillMistakeChance * 0.25 then
+		self.SkillMistakeChance = math.max(self.SkillMistakeChance - 0.02, 0.05)
+	end
+end
+
+function AISnake:applySafetySteer(steerVector)
+	if not steerVector or steerVector.Magnitude < 0.01 then
+		return self.Direction
+	end
+
+	local safeProbe = self.Position + steerVector.Unit * 28
+	if self:isPathSafe(safeProbe, 28) then
+		return steerVector
+	end
+
+	local left = perpendicular(steerVector).Unit
+	if self:isPathSafe(self.Position + left * 24, 24) then
+		return left
+	end
+
+	local right = perpendicular(-steerVector).Unit
+	if self:isPathSafe(self.Position + right * 24, 24) then
+		return right
+	end
+
+	return steerVector
+end
+
+function AISnake:monitorProgress(dt)
+	if not self.ProgressWatch then
+		return
+	end
+
+	local watch = self.ProgressWatch
+	local delta = (self.Position - watch.lastPos).Magnitude
+	if delta < (self.Config.SegmentSpacing or 2) * 0.5 then
+		watch.stagnation = watch.stagnation + dt
+	else
+		watch.stagnation = 0
+		watch.lastPos = self.Position
+	end
+
+	watch.oscillationTimer = watch.oscillationTimer + dt
+	if watch.oscillationTimer >= 3.0 then
+		local drift = (self.Position - watch.oscillationAnchor).Magnitude
+		if drift < 45 then
+			self:forceCourseCorrection("oscillation")
+		end
+		watch.oscillationAnchor = self.Position
+		watch.oscillationTimer = 0
+	end
+
+	if watch.stagnation > 2.4 then
+		self:forceCourseCorrection("stagnation")
+	end
 end
 function AISnake:_determineAction()
     local headPos = self.HeadParts.head.Position
@@ -1870,6 +1970,12 @@ function AISnake.new(startPosition, preservedPersonalityType)
 
     self._spawnProtection = tick() + 3
     self._spawnStabilizing = tick() + 0.5
+	self.ProgressWatch = {
+		lastPos = self.Position,
+		stagnation = 0,
+		oscillationAnchor = self.Position,
+		oscillationTimer = 0
+	}
 
     return self
 end
@@ -2184,6 +2290,8 @@ function AISnake:updateMovement(dt)
     if not steer or steer.Magnitude < 0.1 then
         steer = self.Direction
     end
+
+	steer = self:applySafetySteer(steer)
 
     if self._lastBrainUpdate then
         local timeSinceLastBrain = now - self._lastBrainUpdate
@@ -2560,6 +2668,8 @@ function AISnake:updateMovement(dt)
             end
         end
     end
+
+	self:monitorProgress(dt)
 end
 if AISnake._movementConnection then AISnake._movementConnection:Disconnect() end
 if AISnake._brainConnection then AISnake._brainConnection:Disconnect() end
