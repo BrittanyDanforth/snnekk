@@ -1806,6 +1806,8 @@ function AISnake.new(startPosition, preservedPersonalityType)
     self.NormalSpeed = aiConfig.BaseSpeed or self.Config.BaseSpeed or 10
     self.BoostSpeed = aiConfig.BoostSpeed or self.Config.BoostSpeed or 24
     self.TurnSpeed = aiConfig.TurnSpeed or self.Config.TurnSpeed or 1.8
+    self._targetSpeed = self.Speed
+    self._smoothSpeed = self.Speed
 
     self.RandomTurnInterval = 1.5
     self.LastTurn = tick()
@@ -2416,6 +2418,36 @@ function AISnake:updateMovement(dt)
 	steer = self:applySafetySteer(steer)
 	steer = self:_blendSteer(dt, steer)
 
+    local baseTurnSpeed = sanitizeNumber(self.TurnSpeed, 1.8)
+    if state == "SEEK_ORB" and self.TargetOrb then
+        local dist = (self.TargetOrb.Position - self.Position).Magnitude
+        if dist < 20 then
+            baseTurnSpeed = baseTurnSpeed * 1.5
+        end
+    elseif state == "AVOID_WALL" then
+        baseTurnSpeed = baseTurnSpeed * 1.3
+    elseif state == "AVOID_BOUNDARY" then
+        baseTurnSpeed = baseTurnSpeed * 2.0
+    elseif state == "COLLISION_AVOID" then
+        baseTurnSpeed = baseTurnSpeed * 2.5
+    end
+
+    if self.Boosting then
+        baseTurnSpeed = baseTurnSpeed * 0.85
+    end
+
+    local desiredDir = sanitizeVector(steer, self.Direction).Unit
+    local allowHardTurn = motion.allowHardTurnUntil and motion.allowHardTurnUntil > now
+    local limitedDir = limitTurnAngle(motion.currentDirection or self.Direction, desiredDir, allowHardTurn)
+    local turnRate = mathClamp(baseTurnSpeed * dt, 0, 1)
+    local blendedDir = (motion.currentDirection or self.Direction):Lerp(limitedDir, turnRate)
+    if blendedDir.Magnitude > 0.001 then
+        motion.currentDirection = blendedDir.Unit
+    else
+        motion.currentDirection = self.Direction
+    end
+    self.Direction = motion.currentDirection
+
     if self._lastBrainUpdate then
         local timeSinceLastBrain = now - self._lastBrainUpdate
         if timeSinceLastBrain > 2.0 then
@@ -2447,67 +2479,14 @@ function AISnake:updateMovement(dt)
             local safeZ = mathClamp(self.Position.Z, MAP_BOUNDS.minZ + 50, MAP_BOUNDS.maxZ - 50)
             self.Position = Vector3new(safeX, self.Position.Y, safeZ)
             self.Direction = Vector3new(mathRandom() - 0.5, 0, mathRandom() - 0.5).Unit
+            motion.currentDirection = self.Direction
             self.State = "WANDER"
             return
         end
     end
 
-	local forward = motion.currentDirection or self.Direction or Vector3new(0, 0, 1)
-	local flatForward = Vector3new(forward.X, 0, forward.Z)
-	if flatForward.Magnitude < 0.0001 then
-		flatForward = Vector3new(0, 0, 1)
-	else
-		flatForward = flatForward.Unit
-	end
-    local flatSteer = Vector3new(steer.X, 0, steer.Z)
-    local angle = 0
-    if flatSteer.Magnitude > 0.01 then
-        flatSteer = flatSteer.Unit
-        angle = mathAtan2(flatSteer.X, flatSteer.Z) - mathAtan2(flatForward.X, flatForward.Z)
-        if angle > mathPi then angle = angle - 2 * mathPi end
-        if angle < -mathPi then angle = angle + 2 * mathPi end
-    end
-    local desiredYaw = self.CurrentYaw + angle
-    self.TargetYaw = desiredYaw
-
-	local turnSpeed = sanitizeNumber(self.TurnSpeed, 1.8)
-
-    if state == "SEEK_ORB" and self.TargetOrb then
-        local toOrb = (self.TargetOrb.Position - self.Position)
-        local dist = toOrb.Magnitude
-        if dist < 20 then
-            turnSpeed = turnSpeed * 1.5
-        end
-    elseif state == "AVOID_WALL" then
-        turnSpeed = turnSpeed * 1.3
-    elseif state == "AVOID_BOUNDARY" then
-        turnSpeed = turnSpeed * 2.5
-    elseif state == "COLLISION_AVOID" then
-        turnSpeed = turnSpeed * 3.0
-    end
-
-    if self.Boosting then
-        turnSpeed = turnSpeed * 0.85
-    end
-
-	self.CurrentYaw = sanitizeNumber(self.CurrentYaw, 0)
-	self.TargetYaw = sanitizeNumber(self.TargetYaw, self.CurrentYaw)
-
-	local yawDiff = self.TargetYaw - self.CurrentYaw
-    if yawDiff > mathPi then yawDiff = yawDiff - 2 * mathPi end
-    if yawDiff < -mathPi then yawDiff = yawDiff + 2 * mathPi end
-
-	yawDiff = sanitizeNumber(yawDiff, 0)
-	local maxTurn = mathMax(0, turnSpeed) * dt
-	if maxTurn > 0 then
-		yawDiff = mathClamp(yawDiff, -maxTurn, maxTurn)
-	else
-		yawDiff = 0
-	end
-    self.CurrentYaw = self.CurrentYaw + yawDiff
-
-	self.Direction = Vector3new(mathSin(self.CurrentYaw), 0, mathCos(self.CurrentYaw))
-	motion.currentDirection = self.Direction
+	self.CurrentYaw = mathAtan2(self.Direction.X, self.Direction.Z)
+	self.TargetYaw = self.CurrentYaw
 
     if self.State == "WANDER" or self.State == "FLEE" then
         local wobbleTime = tick() * 2
@@ -2517,7 +2496,8 @@ function AISnake:updateMovement(dt)
             0,
             math.cos(wobbleTime * 1.3) * wobbleAmount
         )
-        self.Direction = (self.Direction + wobble).Unit
+        self.Direction = sanitizeVector(self.Direction + wobble, self.Direction).Unit
+        motion.currentDirection = self.Direction
     end
 
     if not isSpawnProtected then
@@ -2550,6 +2530,7 @@ function AISnake:updateMovement(dt)
         if boundaryStrength > 0.1 then
             boundaryForce = boundaryForce.Unit
             self.Direction = (self.Direction * (1 - boundaryStrength) + boundaryForce * boundaryStrength).Unit
+            motion.currentDirection = self.Direction
             if boundaryStrength > 0.5 then
                 self.State = "AVOID_BOUNDARY"
                 self.TargetOrb = nil
@@ -2557,6 +2538,11 @@ function AISnake:updateMovement(dt)
             end
         end
     end
+
+    self.Direction = sanitizeVector(self.Direction, Vector3new(0, 0, 1))
+    motion.currentDirection = self.Direction
+	self.CurrentYaw = mathAtan2(self.Direction.X, self.Direction.Z)
+	self.TargetYaw = self.CurrentYaw
 
     if self.Boosting and now > self.BoostEndTime then
         self.Boosting = false
@@ -2592,12 +2578,12 @@ function AISnake:updateMovement(dt)
     end
 
     local speedMultiplier = p.SpeedMultiplier or 1
-
-    if self.Boosting then
-        self.Speed = self.BoostSpeed * speedMultiplier
-    else
-        self.Speed = mathMax(self.NormalSpeed, self.NormalSpeed * speedMultiplier)
-    end
+    local desiredSpeed = (self.Boosting and self.BoostSpeed or self.NormalSpeed) * speedMultiplier
+    self._targetSpeed = desiredSpeed
+    local accel = self.Boosting and 10 or 6
+    local lerpAlpha = mathClamp(dt * accel, 0, 1)
+    self._smoothSpeed = self._smoothSpeed + (desiredSpeed - self._smoothSpeed) * lerpAlpha
+    self.Speed = self._smoothSpeed
 
 	local moveDistance = self.Speed * dt
 	local previousPosition = self.Position
@@ -2614,6 +2600,7 @@ function AISnake:updateMovement(dt)
             local newAngle = currentAngle + escapeAngle
 
             self.Direction = Vector3new(mathSin(newAngle), 0, mathCos(newAngle))
+            motion.currentDirection = self.Direction
             self.CurrentYaw = newAngle
             self.TargetYaw = newAngle
 
