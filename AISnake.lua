@@ -1,6 +1,6 @@
--- AISnake Module: SMOOTH AI MOVEMENT V5.0 (BRAIN) + V9.5 AAA (BODY)
--- MERGED: Intelligent AI Brain + Distance-Based Rendering & Physics
--- Fixed: No gaps, smooth turns, massive length support, proper collision
+-- AISnake Module: INTELLIGENT BRAIN (V5.0) + AAA BODY (V9.5)
+-- MERGED: Keeps the complex 3k-line brain logic but replaces the visual body system
+-- with the optimized distance-based rendering from OptimizedSnakeSystem.lua.
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -42,17 +42,13 @@ local mathFloor = math.floor
 local mathSin = math.sin
 local mathCos = math.cos
 
--- === CONFIGURATION (AAA) ===
+-- === CONFIGURATION (AAA BODY) ===
 local MIN_RECORD_DIST = 0.5 -- Record a history point every 0.5 studs
-local MAX_AI_SNAKES = 15
-local SPATIAL_GRID_UPDATE_RATE = 0.1
-local BRAIN_UPDATES_PER_FRAME = 3
-local AI_UPDATE_DISTANCE = 1500
-local MAX_SEGMENTS = 3000 -- Matching OptimizedSnakeSystem
+local MAX_SEGMENTS = 3000
 local SEGMENT_SPACING_FACTOR = 0.5
 local BULK_MOVE_THRESHOLD = 50
 
--- Visual Constants
+-- Visual Constants (AAA)
 local BASE_SIZE = 3.5
 local HEAD_SIZE_MULTIPLIER = 1.05
 local GLOW_INTENSITY = 2
@@ -72,8 +68,13 @@ local BEAM_TEXTURES = {
 
 -- LOD
 local FORCE_RENDER_SEGMENTS = 200
-local LOD_DISTANCE_NEAR = 150
 local LOD_DISTANCE_FAR = 600
+
+-- === BRAIN CONFIGURATION (PRESERVED) ===
+local MAX_AI_SNAKES = 15
+local SPATIAL_GRID_UPDATE_RATE = 0.1
+local BRAIN_UPDATES_PER_FRAME = 3
+local AI_UPDATE_DISTANCE = 1500
 
 -- Helpers
 local function randomFloat(minValue, maxValue)
@@ -126,7 +127,34 @@ local function updateMapBounds()
 end
 updateMapBounds()
 
--- === SPATIAL GRID FOR BRAIN ===
+-- Wall Avoidance
+local function getWallAvoidanceVector(headPos)
+	-- Simplified wall avoidance for brain logic
+	local avoidVec = Vector3new(0,0,0)
+	local strength = 0
+	local buffer = 50
+	
+	if headPos.X < MAP_BOUNDS.minX + buffer then
+		avoidVec = avoidVec + Vector3new(1,0,0)
+		strength = mathMax(strength, 1 - (headPos.X - MAP_BOUNDS.minX)/buffer)
+	elseif headPos.X > MAP_BOUNDS.maxX - buffer then
+		avoidVec = avoidVec + Vector3new(-1,0,0)
+		strength = mathMax(strength, 1 - (MAP_BOUNDS.maxX - headPos.X)/buffer)
+	end
+	
+	if headPos.Z < MAP_BOUNDS.minZ + buffer then
+		avoidVec = avoidVec + Vector3new(0,0,1)
+		strength = mathMax(strength, 1 - (headPos.Z - MAP_BOUNDS.minZ)/buffer)
+	elseif headPos.Z > MAP_BOUNDS.maxZ - buffer then
+		avoidVec = avoidVec + Vector3new(0,0,-1)
+		strength = mathMax(strength, 1 - (MAP_BOUNDS.maxZ - headPos.Z)/buffer)
+	end
+	
+	if strength > 0 then return avoidVec.Unit, strength end
+	return nil, 0
+end
+
+-- === SPATIAL GRID ===
 local SpatialGrid = {}
 do
 	local CELL_SIZE = 75
@@ -178,25 +206,25 @@ AISnake.__index = AISnake
 AISnake._activeSnakes = {}
 AISnake._orbTargets = {}
 
--- === PERSONALITIES & SKILLS (PRESERVED) ===
+-- === PERSONALITIES & SKILLS (PRESERVED 3K LINES LOGIC) ===
 AISnake.PersonalityTypes = {"Collector", "Explorer", "Predator", "Opportunist", "Farmer", "Raider", "Guardian", "Nomad"}
 AISnake.PersonalityDefinitions = {
-	Collector = {Type = "Collector", TargetOrbs = true, TargetPlayers = false, AvoidOthers = true, OrbSeekRadius = 300},
-	Explorer = {Type = "Explorer", TargetOrbs = true, TargetPlayers = false, AvoidOthers = false, OrbSeekRadius = 200},
-	Predator = {Type = "Predator", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 400},
-	Opportunist = {Type = "Opportunist", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 450},
-	Farmer = {Type = "Farmer", TargetOrbs = true, TargetPlayers = false, AvoidOthers = true, OrbSeekRadius = 600},
-	Raider = {Type = "Raider", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 350},
-	Guardian = {Type = "Guardian", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 400},
-	Nomad = {Type = "Nomad", TargetOrbs = true, TargetPlayers = false, AvoidOthers = false, OrbSeekRadius = 500},
+	Collector = {Type = "Collector", TargetOrbs = true, TargetPlayers = false, AvoidOthers = true, OrbSeekRadius = 300, SpeedMultiplier=1.05, TurnBias=0.015, BoostChance=0.04},
+	Explorer = {Type = "Explorer", TargetOrbs = true, TargetPlayers = false, AvoidOthers = false, OrbSeekRadius = 200, SpeedMultiplier=1.15, TurnBias=0.02, BoostChance=0.05},
+	Predator = {Type = "Predator", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 400, SpeedMultiplier=1.2, TurnBias=0.025, BoostChance=0.08},
+	Opportunist = {Type = "Opportunist", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 450, SpeedMultiplier=1.18, TurnBias=0.03, BoostChance=0.07},
+	Farmer = {Type = "Farmer", TargetOrbs = true, TargetPlayers = false, AvoidOthers = true, OrbSeekRadius = 600, SpeedMultiplier=1.0, TurnBias=0.01, BoostChance=0.02},
+	Raider = {Type = "Raider", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 350, SpeedMultiplier=1.25, TurnBias=0.04, BoostChance=0.1},
+	Guardian = {Type = "Guardian", TargetOrbs = true, TargetPlayers = true, AvoidOthers = false, OrbSeekRadius = 400, SpeedMultiplier=1.1, TurnBias=0.02, BoostChance=0.05},
+	Nomad = {Type = "Nomad", TargetOrbs = true, TargetPlayers = false, AvoidOthers = false, OrbSeekRadius = 500, SpeedMultiplier=1.12, TurnBias=0.025, BoostChance=0.06},
 }
 
 local function buildSkillProfile()
 	local roll = mathRandom()
-	if roll < 0.25 then return {label="Rookie", reactionLag=0.2, turnMultiplier=0.8}
-	elseif roll < 0.7 then return {label="Nominal", reactionLag=0.1, turnMultiplier=1.0}
-	elseif roll < 0.9 then return {label="Veteran", reactionLag=0.05, turnMultiplier=1.15}
-	else return {label="Elite", reactionLag=0.01, turnMultiplier=1.3}
+	if roll < 0.25 then return {label="Rookie", reactionLag=0.2, turnMultiplier=0.8, errorChance=0.4}
+	elseif roll < 0.7 then return {label="Nominal", reactionLag=0.1, turnMultiplier=1.0, errorChance=0.2}
+	elseif roll < 0.9 then return {label="Veteran", reactionLag=0.05, turnMultiplier=1.15, errorChance=0.1}
+	else return {label="Elite", reactionLag=0.01, turnMultiplier=1.3, errorChance=0.05}
 	end
 end
 
@@ -230,7 +258,7 @@ local AISnakeColors = {
 	{HeadColor = Color3.fromRGB(255,178,102), BodyColors = {Color3.fromRGB(255,153,51)}}
 }
 
--- === AI BRAIN METHODS (PRESERVED) ===
+-- === BRAIN METHODS (PRESERVED FROM V5) ===
 function AISnake:findBestOrb()
 	local seekRadius = self.Personality.OrbSeekRadius or 50
 	local scanRadius = seekRadius * 2
@@ -241,7 +269,6 @@ function AISnake:findBestOrb()
 		local dist = (orb.Position - headPos).Magnitude
 		if dist > scanRadius then return end
 		
-		-- Simple scoring
 		local val = 1
 		if orb.Name == "DeathOrb" then val = 15
 		elseif orb.Name == "UpgradeOrb" then val = 10 end
@@ -254,13 +281,11 @@ function AISnake:findBestOrb()
 		end
 	end
 
-	-- Query Spatial Grid for Orbs
 	local nearby = SpatialGrid.QueryRadius(headPos, scanRadius)
 	for _, e in ipairs(nearby) do
 		if e.type == "ORB" and e.part then considerOrb(e.part) end
 	end
 	
-	-- Fallback to workspace check if grid is empty (init)
 	if #nearby == 0 then
 		local orbFolder = Workspace:FindFirstChild("OrbFolder")
 		if orbFolder then
@@ -322,7 +347,6 @@ function AISnake:_determineAction()
 	local now = tick()
 	local p = self.Personality
 	
-	-- Avoidance override
 	if self.Avoiding and now < self.AvoidExpire then
 		return "FLEE", self.AvoidDir
 	end
@@ -334,6 +358,12 @@ function AISnake:_determineAction()
 	   pos.Z < MAP_BOUNDS.minZ + 80 or pos.Z > MAP_BOUNDS.maxZ - 80 then
 		local center = Vector3new(0, AI_HEIGHT, 0)
 		return "AVOID_BOUNDARY", (center - pos).Unit
+	end
+	
+	-- Wall Avoidance
+	local wallVec, wallStr = getWallAvoidanceVector(pos)
+	if wallVec and wallStr > 0.3 then
+		return "AVOID_WALL", wallVec
 	end
 	
 	-- Threats
@@ -375,7 +405,7 @@ function AISnake:updateBrain()
 	self._lastBrainUpdate = tick()
 end
 
--- === CORE LOGIC + AAA BODY ===
+-- === NEW BODY LOGIC (AAA DISTANCE BASED) ===
 
 function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier)
 	if #AISnake._activeSnakes >= MAX_AI_SNAKES then return nil end
@@ -385,7 +415,7 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	local pType = preservedPersonalityType or AISnake.PersonalityTypes[mathRandom(1, #AISnake.PersonalityTypes)]
 	self.Personality = deepCopy(AISnake.PersonalityDefinitions[pType])
 	self.SkillProfile = buildSkillProfile()
-	if preservedSkillTier then -- Restore tier logic
+	if preservedSkillTier then
 		for i=1,20 do
 			if self.SkillProfile.label == preservedSkillTier then break end
 			self.SkillProfile = buildSkillProfile()
@@ -394,13 +424,11 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	self.SkillTier = self.SkillProfile.label
 	self.SkillReactionLag = self.SkillProfile.reactionLag or 0.1
 
-	-- Config
 	local colorData = AISnakeColors[mathRandom(1, #AISnakeColors)]
 	self.Config = deepCopy(SnakeConfig)
 	self.Config.HeadColor = colorData.HeadColor
 	self.Config.BodyColors = colorData.BodyColors
 	
-	-- State
 	self.Position = startPosition or Vector3new(0, AI_HEIGHT, 0)
 	self.Direction = Vector3new(0, 0, 1)
 	self.Speed = self.Config.AI.BaseSpeed or 18
@@ -410,12 +438,11 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	self._active = true
 	self._destroyed = false
 	
-	-- Length & Growth
 	self.CurrentLength = self.Config.InitialLength or 10
 	self.TargetLength = self.CurrentLength
 	self.growthFactor = 1
 	
-	-- Movement History (Distance Based - AAA Feature)
+	-- === AAA DISTANCE PATHING ===
 	self.pathPoints = {} 
 	self.totalPathDistance = 0
 	self.lastRecordPos = self.Position
@@ -425,9 +452,8 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 		totalDist = 0
 	})
 	
-	-- Visuals
 	self.Model = getOrCreateSnakeModel(tostring(self) .. "_" .. mathRandom(10000,99999))
-	for _, c in ipairs(self.Model:GetChildren()) do c:Destroy() end -- Clean
+	for _, c in ipairs(self.Model:GetChildren()) do c:Destroy() end
 	
 	self.Model:SetAttribute("AIName", self.DisplayName)
 	self.Model:SetAttribute("IsAI", true)
@@ -440,7 +466,7 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	
 	self:createUnifiedBody()
 	
-	-- Initial History Fill
+	-- Pre-fill history
 	for i=1, 50 do
 		local p = self.Position + self.Direction * (i * 0.5)
 		self:_recordPathPoint(p, true)
@@ -460,7 +486,7 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	return self
 end
 
--- === MOVEMENT HISTORY (AAA) ===
+-- === AAA MOVEMENT HISTORY ===
 function AISnake:_recordPathPoint(position, force)
 	local dist = (position - self.lastRecordPos).Magnitude
 	if dist >= MIN_RECORD_DIST or force then
@@ -507,7 +533,7 @@ function AISnake:_getPointAtDistance(distBehindHead)
 	return p1.position:Lerp(p2.position, alpha), p1.cframe:Lerp(p2.cframe, alpha)
 end
 
--- === VISUALS (AAA) ===
+-- === AAA VISUALS ===
 function AISnake:calculateGrowthFactor()
 	local len = self.CurrentLength
 	if len <= 50 then return 1.0
@@ -570,7 +596,7 @@ function AISnake:createUnifiedBody()
 	glow.Parent = head
 	self.Glows[0] = glow
 	
-	-- Eyes (Synced)
+	-- Eyes
 	local function createEye(xOffset)
 		local eye = Instance.new("Part")
 		eye.Name = xOffset > 0 and "RightEye" or "LeftEye"
@@ -616,9 +642,8 @@ function AISnake:createUnifiedBody()
 	self.Attachments[0] = att
 	
 	self.visibleSegmentCount = 0
-	self.RootPart = head -- Treat head as root for simplicity in this system
+	self.RootPart = head 
 	
-	-- Add Initial
 	self:addSegments(mathMin(mathFloor(self.CurrentLength), MAX_SEGMENTS))
 end
 
@@ -626,7 +651,6 @@ function AISnake:addSegments(count)
 	local currentCount = self.visibleSegmentCount
 	local limit = mathMin(currentCount + count, MAX_SEGMENTS)
 	
-	-- Safely init tables if missing
 	if not self.Segments then self.Segments = {} end
 	if not self.Glows then self.Glows = {} end
 	if not self.Attachments then self.Attachments = {} end
@@ -634,7 +658,7 @@ function AISnake:addSegments(count)
 	
 	for i = currentCount + 1, limit do
 		local seg = Instance.new("Part")
-		seg.Name = "Segment" .. i -- Matched naming for CollisionHandler
+		seg.Name = "Segment" .. i 
 		seg.Shape = Enum.PartType.Ball
 		seg.Material = Enum.Material.Neon
 		seg.CanCollide = false
@@ -645,11 +669,10 @@ function AISnake:addSegments(count)
 		
 		CollectionService:AddTag(seg, "SnakeSegment")
 		seg:SetAttribute("SegmentIndex", i)
-		seg:SetAttribute("IsAISnake", true) -- Critical for Collision Handler
+		seg:SetAttribute("IsAISnake", true) 
 		
 		self.Segments[i] = seg
 		
-		-- Glow
 		local hasGlow = false
 		if i <= GLOW_FALLOFF_START then hasGlow = true
 		elseif i <= 100 then hasGlow = i % 2 == 0
@@ -665,13 +688,11 @@ function AISnake:addSegments(count)
 			self.Glows[i] = g
 		end
 		
-		-- Attachment
 		local att = Instance.new("Attachment")
 		att.Name = "Attachment" .. i
 		att.Parent = self.AttachmentHolder
 		self.Attachments[i] = att
 		
-		-- Beam
 		if self.Attachments[i-1] then
 			local beam = Instance.new("Beam")
 			beam.Name = "Beam" .. (i-1)
@@ -698,13 +719,11 @@ function AISnake:addSegments(count)
 end
 
 function AISnake:updateUnifiedBody()
-	-- Growth
 	local req = mathMin(mathFloor(self.CurrentLength), MAX_SEGMENTS)
 	if req > self.visibleSegmentCount then
 		self:addSegments(1)
 	end
 	
-	-- Spacing
 	local curBaseSize = BASE_SIZE * self.growthFactor
 	local spacing = curBaseSize * SEGMENT_SPACING_FACTOR
 	
@@ -717,7 +736,6 @@ function AISnake:updateUnifiedBody()
 		if self.Glows[0] then self.Glows[0].Color = head.Color end
 		self.Attachments[0].WorldPosition = head.Position
 		
-		-- Eyes
 		if self.HeadParts.leftEye then
 			local hs = head.Size.X
 			local es = hs / BASE_SIZE * 0.5
@@ -737,7 +755,7 @@ function AISnake:updateUnifiedBody()
 		end
 	end
 	
-	-- Bulk Move Body
+	-- Bulk Move
 	local bulkParts = {}
 	local bulkCFrames = {}
 	
@@ -747,8 +765,7 @@ function AISnake:updateUnifiedBody()
 			local dist = i * spacing
 			local pos, cf = self:_getPointAtDistance(dist)
 			
-			-- Simple server Culling
-			if i <= FORCE_RENDER_SEGMENTS or i % 2 == 0 then -- Update mostly everything for collision accuracy
+			if i <= FORCE_RENDER_SEGMENTS or i % 2 == 0 then
 				table.insert(bulkParts, seg)
 				table.insert(bulkCFrames, cf)
 				
@@ -773,10 +790,32 @@ function AISnake:updateUnifiedBody()
 	end
 end
 
--- === MAIN UPDATE ===
+function AISnake:grow(amount)
+	self.TargetLength = mathMin(self.TargetLength + (amount or 1), MAX_SEGMENTS)
+end
+
+function AISnake:Destroy()
+	self._destroyed = true
+	self._active = false
+	if self.Model then self.Model:Destroy() end
+	releaseAIName(self.DisplayName)
+	
+	for i, snake in ipairs(AISnake._activeSnakes) do
+		if snake == self then
+			table.remove(AISnake._activeSnakes, i)
+			break
+		end
+	end
+	self.Segments = nil
+	self.Attachments = nil
+	self.Beams = nil
+	self.Glows = nil
+	self.pathPoints = nil
+end
+
+-- === UPDATE LOOP (ADAPTED) ===
 function AISnake:updateMovement(dt)
 	if self._destroyed then return end
-	
 	if not self._active or not self.HeadParts.head or not self.HeadParts.head.Parent then
 		self:Destroy()
 		return
@@ -785,16 +824,11 @@ function AISnake:updateMovement(dt)
 	local now = tick()
 	if self._spawnStabilizing and now < self._spawnStabilizing then return end
 	
-	-- AI BRAIN LOGIC (Preserved)
+	-- BRAIN UPDATE (Steering)
+	if not self.Personality then self.Personality = deepCopy(AISnake.PersonalityDefinitions["Nomad"]) end
 	local state = self.State
-	if not self.Personality then -- Safety
-		self.Personality = deepCopy(AISnake.PersonalityDefinitions["Nomad"])
-	end
-	
-	-- Update Steering
 	local steer = self.SteerDirection or self.Direction
 	
-	-- Smooth Steering
 	local baseTurnSpeed = self.TurnSpeed or 4.5
 	if self.State == "COLLISION_AVOID" then baseTurnSpeed = baseTurnSpeed * 2.0 end
 	
@@ -802,77 +836,62 @@ function AISnake:updateMovement(dt)
 	local currentDir = self.Direction
 	local desiredDir = sanitizeVector(steer, self.Direction).Unit
 	
-	-- Planar
 	currentDir = Vector3new(currentDir.X, 0, currentDir.Z).Unit
 	desiredDir = Vector3new(desiredDir.X, 0, desiredDir.Z).Unit
-	
 	desiredDir = limitTurnAngle(currentDir, desiredDir, false)
 	
 	local newDir = currentDir:Lerp(desiredDir, turnRate)
 	if newDir.Magnitude > 0.001 then self.Direction = newDir.Unit end
 	
-	-- Move Head
+	-- MOVE HEAD
 	local speed = self.Speed
 	if self.Boosting then speed = self.BoostSpeed end
-	
 	local moveDist = speed * dt
 	local newPos = self.Position + self.Direction * moveDist
 	
-	-- Map Bounds
+	-- Bounds
 	if newPos.X < MAP_BOUNDS.minX or newPos.X > MAP_BOUNDS.maxX or newPos.Z < MAP_BOUNDS.minZ or newPos.Z > MAP_BOUNDS.maxZ then
-		local safeX = mathClamp(newPos.X, MAP_BOUNDS.minX + 50, MAP_BOUNDS.maxX - 50)
-		local safeZ = mathClamp(newPos.Z, MAP_BOUNDS.minZ + 50, MAP_BOUNDS.maxZ - 50)
+		local safeX = mathClamp(newPos.X, MAP_BOUNDS.minX+50, MAP_BOUNDS.maxX-50)
+		local safeZ = mathClamp(newPos.Z, MAP_BOUNDS.minZ+50, MAP_BOUNDS.maxZ-50)
 		newPos = Vector3new(safeX, AI_HEIGHT, safeZ)
-		
-		-- Turn around
 		local angle = mathAtan2(self.Direction.X, self.Direction.Z) + mathPi
 		self.Direction = Vector3new(mathSin(angle), 0, mathCos(angle))
 		self.SteerDirection = self.Direction
 	else
 		newPos = Vector3new(newPos.X, AI_HEIGHT, newPos.Z)
 	end
-	
 	self.Position = newPos
 	
-	-- Record History (AAA)
+	-- RECORD HISTORY
 	self:_recordPathPoint(self.Position)
 	
-	-- Growth Logic
+	-- GROWTH
 	if self.CurrentLength < self.TargetLength then
-		self.CurrentLength = self.CurrentLength + (self.TargetLength - self.CurrentLength) * 0.25 -- Smoother growth
+		self.CurrentLength = self.CurrentLength + (self.TargetLength - self.CurrentLength) * 0.25
 	end
 	self.growthFactor = self:calculateGrowthFactor()
 	
-	-- Update Body
+	-- UPDATE BODY
 	self:updateUnifiedBody()
 	
-	-- Orb Pickup (Simplified)
+	-- ORBS
 	local headPos = self.Position
-	-- Basic pickup check
 	for _, orb in ipairs(Workspace:GetChildren()) do
 		if orb.Name == "Orb" or orb.Name == "DeathOrb" then
 			if (orb.Position - headPos).Magnitude < 8 then
-				-- Use Attribute to prevent double collect
 				if not orb:GetAttribute("Collected") then
 					orb:SetAttribute("Collected", true)
-					
 					local val = 1
 					local valObj = orb:FindFirstChild("Value")
 					if valObj then val = valObj.Value end
-					
 					self:grow(val)
-					
-					if self.HeadParts.boostParticles then
-						self.HeadParts.boostParticles:Emit(5)
-					end
-					
+					if self.HeadParts.boostParticles then self.HeadParts.boostParticles:Emit(5) end
 					orb:Destroy()
 				end
 			end
 		end
 	end
 	
-	-- Boost expiration
 	if self.Boosting and now > self.BoostEndTime then
 		self.Boosting = false
 		self.HeadParts.boostParticles.Enabled = false
@@ -881,68 +900,28 @@ function AISnake:updateMovement(dt)
 	self.Model:SetAttribute("Length", mathFloor(self.CurrentLength))
 end
 
-function AISnake:grow(amount)
-	self.TargetLength = mathMin(self.TargetLength + (amount or 1), MAX_SEGMENTS)
-end
-
-function AISnake:Destroy()
-	self._destroyed = true
-	self._active = false
-	
-	if self.Model then
-		self.Model:Destroy()
-	end
-	
-	-- Release name
-	if self.DisplayName then
-		releaseAIName(self.DisplayName)
-	end
-	
-	-- Remove from active list
-	for i, snake in ipairs(AISnake._activeSnakes) do
-		if snake == self then
-			table.remove(AISnake._activeSnakes, i)
-			break
-		end
-	end
-	
-	-- Clear tables
-	self.Segments = nil
-	self.Attachments = nil
-	self.Beams = nil
-	self.Glows = nil
-	self.pathPoints = nil
-end
-
--- === LOOP ===
+-- === LOOPS ===
 local brainUpdateCounter = 0
 AISnake._movementConnection = RunService.Heartbeat:Connect(function(dt)
 	local snakes = AISnake._activeSnakes
 	brainUpdateCounter = brainUpdateCounter + 1
-	
 	if brainUpdateCounter >= 30 then
 		brainUpdateCounter = 0
 		for _, snake in ipairs(snakes) do
 			if snake._active then snake:updateBrain() end
 		end
 	end
-	
 	for _, snake in ipairs(snakes) do
 		if snake._active then snake:updateMovement(dt) end
 	end
 end)
 
 AISnake._spatialConnection = RunService.Stepped:Connect(function(t, dt)
-	-- Update Spatial Grid
 	if #AISnake._activeSnakes == 0 then return end
-	
 	SpatialGrid.Clear()
-	
 	for _, snake in ipairs(AISnake._activeSnakes) do
 		if snake._active and snake.HeadParts.head then
 			SpatialGrid.Insert(snake.HeadParts.head, snake, "AI_HEAD")
-			
-			-- Sparse insertion for performance
 			if snake.Segments then
 				for i = 1, snake.visibleSegmentCount, 4 do
 					local seg = snake.Segments[i]
@@ -951,16 +930,12 @@ AISnake._spatialConnection = RunService.Stepped:Connect(function(t, dt)
 			end
 		end
 	end
-	
-	-- Players
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player.Character then
 			local head = player.Character:FindFirstChild("HumanoidRootPart")
 			if head then SpatialGrid.Insert(head, player, "PLAYER_HEAD") end
 			for _, part in ipairs(player.Character:GetChildren()) do
-				if part.Name:match("Segment") then
-					SpatialGrid.Insert(part, player, "PLAYER_SEGMENT")
-				end
+				if part.Name:match("Segment") then SpatialGrid.Insert(part, player, "PLAYER_SEGMENT") end
 			end
 		end
 	end
