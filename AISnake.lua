@@ -2035,24 +2035,16 @@ function AISnake.new(startPosition, preservedPersonalityType)
 
 	self:_initPathSystem()
 
-	local attachmentPart = Instance.new("Part")
-	attachmentPart.Name = "BeamHolder"
-	attachmentPart.Size = Vector3.new(1, 1, 1)
-	attachmentPart.Transparency = 1
-	attachmentPart.CanCollide = false
-	attachmentPart.CanQuery = false
-	attachmentPart.CanTouch = false
-	attachmentPart.Anchored = true
-	attachmentPart.Position = self.Position
-	attachmentPart.Parent = self.Model
-	attachmentPart:SetAttribute("AlwaysRender", true)
+	-- Removed AttachmentPart to fix rendering issues
+	-- Attachments and Beams are now parented directly to Head and Segments
 
 	self.Attachments = {}
 	self.Beams = {}
 
 	local headAttachment = Instance.new("Attachment")
 	headAttachment.Name = "Attachment0"
-	headAttachment.Parent = attachmentPart
+	headAttachment.Parent = self.HeadParts.head
+	headAttachment.Position = Vector3.new(0, 0, 0)
 	self.Attachments[0] = headAttachment
 
 	self.Segments[0] = self.HeadParts.head
@@ -2077,7 +2069,8 @@ function AISnake.new(startPosition, preservedPersonalityType)
 
 		local attachment = Instance.new("Attachment")
 		attachment.Name = "Attachment" .. i
-		attachment.Parent = attachmentPart
+		attachment.Parent = segment
+		attachment.Position = Vector3.new(0, 0, 0)
 		self.Attachments[i] = attachment
 	end
 
@@ -2120,11 +2113,15 @@ function AISnake.new(startPosition, preservedPersonalityType)
 			beam.Color = ColorSequence.new(self:getSegmentColor(i))
 		end
 
-		beam.Parent = attachmentPart
+		-- Parent beam to the start segment of the pair (Head for 0, Segment i for others)
+		if i == 0 then
+			beam.Parent = self.HeadParts.head
+		else
+			beam.Parent = self.Segments[i]
+		end
 		self.Beams[i] = beam
 	end
 
-	self.AttachmentPart = attachmentPart
 	self.actualSegmentCount = initialSegmentCount
 
 	self.Model:SetAttribute("CurrentLength", self.CurrentLength)
@@ -2263,69 +2260,69 @@ function AISnake:grow(amount)
 					segment.CFrame = CFramenew(newPos, newPos + sampleDir)
 				end
 
-				if self.AttachmentPart and self.Attachments then
+				if self.Attachments then
 					local attachment = Instance.new("Attachment")
 					attachment.Name = "Attachment" .. self.CurrentLength
-					attachment.Parent = self.AttachmentPart
-					attachment.WorldPosition = newPos
+					attachment.Parent = segment
+					attachment.Position = Vector3.new(0, 0, 0)
 					self.Attachments[self.CurrentLength] = attachment
 
 					if self.CurrentLength > 1 and self.Beams then
-						local prevAttachment = self.Attachments[self.CurrentLength - 1]
-						if not prevAttachment then
+						local prevIndex = self.CurrentLength - 1
+						local prevAttachment = self.Attachments[prevIndex]
+						local prevSegment = self.Segments[prevIndex]
+
+						if not prevAttachment and prevSegment then
 							prevAttachment = Instance.new("Attachment")
-							prevAttachment.Name = "Attachment" .. (self.CurrentLength - 1)
-							prevAttachment.Parent = self.AttachmentPart
-							local prevSegment = self.Segments[self.CurrentLength - 1]
-							if prevSegment and prevSegment.Parent then
-								prevAttachment.WorldPosition = prevSegment.Position
+							prevAttachment.Name = "Attachment" .. prevIndex
+							prevAttachment.Parent = prevSegment
+							prevAttachment.Position = Vector3.new(0, 0, 0)
+							self.Attachments[prevIndex] = prevAttachment
+						end
+
+						if prevAttachment then
+							local beam = Instance.new("Beam")
+							beam.Name = "Beam" .. prevIndex
+							beam.Attachment0 = prevAttachment
+							beam.Attachment1 = attachment
+
+							local beamWidth = self:getBeamWidth(prevIndex, currentBaseSize)
+							beam.Width0 = beamWidth
+							beam.Width1 = beamWidth
+							beam.CurveSize0 = 0
+							beam.CurveSize1 = 0
+							beam.FaceCamera = true
+							beam.Segments = BEAM_SEGMENTS
+							beam.Texture = BEAM_TEXTURES.gradient
+							beam.TextureMode = Enum.TextureMode.Wrap
+							beam.TextureLength = 2
+							beam.TextureSpeed = BEAM_TEXTURE_SPEED
+							beam.LightEmission = 1
+							beam.LightInfluence = 0
+							beam.Brightness = 2
+							beam.Transparency = NumberSequence.new{
+								NumberSequenceKeypoint.new(0, 0),
+								NumberSequenceKeypoint.new(0.5, 0),
+								NumberSequenceKeypoint.new(1, 0.1)
+							}
+
+							local prevColor = self:getSegmentColor(prevIndex)
+							local currColor = self:getSegmentColor(self.CurrentLength)
+
+							if not prevColor or not currColor then
+								beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 51))
+							elseif prevColor == currColor then
+								beam.Color = ColorSequence.new(currColor)
 							else
-								prevAttachment.WorldPosition = newPos
+								beam.Color = ColorSequence.new({
+									ColorSequenceKeypoint.new(0, prevColor),
+									ColorSequenceKeypoint.new(1, currColor)
+								})
 							end
-							self.Attachments[self.CurrentLength - 1] = prevAttachment
+
+							beam.Parent = prevSegment -- Parent to previous segment
+							self.Beams[prevIndex] = beam
 						end
-
-						local beam = Instance.new("Beam")
-						beam.Name = "Beam" .. (self.CurrentLength - 1)
-						beam.Attachment0 = prevAttachment
-						beam.Attachment1 = attachment
-
-						local beamWidth = self:getBeamWidth(self.CurrentLength - 1, currentBaseSize)
-						beam.Width0 = beamWidth
-						beam.Width1 = beamWidth
-						beam.CurveSize0 = 0
-						beam.CurveSize1 = 0
-						beam.FaceCamera = true
-						beam.Segments = BEAM_SEGMENTS
-						beam.Texture = BEAM_TEXTURES.gradient
-						beam.TextureMode = Enum.TextureMode.Wrap
-						beam.TextureLength = 2
-						beam.TextureSpeed = BEAM_TEXTURE_SPEED
-						beam.LightEmission = 1
-						beam.LightInfluence = 0
-						beam.Brightness = 2
-						beam.Transparency = NumberSequence.new{
-							NumberSequenceKeypoint.new(0, 0),
-							NumberSequenceKeypoint.new(0.5, 0),
-							NumberSequenceKeypoint.new(1, 0.1)
-						}
-
-						local prevColor = self:getSegmentColor(self.CurrentLength - 1)
-						local currColor = self:getSegmentColor(self.CurrentLength)
-
-						if not prevColor or not currColor then
-							beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 51))
-						elseif prevColor == currColor then
-							beam.Color = ColorSequence.new(currColor)
-						else
-							beam.Color = ColorSequence.new({
-								ColorSequenceKeypoint.new(0, prevColor),
-								ColorSequenceKeypoint.new(1, currColor)
-							})
-						end
-
-						beam.Parent = self.AttachmentPart
-						self.Beams[self.CurrentLength - 1] = beam
 					end
 				end
 
@@ -2466,34 +2463,10 @@ function AISnake:Destroy()
 	end
 	self.Segments = {}
 
-	if self.Beams then
-		for _, beam in pairs(self.Beams) do
-			if beam and beam.Parent then
-				pcall(function()
-					beam:Destroy()
-				end)
-			end
-		end
-		self.Beams = {}
-	end
-
-	if self.Attachments then
-		for _, attachment in pairs(self.Attachments) do
-			if attachment and attachment.Parent then
-				pcall(function()
-					attachment:Destroy()
-				end)
-			end
-		end
-		self.Attachments = {}
-	end
-
-	if self.AttachmentPart and self.AttachmentPart.Parent then
-		pcall(function()
-			self.AttachmentPart:Destroy()
-		end)
-		self.AttachmentPart = nil
-	end
+	-- Beams and Attachments are children of Segments/Head, so they are destroyed automatically
+	self.Beams = {}
+	self.Attachments = {}
+	self.AttachmentPart = nil -- Should be nil already but ensuring safety
 
 	if self.HeadParts then
 		for _, part in pairs(self.HeadParts) do
@@ -2883,10 +2856,6 @@ function AISnake:updateMovement(dt)
 
 	local updateOffset = self._segmentUpdateFrame % segmentSkip
 
-	if self.Attachments and self.Attachments[0] then
-		self.Attachments[0].WorldPosition = self.HeadParts.head.Position
-	end
-
 	if not self.CurrentLength then
 		warn("AISnake:updateMovement missing CurrentLength")
 		return
@@ -2901,24 +2870,11 @@ function AISnake:updateMovement(dt)
 			if targetPos then
 				local newPos = segment.Position:Lerp(targetPos, followSpeed)
 				segment.CFrame = CFramenew(newPos, newPos + targetDir)
-
-				if self.Attachments and self.Attachments[i] then
-					self.Attachments[i].WorldPosition = newPos
-				end
 			end
 		end
 	end
 
-	if segmentSkip > 1 then
-		for i = 1, maxSegmentToUpdate do
-			if i % segmentSkip ~= updateOffset then
-				local segment = self.Segments[i]
-				if segment and segment.Parent and self.Attachments and self.Attachments[i] then
-					self.Attachments[i].WorldPosition = segment.Position
-				end
-			end
-		end
-	end
+	-- Skipped segments don't need attachment updates as attachments are parented to segments
 
 	self:monitorProgress(dt)
 end
@@ -3161,8 +3117,8 @@ function AISnake:ensureSegmentExists(index)
 	if not self.Attachments[index] then
 		local attachment = Instance.new("Attachment")
 		attachment.Name = "Attachment" .. index
-		attachment.Parent = self.AttachmentPart
-		attachment.WorldPosition = segment.Position
+		attachment.Parent = segment
+		attachment.Position = Vector3.new(0, 0, 0)
 		self.Attachments[index] = attachment
 	end
 
@@ -3195,7 +3151,16 @@ function AISnake:ensureSegmentExists(index)
 			}
 			beam.Color = ColorSequence.new(color)
 
-			beam.Parent = self.AttachmentPart
+			if index - 1 == 0 then
+				beam.Parent = self.HeadParts.head
+			else
+				local prevSeg = self.Segments[index - 1]
+				if prevSeg and prevSeg.Parent then
+					beam.Parent = prevSeg
+				else
+					beam.Parent = segment
+				end
+			end
 			self.Beams[index - 1] = beam
 			beam.Enabled = true
 		end

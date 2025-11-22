@@ -85,10 +85,15 @@ function ClientSnake:_hydrate()
 		return
 	end
 
-	self.segments = {}
-	self.segmentOrder = {}
-	self.segmentState = {}
-	self.glows = {}
+	self.beams = {}
+	self.beamBaseWidths = {}
+
+	-- Check Head for Beam 0
+	local headBeam = self.head:FindFirstChild("Beam0")
+	if headBeam then
+		self.beams[0] = headBeam
+		self.beamBaseWidths[0] = {Width0 = headBeam.Width0, Width1 = headBeam.Width1}
+	end
 
 	local parts = {}
 	for _, child in ipairs(self.model:GetChildren()) do
@@ -96,6 +101,13 @@ function ClientSnake:_hydrate()
 			local index = tonumber(child.Name:match("%d+"))
 			if index then
 				parts[#parts + 1] = {index = index, part = child}
+
+				-- Check Segment for Beam
+				local beam = child:FindFirstChild("Beam" .. index)
+				if beam then
+					self.beams[index] = beam
+					self.beamBaseWidths[index] = {Width0 = beam.Width0, Width1 = beam.Width1}
+				end
 			end
 		end
 	end
@@ -113,21 +125,6 @@ function ClientSnake:_hydrate()
 		local glow = info.part:FindFirstChild("Glow")
 		if glow then
 			self.glows[info.index] = glow
-		end
-	end
-
-	self.beams = {}
-	self.beamBaseWidths = {}
-	local beamHolder = self.model:FindFirstChild("BeamHolder")
-	if beamHolder then
-		for _, beam in ipairs(beamHolder:GetChildren()) do
-			if beam:IsA("Beam") then
-				local index = tonumber(beam.Name:match("%d+"))
-				if index then
-					self.beams[index] = beam
-					self.beamBaseWidths[index] = {Width0 = beam.Width0, Width1 = beam.Width1}
-				end
-			end
 		end
 	end
 
