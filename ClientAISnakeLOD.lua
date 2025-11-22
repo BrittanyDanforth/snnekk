@@ -74,6 +74,7 @@ function ClientSnake.new(model)
 	self.accumulator = 0
 	self.lodProfile = HIDDEN_PROFILE
 	self.dead = false
+	self.culled = false
 
 	self:_hydrate()
 	return self
@@ -308,13 +309,14 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 		local targetAlpha = 0
 		if renderSlot then
 			local segDist = (cameraPos - seg.Position).Magnitude
-			local distanceAlpha = smoothVisibility(segDist, segmentIndex == 0)
+			local distanceAlpha = smoothVisibility(segDist, isHeadSegment)
 			targetAlpha = distanceAlpha * profile.fade
 		end
 
 		-- SEGMENTS: fade via local modifier so we don’t fight server transparency
 		state.target = 1 - targetAlpha
 		state.current = lerpNumber(state.current, state.target, TRANSPARENCY_LERP)
+		state.current = math.clamp(state.current, 0, 1)
 		seg.LocalTransparencyModifier = state.current
 
 		-- GLOW: follow segment visibility
@@ -378,7 +380,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 end
 
 function ClientSnake:step(dt, cameraPos)
-	if self.dead then
+	if self.dead or self.culled then
 		return
 	end
 
@@ -474,8 +476,20 @@ function SnakeManager:_resort()
 		return a.lastDistance < b.lastDistance
 	end)
 
-	for i = MAX_VISIBLE_SNAKES + 1, #self.sorted do
-		self.sorted[i]:_setInvisible()
+	for i, snake in ipairs(self.sorted) do
+		if i <= MAX_VISIBLE_SNAKES then
+			-- Should be active
+			if snake.culled then
+				snake.culled = false
+				-- no need to immediately fade in; next step() will handle it
+			end
+		else
+			-- Should be culled
+			if not snake.culled then
+				snake.culled = true
+				snake:_setInvisible()
+			end
+		end
 	end
 end
 
