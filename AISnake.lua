@@ -1281,6 +1281,95 @@ function AISnake:getSmartFleeDirection(threats)
     return toCenter.Unit
 end
 
+function AISnake:_initPathSystem()
+    local spacing = self.Config.SegmentSpacing or 2.2
+    local maxSegments = self.Config.MaxSegments or DYNAMIC_SEGMENT_LIMIT
+    local path = {
+        points = {},
+        totalDistance = 0,
+        lastRecordedPos = self.Position,
+        minRecordDistance = mathMax(spacing * 0.45, 0.6),
+        maxDistance = spacing * (maxSegments + 25)
+    }
+    path.points[1] = {position = self.Position, distance = 0}
+    self.PathSystem = path
+end
+
+function AISnake:_recordPathPoint(position, force)
+    local path = self.PathSystem
+    if not path then return end
+
+    local moved = (position - path.lastRecordedPos).Magnitude
+    if not force and moved < path.minRecordDistance then
+        local lastEntry = path.points[#path.points]
+        if lastEntry then
+            lastEntry.position = position
+        end
+        return
+    end
+
+    path.totalDistance = path.totalDistance + moved
+    table.insert(path.points, {position = position, distance = path.totalDistance})
+    path.lastRecordedPos = position
+
+    local points = path.points
+    local maxDistance = path.maxDistance
+    while #points > 2 and (path.totalDistance - points[1].distance) > maxDistance do
+        table.remove(points, 1)
+    end
+end
+
+function AISnake:_samplePath(distanceBehind)
+    local path = self.PathSystem
+    if not path or #path.points == 0 then
+        return self.Position, self.Direction
+    end
+
+    local targetDistance = path.totalDistance - mathMax(distanceBehind, 0)
+    local points = path.points
+    if targetDistance <= points[1].distance then
+        local nextPoint = points[2] or points[1]
+        local dir = nextPoint.position - points[1].position
+        if dir.Magnitude < 0.001 then
+            dir = self.Direction
+        else
+            dir = dir.Unit
+        end
+        return points[1].position, dir
+    end
+
+    local left, right = 1, #points
+    while left < right do
+        local mid = mathFloor((left + right) / 2)
+        if points[mid].distance < targetDistance then
+            left = mid + 1
+        else
+            right = mid
+        end
+    end
+
+    local idx = math.max(2, left)
+    local prev = points[idx - 1]
+    local curr = points[idx]
+    local span = curr.distance - prev.distance
+    local alpha = span > 0 and (targetDistance - prev.distance) / span or 0
+    local basePos = prev.position:Lerp(curr.position, alpha)
+    local directionVec = curr.position - prev.position
+    if directionVec.Magnitude < 0.001 then
+        directionVec = self.Direction
+    else
+        directionVec = directionVec.Unit
+    end
+
+    local nextPoint = points[idx + 1]
+    if nextPoint then
+        local blend = curr.position:Lerp(nextPoint.position, alpha)
+        basePos = basePos:Lerp(blend, 0.35)
+    end
+
+    return basePos, directionVec
+end
+
 function AISnake:_ensureMotionState()
 	if self.MotionState then
 		return self.MotionState
@@ -1356,14 +1445,23 @@ function AISnake:forceCourseCorrection(reason)
 	if self._destroyed then return end
 
 	local turnSign = mathRandom(0, 1) == 0 and -1 or 1
-	local turnDegrees = randomFloat(135, 210) * turnSign
-	self.TargetYaw = self.TargetYaw + mathRad(turnDegrees)
+	local turnDegrees = randomFloat(60, 110) * turnSign
+	local turnRadians = mathRad(turnDegrees)
+	local motion = self:_ensureMotionState()
+	local currentDir = motion.currentDirection or self.Direction
+	local cosAngle = mathCos(turnRadians)
+	local sinAngle = mathSin(turnRadians)
+	local rotatedDir = Vector3new(
+		currentDir.X * cosAngle - currentDir.Z * sinAngle,
+		0,
+		currentDir.X * sinAngle + currentDir.Z * cosAngle
+	).Unit
+	self.Direction = rotatedDir
+	self.TargetYaw = mathAtan2(rotatedDir.X, rotatedDir.Z)
 	self.CurrentYaw = self.TargetYaw
-	self.Direction = Vector3new(mathSin(self.CurrentYaw), 0, mathCos(self.CurrentYaw))
 	self.TargetOrb = nil
 	self.TargetSnake = nil
 	self.Avoiding = false
-	local motion = self:_ensureMotionState()
 	motion.currentDirection = self.Direction
 	motion.smoothedSteer = self.Direction
 	motion.desiredDirection = self.Direction
@@ -1910,26 +2008,7 @@ function AISnake.new(startPosition, preservedPersonalityType)
 
     self.growthFactor = self:calculateGrowthFactor()
 
-    self.MaxHistorySize = mathCeil(self.Config.MaxSegments * 1.2) + 20
-    self.PositionHistory = table.create(self.MaxHistorySize)
-    self.HistoryHead = 1
-
-    for i = 1, self.MaxHistorySize do
-        self.PositionHistory[i] = { position = self.Position, lookVector = self.Direction }
-    end
-
-    function self:addToHistory(data)
-        self.PositionHistory[self.HistoryHead] = data
-        self.HistoryHead = (self.HistoryHead % self.MaxHistorySize) + 1
-    end
-
-    function self:getFromHistory(stepsBack)
-        local index = self.HistoryHead - stepsBack
-        if index < 1 then
-            index = index + self.MaxHistorySize
-        end
-        return self.PositionHistory[index]
-    end
+    self:_initPathSystem()
 
     local attachmentPart = Instance.new("Part")
     attachmentPart.Name = "BeamHolder"
@@ -2042,7 +2121,7 @@ function AISnake.new(startPosition, preservedPersonalityType)
                 self.HeadParts.head.CFrame = CFramelookAt(self.Position + headOffset, self.Position + headOffset + self.Direction)
             end
 
-            self:addToHistory({ position = self.Position, lookVector = self.Direction })
+            self:_recordPathPoint(self.Position, true)
             task.wait(0.02)
         end
 
@@ -2114,8 +2193,10 @@ function AISnake:grow(amount)
                 local currentBaseSize = BASE_SIZE * self.growthFactor
 
                 local color = self:getSegmentColor(self.CurrentLength)
+                local spawnDistance = self.CurrentLength * self.SegmentSpacing
+                local samplePos, sampleDir = self:_samplePath(spawnDistance)
                 local lastSegment = self.Segments[self.CurrentLength - 1]
-                local newPos = lastSegment and lastSegment.Position or self.Position
+                local newPos = samplePos or (lastSegment and lastSegment.Position) or self.Position
                 local segment = createSegment(self.CurrentLength, newPos, color, self.Config, self.Model, self.CurrentLength)
                 self.Segments[self.CurrentLength] = segment
 
@@ -2124,6 +2205,9 @@ function AISnake:grow(amount)
 
                 segment.Transparency = 1
                 segment.Size = Vector3new(0.1, 0.1, 0.1)
+                if sampleDir then
+                    segment.CFrame = CFramenew(newPos, newPos + sampleDir)
+                end
 
                 if self.AttachmentPart and self.Attachments then
                     local attachment = Instance.new("Attachment")
@@ -2488,18 +2572,6 @@ function AISnake:updateMovement(dt)
 	self.CurrentYaw = mathAtan2(self.Direction.X, self.Direction.Z)
 	self.TargetYaw = self.CurrentYaw
 
-    if self.State == "WANDER" or self.State == "FLEE" then
-        local wobbleTime = tick() * 2
-		local wobbleAmount = 0.1 + (self.SkillMistakeChance or 0) * 0.05
-        local wobble = Vector3new(
-            math.sin(wobbleTime) * wobbleAmount,
-            0,
-            math.cos(wobbleTime * 1.3) * wobbleAmount
-        )
-        self.Direction = sanitizeVector(self.Direction + wobble, self.Direction).Unit
-        motion.currentDirection = self.Direction
-    end
-
     if not isSpawnProtected then
         local lookAheadTime = 1.0
         local futurePos = self.Position + self.Direction * self.Speed * lookAheadTime
@@ -2693,22 +2765,21 @@ function AISnake:updateMovement(dt)
         end
     end
 
-    local lastHistoryPoint = self:getFromHistory(1)
-    local dist = (self.Position - lastHistoryPoint.position).Magnitude
-
-    if dist > 0.02 then
-        if dist > self.Config.SegmentSpacing * 0.7 then
-            local isBoosting = self.Speed > 16
-            local maxInterp = isBoosting and 6 or 3
-            local numInterpolations = mathMin(mathFloor(dist / (self.Config.SegmentSpacing * 0.35)), maxInterp)
-            for i = 1, numInterpolations do
-                local fraction = i / (numInterpolations + 1)
-                local interpPos = lastHistoryPoint.position:Lerp(self.Position, fraction)
-                local interpLook = lastHistoryPoint.lookVector:Lerp(self.Direction, fraction).Unit
-                self:addToHistory({ position = interpPos, lookVector = interpLook })
+    if self.PathSystem then
+        local path = self.PathSystem
+        local delta = self.Position - path.lastRecordedPos
+        local dist = delta.Magnitude
+        if dist > path.minRecordDistance * 1.5 then
+            local step = path.minRecordDistance
+            local dir = dist > 0 and delta.Unit or self.Direction
+            local travelled = step
+            while travelled < dist do
+                local interpPos = path.lastRecordedPos + dir * travelled
+                self:_recordPathPoint(interpPos, true)
+                travelled += step
             end
         end
-        self:addToHistory({ position = self.Position, lookVector = self.Direction })
+        self:_recordPathPoint(self.Position, true)
     end
 
     local followSpeed = self.IsBoosting and self.BoostFollowSpeed or self.FollowSpeed
@@ -2743,29 +2814,11 @@ function AISnake:updateMovement(dt)
     for i = 1 + updateOffset, maxSegmentToUpdate, segmentSkip do
         local segment = self:ensureSegmentExists(i)
         if segment and segment.Parent then
-            local delay = mathFloor(i * 1.2)
-            local targetData = self:getFromHistory(delay)
-            if targetData then
-                local spacingMultiplier = 0.15
-                if self.CurrentLength > 1500 then
-                    spacingMultiplier = 0.2
-                end
-                local segmentPos = targetData.position - targetData.lookVector * (self.Config.SegmentSpacing * spacingMultiplier)
-                local currentSegmentPos = segment.Position
-
-                if i > 1 then
-                    local prevSegment = self.Segments[i - 1]
-                    if prevSegment and prevSegment.Parent then
-                        local gap = (currentSegmentPos - prevSegment.Position).Magnitude
-                        if gap > self.Config.SegmentSpacing * 1.5 then
-                            local dir = (prevSegment.Position - currentSegmentPos).Unit
-                            segmentPos = prevSegment.Position - dir * self.Config.SegmentSpacing
-                        end
-                    end
-                end
-
-                local newPos = currentSegmentPos:Lerp(segmentPos, followSpeed)
-                segment.CFrame = CFramenew(newPos)
+            local targetPos, targetDir = self:_samplePath(i * self.SegmentSpacing)
+            targetDir = targetDir or self.Direction
+            if targetPos then
+                local newPos = segment.Position:Lerp(targetPos, followSpeed)
+                segment.CFrame = CFramenew(newPos, newPos + targetDir)
 
                 if self.Attachments and self.Attachments[i] then
                     self.Attachments[i].WorldPosition = newPos
@@ -2997,18 +3050,19 @@ function AISnake:ensureSegmentExists(index)
         return segment
     end
 
-    local delay = mathFloor(index * 1.2)
-    local targetData = self:getFromHistory(delay)
-    if not targetData then
+    local targetPos, targetDir = self:_samplePath(index * self.SegmentSpacing)
+    if not targetPos then
         return nil
     end
 
     local color = self:getSegmentColor(index)
-    segment = createSegment(index, targetData.position, color, self.Config, self.Model, self.CurrentLength)
+    segment = createSegment(index, targetPos, color, self.Config, self.Model, self.CurrentLength)
 
     local currentBaseSize = BASE_SIZE * self.growthFactor
     local segmentSize = self:getSegmentSize(index, currentBaseSize)
     segment.Size = Vector3.new(segmentSize, segmentSize, segmentSize)
+    targetDir = targetDir or self.Direction
+    segment.CFrame = CFramenew(targetPos, targetPos + targetDir)
 
     segment.Transparency = 0
     segment.CanTouch = index <= 50
