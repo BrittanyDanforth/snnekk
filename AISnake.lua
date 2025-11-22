@@ -72,8 +72,8 @@ local function sanitizeVector(vec, fallback)
 	return vec
 end
 
-local MAX_TURN_DEG = 45
-local HARD_TURN_DEG = 75
+local MAX_TURN_DEG = 90 -- Increased for sharper turns
+local HARD_TURN_DEG = 120 -- Increased for emergency evasion
 
 local function limitTurnAngle(currentDir, desiredDir, allowHardTurn)
 	if not (isValidVector(currentDir) and isValidVector(desiredDir)) then
@@ -169,9 +169,9 @@ local function scoreOrbCandidate(orb, distance)
 	end
 
 	if orb.Name == "DeathOrb" then
-		baseValue = baseValue * 3.5
+		baseValue = baseValue * 15 -- Heavily prioritize death orbs
 	elseif orb.Name == "UpgradeOrb" then
-		baseValue = baseValue * 4
+		baseValue = baseValue * 10 -- Prioritize upgrades
 	end
 
 	return baseValue / distance
@@ -186,14 +186,14 @@ AISnake.__index = AISnake
 
 -- === OPTIMIZED SETTINGS ===
 local MAX_AI_SNAKES = 15 -- matches runtime limits
-local SPATIAL_GRID_UPDATE_RATE = 1.0 -- slower updates for stability
+local SPATIAL_GRID_UPDATE_RATE = 0.1 -- UPDATED: Faster updates (10Hz) for better reaction to cut-offs
 local BRAIN_UPDATES_PER_FRAME = 3 -- multiple brains per step
 local DEBUG_UPDATE_RATE = 5.0
 local AI_HEIGHT = 5
 local SEGMENT_UPDATE_SKIP = 2
 local LONG_SNAKE_THRESHOLD = 100
 local VERY_LONG_SNAKE_THRESHOLD = 300
-local AI_UPDATE_DISTANCE = 200
+local AI_UPDATE_DISTANCE = 300 -- Increased
 local SEGMENT_POOL_MAX = 500
 
 -- LOD Constants
@@ -1908,10 +1908,10 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self.Direction = Vector3new(0, 0, 1)
 
 	local aiConfig = self.Config.AI or {}
-	self.Speed = aiConfig.BaseSpeed or self.Config.BaseSpeed or 10
-	self.NormalSpeed = aiConfig.BaseSpeed or self.Config.BaseSpeed or 10
-	self.BoostSpeed = aiConfig.BoostSpeed or self.Config.BoostSpeed or 24
-	self.TurnSpeed = aiConfig.TurnSpeed or self.Config.TurnSpeed or 1.8
+	self.Speed = aiConfig.BaseSpeed or self.Config.BaseSpeed or 18 -- Increased base speed
+	self.NormalSpeed = aiConfig.BaseSpeed or self.Config.BaseSpeed or 18
+	self.BoostSpeed = aiConfig.BoostSpeed or self.Config.BoostSpeed or 40 -- Increased boost speed
+	self.TurnSpeed = aiConfig.TurnSpeed or self.Config.TurnSpeed or 4.5 -- Matches user preference (was 1.8)
 	self._targetSpeed = self.Speed
 	self._smoothSpeed = self.Speed
 
@@ -1982,7 +1982,11 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self.SkillMistakeChance = self.SkillProfile.errorChance
 	self.SkillTurnMultiplier = self.SkillProfile.turnMultiplier
 	self.SkillDodgeBias = self.SkillProfile.dodgeBias
-	self.SkillReactionLag = self.SkillProfile.reactionLag
+	if self.SkillProfile.label == "Elite" or self.SkillProfile.label == "Veteran" then
+		self.SkillReactionLag = 0.01 -- Almost instant reaction
+		self.TurnSpeed = self.TurnSpeed * 1.5 -- Faster turning
+	end
+
 	self.Personality.SpeedMultiplier = (self.Personality.SpeedMultiplier or 1) * self.SkillProfile.speedMultiplier
 	self.Personality.BoostChance = math.max(0.01, (self.Personality.BoostChance or 0.05) * self.SkillProfile.boostMultiplier)
 	self.TurnSpeed = self.TurnSpeed * self.SkillTurnMultiplier * 0.8
@@ -2539,9 +2543,9 @@ function AISnake:updateMovement(dt)
 	end
 
 	steer = self:applySafetySteer(steer)
-	steer = self:_blendSteer(dt, steer)
+	-- steer = self:_blendSteer(dt, steer) -- Removing old blending
 
-	local baseTurnSpeed = sanitizeNumber(self.TurnSpeed, 1.4)
+	local baseTurnSpeed = sanitizeNumber(self.TurnSpeed, 4.5)
 	if state == "SEEK_ORB" and self.TargetOrb then
 		local dist = (self.TargetOrb.Position - self.Position).Magnitude
 		if dist < 20 then
@@ -2552,23 +2556,33 @@ function AISnake:updateMovement(dt)
 	elseif state == "AVOID_BOUNDARY" then
 		baseTurnSpeed = baseTurnSpeed * 1.2
 	elseif state == "COLLISION_AVOID" then
-		baseTurnSpeed = baseTurnSpeed * 1.4
+		baseTurnSpeed = baseTurnSpeed * 2.0 -- Much faster response to collision threats
 	end
 
 	if self.Boosting then
 		baseTurnSpeed = baseTurnSpeed * 0.85
 	end
 
+	-- BUTTERY SMOOTH TURNING LOGIC (from user script)
+	local turnRate = baseTurnSpeed * dt * 0.9
+	if state == "COLLISION_AVOID" then
+		turnRate = turnRate * 1.5 -- Sharper turn when avoiding collision
+	end
+
+	local currentDir = motion.currentDirection or self.Direction
 	local desiredDir = sanitizeVector(steer, self.Direction).Unit
+	
 	local allowHardTurn = motion.allowHardTurnUntil and motion.allowHardTurnUntil > now
-	local limitedDir = limitTurnAngle(motion.currentDirection or self.Direction, desiredDir, allowHardTurn)
-	local turnRate = mathClamp(baseTurnSpeed * dt, 0, 1)
-	local blendedDir = (motion.currentDirection or self.Direction):Lerp(limitedDir, turnRate)
-	if blendedDir.Magnitude > 0.001 then
-		motion.currentDirection = blendedDir.Unit
+	desiredDir = limitTurnAngle(currentDir, desiredDir, allowHardTurn)
+
+	-- Lerp logic
+	local newDirection = currentDir:Lerp(desiredDir, turnRate)
+	if newDirection.Magnitude > 0.001 then
+		motion.currentDirection = newDirection.Unit
 	else
 		motion.currentDirection = self.Direction
 	end
+	
 	self.Direction = motion.currentDirection
 
 	if self._lastBrainUpdate then
@@ -2678,6 +2692,10 @@ function AISnake:updateMovement(dt)
 				shouldBoost = true
 				boostDuration = 1.5
 			end
+		elseif state == "COLLISION_AVOID" then
+			-- Always boost when avoiding collisions if we can
+			shouldBoost = true
+			boostDuration = 0.8
 		else
 			if mathRandom() < (p.BoostChance or 0) * 0.3 then
 				shouldBoost = true
