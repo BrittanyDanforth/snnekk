@@ -2003,6 +2003,8 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self.SkillMistakeChance = self.SkillProfile.errorChance
 	self.SkillTurnMultiplier = self.SkillProfile.turnMultiplier
 	self.SkillDodgeBias = self.SkillProfile.dodgeBias
+	self.SkillReactionLag = self.SkillProfile.reactionLag or 0.1 -- Default fallback
+	
 	if self.SkillProfile.label == "Elite" or self.SkillProfile.label == "Veteran" then
 		self.SkillReactionLag = 0.01 -- Almost instant reaction
 		self.TurnSpeed = self.TurnSpeed * 1.5 -- Faster turning
