@@ -1,3 +1,4 @@
+--[[
 SnakeCollisionHandler V10 FIXED
 Fixes: Death orbs spawn properly, ReviveUI shows correctly
 Maintains V8.2 structure while fixing critical issues
