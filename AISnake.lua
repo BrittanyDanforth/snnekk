@@ -2146,14 +2146,51 @@ function AISnake.new(startPosition, preservedPersonalityType)
 	self.Model:SetAttribute("HeadPosition", self.Position)
 	self.Model:SetAttribute("Length", self.CurrentLength)
 
+	-- Initialize position immediately to prevent 0,0,0 jump
+	if self.RootPart then self.RootPart.Position = self.Position end
+	if self.HeadParts and self.HeadParts.head then
+		local headOffset = self.Direction * 1.5
+		local headPos = self.Position + headOffset
+		self.HeadParts.head.CFrame = CFrame.lookAt(headPos, headPos + self.Direction)
+	end
+	
+	-- Force update attachments immediately
+	if self.Attachments then
+		for _, att in pairs(self.Attachments) do
+			att.Position = Vector3.new(0,0,0)
+		end
+	end
+
 	task.defer(function()
 		task.wait(0.1)
+		
+		-- CRITICAL FIX: Force update attachments before movement starts
+		if self.Segments then
+			local currentBaseSize = BASE_SIZE * self.growthFactor
+			for i = 0, initialSegmentCount - 1 do
+				if self.Beams[i] and self.Attachments[i] and self.Attachments[i+1] then
+					self.Beams[i].Attachment0 = self.Attachments[i]
+					self.Beams[i].Attachment1 = self.Attachments[i+1]
+				end
+			end
+		end
+
 		for step = 1, 20 do
 			local moveDistance = self.SegmentSpacing * 0.1
 			local newPos = self.Position + self.Direction * moveDistance
 			self.Position = newPos
 			if self.RootPart and self.RootPart.Parent then
 				self.RootPart.Position = newPos
+			end
+
+			-- Force update attachments during spawn movement
+			if self.Attachments then
+				if self.Attachments[0] then 
+					self.Attachments[0].Position = Vector3.new(0,0,0) 
+				end
+				for k, att in pairs(self.Attachments) do
+					if k > 0 then att.Position = Vector3.new(0,0,0) end
+				end
 			end
 
 			if self.HeadParts and self.HeadParts.head then

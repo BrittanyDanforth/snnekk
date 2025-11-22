@@ -88,7 +88,23 @@ local function spawnSnake(slotIndex)
 	local position = getRandomSpawnPosition()
 	local success, newSnake = pcall(function()
 		-- Create snake with preserved personality if available
+		-- FORCE POSITION: Ensure the position is valid and not near origin
+		if position.Magnitude < 50 then
+			position = Vector3.new(100, 5, 100)
+		end
+		
 		local snake = AISnake.new(position, slot.lastPersonality)
+		
+		-- FORCE UPDATE: If the snake model spawns at 0,0,0, move it
+		if snake and snake.Model and snake.Model:GetPivot().Position.Magnitude < 1 then
+			if snake.RootPart then
+				snake.RootPart.Position = position
+			end
+			if snake.HeadParts and snake.HeadParts.head then
+				snake.HeadParts.head.Position = position
+			end
+		end
+		
 		return snake
 	end)
 
