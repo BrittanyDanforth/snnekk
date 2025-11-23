@@ -1,8 +1,8 @@
--- ClientAISnakeLOD v6.1 – Fixed Beam Widths & LOD
+-- ClientAISnakeLOD v6.2 – Fixed Beam Widths (Server Control)
 -- Now supports beams parented to segments (no BeamHolder)
 -- Uses LocalTransparencyModifier to avoid server fighting
 -- Hard beam cutoff for clean distance rendering
--- FIXED: Beam width inflation (now uses server base width exactly)
+-- FIXED: Beam width is now 100% controlled by server; client only handles visibility.
 
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
@@ -68,7 +68,6 @@ function ClientSnake.new(model)
 	self.segmentOrder = {}
 	self.segmentState = {}
 	self.beams = {}
-	self.beamBaseWidths = {}
 	self.glows = {}
 	self.eyes = {}
 	self.lastDistance = math.huge
@@ -108,10 +107,6 @@ function ClientSnake:_onChildAdded(child)
 					local beamIdx = tonumber(b.Name:match("%d+"))
 					if beamIdx then
 						self.beams[beamIdx] = b
-						self.beamBaseWidths[beamIdx] = {
-							Width0 = b.Width0,
-							Width1 = b.Width1,
-						}
 					end
 				end
 			end
@@ -122,10 +117,6 @@ function ClientSnake:_onChildAdded(child)
 		local beamIdx = tonumber(child.Name:match("%d+"))
 		if beamIdx then
 			self.beams[beamIdx] = child
-			self.beamBaseWidths[beamIdx] = {
-				Width0 = child.Width0,
-				Width1 = child.Width1,
-			}
 		end
 	end
 end
@@ -145,7 +136,6 @@ function ClientSnake:_hydrate()
 	self.segmentState = {}
 	self.glows = {}
 	self.beams = {}
-	self.beamBaseWidths = {}
 
 	-- 1. Find Segments
 	local parts = {}
@@ -180,7 +170,6 @@ function ClientSnake:_hydrate()
 				local beamIdx = tonumber(child.Name:match("%d+"))
 				if beamIdx then
 					self.beams[beamIdx] = child
-					self.beamBaseWidths[beamIdx] = {Width0 = child.Width0, Width1 = child.Width1}
 				end
 			end
 		end
@@ -192,7 +181,6 @@ function ClientSnake:_hydrate()
 			local beamIdx = tonumber(child.Name:match("%d+"))
 			if beamIdx then
 				self.beams[beamIdx] = child
-				self.beamBaseWidths[beamIdx] = {Width0 = child.Width0, Width1 = child.Width1}
 			end
 		end
 	end
@@ -320,7 +308,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 			end
 		end
 
-		-- Beams (FIXED WIDTH)
+		-- Beams
 		local beam = self.beams[segmentIndex]
 		if beam then
 			if hideAllBeams or targetAlpha <= 0.02 then
@@ -328,21 +316,14 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 				beam.Transparency = NumberSequence.new(1)
 			else
 				beam.Enabled = true
-
-				local base = self.beamBaseWidths[segmentIndex]
-				if base then
-					-- FIXED: No width multiplier from distance, keeps them thin/consistent
-					beam.Width0 = base.Width0
-					beam.Width1 = base.Width1
-				end
-
+				-- DO NOT TOUCH WIDTH HERE - Server controls thickness
 				local beamAlpha = math.clamp(targetAlpha * profile.beamFade, 0, 1)
 				beam.Transparency = NumberSequence.new(1 - beamAlpha)
 			end
 		end
 	end
 
-	-- Head Beam (FIXED WIDTH)
+	-- Head Beam
 	local headBeam = self.beams[0]
 	if headBeam then
 		if hideAllBeams or headAlpha <= 0.05 or profile.forceHide then
@@ -350,12 +331,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 			headBeam.Transparency = NumberSequence.new(1)
 		else
 			headBeam.Enabled = true
-			local base = self.beamBaseWidths[0]
-			if base then
-				-- FIXED: No width multiplier
-				headBeam.Width0 = base.Width0
-				headBeam.Width1 = base.Width1
-			end
+			-- DO NOT TOUCH WIDTH HERE - Server controls thickness
 			local beamAlpha0 = math.clamp(headAlpha * profile.beamFade, 0, 1)
 			headBeam.Transparency = NumberSequence.new(1 - beamAlpha0)
 		end
@@ -508,4 +484,4 @@ end
 local manager = SnakeManager.new()
 manager:start()
 
-print("🐍 ClientAISnakeLOD v6.1 initialized – Fixed beam width scaling.")
+print("🐍 ClientAISnakeLOD v6.2 initialized – Server controls beam widths.")
