@@ -1,4 +1,4 @@
--- Optimized Snake System V9.5 AAA - DISTANCE-BASED PATHING & MASSIVE SCALE
+-- Optimized Snake System V9.6 AAA - DISTANCE-BASED PATHING & MASSIVE SCALE
 -- Features:
 -- 1. Arc-Length Parameterization: Segments are placed by distance traveled, not time/frames.
 --    Eliminates accordion effects (bunching up when slow, stretching when fast).
@@ -126,7 +126,14 @@ function Snake.new(character, config)
 	self.humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 
 	-- Core Data
-	self.length = config.InitialLength or 10
+	-- FIX: Use player attributes as the source of truth if they exist
+	local existingLength = self.player:GetAttribute("Length")
+	if existingLength and existingLength > 0 then
+		self.length = existingLength
+	else
+		self.length = config.InitialLength or 15 -- Use 15 as default if no saved length
+	end
+	
 	self.actualLength = self.length
 	self.targetLength = self.length
 	self.isBoosting = false
@@ -143,12 +150,13 @@ function Snake.new(character, config)
 	self.lastRecordPos = self.rootPart.Position
 	self.lastRecordCF = self.rootPart.CFrame
 	
-	-- Initialize Path
-	table.insert(self.pathPoints, {
-		position = self.rootPart.Position,
-		cframe = self.rootPart.CFrame,
-		totalDist = 0
-	})
+	-- Initialize Path with pre-fill for instant length
+	-- This prevents "tail stays in place" on spawn
+	for i = math.ceil(self.length * 2), 0, -1 do
+		local p = self.rootPart.Position - (self.rootPart.CFrame.LookVector * (i * MIN_RECORD_DIST))
+		local cf = CFrame.lookAt(p, p + self.rootPart.CFrame.LookVector)
+		self:recordPoint(p, cf, true)
+	end
 
 	-- Visual Components
 	self.model = Instance.new("Model")
@@ -182,6 +190,28 @@ function Snake.new(character, config)
 
 	print("✅ AAA Snake created for", self.player.Name)
 	return self
+end
+
+function Snake:recordPoint(pos, cf, force)
+	local dist = 0
+	if #self.pathPoints > 0 then
+		dist = (pos - self.pathPoints[#self.pathPoints].position).Magnitude
+	end
+	
+	if force or dist >= MIN_RECORD_DIST then
+		self.totalPathDistance = self.totalPathDistance + dist
+		table.insert(self.pathPoints, {
+			position = pos,
+			cframe = cf,
+			totalDist = self.totalPathDistance
+		})
+		
+		-- Prune
+		local maxNeededDist = MAX_SEGMENTS * (BASE_SIZE * 3.5 * SEGMENT_SPACING_FACTOR) + 100
+		while #self.pathPoints > 2 and (self.totalPathDistance - self.pathPoints[2].totalDist) > maxNeededDist do
+			table.remove(self.pathPoints, 1)
+		end
+	end
 end
 
 function Snake:calculateGrowthFactor()
@@ -554,8 +584,9 @@ function Snake:startUpdateLoop()
 		end
 
 		-- LEADERBOARD UPDATE: Sync Length attribute to Model so LeaderboardManager can see it
-		if frame % 15 == 0 then
+		if frame % 5 == 0 then -- Update frequently for responsive score
 			self.model:SetAttribute("Length", math.floor(self.targetLength))
+			self.player:SetAttribute("Length", math.floor(self.targetLength)) -- Backup attribute on player
 		end
 	end)
 end
@@ -598,7 +629,7 @@ local OptimizedSnakeSystem = {}
 
 function OptimizedSnakeSystem.init()
 	createNetworkEvents()
-	print("✅ OptimizedSnakeSystem V9.5 AAA Loaded")
+	print("✅ OptimizedSnakeSystem V9.6 AAA Loaded")
 end
 
 function OptimizedSnakeSystem.createSnake(character, config)
