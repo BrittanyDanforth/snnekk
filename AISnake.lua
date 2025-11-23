@@ -1,6 +1,7 @@
 -- AISnake Module: INTELLIGENT BRAIN (V5.0) + AAA BODY (V9.5)
 -- MERGED: All 3k lines of Brain Logic + Optimized AAA Visuals
 -- Fixed: Visual sync with player body (uses SnakeConfig)
+-- Fixed: Missing attributes for Leaderboard
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -599,6 +600,10 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	
 	self.Model:SetAttribute("AIName", self.DisplayName)
 	self.Model:SetAttribute("IsAI", true)
+	-- LEADERBOARD RESTORATION: Set critical attributes
+	self.Model:SetAttribute("Length", self.CurrentLength)
+	self.Model:SetAttribute("CurrentLength", self.CurrentLength)
+	self.Model:SetAttribute("SkillTier", self.SkillTier)
 	
 	self.Segments = {}
 	self.Beams = {}
@@ -1088,7 +1093,10 @@ function AISnake:updateMovement(dt)
 		self.HeadParts.boostParticles.Enabled = false
 	end
 	
+	-- LEADERBOARD SYNC
 	self.Model:SetAttribute("Length", mathFloor(self.CurrentLength))
+	self.Model:SetAttribute("CurrentLength", self.CurrentLength)
+	self.Model:SetAttribute("HeadPosition", self.Position)
 	
 	self:monitorProgress(dt)
 end
