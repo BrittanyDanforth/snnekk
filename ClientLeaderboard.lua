@@ -94,7 +94,7 @@ Template.Visible = false
 Template.Parent = Container
 
 local TemplateRank = Instance.new("TextLabel")
-TemplateRank.Name = "Rank"
+TemplateRank.Name = "RankLabel"
 TemplateRank.BackgroundTransparency = 1
 TemplateRank.Position = UDim2.new(0, 0, 0, 0)
 TemplateRank.Size = UDim2.new(0, 25, 1, 0)
@@ -106,7 +106,7 @@ TemplateRank.TextXAlignment = Enum.TextXAlignment.Left
 TemplateRank.Parent = Template
 
 local TemplateName = Instance.new("TextLabel")
-TemplateName.Name = "Name"
+TemplateName.Name = "NameLabel"
 TemplateName.BackgroundTransparency = 1
 TemplateName.Position = UDim2.new(0, 30, 0, 0)
 TemplateName.Size = UDim2.new(1, -90, 1, 0)
@@ -119,7 +119,7 @@ TemplateName.TextTruncate = Enum.TextTruncate.AtEnd
 TemplateName.Parent = Template
 
 local TemplateScore = Instance.new("TextLabel")
-TemplateScore.Name = "Score"
+TemplateScore.Name = "ScoreLabel"
 TemplateScore.BackgroundTransparency = 1
 TemplateScore.Position = UDim2.new(1, -60, 0, 0)
 TemplateScore.Size = UDim2.new(0, 60, 1, 0)
