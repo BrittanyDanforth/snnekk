@@ -1,0 +1,219 @@
+-- COMPLETELY REVAMPED AI SNAKE SPAWNER - SIMPLE AND RELIABLE
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local AISnake = require(ReplicatedStorage:WaitForChild("AISnake"))
+
+-- === CONFIGURATION ===
+local NUM_SNAKES = 11
+local SPAWN_HEIGHT = 5
+local MIN_SPAWN_DELAY = 3  -- Minimum time between death and respawn
+local CHECK_INTERVAL = 1   -- Check for dead snakes every 1 second
+
+-- === STATE TRACKING ===
+local snakeSlots = {}  -- Track each snake slot
+for i = 1, NUM_SNAKES do
+	snakeSlots[i] = {
+		snake = nil,
+		deathTime = nil,
+		spawning = false,
+		lastPersonality = nil,  -- Track personality for respawn
+		lastSkillTier = nil     -- Track skill tier for respawn
+	}
+end
+
+-- === HELPER FUNCTIONS ===
+local function getRandomSpawnPosition()
+	local ground = Workspace:FindFirstChild("SlitherIOGround")
+	local radius = 250
+
+	if ground and ground:IsA("BasePart") then
+		local halfX = ground.Size.X / 2
+		local halfZ = ground.Size.Z / 2
+		radius = math.min(halfX, halfZ) * 0.7
+	end
+
+	local angle = math.random() * 2 * math.pi
+	local distance = math.random(50, radius)  -- Not too close to center
+
+	return Vector3.new(
+		math.cos(angle) * distance,
+		SPAWN_HEIGHT,
+		math.sin(angle) * distance
+	)
+end
+
+local function cleanupSnake(slot)
+	if slot.snake then
+		-- Save personality before cleanup
+		if slot.snake.Personality and slot.snake.Personality.Type then
+			slot.lastPersonality = slot.snake.Personality.Type
+			-- Save skill tier
+			slot.lastSkillTier = slot.snake.SkillTier
+			-- print("💾 Saved personality:", slot.lastPersonality, "Tier:", slot.lastSkillTier)
+		end
+
+		-- Try multiple cleanup methods
+		pcall(function()
+			if slot.snake.Destroy then
+				slot.snake:Destroy()
+			end
+		end)
+
+		-- Extra cleanup - find and destroy the model
+		pcall(function()
+			if slot.snake.Model and slot.snake.Model.Parent then
+				slot.snake.Model:Destroy()
+			end
+		end)
+
+		slot.snake = nil
+	end
+end
+
+local function spawnSnake(slotIndex)
+	local slot = snakeSlots[slotIndex]
+
+	-- Safety check
+	if slot.spawning then
+		return
+	end
+
+	slot.spawning = true
+
+	-- Clean up any existing snake
+	cleanupSnake(slot)
+
+	-- Small delay to ensure cleanup
+	task.wait(0.1)
+
+	-- Spawn new snake
+	local position = getRandomSpawnPosition()
+	local success, result = pcall(function()
+		-- Create snake with preserved personality if available
+		-- FORCE POSITION: Ensure the position is valid and not near origin
+		if position.Magnitude < 50 then
+			position = Vector3.new(100, 5, 100)
+		end
+		
+		local snake = AISnake.new(position, slot.lastPersonality, slot.lastSkillTier)
+		if not snake then
+			-- If new() returns nil (limit reached), we shouldn't crash
+			error("AISnake.new returned nil (limit reached?)")
+		end
+		
+		-- FORCE UPDATE: If the snake model spawns at 0,0,0, move it
+		if snake and snake.Model and snake.Model:GetPivot().Position.Magnitude < 1 then
+			if snake.RootPart then
+				snake.RootPart.Position = position
+			end
+			if snake.HeadParts and snake.HeadParts.head then
+				snake.HeadParts.head.Position = position
+			end
+		end
+		
+		return snake
+	end)
+
+	if success and result then
+		slot.snake = result
+		slot.deathTime = nil
+		local personality = result.Personality and result.Personality.Type or "Unknown"
+		-- print("✅ Spawned AI Snake #" .. slotIndex .. " at", position, "with personality:", personality)
+	else
+		if not success then
+			warn("❌ Failed to spawn AI Snake #" .. slotIndex .. " Error: " .. tostring(result))
+		else
+			warn("❌ Failed to spawn AI Snake #" .. slotIndex .. " (Returned nil)")
+		end
+	end
+
+	slot.spawning = false
+end
+
+-- === INITIAL SPAWN ===
+print("🐍 Starting AI Snake spawner with", NUM_SNAKES, "snakes")
+
+-- Spawn all snakes initially with delay
+task.spawn(function()
+	for i = 1, NUM_SNAKES do
+		spawnSnake(i)
+		task.wait(0.5)  -- Half second between each spawn
+	end
+	print("✅ Initial spawn complete")
+end)
+
+-- === RESPAWN MONITOR ===
+-- Simple monitoring loop that checks every second
+task.spawn(function()
+	while true do
+		task.wait(CHECK_INTERVAL)
+
+		local currentTime = tick()
+
+		for i = 1, NUM_SNAKES do
+			local slot = snakeSlots[i]
+
+			-- Check if snake is dead/missing
+			local isDead = false
+
+			if not slot.snake then
+				isDead = true
+			elseif not slot.snake._active then
+				isDead = true
+			elseif not slot.snake.RootPart or not slot.snake.RootPart.Parent then
+				isDead = true
+			elseif slot.snake._destroyed then
+				isDead = true
+			end
+
+			if isDead and not slot.spawning then
+				if not slot.deathTime then
+					-- Just died - mark death time
+					slot.deathTime = currentTime
+					print("💀 AI Snake #" .. i .. " died")
+					cleanupSnake(slot)
+				elseif currentTime - slot.deathTime >= MIN_SPAWN_DELAY then
+					-- Ready to respawn
+					print("🔄 Respawning AI Snake #" .. i)
+					task.spawn(function()
+						spawnSnake(i)
+					end)
+				end
+			end
+		end
+	end
+end)
+
+-- === CLEANUP ORPHANED MODELS ===
+-- Run every 30 seconds to clean up any orphaned snake models
+task.spawn(function()
+	while true do
+		task.wait(30)
+
+		local cleaned = 0
+		for _, obj in pairs(Workspace:GetChildren()) do
+			if obj.Name:match("AISnakeModel_") and obj:IsA("Model") then
+				-- Check if this model belongs to any active snake
+				local isActive = false
+				for _, slot in pairs(snakeSlots) do
+					if slot.snake and slot.snake.Model == obj then
+						isActive = true
+						break
+					end
+				end
+
+				if not isActive then
+					obj:Destroy()
+					cleaned = cleaned + 1
+				end
+			end
+		end
+
+		if cleaned > 0 then
+			print("🧹 Cleaned up", cleaned, "orphaned snake models")
+		end
+	end
+end)
+
+print("✅ AI Snake Spawner initialized")
