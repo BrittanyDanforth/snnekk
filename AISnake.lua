@@ -1,6 +1,6 @@
 -- AISnake Module: INTELLIGENT BRAIN (V5.0) + AAA BODY (V9.5)
 -- MERGED: All 3k lines of Brain Logic + Optimized AAA Visuals
--- Fixed: nil arithmetic errors, broken movement, weird body rendering
+-- Fixed: Visual sync with player body (uses SnakeConfig)
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -42,15 +42,22 @@ local mathFloor = math.floor
 local mathSin = math.sin
 local mathCos = math.cos
 
--- === CONFIGURATION (AAA BODY) ===
+-- === CONFIGURATION (SYNCED WITH SNAKECONFIG) ===
 local MIN_RECORD_DIST = 0.5
 local MAX_SEGMENTS = 3000
-local SEGMENT_SPACING_FACTOR = 0.5
 local BULK_MOVE_THRESHOLD = 50
 
+-- Derived Constants from SnakeConfig for 1:1 Visual Match
+-- If Config values are missing, fallback to defaults
+local CFG_SEG_SIZE = SnakeConfig.SegmentSize and SnakeConfig.SegmentSize.X or 2.5
+local CFG_HEAD_SIZE = SnakeConfig.HeadSize and SnakeConfig.HeadSize.X or 3.0
+local CFG_SPACING = SnakeConfig.SegmentSpacing or 2.2
+
+local BASE_SIZE = CFG_SEG_SIZE
+local HEAD_SIZE_MULTIPLIER = CFG_HEAD_SIZE / BASE_SIZE
+local SEGMENT_SPACING_FACTOR = CFG_SPACING / BASE_SIZE
+
 -- Visual Constants (AAA)
-local BASE_SIZE = 3.5
-local HEAD_SIZE_MULTIPLIER = 1.05
 local GLOW_INTENSITY = 2
 local GLOW_RANGE_BASE = 15
 local BEAM_SEGMENTS = 10
@@ -573,7 +580,7 @@ function AISnake.new(startPosition, preservedPersonalityType, preservedSkillTier
 	self._active = true
 	self._destroyed = false
 	
-	self.CurrentLength = self.Config.InitialLength or 10
+	self.CurrentLength = self.Config.InitialLength or 85 -- Match player default roughly
 	self.TargetLength = self.CurrentLength
 	self.growthFactor = 1
 	
@@ -691,11 +698,13 @@ end
 
 -- === AAA VISUALS ===
 function AISnake:calculateGrowthFactor()
-	local len = self.CurrentLength
-	if len <= 50 then return 1.0
-	elseif len <= 200 then return 1.0 + (len - 50)/150 * 0.5
-	elseif len <= 1000 then return 1.5 + (len - 200)/800 * 1.0
-	else return 3.0 end
+	-- MATCHED TO PLAYER LOGIC
+	local length = self.CurrentLength
+	if length <= 50 then return 1.0
+	elseif length <= 200 then return 1.0 + (length - 50) / 150 * 0.5
+	elseif length <= 1000 then return 1.5 + (length - 200) / 800 * 1.0
+	elseif length <= 5000 then return 2.5 + (length - 1000) / 4000 * 0.5
+	else return 3.0 + math.min((length - 5000) / 10000 * 0.5, 0.5) end
 end
 
 function AISnake:getSegmentSize(index, baseSize)
