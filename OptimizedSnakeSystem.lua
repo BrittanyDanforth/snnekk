@@ -166,6 +166,17 @@ function Snake.new(character, config)
 	self.camera = workspace.CurrentCamera
 	self.isLocalPlayer = (self.player == Players.LocalPlayer)
 
+	-- IMPORTANT: Set attributes for leaderboard compatibility
+	self.model:SetAttribute("PlayerUserId", self.player.UserId)
+	self.model:SetAttribute("Length", self.length)
+	self.model:SetAttribute("IsPlayer", true)
+
+	-- Add to Snake folder for easy finding by LeaderboardManager
+	local snakesFolder = workspace:FindFirstChild("Snakes")
+	if snakesFolder then
+		self.model.Parent = snakesFolder
+	end
+
 	self:createUnifiedBody()
 	self:startUpdateLoop()
 
@@ -541,6 +552,11 @@ function Snake:startUpdateLoop()
 		if self.isLocalPlayer and frame % 3 == 0 then
 			self:sendNetworkUpdate()
 		end
+
+		-- LEADERBOARD UPDATE: Sync Length attribute to Model so LeaderboardManager can see it
+		if frame % 15 == 0 then
+			self.model:SetAttribute("Length", math.floor(self.targetLength))
+		end
 	end)
 end
 
@@ -554,6 +570,11 @@ function Snake:sendNetworkUpdate()
 			rainbowMode = self.rainbowMode
 		})
 	end
+end
+
+-- ADDED MISSING METHOD TO FIX ERROR
+function Snake:updateLength(amount)
+	self.targetLength = math.min(self.targetLength + (amount or 1), MAX_SEGMENTS)
 end
 
 function Snake:GetSegments()
