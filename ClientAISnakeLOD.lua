@@ -1,7 +1,8 @@
--- ClientAISnakeLOD v6.0 – Triple AAA Polish & Fixes
+-- ClientAISnakeLOD v6.1 – Fixed Beam Widths & LOD
 -- Now supports beams parented to segments (no BeamHolder)
 -- Uses LocalTransparencyModifier to avoid server fighting
 -- Hard beam cutoff for clean distance rendering
+-- FIXED: Beam width inflation (now uses server base width exactly)
 
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
@@ -17,7 +18,7 @@ local MAX_VISIBLE_SNAKES = 220
 local MAX_STREAM_DISTANCE = 1800
 local HEARTBEAT_SAMPLE = 1 / 30
 local TRANSPARENCY_LERP = 0.18
-local BEAM_CUTOFF_DIST = 1500 -- Increased to match fade-out distance
+local BEAM_CUTOFF_DIST = 1500
 
 local LOD_PROFILES = {
 	{distance = 200, stride = 1, fade = 1.0, beamFade = 1.0, maxSegments = math.huge, headFocus = 12},
@@ -116,7 +117,7 @@ function ClientSnake:_onChildAdded(child)
 			end
 		end
 
-		-- Beam added later (usually on head or previous segment)
+		-- Beam added later
 	elseif child:IsA("Beam") then
 		local beamIdx = tonumber(child.Name:match("%d+"))
 		if beamIdx then
@@ -146,7 +147,7 @@ function ClientSnake:_hydrate()
 	self.beams = {}
 	self.beamBaseWidths = {}
 
-	-- 1. Find Segments (AISegment%d+)
+	-- 1. Find Segments
 	local parts = {}
 	for _, child in ipairs(self.model:GetChildren()) do
 		if child:IsA("BasePart") and (child.Name:match("^AISegment") or child.Name:match("^Segment")) then
@@ -160,7 +161,7 @@ function ClientSnake:_hydrate()
 		return a.index < b.index
 	end)
 
-	-- 2. Populate Segments and find Beams inside them
+	-- 2. Populate Segments
 	for _, info in ipairs(parts) do
 		self.segments[info.index] = info.part
 		self.segmentOrder[#self.segmentOrder + 1] = info.index
@@ -174,8 +175,6 @@ function ClientSnake:_hydrate()
 			self.glows[info.index] = glow
 		end
 
-		-- Find beam (Beam{index}) inside Segment{index}
-		-- Let's look for ANY beam inside the part and index it by name
 		for _, child in ipairs(info.part:GetChildren()) do
 			if child:IsA("Beam") then
 				local beamIdx = tonumber(child.Name:match("%d+"))
@@ -187,7 +186,7 @@ function ClientSnake:_hydrate()
 		end
 	end
 
-	-- 3. Find Beams inside Head (Beam0 usually)
+	-- 3. Find Beams inside Head
 	for _, child in ipairs(self.head:GetChildren()) do
 		if child:IsA("Beam") then
 			local beamIdx = tonumber(child.Name:match("%d+"))
@@ -265,7 +264,6 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 	local headAlpha = smoothVisibility(distance, true) * profile.fade
 	self.head.LocalTransparencyModifier = 1 - headAlpha
 
-	-- Global flag: once we’re far enough, NO beams at all
 	local hideAllBeams = (distance > BEAM_CUTOFF_DIST) or profile.forceHide
 
 	local visibleBudget = profile.maxSegments
@@ -280,9 +278,8 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 		end
 
 		local isHeadSegment = segmentIndex <= headFocus
-
-		-- Decide if this segment is even considered for rendering
 		local renderSlot = (orderIndex % stride == 0) or isHeadSegment
+		
 		if profile.forceHide then
 			renderSlot = false
 		elseif renderSlot then
@@ -292,14 +289,12 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 			end
 		end
 
-		-- Get state (for smooth lerp)
 		local state = self.segmentState[segmentIndex]
 		if not state then
 			state = {current = 1, target = 1}
 			self.segmentState[segmentIndex] = state
 		end
 
-		-- Target visibility for this segment (0 = invisible, 1 = fully visible)
 		local targetAlpha = 0
 		if renderSlot then
 			local segDist = (cameraPos - seg.Position).Magnitude
@@ -307,13 +302,13 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 			targetAlpha = distanceAlpha * profile.fade
 		end
 
-		-- SEGMENTS: fade via local modifier so we don’t fight server transparency
+		-- Segments
 		state.target = 1 - targetAlpha
 		state.current = lerpNumber(state.current, state.target, TRANSPARENCY_LERP)
 		state.current = math.clamp(state.current, 0, 1)
 		seg.LocalTransparencyModifier = state.current
 
-		-- GLOW: follow segment visibility
+		-- Glow
 		local glow = self.glows[segmentIndex]
 		if glow then
 			if targetAlpha <= 0.05 or profile.forceHide then
@@ -325,7 +320,7 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 			end
 		end
 
-		-- BEAMS: NEVER more visible than their segment, and hard cut at distance
+		-- Beams (FIXED WIDTH)
 		local beam = self.beams[segmentIndex]
 		if beam then
 			if hideAllBeams or targetAlpha <= 0.02 then
@@ -336,9 +331,9 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 
 				local base = self.beamBaseWidths[segmentIndex]
 				if base then
-					local widthMultiplier = 0.5 + (targetAlpha * profile.beamFade)
-					beam.Width0 = base.Width0 * widthMultiplier
-					beam.Width1 = base.Width1 * widthMultiplier
+					-- FIXED: No width multiplier from distance, keeps them thin/consistent
+					beam.Width0 = base.Width0
+					beam.Width1 = base.Width1
 				end
 
 				local beamAlpha = math.clamp(targetAlpha * profile.beamFade, 0, 1)
@@ -347,10 +342,9 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 		end
 	end
 
-	-- HEAD BEAM (Beam0) – it wasn’t LOD’d before
+	-- Head Beam (FIXED WIDTH)
 	local headBeam = self.beams[0]
 	if headBeam then
-		-- Re-use headAlpha (calculated above)
 		if hideAllBeams or headAlpha <= 0.05 or profile.forceHide then
 			headBeam.Enabled = false
 			headBeam.Transparency = NumberSequence.new(1)
@@ -358,25 +352,22 @@ function ClientSnake:_applySegmentVisibility(cameraPos)
 			headBeam.Enabled = true
 			local base = self.beamBaseWidths[0]
 			if base then
-				local widthMult = 0.5 + (headAlpha * profile.beamFade)
-				headBeam.Width0 = base.Width0 * widthMult
-				headBeam.Width1 = base.Width1 * widthMult
+				-- FIXED: No width multiplier
+				headBeam.Width0 = base.Width0
+				headBeam.Width1 = base.Width1
 			end
 			local beamAlpha0 = math.clamp(headAlpha * profile.beamFade, 0, 1)
 			headBeam.Transparency = NumberSequence.new(1 - beamAlpha0)
 		end
 	end
 
-	-- Eyes: just fade with overall profile
 	for _, eye in ipairs(self.eyes) do
 		eye.LocalTransparencyModifier = lerpNumber(eye.LocalTransparencyModifier or 0, 1 - profile.fade, 0.25)
 	end
 end
 
 function ClientSnake:step(dt, cameraPos)
-	if self.dead then
-		return
-	end
+	if self.dead then return end
 
 	if not self.head or not self.head.Parent then
 		self.head = self:_resolveHead()
@@ -386,17 +377,12 @@ function ClientSnake:step(dt, cameraPos)
 		end
 	end
 
-	-- Always update distance for sorting, even if culled
 	self.lastDistance = (cameraPos - self.head.Position).Magnitude
 
-	if self.culled then
-		return
-	end
+	if self.culled then return end
 
 	self.accumulator += dt
-	if self.accumulator < HEARTBEAT_SAMPLE then
-		return
-	end
+	if self.accumulator < HEARTBEAT_SAMPLE then return end
 	self.accumulator = 0
 
 	self:_applySegmentVisibility(cameraPos)
@@ -409,9 +395,7 @@ function ClientSnake:destroy()
 		self._childConn:Disconnect()
 		self._childConn = nil
 	end
-	for k in pairs(self) do
-		self[k] = nil
-	end
+	for k in pairs(self) do self[k] = nil end
 end
 
 -- ==================================
@@ -429,9 +413,7 @@ function SnakeManager.new()
 end
 
 function SnakeManager:_track(model)
-	if self.tracked[model] then
-		return
-	end
+	if self.tracked[model] then return end
 
 	local snake = ClientSnake.new(model)
 	if not snake.head then
@@ -443,9 +425,7 @@ function SnakeManager:_track(model)
 			end
 		end)
 		task.delay(5, function()
-			if connection.Connected then
-				connection:Disconnect()
-			end
+			if connection.Connected then connection:Disconnect() end
 		end)
 		return
 	end
@@ -456,9 +436,7 @@ end
 
 function SnakeManager:_untrack(model)
 	local snake = self.tracked[model]
-	if not snake then
-		return
-	end
+	if not snake then return end
 
 	snake:destroy()
 	self.tracked[model] = nil
@@ -479,13 +457,10 @@ function SnakeManager:_resort()
 
 	for i, snake in ipairs(self.sorted) do
 		if i <= MAX_VISIBLE_SNAKES then
-			-- Should be active
 			if snake.culled then
 				snake.culled = false
-				-- no need to immediately fade in; next step() will handle it
 			end
 		else
-			-- Should be culled
 			if not snake.culled then
 				snake.culled = true
 				snake:_setInvisible()
@@ -533,4 +508,4 @@ end
 local manager = SnakeManager.new()
 manager:start()
 
-print("🐍 ClientAISnakeLOD v6.0 initialized – ultra-smooth streaming engaged.")
+print("🐍 ClientAISnakeLOD v6.1 initialized – Fixed beam width scaling.")
