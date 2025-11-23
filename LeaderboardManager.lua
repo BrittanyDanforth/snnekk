@@ -18,7 +18,7 @@ end
 local SNAKES_FOLDER = Workspace:FindFirstChild("Snakes") or Instance.new("Folder", Workspace)
 SNAKES_FOLDER.Name = "Snakes"
 
-local UPDATE_RATE = 0.5 -- Update every 0.5 seconds (balance between smoothness and network)
+local UPDATE_RATE = 0.2 -- Increased update rate for smoother visuals
 local LEADERBOARD_SIZE = 10
 local lastUpdate = 0
 
@@ -132,4 +132,4 @@ RunService.Heartbeat:Connect(function(dt)
 	LeaderboardUpdated:FireAllClients(topEntries)
 end)
 
-print("✅ Leaderboard Manager V2.0 (Polished & Optimized) Loaded")
+print("✅ Leaderboard Manager V2.1 (Smooth Update) Loaded")

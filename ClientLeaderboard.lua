@@ -1,6 +1,6 @@
--- StarterPlayerScripts/LeaderboardUI.lua
--- Triple AAA Polished Leaderboard UI
--- Smooth animations, glassmorphism, responsive layout
+-- StarterPlayerScripts/ClientLeaderboard.lua
+-- Triple AAA Polished Leaderboard UI (Client Side)
+-- Features: Smooth Score Interpolation, Glassmorphism, Mobile Responsive
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,7 +14,7 @@ local playerGui = localPlayer:WaitForChild("PlayerGui")
 -- Configuration
 local CONFIG = {
 	MaxEntries = 10,
-	UpdateSpeed = 0.3, -- Interpolation speed
+	UpdateSpeed = 0.15, -- Lower = smoother ease
 	Theme = {
 		Background = Color3.fromRGB(15, 15, 20),
 		BackgroundTransparency = 0.3, -- Glass effect
@@ -134,8 +134,11 @@ local TemplateCorner = Instance.new("UICorner")
 TemplateCorner.CornerRadius = UDim.new(0, 6)
 TemplateCorner.Parent = Template
 
--- Entries Pool
+-- Entries Pool & State
 local entriesUI = {}
+local currentData = nil
+local displayScores = {}
+local entryKeyByIndex = {}
 
 -- State
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
@@ -148,12 +151,19 @@ if isMobile then
 	TemplateRank.TextSize = 12
 	TemplateName.TextSize = 12
 	TemplateScore.TextSize = 12
-	ScreenGui.Scale = CONFIG.MobileScale
+	
+	local uiScale = Instance.new("UIScale")
+	uiScale.Scale = CONFIG.MobileScale
+	uiScale.Parent = Container
 end
 
 -- Update Function
 local function updateLeaderboard(data)
 	if not data then return end
+	
+	-- Update State
+	currentData = data
+	table.clear(entryKeyByIndex)
 
 	-- Hide all existing
 	for _, frame in pairs(entriesUI) do
@@ -169,15 +179,31 @@ local function updateLeaderboard(data)
 		if not frame then
 			frame = Template:Clone()
 			frame.Name = "Entry_" .. i
+			frame.Visible = false
 			frame.Parent = Container
 			entriesUI[i] = frame
 		end
 
 		frame.Visible = true
 		frame.LayoutOrder = i
+		
+		-- Set Static Text (Rank/Name)
 		frame.NameLabel.Text = entry.Name
-		frame.ScoreLabel.Text = tostring(entry.Score)
 		frame.RankLabel.Text = tostring(i)
+		
+		-- Generate Key for Score Smoothing
+		local key
+		if entry.IsPlayer and entry.PlayerId and entry.PlayerId ~= -1 then
+			key = "P" .. tostring(entry.PlayerId)
+		else
+			key = "A" .. (entry.Name or "Unknown")
+		end
+		entryKeyByIndex[i] = key
+		
+		-- Init smoothed score if new
+		if displayScores[key] == nil then
+			displayScores[key] = entry.Score or 0
+		end
 
 		-- Colors
 		if i == 1 then
@@ -192,9 +218,9 @@ local function updateLeaderboard(data)
 
 		-- Highlight Local Player
 		if entry.IsPlayer and entry.PlayerId == localPlayer.UserId then
-			frame.BackgroundTransparency = 0.8
-			frame.BackgroundColor3 = CONFIG.Theme.Accent
-			frame.NameLabel.TextColor3 = CONFIG.Theme.Accent
+			frame.BackgroundTransparency = 0.2
+			frame.BackgroundColor3 = CONFIG.Theme.Self
+			frame.NameLabel.TextColor3 = CONFIG.Theme.Text
 		else
 			frame.BackgroundTransparency = 1
 			frame.NameLabel.TextColor3 = CONFIG.Theme.Text
@@ -209,8 +235,34 @@ local function updateLeaderboard(data)
 	}):Play()
 end
 
+-- Smooth Score Interpolation Loop
+RunService.RenderStepped:Connect(function(dt)
+	if not currentData then return end
+	
+	for i, entry in ipairs(currentData) do
+		if i > CONFIG.MaxEntries then break end
+		
+		local frame = entriesUI[i]
+		if not frame or not frame.Visible then continue end
+		
+		local key = entryKeyByIndex[i]
+		if not key then continue end
+		
+		local target = entry.Score or 0
+		local current = displayScores[key] or target
+		
+		-- Smoothly interpolate towards target score
+		-- Using dt ensures consistent speed regardless of framerate
+		local alpha = 1 - math.pow(1 - CONFIG.UpdateSpeed, dt * 60)
+		current = current + (target - current) * alpha
+		
+		displayScores[key] = current
+		frame.ScoreLabel.Text = tostring(math.floor(current + 0.5))
+	end
+end)
+
 -- Listen for Updates
 local Event = ReplicatedStorage:WaitForChild("LeaderboardUpdated")
 Event.OnClientEvent:Connect(updateLeaderboard)
 
-print("✅ AAA Client Leaderboard Loaded")
+print("✅ AAA Client Leaderboard Loaded (Smoothed V2)")
