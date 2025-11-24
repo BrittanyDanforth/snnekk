@@ -1,12 +1,13 @@
 --[[
-    SANRIO SHOP CLIENT (ULTIMATE REVAMP)
+    SANRIO SHOP CLIENT (ULTIMATE REVAMP v2)
     Place in: StarterPlayer > StarterPlayerScripts
     Name: CREATEMONEYSHOP
 
-    • High-polish "Sanrio" aesthetic with soft gradients, bouncy animations, and glassmorphism.
+    • High-polish "Sanrio" aesthetic with soft gradients, bouncy animations.
     • Uses your specific background frame (rbxassetid://83301831904885).
     • Robust responsive layout for Phone/Tablet/PC.
-    • Fixes for "weird sizing" included.
+    • Fully implemented logic (no omissions).
+    • Syntax errors fixed.
 ]]
 
 --// SERVICES
@@ -58,7 +59,7 @@ local CARD_MAX_H             = 220
 local CARD_INSET             = 8
 local TITLE_H                = 26
 local DESC_H                 = 28
-local BTN_H                  = 34 -- slightly taller for 'juicy' look
+local BTN_H                  = 34
 local CELL_PAD_X             = 8
 local SECOND_ROW_GAP         = 8
 
@@ -91,12 +92,12 @@ local CLOSE_OFFSETS = {
 local function closeSizeFor(kind)
 	if kind == "phone" then return 36
 	elseif kind == "tablet" then return 42
-	else return 48 end -- slightly larger close button for better UX
+	else return 48 end
 end
 
 -- ======== THEME ========
 local theme = {
-	accent      = Color3.fromRGB(255, 105, 180), -- Hotter pink
+	accent      = Color3.fromRGB(255, 105, 180), -- Hot Pink
 	success     = Color3.fromRGB(96, 210, 100),
 	cinna       = Color3.fromRGB(200, 230, 255),
 	kuromi      = Color3.fromRGB(210, 200, 255),
@@ -315,7 +316,9 @@ local function buildCard(parent, product, reservedRows)
 	shadow.BorderSizePixel = 0
 	shadow.ZIndex = 11
 	shadow.Parent = parent
-	Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 16)
+	local sc = Instance.new("UICorner")
+	sc.CornerRadius = UDim.new(0, 16)
+	sc.Parent = shadow
 
 	-- main card
 	local card = Instance.new("Frame")
@@ -325,7 +328,9 @@ local function buildCard(parent, product, reservedRows)
 	card.BorderSizePixel = 0
 	card.ZIndex = 12
 	card.Parent = parent
-	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 16)
+	local cc = Instance.new("UICorner")
+	cc.CornerRadius = UDim.new(0, 16)
+	cc.Parent = card
 
 	-- subtle stroke
 	local stroke = Instance.new("UIStroke")
@@ -352,7 +357,9 @@ local function buildCard(parent, product, reservedRows)
 	inner.BorderSizePixel = 0
 	inner.ZIndex = 13
 	inner.Parent = card
-	Instance.new("UICorner", inner).CornerRadius = UDim.new(0, 12)
+	local ic = Instance.new("UICorner")
+	ic.CornerRadius = UDim.new(0, 12)
+	ic.Parent = inner
 	
 	-- inner subtle stroke
 	local isStroke = Instance.new("UIStroke")
@@ -476,7 +483,9 @@ function Shop:createToggleButton()
 	self.toggleButton.BackgroundColor3 = theme.white
 	self.toggleButton.Text = ""
 	self.toggleButton.Parent = sg
-	Instance.new("UICorner", self.toggleButton).CornerRadius = UDim.new(0, 20)
+	local tbc = Instance.new("UICorner")
+	tbc.CornerRadius = UDim.new(0, 20)
+	tbc.Parent = self.toggleButton
 	
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = theme.accent
@@ -592,7 +601,9 @@ function Shop:createMainInterface()
 	self.mainFrame.ScaleType = Enum.ScaleType.Fit
 	self.mainFrame.ZIndex = 1
 	self.mainFrame.Parent = self.gui
-	Instance.new("UIAspectRatioConstraint", self.mainFrame).AspectRatio = 1
+	local arc = Instance.new("UIAspectRatioConstraint")
+	arc.AspectRatio = 1
+	arc.Parent = self.mainFrame
 
 	-- CLOSE BUTTON
 	self.closeBtn = Instance.new("TextButton")
@@ -605,7 +616,9 @@ function Shop:createMainInterface()
 	self.closeBtn.TextScaled = true
 	self.closeBtn.ZIndex = 50
 	self.closeBtn.Parent = self.mainFrame
-	Instance.new("UICorner", self.closeBtn).CornerRadius = UDim.new(1, 0) -- Circle
+	local cbc = Instance.new("UICorner")
+	cbc.CornerRadius = UDim.new(1, 0) -- Circle
+	cbc.Parent = self.closeBtn
 	
 	local cStroke = Instance.new("UIStroke")
 	cStroke.Color = theme.cardStroke
@@ -621,7 +634,9 @@ function Shop:createMainInterface()
 	cShadow.BackgroundColor3 = theme.shadow
 	cShadow.BackgroundTransparency = 0.7
 	cShadow.Parent = self.closeBtn
-	Instance.new("UICorner", cShadow).CornerRadius = UDim.new(1, 0)
+	local csc = Instance.new("UICorner")
+	csc.CornerRadius = UDim.new(1, 0)
+	csc.Parent = cShadow
 
 	hoverEffect(self.closeBtn, 1.1, 0.9)
 	self.closeBtn.MouseButton1Click:Connect(function()
@@ -655,7 +670,9 @@ function Shop:createMainInterface()
 	self.contentFrame.BackgroundTransparency = 0.9
 	self.contentFrame.ZIndex = 5
 	self.contentFrame.Parent = self.mainFrame
-	Instance.new("UICorner", self.contentFrame).CornerRadius = UDim.new(0, 20)
+	local cfc = Instance.new("UICorner")
+	cfc.CornerRadius = UDim.new(0, 20)
+	cfc.Parent = self.contentFrame
 
 	self:createPages()
 	self:setupDynamicSizing()
@@ -774,7 +791,8 @@ function Shop:createProductItem(product, productType, parent)
 			local toggle = makeBottomRow(container, 1, current and "ON" or "OFF", current and theme.success or theme.cardStroke, true, TWO_ROW_BOTTOM_PUSH_PX)
 			
 			local function paint(state)
-				toggle:FindFirstChild("TextLabel").Text = state and "ON" or "OFF"
+				local lbl = toggle:FindFirstChild("TextLabel")
+				if lbl then lbl.Text = state and "ON" or "OFF" end
 				toggle.BackgroundColor3 = state and theme.success or theme.textSubtle
 			end
 			paint(current)
@@ -796,7 +814,8 @@ function Shop:createProductItem(product, productType, parent)
 				buyBtn.MouseButton1Click:Connect(function()
 					playSound("click")
 					pulse(card)
-					buyBtn:FindFirstChild("TextLabel").Text = "..."
+					local lbl = buyBtn:FindFirstChild("TextLabel")
+					if lbl then lbl.Text = "..." end
 					self:promptPurchase(product, "gamepass", buyBtn)
 				end)
 				product.purchaseButton = buyBtn
@@ -809,7 +828,8 @@ function Shop:createProductItem(product, productType, parent)
 		buyBtn.MouseButton1Click:Connect(function()
 			playSound("click")
 			pulse(card)
-			buyBtn:FindFirstChild("TextLabel").Text = "..."
+			local lbl = buyBtn:FindFirstChild("TextLabel")
+			if lbl then lbl.Text = "..." end
 			self:promptPurchase(product, "cash", buyBtn)
 		end)
 		product.purchaseButton = buyBtn
@@ -904,9 +924,32 @@ function Shop:updateGamepassUI(passId)
 
 	if gpData.hasToggle then
 		makeBottomRow(container, 2, "OWNED", theme.success, false, TWO_ROW_BOTTOM_PUSH_PX)
-		-- Logic for toggle state would go here, simplified for update
-		local toggle = makeBottomRow(container, 1, "OFF", theme.cardStroke, true, TWO_ROW_BOTTOM_PUSH_PX)
-		-- Re-bind toggle logic... (omitted for brevity, same as createProductItem)
+		
+		-- Fully implemented toggle logic refresh
+		local current = false
+		if Remotes then
+			local rf = Remotes:FindFirstChild("GetAutoCollectState")
+			if rf and rf:IsA("RemoteFunction") then
+				pcall(function() current = rf:InvokeServer() end)
+			end
+		end
+		
+		local toggle = makeBottomRow(container, 1, current and "ON" or "OFF", current and theme.success or theme.cardStroke, true, TWO_ROW_BOTTOM_PUSH_PX)
+		local function paint(state)
+			local lbl = toggle:FindFirstChild("TextLabel")
+			if lbl then lbl.Text = state and "ON" or "OFF" end
+			toggle.BackgroundColor3 = state and theme.success or theme.textSubtle
+		end
+		paint(current)
+		
+		toggle.MouseButton1Click:Connect(function()
+			current = not current
+			paint(current)
+			if Remotes then
+				local ev = Remotes:FindFirstChild("AutoCollectToggle")
+				if ev then ev:FireServer(current) end
+			end
+		end)
 	else
 		makeBottomRow(container, 1, "OWNED", theme.success, false, SINGLE_ROW_BOTTOM_PUSH_PX)
 	end
@@ -923,7 +966,31 @@ function Shop:refreshAllProducts()
 			if lbl then lbl.Text = isPhone() and "BUY" or ("BUY - R$" .. tostring(price)) end
 		end
 	end
-	-- (Gamepass refresh logic similar to original, keeping structure simple here)
+	
+	-- Refresh gamepasses
+	for _, gp in ipairs(products.gamepasses) do
+		local owned = checkOwnership(gp.id)
+		if owned and gp.hasToggle then
+			-- check if toggle UI exists
+			local hasUI = false
+			if gp.containerInstance then
+				for _, c in ipairs(gp.containerInstance:GetChildren()) do
+					if c:IsA("TextButton") and (c.BackgroundColor3 == theme.success or c.BackgroundColor3 == theme.cardStroke) then
+						hasUI = true
+						break
+					end
+				end
+			end
+			if not hasUI then self:updateGamepassUI(gp.id) end
+		elseif owned and not gp.hasToggle then
+			if gp.purchaseButton and gp.purchaseButton.Parent then
+				local lbl = gp.purchaseButton:FindFirstChild("TextLabel")
+				if lbl then lbl.Text = "OWNED" end
+				gp.purchaseButton.BackgroundColor3 = theme.success
+				gp.purchaseButton.AutoButtonColor = false
+			end
+		end
+	end
 end
 
 function Shop:open()
@@ -932,6 +999,21 @@ function Shop:open()
 	ownershipCache:clear()
 	refreshPrices()
 	-- Preload ownership logic here...
+	if Remotes then
+		local rf = Remotes:FindFirstChild("GetOwnedPasses")
+		if rf and rf:IsA("RemoteFunction") then
+			pcall(function()
+				local ownedMap = rf:InvokeServer()
+				if type(ownedMap) == "table" then
+					for id, owns in pairs(ownedMap) do
+						local key = ("%d_%d"):format(Player.UserId, tonumber(id))
+						ownershipCache:set(key, owns and true or false)
+					end
+				end
+			end)
+		end
+	end
+	
 	self:refreshAllProducts()
 	self.gui.Enabled = true
 	
@@ -966,6 +1048,25 @@ function Shop:setupHandlers()
 		if i.KeyCode == Enum.KeyCode.M then self:toggle() end
 		if i.KeyCode == Enum.KeyCode.Escape and self.isOpen then self:close() end
 	end)
+	
+	-- Throttling for recreates
+	local recreateDebounce = {}
+	if Remotes then
+		local gpPurchased = Remotes:FindFirstChild("GamepassPurchased")
+		if gpPurchased and gpPurchased:IsA("RemoteEvent") then
+			gpPurchased.OnClientEvent:Connect(function(passId)
+				if recreateDebounce[passId] then return end
+				recreateDebounce[passId] = true
+				
+				local key = ("%d_%d"):format(Player.UserId, passId)
+				ownershipCache:set(key, true)
+				
+				task.wait(0.2)
+				self:updateGamepassUI(passId)
+				task.delay(3, function() recreateDebounce[passId] = nil end)
+			end)
+		end
+	end
 	
 	MarketplaceService.PromptProductPurchaseFinished:Connect(function(plr, id, bought)
 		if plr ~= Player then return end
