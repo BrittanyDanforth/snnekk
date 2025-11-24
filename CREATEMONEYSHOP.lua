@@ -1,12 +1,11 @@
 --[[
-    SANRIO SHOP CLIENT (REVAMPED & FIXED v3)
+    SANRIO SHOP CLIENT (BIG TABS + CLEAR TOGGLE v4)
     Place in: StarterPlayer > StarterPlayerScripts
     Name: CREATEMONEYSHOP
 
-    • ROBUST LAYOUT: Replaced fragile manual positioning with UIListLayout to prevent stacking.
-    • VISIBILITY FIX: Adjusted sizing logic to ensure elements are always visible and sized correctly on all devices.
-    • "JUICY" UI: Bouncy animations, clean gradients, and high-polish aesthetic.
-    • ASSET: Uses "rbxassetid://83301831904885" as requested.
+    • TABS: Made SIGNIFICANTLY larger/chunkier for better visibility.
+    • AUTO-COLLECT: clearer "AUTO: ON/OFF" text with distinct colors.
+    • LAYOUT: Retained the robust list layout from v3.
 ]]
 
 --// SERVICES
@@ -34,6 +33,7 @@ local GIFT_BOX_TEXTURE_ID = "130623477775352"
 local theme = {
 	accent      = Color3.fromRGB(255, 105, 180), -- Hot Pink
 	success     = Color3.fromRGB(96, 210, 100),
+	fail        = Color3.fromRGB(255, 80, 80),   -- Red for OFF
 	cinna       = Color3.fromRGB(200, 230, 255),
 	kuromi      = Color3.fromRGB(210, 200, 255),
 	cardTop     = Color3.fromRGB(255, 250, 255),
@@ -44,6 +44,7 @@ local theme = {
 	textDark    = Color3.fromRGB(75, 45, 110),
 	textSubtle  = Color3.fromRGB(110, 90, 150),
 	white       = Color3.fromRGB(255, 255, 255),
+	grey        = Color3.fromRGB(180, 180, 180),
 }
 
 -- ======== UTILS ========
@@ -358,7 +359,7 @@ local function makeBottomRow(parentCell, orderFromBottom, text, color, active, e
 	row.ZIndex = 20
 	
 	if active == false then
-		row.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+		row.BackgroundColor3 = theme.grey
 		row.AutoButtonColor = false
 	else
 		row.BackgroundColor3 = color
@@ -449,7 +450,7 @@ function Shop:createMainInterface()
 	self.mainFrame.BackgroundTransparency = 1
 	self.mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	self.mainFrame.Position = UDim2.fromScale(0.5, 0.5)
-	self.mainFrame.Size = UDim2.fromScale(0.9, 0.9) -- Base size, adjusted by aspect ratio
+	self.mainFrame.Size = UDim2.fromScale(0.9, 0.9) -- Base size
 	self.mainFrame.Image = IMG_FRAME
 	self.mainFrame.ScaleType = Enum.ScaleType.Fit
 	self.mainFrame.ZIndex = 1
@@ -457,7 +458,7 @@ function Shop:createMainInterface()
 	
 	local aspect = Instance.new("UIAspectRatioConstraint")
 	aspect.AspectRatio = 1.0
-	aspect.DominantAxis = Enum.DominantAxis.Height -- Ensures it fits in height
+	aspect.DominantAxis = Enum.DominantAxis.Height
 	aspect.Parent = self.mainFrame
 
 	-- CLOSE BUTTON
@@ -465,7 +466,7 @@ function Shop:createMainInterface()
 	self.closeBtn.Name = "CloseButton"
 	self.closeBtn.AnchorPoint = Vector2.new(1, 0)
 	self.closeBtn.Size = UDim2.fromOffset(44, 44)
-	self.closeBtn.Position = UDim2.new(1, -40, 0, 160) -- Default safe pos
+	self.closeBtn.Position = UDim2.new(1, -40, 0, 160)
 	self.closeBtn.BackgroundColor3 = theme.white
 	self.closeBtn.Text = "X"
 	self.closeBtn.Font = Enum.Font.FredokaOne
@@ -486,13 +487,13 @@ function Shop:createMainInterface()
 		self:close()
 	end)
 
-	-- TAB CONTAINER (Replacing fragile manual positioning with ListLayout)
+	-- TAB CONTAINER (BIGGER)
 	self.buttonBar = Instance.new("Frame")
 	self.buttonBar.Name = "ButtonBar"
 	self.buttonBar.BackgroundTransparency = 1
 	self.buttonBar.AnchorPoint = Vector2.new(0.5, 0)
-	self.buttonBar.Position = UDim2.fromScale(0.5, 0.36) -- Fixed vertical position
-	self.buttonBar.Size = UDim2.fromScale(0.9, 0.12) -- Takes up 90% width, 12% height
+	self.buttonBar.Position = UDim2.fromScale(0.5, 0.35) -- Moved up slightly
+	self.buttonBar.Size = UDim2.fromScale(0.92, 0.15) -- Increased height (was 0.12)
 	self.buttonBar.ZIndex = 8
 	self.buttonBar.Parent = self.mainFrame
 
@@ -500,16 +501,16 @@ function Shop:createMainInterface()
 	tabLayout.FillDirection = Enum.FillDirection.Horizontal
 	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	tabLayout.Padding = UDim.new(0.05, 0) -- 5% spacing
+	tabLayout.Padding = UDim.new(0.03, 0)
 	tabLayout.Parent = self.buttonBar
 
-	-- CASH TAB
+	-- CASH TAB (Chunkier Aspect)
 	self.cashContainer = Instance.new("Frame")
 	self.cashContainer.BackgroundTransparency = 1
-	self.cashContainer.Size = UDim2.fromScale(0.45, 1) -- 45% width of bar
-	self.cashContainer.SizeConstraint = Enum.SizeConstraint.RelativeYY -- maintain aspect ratio based on height
+	self.cashContainer.Size = UDim2.fromScale(0.45, 1)
+	self.cashContainer.SizeConstraint = Enum.SizeConstraint.RelativeYY
 	self.cashContainer.Parent = self.buttonBar
-	Instance.new("UIAspectRatioConstraint", self.cashContainer).AspectRatio = 3.25 -- Pill shape
+	Instance.new("UIAspectRatioConstraint", self.cashContainer).AspectRatio = 2.8 -- was 3.25 (Wider/shorter) -> 2.8 (Taller/chunkier)
 
 	self.cashBtn = Instance.new("ImageButton")
 	self.cashBtn.BackgroundTransparency = 1
@@ -519,13 +520,13 @@ function Shop:createMainInterface()
 	self.cashBtn.Parent = self.cashContainer
 	self._cashScale = Instance.new("UIScale", self.cashContainer)
 
-	-- GAMEPASS TAB
+	-- GAMEPASS TAB (Chunkier Aspect)
 	self.gpContainer = Instance.new("Frame")
 	self.gpContainer.BackgroundTransparency = 1
 	self.gpContainer.Size = UDim2.fromScale(0.45, 1)
 	self.gpContainer.SizeConstraint = Enum.SizeConstraint.RelativeYY
 	self.gpContainer.Parent = self.buttonBar
-	Instance.new("UIAspectRatioConstraint", self.gpContainer).AspectRatio = 4.2 -- Pill shape
+	Instance.new("UIAspectRatioConstraint", self.gpContainer).AspectRatio = 3.5 -- was 4.2 -> 3.5
 
 	self.gpBtn = Instance.new("ImageButton")
 	self.gpBtn.BackgroundTransparency = 1
@@ -539,8 +540,8 @@ function Shop:createMainInterface()
 	self.contentFrame = Instance.new("Frame")
 	self.contentFrame.Name = "Content"
 	self.contentFrame.AnchorPoint = Vector2.new(0.5, 0)
-	self.contentFrame.Position = UDim2.fromScale(0.5, 0.50) -- Starts below tabs
-	self.contentFrame.Size = UDim2.fromScale(0.82, 0.42)
+	self.contentFrame.Position = UDim2.fromScale(0.5, 0.51) -- Pushed down slightly
+	self.contentFrame.Size = UDim2.fromScale(0.82, 0.41)
 	self.contentFrame.BackgroundColor3 = theme.white
 	self.contentFrame.BackgroundTransparency = 0.9
 	self.contentFrame.ZIndex = 5
@@ -548,8 +549,6 @@ function Shop:createMainInterface()
 	Instance.new("UICorner", self.contentFrame).CornerRadius = UDim.new(0, 16)
 
 	self:createPages()
-	
-	-- Device Specific Adjustments (Run once + on resize)
 	self:setupDynamicSizing()
 
 	self.cashBtn.MouseButton1Click:Connect(function() self:showCash() self:updateTabSelection("cash") playSound("click") end)
@@ -562,27 +561,16 @@ function Shop:setupDynamicSizing()
 		local viewport = workspace.CurrentCamera.ViewportSize
 		local isPhone = viewport.X < 700
 		
-		-- Adjust MainFrame Sizing
-		-- On phones, we might want it slightly bigger scale to be readable
 		if isPhone then
 			self.mainFrame.Size = UDim2.fromScale(0.98, 0.98)
-		else
-			self.mainFrame.Size = UDim2.fromScale(0.9, 0.9)
-		end
-
-		-- Adjust Close Button Position
-		-- "x = 18, y = 60" for phone relative to Top-Right of the IMAGE.
-		-- Since we use ScaleType.Fit, the image might not fill the whole frame rect if aspect ratio differs.
-		-- But simpler logic:
-		if isPhone then
 			self.closeBtn.Position = UDim2.new(1, -20, 0, 60)
 			self.closeBtn.Size = UDim2.fromOffset(36, 36)
 		else
+			self.mainFrame.Size = UDim2.fromScale(0.9, 0.9)
 			self.closeBtn.Position = UDim2.new(1, -50, 0, 170)
 			self.closeBtn.Size = UDim2.fromOffset(48, 48)
 		end
 	end
-	
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(update)
 	update()
 end
@@ -607,7 +595,7 @@ function Shop:createPages()
 
 	self.cashPage = mkPage("CashPage")
 	local cGrid = Instance.new("UIGridLayout")
-	cGrid.CellSize = UDim2.fromOffset(140, 180) -- Default, will update
+	cGrid.CellSize = UDim2.fromOffset(140, 180)
 	cGrid.CellPadding = UDim2.fromOffset(10, 10)
 	cGrid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	cGrid.Parent = self.cashPage
@@ -620,18 +608,16 @@ function Shop:createPages()
 	gGrid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	gGrid.Parent = self.gpPage
 
-	-- Dynamic Grid Sizing
 	local function updateGrid(grid, pg)
 		local w = pg.AbsoluteSize.X
 		if w <= 0 then return end
-		-- Aim for 2 columns on phone, 3-4 on tablet/desktop
 		local cols = 3
 		if w < 400 then cols = 2 end
 		
 		local pad = 10
-		local totalPad = (cols - 1) * pad + 20 -- +20 for margins
+		local totalPad = (cols - 1) * pad + 20
 		local cellW = (w - totalPad) / cols
-		local cellH = cellW * 1.3 -- Aspect ratio 1:1.3
+		local cellH = cellW * 1.3
 		
 		grid.CellSize = UDim2.fromOffset(cellW, cellH)
 		pg.CanvasSize = UDim2.new(0, 0, 0, grid.AbsoluteContentSize.Y + 20)
@@ -655,50 +641,66 @@ function Shop:createProductItem(product, kind, parent)
 	product.cardInstance = card
 	product.containerInstance = container
 
-	local function addBuy(btnText, btnColor, active, isToggle)
-		local btn = makeBottomRow(container, isToggle and 1 or 1, btnText, btnColor, active, 0)
-		if isToggle then
-			-- Shift up existing rows? Logic simplified for robust UI
-			-- If toggle, we usually have "OWNED" at bottom row 2, and "ON/OFF" at row 1
-			btn.Position = UDim2.new(0.5, 0, 1, -8) -- Bottom
-		end
+	-- Standard button creator helper
+	local function addBuy(btnText, btnColor, active)
+		local btn = makeBottomRow(container, 1, btnText, btnColor, active, 0)
 		return btn
 	end
 
-	-- Initial State Logic
 	local owned = checkOwnership(product.id)
 	
 	if kind == "gamepass" then
 		if owned then
-			makeBottomRow(container, 1, "OWNED", theme.success, false, 0)
 			if product.hasToggle then
-				-- Add toggle button slightly higher? No, Grid layout is tight.
-				-- Let's replace OWNED with Toggle if owned.
-				local tgl = makeBottomRow(container, 1, "OFF", theme.cardStroke, true, 0)
+				-- AUTO COLLECT SPECIAL UI
+				-- Show "OWNED" label + Toggle Button
+				makeBottomRow(container, 2, "OWNED", theme.success, false, 37) -- Push up
 				
-				local function updateTgl()
+				local toggleBtn = makeBottomRow(container, 1, "AUTO: OFF", theme.grey, true, 37)
+				
+				local function updateToggleUI()
 					local state = false
 					if Remotes and Remotes:FindFirstChild("GetAutoCollectState") then
 						pcall(function() state = Remotes.GetAutoCollectState:InvokeServer() end)
 					end
-					tgl:FindFirstChild("TextLabel").Text = state and "ON" or "OFF"
-					tgl.BackgroundColor3 = state and theme.success or theme.cardStroke
-				end
-				updateTgl()
-				
-				tgl.MouseButton1Click:Connect(function()
-					local curr = (tgl:FindFirstChild("TextLabel").Text == "ON")
-					if Remotes and Remotes:FindFirstChild("AutoCollectToggle") then
-						Remotes.AutoCollectToggle:FireServer(not curr)
+					local lbl = toggleBtn:FindFirstChild("TextLabel")
+					if state then
+						lbl.Text = "AUTO: ON"
+						toggleBtn.BackgroundColor3 = theme.success
+					else
+						lbl.Text = "AUTO: OFF"
+						toggleBtn.BackgroundColor3 = theme.fail -- Red-ish
 					end
-					tgl:FindFirstChild("TextLabel").Text = (not curr) and "ON" or "OFF"
-					tgl.BackgroundColor3 = (not curr) and theme.success or theme.cardStroke
+				end
+				
+				updateToggleUI()
+				
+				toggleBtn.MouseButton1Click:Connect(function()
+					local lbl = toggleBtn:FindFirstChild("TextLabel")
+					local currentlyOn = (lbl.Text == "AUTO: ON")
+					local newState = not currentlyOn
+					
+					-- Optimistic update
+					if newState then
+						lbl.Text = "AUTO: ON"
+						toggleBtn.BackgroundColor3 = theme.success
+					else
+						lbl.Text = "AUTO: OFF"
+						toggleBtn.BackgroundColor3 = theme.fail
+					end
+					
+					if Remotes and Remotes:FindFirstChild("AutoCollectToggle") then
+						Remotes.AutoCollectToggle:FireServer(newState)
+					end
 				end)
+			else
+				-- Just owned standard
+				makeBottomRow(container, 1, "OWNED", theme.success, false, 0)
 			end
 		else
 			local info = getGamePassInfo(product.id)
 			local price = (info and info.PriceInRobux) or product.price or 0
-			local btn = addBuy("BUY - R$"..price, theme.accent, true, false)
+			local btn = addBuy("BUY - R$"..price, theme.accent, true)
 			btn.MouseButton1Click:Connect(function()
 				self:promptPurchase(product, "gamepass", btn)
 			end)
@@ -707,7 +709,7 @@ function Shop:createProductItem(product, kind, parent)
 	else
 		local info = getProductInfo(product.id)
 		local price = (info and info.PriceInRobux) or product.price or 0
-		local btn = addBuy("BUY - R$"..price, theme.accent, true, false)
+		local btn = addBuy("BUY - R$"..price, theme.accent, true)
 		btn.MouseButton1Click:Connect(function()
 			self:promptPurchase(product, "cash", btn)
 		end)
@@ -727,7 +729,6 @@ function Shop:promptPurchase(product, kind, btn)
 		MarketplaceService:PromptProductPurchase(Player, product.id)
 	end
 	
-	-- Revert text if cancelled/failed after delay
 	task.delay(5, function()
 		if self.purchasePending[product.id] then
 			lbl.Text = oldText
@@ -783,10 +784,11 @@ function Shop:setupHandlers()
 		if plr ~= Player then return end
 		if bought then
 			playSound("success")
-			-- Reload UI
+			-- Simple refresh for now
 			self.gui:Destroy()
-			script.Parent = PlayerGui -- Reload script basically or just rebuild
-			-- For now, simple update
+			script.Parent = PlayerGui -- Trigger re-run potentially or simpler: just create new shop
+			-- Since we can't easily re-run the script, let's just manually refresh the specific item
+			-- In a real full system we'd use a proper Refresh() method, but this works for now
 			for _, gp in ipairs(products.gamepasses) do
 				if gp.id == id and gp.containerInstance then
 					gp.containerInstance:Destroy()
