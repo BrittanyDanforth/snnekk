@@ -1306,30 +1306,32 @@ local function playPetHatchSequence(rarity, petKey)
 	screenVfxSystem:TriggerVFX(rarity)
 
 	-- 2) Show UI quickly after buildup (during VFX, not after)
+	-- Pet will ONLY spawn when user clicks CLAIM button in the UI
 	task.spawn(function()
 		local buildupTime = config.buildupTime or 0.5
-		local uiDuration = 3.0
 		
 		-- Wait for buildup to finish, then show UI immediately
 		task.wait(buildupTime + 0.3)
 		
 		if _G.ShowPetPreview then
-			_G.ShowPetPreview(petKey, config, uiDuration)
+			-- Pass a callback that will be called when CLAIM is clicked
+			_G.ShowPetPreview(petKey, config, function()
+				-- This callback runs when CLAIM is clicked
+				petFollower:EquipPet(petKey)
+				-- Allow next sequence after pet is claimed
+				task.wait(0.5)
+				isSequenceRunning = false
+			end)
 		else
+			-- Fallback to old preview (no claim button)
+			local uiDuration = 3.0
 			petPreview:Show(petConfig, config, uiDuration)
+			-- Auto-spawn after UI closes (old behavior)
+			task.wait(uiDuration + 0.5)
+			petFollower:EquipPet(petKey)
+			task.wait(0.5)
+			isSequenceRunning = false
 		end
-	end)
-
-	-- 3) Spawn pet shortly after UI appears
-	task.spawn(function()
-		local buildupTime = config.buildupTime or 0.5
-		-- Wait for buildup + small delay, then spawn pet
-		task.wait(buildupTime + 1.0)
-		petFollower:EquipPet(petKey)
-		
-		-- Wait for UI to finish showing, then allow next sequence
-		task.wait(3.5)
-		isSequenceRunning = false
 	end)
 end
 
