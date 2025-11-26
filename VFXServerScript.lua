@@ -32,8 +32,8 @@ if not Assets or not EggTemplate then
 	warn("⚠️ EggModel not found in ReplicatedStorage.Assets! No eggs will spawn.")
 end
 
--- spawn height (old was 10; ~60% lower → 4)
-local GROUND_Y = 4
+-- spawn height (60% lower than 4 = 1.6, rounded to 1.5 for ground level)
+local GROUND_Y = 1.5
 
 local RARITY_COLORS = {
 	Common    = Color3.fromRGB(200, 200, 200),

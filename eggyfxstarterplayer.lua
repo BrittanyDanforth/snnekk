@@ -915,7 +915,6 @@ function PetPreviewUI.new()
 	nameLabel.TextTransparency = 1
 	nameLabel.TextStrokeTransparency = 0.5
 	nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	nameLabel.TextStrokeThickness = 3
 	nameLabel.ZIndex = 8920
 	nameLabel.Parent = card
 
