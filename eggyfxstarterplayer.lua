@@ -297,55 +297,57 @@ function ScreenVFXSystem:ScreenParticles(color, count, duration)
 	end
 end
 
-function ScreenVFXSystem:ScreenBeams(color, count, duration)
+function ScreenVFXSystem:ExplosionBurst(color, intensity, duration)
+	-- Massive center explosion effect
 	local center = UDim2.fromScale(0.5, 0.5)
-	local maxLen = math.max(self.Camera.ViewportSize.X, self.Camera.ViewportSize.Y) * 0.9
-	local growTime = 0.35
-
-	for i = 1, count do
-		local angle = (i - 1) * (360 / count)
-
-		local beam = Instance.new("Frame")
-		beam.AnchorPoint = Vector2.new(0.5, 1)
-		beam.Position = center
-		beam.Size = UDim2.new(0, 5, 0, 0)
-		beam.BackgroundColor3 = color
-		beam.BorderSizePixel = 0
-		beam.Rotation = angle
-		beam.ZIndex = 9800
-		beam.Parent = self.ScreenGui
-
-		local stroke = Instance.new("UIStroke")
-		stroke.Color = Color3.fromRGB(255, 255, 255)
-		stroke.Thickness = 2.5
-		stroke.Transparency = 0
-		stroke.Parent = beam
-
-		local gradient = Instance.new("UIGradient")
-		gradient.Rotation = 90
-		gradient.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0),
-			NumberSequenceKeypoint.new(0.7, 0),
-			NumberSequenceKeypoint.new(1, 1)
-		})
-		gradient.Parent = beam
-
-		task.delay(0.03 * i, function()
-			TweenService:Create(beam, TweenInfo.new(growTime, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-				Size = UDim2.new(0, 5, 0, maxLen)
+	local burstCount = math.floor(intensity * 8)
+	
+	for i = 1, burstCount do
+		task.spawn(function()
+			task.wait(math.random() * 0.15)
+			
+			local burst = Instance.new("Frame")
+			burst.Size = UDim2.new(0, 0, 0, 0)
+			burst.Position = center
+			burst.AnchorPoint = Vector2.new(0.5, 0.5)
+			burst.BackgroundColor3 = color
+			burst.BackgroundTransparency = 0.3
+			burst.BorderSizePixel = 0
+			burst.ZIndex = 9800
+			burst.Parent = self.ScreenGui
+			
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(1, 0)
+			corner.Parent = burst
+			
+			local glow = Instance.new("UIStroke")
+			glow.Color = color
+			glow.Thickness = 8
+			glow.Transparency = 0
+			glow.Parent = burst
+			
+			local size = math.random(80, 200)
+			local expandTime = 0.2
+			
+			TweenService:Create(burst, TweenInfo.new(expandTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, size, 0, size),
+				Position = UDim2.new(0.5, -size/2, 0.5, -size/2),
+				BackgroundTransparency = 0.8
 			}):Play()
-
-			task.wait(growTime)
-
-			TweenService:Create(beam, TweenInfo.new(duration - growTime, Enum.EasingStyle.Quad), {
-				BackgroundTransparency = 1
-			}):Play()
-
-			TweenService:Create(stroke, TweenInfo.new(duration - growTime), {
+			
+			TweenService:Create(glow, TweenInfo.new(expandTime), {
 				Transparency = 1
 			}):Play()
-
-			Debris:AddItem(beam, duration + 0.1)
+			
+			task.wait(expandTime)
+			
+			TweenService:Create(burst, TweenInfo.new(duration - expandTime, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(0, size * 2, 0, size * 2),
+				Position = UDim2.new(0.5, -size, 0.5, -size),
+				BackgroundTransparency = 1
+			}):Play()
+			
+			Debris:AddItem(burst, duration + 0.1)
 		end)
 	end
 end
@@ -392,7 +394,6 @@ function ScreenVFXSystem:TextPopup(text, color, duration)
 	label.TextColor3 = Color3.fromRGB(255, 255, 255)
 	label.TextStrokeTransparency = 0
 	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextStrokeThickness = 6
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.new(0, 1000, 0, 220)
 	label.Position = UDim2.new(0.5, -500, 0.32, -110)
@@ -463,53 +464,73 @@ function ScreenVFXSystem:VignettePulse(color, duration)
 end
 
 function ScreenVFXSystem:BuildupAnimation(color, duration)
-	local circle = Instance.new("Frame")
-	circle.Size = UDim2.new(0, 120, 0, 120)
-	circle.Position = UDim2.new(0.5, -60, 0.5, -60)
-	circle.BackgroundTransparency = 0.4
-	circle.BackgroundColor3 = color
-	circle.BorderSizePixel = 0
-	circle.ZIndex = 10002
-	circle.Parent = self.ScreenGui
+	-- Intense pulsing buildup with multiple layers
+	local center = UDim2.fromScale(0.5, 0.5)
+	local layers = 3
+	
+	for layer = 1, layers do
+		task.spawn(function()
+			local circle = Instance.new("Frame")
+			local baseSize = 100 + (layer * 40)
+			circle.Size = UDim2.new(0, baseSize, 0, baseSize)
+			circle.Position = UDim2.new(0.5, -baseSize/2, 0.5, -baseSize/2)
+			circle.AnchorPoint = Vector2.new(0.5, 0.5)
+			circle.BackgroundTransparency = 0.5
+			circle.BackgroundColor3 = color
+			circle.BorderSizePixel = 0
+			circle.ZIndex = 10002 + layer
+			circle.Parent = self.ScreenGui
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(1, 0)
-	corner.Parent = circle
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(1, 0)
+			corner.Parent = circle
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = color
-	stroke.Thickness = 5
-	stroke.Parent = circle
+			local stroke = Instance.new("UIStroke")
+			stroke.Color = color
+			stroke.Thickness = 6 - (layer * 1.5)
+			stroke.Transparency = 0.2
+			stroke.Parent = circle
 
-	local pulseCount = 0
-	local maxPulses = math.floor(duration / 0.7)
+			local pulseCount = 0
+			local maxPulses = math.floor(duration / 0.5)
+			local delay = (layer - 1) * 0.15
 
-	local function pulse()
-		if pulseCount >= maxPulses then
-			circle:Destroy()
-			return
-		end
-		pulseCount += 1
+			task.wait(delay)
 
-		TweenService:Create(circle, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 180, 0, 180),
-			Position = UDim2.new(0.5, -90, 0.5, -90),
-			BackgroundTransparency = 0.15
-		}):Play()
+			local function pulse()
+				if pulseCount >= maxPulses then
+					TweenService:Create(circle, TweenInfo.new(0.3), {
+						BackgroundTransparency = 1,
+						Size = UDim2.new(0, baseSize * 1.5, 0, baseSize * 1.5)
+					}):Play()
+					TweenService:Create(stroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+					task.delay(0.3, function() circle:Destroy() end)
+					return
+				end
+				pulseCount += 1
 
-		task.wait(0.35)
+				local expandSize = baseSize * (1.4 + (pulseCount * 0.1))
+				TweenService:Create(circle, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Size = UDim2.new(0, expandSize, 0, expandSize),
+					Position = UDim2.new(0.5, -expandSize/2, 0.5, -expandSize/2),
+					BackgroundTransparency = 0.2
+				}):Play()
 
-		TweenService:Create(circle, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-			Size = UDim2.new(0, 120, 0, 120),
-			Position = UDim2.new(0.5, -60, 0.5, -60),
-			BackgroundTransparency = 0.4
-		}):Play()
+				task.wait(0.25)
 
-		task.wait(0.35)
-		pulse()
+				TweenService:Create(circle, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Size = UDim2.new(0, baseSize, 0, baseSize),
+					Position = UDim2.new(0.5, -baseSize/2, 0.5, -baseSize/2),
+					BackgroundTransparency = 0.5
+				}):Play()
+
+				task.wait(0.25)
+				pulse()
+			end
+
+			pulse()
+		end)
 	end
-
-	pulse()
 end
 
 function ScreenVFXSystem:PlaySound(soundId, volume)
@@ -547,7 +568,7 @@ function ScreenVFXSystem:TriggerVFX(rarity)
 		self:ScreenParticles(config.color, config.particleCount, config.duration)
 	end)
 	task.spawn(function()
-		self:ScreenBeams(config.color, config.beamCount, config.duration * 0.85)
+		self:ExplosionBurst(config.color, config.glowIntensity or 1, config.duration * 0.6)
 	end)
 	task.spawn(function()
 		self:CircularWaves(config.color, config.ringCount, config.duration)
@@ -829,14 +850,14 @@ function PetPreviewUI.new()
 	dimGradient.Rotation = 45
 	dimGradient.Parent = dim
 
-	-- Main card with glassmorphism
+	-- Main card with glassmorphism - CENTERED
 	local card = Instance.new("Frame")
 	card.Name = "Card"
 	card.Size = UDim2.new(0, 0, 0, 0)
 	card.Position = UDim2.new(0.5, 0, 0.5, 0)
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
-	card.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-	card.BackgroundTransparency = 0.15
+	card.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	card.BackgroundTransparency = 0.1
 	card.BorderSizePixel = 0
 	card.ZIndex = 8910
 	card.Visible = false
@@ -884,15 +905,16 @@ function PetPreviewUI.new()
 	innerCorner.CornerRadius = UDim.new(0, 28)
 	innerCorner.Parent = innerGlow
 
-	-- Title label (premium typography)
+	-- Title label - CENTERED ABOVE VIEWPORT
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.BackgroundTransparency = 1
-	title.Size = UDim2.new(1, -40, 0, 36)
-	title.Position = UDim2.new(0, 20, 0, 20)
+	title.Size = UDim2.new(1, -40, 0, 32)
+	title.Position = UDim2.new(0.5, 0, 0, 20)
+	title.AnchorPoint = Vector2.new(0.5, 0)
 	title.Font = Enum.Font.GothamBold
-	title.TextSize = 18
-	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextSize = 16
+	title.TextXAlignment = Enum.TextXAlignment.Center
 	title.TextYAlignment = Enum.TextYAlignment.Center
 	title.TextColor3 = Color3.fromRGB(200, 200, 220)
 	title.TextTransparency = 1
@@ -901,15 +923,16 @@ function PetPreviewUI.new()
 	title.ZIndex = 8920
 	title.Parent = card
 
-	-- Pet name (large, bold, premium)
+	-- Pet name - CENTERED BELOW VIEWPORT
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "PetName"
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.Size = UDim2.new(1, -40, 0, 64)
-	nameLabel.Position = UDim2.new(0, 20, 0, 64)
+	nameLabel.Size = UDim2.new(1, -40, 0, 50)
+	nameLabel.Position = UDim2.new(0.5, 0, 0.5, 120)
+	nameLabel.AnchorPoint = Vector2.new(0.5, 0)
 	nameLabel.Font = Enum.Font.GothamBlack
-	nameLabel.TextSize = 48
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.TextSize = 42
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Center
 	nameLabel.TextYAlignment = Enum.TextYAlignment.Center
 	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	nameLabel.TextTransparency = 1
@@ -925,16 +948,17 @@ function PetPreviewUI.new()
 	nameGlow.Transparency = 1
 	nameGlow.Parent = nameLabel
 
-	-- Subtitle (elegant description)
+	-- Subtitle - CENTERED BELOW NAME
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Name = "Subtitle"
 	subtitle.BackgroundTransparency = 1
-	subtitle.Size = UDim2.new(1, -40, 0, 60)
-	subtitle.Position = UDim2.new(0, 20, 0, 136)
+	subtitle.Size = UDim2.new(1, -40, 0, 50)
+	subtitle.Position = UDim2.new(0.5, 0, 0.5, 170)
+	subtitle.AnchorPoint = Vector2.new(0.5, 0)
 	subtitle.Font = Enum.Font.Gotham
-	subtitle.TextSize = 16
+	subtitle.TextSize = 14
 	subtitle.TextWrapped = true
-	subtitle.TextXAlignment = Enum.TextXAlignment.Left
+	subtitle.TextXAlignment = Enum.TextXAlignment.Center
 	subtitle.TextYAlignment = Enum.TextYAlignment.Top
 	subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
 	subtitle.TextTransparency = 1
@@ -943,12 +967,13 @@ function PetPreviewUI.new()
 	subtitle.ZIndex = 8920
 	subtitle.Parent = card
 
-	-- Premium viewport frame
+	-- Premium viewport frame - CENTERED
 	local viewport = Instance.new("ViewportFrame")
 	viewport.Name = "Preview"
 	viewport.BackgroundTransparency = 1
-	viewport.Size = UDim2.new(0, 220, 0, 220)
-	viewport.Position = UDim2.new(1, -240, 0, 20)
+	viewport.Size = UDim2.new(0, 200, 0, 200)
+	viewport.Position = UDim2.new(0.5, -100, 0.5, -100)
+	viewport.AnchorPoint = Vector2.new(0.5, 0.5)
 	viewport.ZIndex = 8920
 	viewport.Ambient = Color3.fromRGB(255, 255, 255)
 	viewport.LightColor = Color3.fromRGB(255, 255, 255)
@@ -1109,8 +1134,8 @@ function PetPreviewUI:Show(petConfig, rarityConfig, duration)
 		self.Card,
 		TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 		{
-			Size = UDim2.new(0, 600, 0, 260),
-			Position = UDim2.new(0.5, -300, 0.5, -130),
+			Size = UDim2.new(0, 400, 0, 400),
+			Position = UDim2.new(0.5, -200, 0.5, -200),
 		}
 	)
 
@@ -1280,8 +1305,10 @@ local function playPetHatchSequence(rarity, petKey)
 	screenVfxSystem:TriggerVFX(rarity)
 
 	task.spawn(function()
-		task.wait((config.buildupTime or 0.5) * 0.7)
-		petPreview:Show(petConfig, config, 3.2)
+		-- Wait for VFX to complete before showing pet preview
+		local vfxDuration = (config.duration or 3) + (config.buildupTime or 0.5)
+		task.wait(vfxDuration + 0.5)  -- Wait for VFX to finish + small delay
+		petPreview:Show(petConfig, config, 3.5)
 	end)
 
 	task.spawn(function()
