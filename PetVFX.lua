@@ -1302,22 +1302,33 @@ local function playPetHatchSequence(rarity, petKey)
 	rarity = rarity or "Epic"
 	local config = ScreenRarityConfig[rarity] or ScreenRarityConfig.Epic
 
+	-- 1) Start VFX (non-blocking)
 	screenVfxSystem:TriggerVFX(rarity)
 
+	-- 2) Show UI quickly after buildup (during VFX, not after)
 	task.spawn(function()
-		-- Wait for VFX to complete before showing pet preview
-		local vfxDuration = (config.duration or 3) + (config.buildupTime or 0.5)
-		task.wait(vfxDuration + 0.5)  -- Wait for VFX to finish + small delay
-		petPreview:Show(petConfig, config, 3.5)
+		local buildupTime = config.buildupTime or 0.5
+		local uiDuration = 3.0
+		
+		-- Wait for buildup to finish, then show UI immediately
+		task.wait(buildupTime + 0.3)
+		
+		if _G.ShowPetPreview then
+			_G.ShowPetPreview(petKey, config, uiDuration)
+		else
+			petPreview:Show(petConfig, config, uiDuration)
+		end
 	end)
 
+	-- 3) Spawn pet shortly after UI appears
 	task.spawn(function()
-		local delayTime = (config.buildupTime or 0.5) + 1.8
-		task.wait(delayTime)
+		local buildupTime = config.buildupTime or 0.5
+		-- Wait for buildup + small delay, then spawn pet
+		task.wait(buildupTime + 1.0)
 		petFollower:EquipPet(petKey)
-
-		local total = (config.duration or 3) + 1.5
-		task.wait(math.max(total - delayTime, 0.5))
+		
+		-- Wait for UI to finish showing, then allow next sequence
+		task.wait(3.5)
 		isSequenceRunning = false
 	end)
 end
