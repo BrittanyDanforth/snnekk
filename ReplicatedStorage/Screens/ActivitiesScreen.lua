@@ -474,28 +474,11 @@ function ActivitiesScreen:createUI()
 	headerGrad.Rotation = 90
 	headerGrad.Parent = header
 	
-	-- Back button
-	local backBtn = Instance.new("TextButton")
-	backBtn.Name = "BackBtn"
-	backBtn.Size = UDim2.new(0, 50, 0, 40)
-	backBtn.Position = UDim2.new(0, 10, 0.5, -20)
-	backBtn.BackgroundTransparency = 1
-	backBtn.Font = Fonts.Title
-	backBtn.TextSize = 24
-	backBtn.TextColor3 = Colors.White
-	backBtn.Text = "←"
-	backBtn.ZIndex = 86
-	backBtn.Parent = header
-	
-	backBtn.MouseButton1Click:Connect(function()
-		self:hide()
-	end)
-	
-	-- Title
+	-- Title (left side)
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
-	titleLabel.Size = UDim2.new(1, -120, 1, 0)
-	titleLabel.Position = UDim2.new(0, 60, 0, 0)
+	titleLabel.Size = UDim2.new(1, -80, 1, 0)
+	titleLabel.Position = UDim2.new(0, 16, 0, 0)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = Fonts.Title
 	titleLabel.TextSize = 20
@@ -504,6 +487,34 @@ function ActivitiesScreen:createUI()
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.ZIndex = 86
 	titleLabel.Parent = header
+	
+	-- Close button (TOP RIGHT - away from Roblox buttons)
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Name = "CloseBtn"
+	closeBtn.Size = UDim2.new(0, 44, 0, 44)
+	closeBtn.AnchorPoint = Vector2.new(1, 0.5)
+	closeBtn.Position = UDim2.new(1, -10, 0.5, 0)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.BackgroundTransparency = 0.9
+	closeBtn.Font = Fonts.Title
+	closeBtn.TextSize = 24
+	closeBtn.TextColor3 = Colors.White
+	closeBtn.Text = "✕"
+	closeBtn.AutoButtonColor = false
+	closeBtn.ZIndex = 86
+	closeBtn.Parent = header
+	createUICorner(closeBtn, 22)
+	
+	closeBtn.MouseEnter:Connect(function()
+		tween(closeBtn, TweenInfo.new(0.15), { BackgroundTransparency = 0.7 })
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		tween(closeBtn, TweenInfo.new(0.15), { BackgroundTransparency = 0.9 })
+	end)
+	
+	closeBtn.MouseButton1Click:Connect(function()
+		self:hide()
+	end)
 	
 	-- Scrolling content
 	local contentScroll = Instance.new("ScrollingFrame")

@@ -10,14 +10,37 @@ local TweenService      = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 ----------------------------------------------------------------
--- SCREEN MODULES
+-- SCREEN MODULES (with error handling)
 ----------------------------------------------------------------
 
-local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 5)
-local OccupationScreen = ScreensFolder and require(ScreensFolder:WaitForChild("OccupationScreen"))
-local AssetsScreen = ScreensFolder and require(ScreensFolder:WaitForChild("AssetsScreen"))
-local RelationshipsScreen = ScreensFolder and require(ScreensFolder:WaitForChild("RelationshipsScreen"))
-local ActivitiesScreen = ScreensFolder and require(ScreensFolder:WaitForChild("ActivitiesScreen"))
+local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 10)
+
+local OccupationScreen = nil
+local AssetsScreen = nil
+local RelationshipsScreen = nil
+local ActivitiesScreen = nil
+
+if ScreensFolder then
+	local success1, result1 = pcall(function()
+		return require(ScreensFolder:WaitForChild("OccupationScreen", 5))
+	end)
+	if success1 then OccupationScreen = result1 end
+	
+	local success2, result2 = pcall(function()
+		return require(ScreensFolder:WaitForChild("AssetsScreen", 5))
+	end)
+	if success2 then AssetsScreen = result2 end
+	
+	local success3, result3 = pcall(function()
+		return require(ScreensFolder:WaitForChild("RelationshipsScreen", 5))
+	end)
+	if success3 then RelationshipsScreen = result3 end
+	
+	local success4, result4 = pcall(function()
+		return require(ScreensFolder:WaitForChild("ActivitiesScreen", 5))
+	end)
+	if success4 then ActivitiesScreen = result4 end
+end
 
 ----------------------------------------------------------------
 -- REMOTES
@@ -1421,23 +1444,35 @@ ageButton.MouseLeave:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- INITIALIZE SCREEN MODULES
+-- INITIALIZE SCREEN MODULES (with error handling)
 ----------------------------------------------------------------
 
-if OccupationScreen then
-	occupationScreenInstance = OccupationScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+if OccupationScreen and OccupationScreen.new then
+	local success, instance = pcall(function()
+		return OccupationScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+	end)
+	if success then occupationScreenInstance = instance end
 end
 
-if AssetsScreen then
-	assetsScreenInstance = AssetsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+if AssetsScreen and AssetsScreen.new then
+	local success, instance = pcall(function()
+		return AssetsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+	end)
+	if success then assetsScreenInstance = instance end
 end
 
-if RelationshipsScreen then
-	relationshipsScreenInstance = RelationshipsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+if RelationshipsScreen and RelationshipsScreen.new then
+	local success, instance = pcall(function()
+		return RelationshipsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+	end)
+	if success then relationshipsScreenInstance = instance end
 end
 
-if ActivitiesScreen then
-	activitiesScreenInstance = ActivitiesScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+if ActivitiesScreen and ActivitiesScreen.new then
+	local success, instance = pcall(function()
+		return ActivitiesScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+	end)
+	if success then activitiesScreenInstance = instance end
 end
 
 ----------------------------------------------------------------
