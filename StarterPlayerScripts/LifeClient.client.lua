@@ -11,7 +11,9 @@ local player = Players.LocalPlayer
 -- REMOTES
 ----------------------------------------------------------------
 
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes")
+local REMOTES_FOLDER_NAME = "Life"
+
+local remotesFolder = ReplicatedStorage:WaitForChild(REMOTES_FOLDER_NAME)
 local RequestAgeUp  = remotesFolder:WaitForChild("RequestAgeUp")
 local PresentEvent  = remotesFolder:WaitForChild("PresentEvent")
 local SubmitChoice  = remotesFolder:WaitForChild("SubmitChoice")

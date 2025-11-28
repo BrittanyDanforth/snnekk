@@ -12,10 +12,12 @@ local EventRunner = require(ReplicatedStorage:WaitForChild("EventRunner"))
 -- REMOTES
 ----------------------------------------------------------------
 
-local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes")
+local REMOTES_FOLDER_NAME = "Life"
+
+local remotesFolder = ReplicatedStorage:FindFirstChild(REMOTES_FOLDER_NAME)
 if not remotesFolder then
 	remotesFolder = Instance.new("Folder")
-	remotesFolder.Name = "LifeRemotes"
+	remotesFolder.Name = REMOTES_FOLDER_NAME
 	remotesFolder.Parent = ReplicatedStorage
 end
 
