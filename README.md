@@ -1,167 +1,263 @@
 # BitLife-Style Roblox Life Simulator
 
-A comprehensive BitLife-style life simulation game built in Roblox with a fully interactive UI system.
+A comprehensive BitLife-style life simulation game with **server-validated** actions. No more 4-year-olds going to law school or broke babies buying mansions!
+
+## 🚀 SETUP INSTRUCTIONS
+
+### Step 1: Create the Remotes Folder
+
+In Roblox Studio, you need to create a folder with all the remotes. You can do this manually OR use the setup script below.
+
+**Option A: Run Setup Script (Recommended)**
+
+Create a **Script** in ServerScriptService with this code, run once, then delete:
+
+```lua
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local folder = ReplicatedStorage:FindFirstChild("LifeRemotes")
+if not folder then
+    folder = Instance.new("Folder")
+    folder.Name = "LifeRemotes"
+    folder.Parent = ReplicatedStorage
+end
+
+-- Remote Events (one-way client→server)
+local events = {
+    "RequestAgeUp", "PresentEvent", "SubmitChoice", 
+    "SyncState", "SetLifeInfo", "QuitJob"
+}
+
+-- Remote Functions (request→response)
+local functions = {
+    "ApplyForJob", "DoWork", "EnrollEducation", "DoFreelance", "TrySpecialCareer",
+    "BuyProperty", "BuyVehicle", "BuyItem", "BuyCrypto", "SellAsset",
+    "InteractPerson", "GiveMoney",
+    "DoActivity", "CommitCrime", "Gamble"
+}
+
+for _, name in ipairs(events) do
+    if not folder:FindFirstChild(name) then
+        local r = Instance.new("RemoteEvent")
+        r.Name = name
+        r.Parent = folder
+    end
+end
+
+for _, name in ipairs(functions) do
+    if not folder:FindFirstChild(name) then
+        local r = Instance.new("RemoteFunction")
+        r.Name = name
+        r.Parent = folder
+    end
+end
+
+print("✅ All LifeRemotes created! You can delete this script now.")
+```
+
+**Option B: Create Manually**
+
+Create this structure in ReplicatedStorage:
+```
+ReplicatedStorage/
+└── LifeRemotes/           (Folder)
+    ├── RequestAgeUp       (RemoteEvent)
+    ├── PresentEvent       (RemoteEvent)
+    ├── SubmitChoice       (RemoteEvent)
+    ├── SyncState          (RemoteEvent)
+    ├── SetLifeInfo        (RemoteEvent)
+    ├── QuitJob            (RemoteEvent)
+    ├── ApplyForJob        (RemoteFunction)
+    ├── DoWork             (RemoteFunction)
+    ├── EnrollEducation    (RemoteFunction)
+    ├── DoFreelance        (RemoteFunction)
+    ├── TrySpecialCareer   (RemoteFunction)
+    ├── BuyProperty        (RemoteFunction)
+    ├── BuyVehicle         (RemoteFunction)
+    ├── BuyItem            (RemoteFunction)
+    ├── BuyCrypto          (RemoteFunction)
+    ├── SellAsset          (RemoteFunction)
+    ├── InteractPerson     (RemoteFunction)
+    ├── GiveMoney          (RemoteFunction)
+    ├── DoActivity         (RemoteFunction)
+    ├── CommitCrime        (RemoteFunction)
+    └── Gamble             (RemoteFunction)
+```
+
+### Step 2: Place the Scripts
+
+Copy these files to the correct locations:
+
+| File | Location in Roblox |
+|------|-------------------|
+| `LifeClient.client.lua` | StarterPlayer → StarterPlayerScripts |
+| `LifeManager.server.lua` | ServerScriptService |
+| `LifeRemoteHandlers.server.lua` | ServerScriptService |
+| `EventLibrary.lua` | ReplicatedStorage |
+| `EventRunner.lua` | ReplicatedStorage |
+| `LifeState.lua` | ReplicatedStorage |
+| `OccupationScreen.lua` | ReplicatedStorage → Screens |
+| `AssetsScreen.lua` | ReplicatedStorage → Screens |
+| `RelationshipsScreen.lua` | ReplicatedStorage → Screens |
+| `ActivitiesScreen.lua` | ReplicatedStorage → Screens |
+
+### Step 3: Create the Screens Folder
+
+In ReplicatedStorage, create a **Folder** called `Screens` and place all 4 screen modules inside it.
+
+---
 
 ## 🎮 Features
 
-### Main Game UI
-- **Gender Selection Screen** - Choose male or female with big colorful pill buttons
-- **Name Selection Screen** - Pick from three randomly generated characters with colored bars
-- **Tutorial Overlay** - Shows players how to use the Age button
-- **Life Feed** - Scrolling feed showing life events by age
-- **Stats Panel** - Happiness, Health, Smarts, Looks with animated bars and "Boost!" buttons
-- **Navigation Bar** - Quick access to all game screens
-- **Age Button** - Central green button to progress through life
+### Server-Validated Actions
 
-### Event System
-- **Dynamic Event Modals** - Relationship events with avatars, relationship banners
-- **Choice System** - Multiple choice buttons for life decisions
-- **"Surprise Me!" Option** - Random choice selection
+Every action now checks:
+- ✅ **Age requirements** - Can't go to nightclub at age 5
+- ✅ **Money requirements** - Can't buy a mansion with $0
+- ✅ **Education requirements** - Can't be a doctor without medical school
+- ✅ **Experience requirements** - Can't be senior developer on day 1
 
-## 📱 Screen Modules (Fully Interactive!)
+### Occupation Screen (💼)
+| Action | Age Req | Other Requirements |
+|--------|---------|-------------------|
+| Fast Food Worker | 14+ | None |
+| Retail Associate | 16+ | None |
+| Receptionist | 18+ | High School |
+| Software Developer | 22+ | Bachelor's + 2yr exp |
+| Doctor | 30+ | Medical School + 8yr exp |
+| Lawyer | 28+ | Law School + 5yr exp |
 
-### 💼 Occupation Screen
-- **Current Job Display** - Shows your job title, company, and salary
-- **Job Listings** - Apply for various positions from Fast Food Worker to Doctor
-  - Each job shows requirements (education, experience)
-  - Application modal with confirmation
-  - Random acceptance based on qualifications
-- **Education** - Enroll in programs from High School to PhD
-  - Shows duration, cost, and requirements
-  - Enrollment confirmation modal
-- **Freelance & Gig Work** - Quick money opportunities
-  - Instant results with random pay
-  - No requirements
-- **Special Careers** - Unique paths like Actor, Athlete, Entrepreneur
-  - Risk/reward system
-  - Stat requirements
+**Education**
+| Program | Age | Cost | Prerequisite |
+|---------|-----|------|-------------|
+| High School | 14-18 | FREE | None |
+| Community College | 18+ | $15K | High School |
+| Bachelor's | 18+ | $80K | High School |
+| Medical School | 22-45 | $200K | Bachelor's |
+| Law School | 22-50 | $150K | Bachelor's |
 
-### 💰 Assets Screen
-- **Net Worth Display** - Shows total cash and assets
-- **Property Market** - Buy real estate
-  - Properties from Studio Apartments to Mansions
-  - Shows bedrooms, square footage, location
-  - Purchase confirmation with affordability check
-- **Vehicle Dealership** - Buy vehicles
-  - Cars, boats, aircraft
-  - Year, type, speed details
-- **Shopping** - Buy items (jewelry, electronics, fashion)
-- **Crypto Exchange** - Buy cryptocurrency with price changes
+**Freelance Gigs**
+| Gig | Age Req | Pay Range |
+|-----|---------|-----------|
+| Walk Dogs | 10+ | $20-50 |
+| Babysit | 12+ | $50-120 |
+| Food Delivery | 16+ | $30-80 |
+| Drive Rideshare | 21+ | $50-150 |
 
-### ❤️ Relationships Screen
-- **Family Section** - Interact with family members
-- **Friends Section** - Manage friendships
-- **Enemies Section** - Handle conflicts
-- **Interaction System** - Click any person to see options:
-  - **Compliment** - Increase relationship
-  - **Insult** - Risk damaging relationship
-  - **Give Gift** - Costs money, high reward
-  - **Spend Time** - Quality time together
-  - **Argue** - Risk conflict
-  - **Apologize** - Repair relationships
-  - **Ask for Money** - Get cash from family
-  - **Conversation** - Safe relationship building
-- **Outcome System** - Random positive/negative results with stat changes
+### Assets Screen (💰)
+| Asset Type | Min Age | Examples |
+|------------|---------|----------|
+| Sneakers | 10+ | $350 |
+| Used Car | 16+ | $8,000 |
+| Condo | 18+ | $175,000 |
+| Crypto | 18+ | Varies |
+| Luxury Car | 21+ | $180,000+ |
+| Yacht/Jet | 25+ | $2M-$15M |
 
-### 🎭 Activities Screen
-- **Mind & Body** - Self-improvement activities
-  - Read, Study, Meditate, Gym, Run, Yoga
-  - Spa Day, Salon Visit (cost money)
-  - Shows stat effects
-- **Social** - Social activities
-  - Parties, Nightclub, Hang Out
-  - Host a Party (costs money)
-- **Entertainment** - Fun activities
-  - TV, Video Games, Movies
-  - Concert, Vacation (expensive)
-  - Casino (gambling - win or lose!)
-- **Crime** - Risky illegal activities
-  - Shoplift, Pickpocket, Burglary
-  - Grand Theft Auto, Bank Robbery
-  - Shows risk %, potential reward, jail time
-  - Get caught or get away!
+### Relationships Screen (❤️)
+| Action | Age Req | Cost | Notes |
+|--------|---------|------|-------|
+| Spend Time | 2+ | FREE | Safe option |
+| Conversation | 3+ | FREE | Build relationship |
+| Compliment | 3+ | FREE | 70% success |
+| Apologize | 4+ | FREE | Repair relationships |
+| Gift | 5+ | $50 | High success rate |
+| Insult | 5+ | FREE | 20% success, high damage |
+| Ask Money | 5+ | FREE | Family only |
 
-## 🛠️ Technical Details
+### Activities Screen (🎭)
+| Activity | Age Req | Cost | Notes |
+|----------|---------|------|-------|
+| Watch TV | 2+ | FREE | +Happiness |
+| Hang Out | 5+ | FREE | Social |
+| Go to Movies | 5+ | $20 | Entertainment |
+| Go to Gym | 14+ | FREE | +Health/Looks |
+| Go to Party | 14+ | FREE | Social |
+| Spa Day | 16+ | $200 | +Looks |
+| Nightclub | 21+ | $50 | Adults only! |
+| Casino | 21+ | $100 | Gambling |
 
-### File Structure
+**Crime** (Server validates age!)
+| Crime | Age | Risk | Reward |
+|-------|-----|------|--------|
+| Shoplift | 8+ | 25% | $20-150 |
+| Pickpocket | 10+ | 35% | $30-300 |
+| Burglary | 16+ | 50% | $500-5K |
+| Grand Theft Auto | 16+ | 60% | $2K-20K |
+| Bank Robbery | 18+ | 80% | $10K-500K |
+
+---
+
+## 📁 File Structure
+
 ```
-ReplicatedStorage/
-├── EventLibrary.lua      - Event definitions
-├── EventRunner.lua       - Event processing
-├── LifeState.lua         - State management
-└── Screens/
-    ├── OccupationScreen.lua   - Jobs, education, freelance
-    ├── AssetsScreen.lua       - Properties, vehicles, shopping
-    ├── RelationshipsScreen.lua - Family, friends, enemies
-    └── ActivitiesScreen.lua   - Activities and crime
-
 ServerScriptService/
-└── LifeManager.server.lua - Server-side game logic
+├── LifeManager.server.lua        # Main game logic
+└── LifeRemoteHandlers.server.lua # NEW! Handles all screen remotes
+
+ReplicatedStorage/
+├── EventLibrary.lua              # Life event definitions
+├── EventRunner.lua               # Event processing
+├── LifeState.lua                 # State management
+├── LifeRemotes/                  # Folder with all remotes
+│   ├── (RemoteEvents)
+│   └── (RemoteFunctions)
+└── Screens/
+    ├── OccupationScreen.lua      # Jobs, education, freelance
+    ├── AssetsScreen.lua          # Properties, vehicles, items
+    ├── RelationshipsScreen.lua   # Family, friends, enemies
+    └── ActivitiesScreen.lua      # Activities and crime
 
 StarterPlayerScripts/
-└── LifeClient.client.lua  - Main client UI (~1540 lines)
+└── LifeClient.client.lua         # Main client UI
 ```
 
-### Debug Logging
-The client now outputs detailed debug messages:
-```
-[LifeClient] Found Screens folder, loading modules...
-[LifeClient] ✅ OccupationScreen loaded
-[LifeClient] ✅ AssetsScreen loaded
-[LifeClient] ✅ RelationshipsScreen loaded
-[LifeClient] ✅ ActivitiesScreen loaded
-[LifeClient] Initializing screen instances...
-[LifeClient] ✅ OccupationScreen instance created
-[LifeClient] ✅ AssetsScreen instance created
-[LifeClient] ✅ RelationshipsScreen instance created
-[LifeClient] ✅ ActivitiesScreen instance created
-[LifeClient] Screen initialization complete!
-```
+---
 
-### UI Features
-- **Smooth Animations** - TweenService for all transitions
-- **Modal System** - Confirmation dialogs, result displays
-- **Hover Effects** - Interactive button feedback
-- **Auto-sizing** - Responsive layouts with UIListLayout
-- **Color Coding** - Category-based color schemes
+## 🔧 How It Works
 
-### Error Handling
-- All module loading wrapped in pcall
-- Graceful fallbacks if screens fail to load
-- Debug warnings for troubleshooting
+1. **Player opens a screen** (Occupation, Assets, etc.)
+2. **Screen shows current player age/money** from shared state
+3. **Player clicks an action** (Apply, Buy, etc.)
+4. **Client calls RemoteFunction** with action ID
+5. **Server validates:**
+   - Is player old enough?
+   - Does player have enough money?
+   - Does player meet requirements?
+6. **Server returns result** (success/fail + message)
+7. **Client shows result modal** with outcome
 
-## 🎨 Design System
+---
 
-### Colors
-- **BitLife Blue** - Primary actions (#2563EB)
-- **Success Green** - Positive outcomes (#22C55E)
-- **Error Red** - Negative outcomes (#EF4444)
-- **Gold** - Special items (#EAB308)
-- **Category Colors** - Each screen has its own palette
+## 🎯 Quick Start Guide
 
-### Typography
-- **GothamBold** - Titles and buttons
-- **GothamMedium** - Emphasis text
-- **Gotham** - Body text
+1. Pick gender (Male/Female)
+2. Pick a character name
+3. Press **Age** to grow older
+4. Open screens using nav buttons:
+   - 💼 Get jobs, education
+   - 💰 Buy stuff (when you have money!)
+   - ❤️ Build relationships
+   - 🎭 Do activities (age-appropriate!)
+5. Make choices when events pop up
+6. Live your best (or worst) life!
 
-## 🎯 How to Play
+---
 
-1. **Start** - Pick your gender (Male/Female)
-2. **Name** - Choose from three random characters
-3. **Age Up** - Press the green Age button to grow older
-4. **Events** - Make choices when life events occur
-5. **Manage Life** - Use the four screen tabs:
-   - 💼 Get a job, education, or freelance
-   - 💰 Buy properties, cars, and items
-   - ❤️ Build relationships with people
-   - 🎭 Do activities (legal and illegal!)
+## ⚠️ Common Issues
 
-## 📝 Notes
+**"Server not available" error**
+- Make sure the LifeRemotes folder exists
+- Make sure LifeRemoteHandlers.server.lua is in ServerScriptService
+- Run the setup script to create missing remotes
 
-- All interactions have visual feedback (modals, toasts)
-- Crime activities can result in jail time
-- Relationships affect gameplay outcomes
-- Money management is key to success
+**Screens not showing age/money**
+- The playerState needs to be synced from server
+- Check that SyncState remote is firing properly
+
+**Actions always fail validation**
+- Make sure you've aged up your character
+- Check that money is being tracked
 
 ---
 

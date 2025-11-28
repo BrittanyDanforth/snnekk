@@ -44,9 +44,23 @@ local SetLifeInfo = getRemote("SetLifeInfo")
 
 local playerLives = {}  -- [Player] = LifeStateType
 
+-- Expose state getter for LifeRemoteHandlers integration
+_G.GetPlayerLife = function(player)
+	return playerLives[player]
+end
+
+-- Expose state push function for LifeRemoteHandlers
+_G.PushPlayerState = function(player, lastFeedText)
+	local state = playerLives[player]
+	if state then
+		SyncState:FireClient(player, serializeState(state), lastFeedText)
+	end
+end
+
 local function serializeState(state)
 	state:ClampStats()
 
+	-- Flatten stats for easier client access
 	return {
 		PlayerId = state.PlayerId,
 		Name = state.Name,
@@ -54,6 +68,12 @@ local function serializeState(state)
 		Age = state.Age,
 		Year = state.Year,
 		Money = state.Money,
+		-- Flattened stats for screen modules
+		Happiness = state.Stats.Happiness,
+		Health = state.Stats.Health,
+		Looks = state.Stats.Looks,
+		Smarts = state.Stats.Smarts,
+		-- Also include nested for compatibility
 		Stats = state.Stats,
 	}
 end
@@ -153,6 +173,11 @@ local function ageUp(player)
 	end
 
 	state:AddFeed(ageText)
+	
+	-- Reduce jail time if in jail (integration with LifeRemoteHandlers)
+	if _G.ReduceJailTime then
+		_G.ReduceJailTime(player, 1)
+	end
 
 	-- decide if a life event should fire
 	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)

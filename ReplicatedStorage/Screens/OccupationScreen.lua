@@ -1,11 +1,24 @@
 -- OccupationScreen.lua
--- BitLife-style Occupation screen with FULL INTERACTIVITY
--- Apply for jobs, enroll in education, do freelance work
+-- BitLife-style Occupation screen with SERVER VALIDATION
+-- Uses remotes for all actions - no more 4 year old lawyers!
 
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local OccupationScreen = {}
 OccupationScreen.__index = OccupationScreen
+
+----------------------------------------------------------------
+-- REMOTES
+----------------------------------------------------------------
+
+local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
+local ApplyForJob = remotesFolder and remotesFolder:FindFirstChild("ApplyForJob")
+local DoWork = remotesFolder and remotesFolder:FindFirstChild("DoWork")
+local EnrollEducation = remotesFolder and remotesFolder:FindFirstChild("EnrollEducation")
+local DoFreelance = remotesFolder and remotesFolder:FindFirstChild("DoFreelance")
+local TrySpecialCareer = remotesFolder and remotesFolder:FindFirstChild("TrySpecialCareer")
+local QuitJob = remotesFolder and remotesFolder:FindFirstChild("QuitJob")
 
 ----------------------------------------------------------------
 -- COLORS
@@ -14,8 +27,6 @@ OccupationScreen.__index = OccupationScreen
 local Colors = {
 	BitLifeBlue      = Color3.fromRGB(37, 99, 235),
 	BitLifeBlueDark  = Color3.fromRGB(29, 78, 216),
-	BitLifeBlueLight = Color3.fromRGB(96, 165, 250),
-	
 	JobOrange        = Color3.fromRGB(249, 115, 22),
 	JobOrangeDark    = Color3.fromRGB(234, 88, 12),
 	EducationPurple  = Color3.fromRGB(139, 92, 246),
@@ -23,10 +34,8 @@ local Colors = {
 	FreelanceGreen   = Color3.fromRGB(16, 185, 129),
 	FreelanceGreenDark = Color3.fromRGB(5, 150, 105),
 	SpecialGold      = Color3.fromRGB(234, 179, 8),
-	
 	SuccessGreen     = Color3.fromRGB(34, 197, 94),
 	ErrorRed         = Color3.fromRGB(239, 68, 68),
-	
 	White            = Color3.fromRGB(255, 255, 255),
 	CardWhite        = Color3.fromRGB(255, 255, 255),
 	LightGray        = Color3.fromRGB(243, 244, 246),
@@ -46,61 +55,50 @@ local Fonts = {
 }
 
 ----------------------------------------------------------------
--- JOB DATA
+-- DATA WITH AGE REQUIREMENTS
 ----------------------------------------------------------------
 
 local JobListings = {
-	{ title = "Fast Food Worker", emoji = "🍔", company = "Burger Palace", salary = 22000, education = "None", exp = 0, acceptance = 95 },
-	{ title = "Retail Associate", emoji = "🛒", company = "MegaMart", salary = 26000, education = "None", exp = 0, acceptance = 90 },
-	{ title = "Janitor", emoji = "🧹", company = "CleanCo Services", salary = 28000, education = "None", exp = 0, acceptance = 92 },
-	{ title = "Receptionist", emoji = "📞", company = "Corporate Office", salary = 32000, education = "High School", exp = 0, acceptance = 80 },
-	{ title = "Office Assistant", emoji = "📎", company = "Business Solutions", salary = 35000, education = "High School", exp = 1, acceptance = 75 },
-	{ title = "Junior Accountant", emoji = "📊", company = "Financial Services", salary = 48000, education = "Bachelor's", exp = 1, acceptance = 60 },
-	{ title = "Marketing Associate", emoji = "📢", company = "AdVenture Agency", salary = 52000, education = "Bachelor's", exp = 2, acceptance = 55 },
-	{ title = "Software Developer", emoji = "💻", company = "TechStart Inc", salary = 85000, education = "Bachelor's", exp = 2, acceptance = 45 },
-	{ title = "Senior Developer", emoji = "👨‍💻", company = "BigTech Corp", salary = 140000, education = "Bachelor's", exp = 5, acceptance = 30 },
-	{ title = "Doctor", emoji = "🩺", company = "City Hospital", salary = 250000, education = "Medical School", exp = 8, acceptance = 15 },
-	{ title = "Lawyer", emoji = "⚖️", company = "Smith & Associates", salary = 180000, education = "Law School", exp = 5, acceptance = 25 },
+	{ id = "fastfood", title = "Fast Food Worker", emoji = "🍔", company = "Burger Palace", salary = 22000, education = "None", minAge = 14, exp = 0 },
+	{ id = "retail", title = "Retail Associate", emoji = "🛒", company = "MegaMart", salary = 26000, education = "None", minAge = 16, exp = 0 },
+	{ id = "janitor", title = "Janitor", emoji = "🧹", company = "CleanCo", salary = 28000, education = "None", minAge = 18, exp = 0 },
+	{ id = "receptionist", title = "Receptionist", emoji = "📞", company = "Corp Office", salary = 32000, education = "High School", minAge = 18, exp = 0 },
+	{ id = "office", title = "Office Assistant", emoji = "📎", company = "Business Solutions", salary = 35000, education = "High School", minAge = 18, exp = 1 },
+	{ id = "accountant_jr", title = "Jr. Accountant", emoji = "📊", company = "Financial Svcs", salary = 48000, education = "Bachelor's", minAge = 22, exp = 1 },
+	{ id = "marketing", title = "Marketing Associate", emoji = "📢", company = "AdVenture", salary = 52000, education = "Bachelor's", minAge = 22, exp = 2 },
+	{ id = "developer", title = "Software Developer", emoji = "💻", company = "TechStart", salary = 85000, education = "Bachelor's", minAge = 22, exp = 2 },
+	{ id = "senior_dev", title = "Senior Developer", emoji = "👨‍💻", company = "BigTech", salary = 140000, education = "Bachelor's", minAge = 26, exp = 5 },
+	{ id = "doctor", title = "Doctor", emoji = "🩺", company = "City Hospital", salary = 250000, education = "Medical School", minAge = 30, exp = 8 },
+	{ id = "lawyer", title = "Lawyer", emoji = "⚖️", company = "Smith & Co", salary = 180000, education = "Law School", minAge = 28, exp = 5 },
 }
 
 local EducationOptions = {
-	{ name = "High School Diploma", emoji = "🎓", duration = "4 years", cost = 0, requirement = "None", type = "highschool" },
-	{ name = "Community College", emoji = "📚", duration = "2 years", cost = 15000, requirement = "High School", type = "community" },
-	{ name = "Bachelor's Degree", emoji = "🎓", duration = "4 years", cost = 80000, requirement = "High School", type = "bachelor" },
-	{ name = "Master's Degree", emoji = "📜", duration = "2 years", cost = 60000, requirement = "Bachelor's", type = "master" },
-	{ name = "Medical School", emoji = "🏥", duration = "4 years", cost = 200000, requirement = "Bachelor's", type = "medical" },
-	{ name = "Law School", emoji = "⚖️", duration = "3 years", cost = 150000, requirement = "Bachelor's", type = "law" },
-	{ name = "PhD Program", emoji = "🔬", duration = "5 years", cost = 100000, requirement = "Master's", type = "phd" },
+	{ id = "highschool", name = "High School Diploma", emoji = "🎓", duration = "4 years", cost = 0, minAge = 14, maxAge = 18, requirement = "None" },
+	{ id = "community", name = "Community College", emoji = "📚", duration = "2 years", cost = 15000, minAge = 18, maxAge = 99, requirement = "High School" },
+	{ id = "bachelor", name = "Bachelor's Degree", emoji = "🎓", duration = "4 years", cost = 80000, minAge = 18, maxAge = 99, requirement = "High School" },
+	{ id = "master", name = "Master's Degree", emoji = "📜", duration = "2 years", cost = 60000, minAge = 22, maxAge = 99, requirement = "Bachelor's" },
+	{ id = "medical", name = "Medical School", emoji = "🏥", duration = "4 years", cost = 200000, minAge = 22, maxAge = 45, requirement = "Bachelor's" },
+	{ id = "law", name = "Law School", emoji = "⚖️", duration = "3 years", cost = 150000, minAge = 22, maxAge = 50, requirement = "Bachelor's" },
+	{ id = "phd", name = "PhD Program", emoji = "🔬", duration = "5 years", cost = 100000, minAge = 24, maxAge = 99, requirement = "Master's" },
 }
 
 local FreelanceGigs = {
-	{ name = "Deliver Food", emoji = "🚴", pay = { 30, 80 }, time = "1-2 hours" },
-	{ name = "Walk Dogs", emoji = "🐕", pay = { 20, 50 }, time = "1 hour" },
-	{ name = "Babysit", emoji = "👶", pay = { 50, 120 }, time = "3-4 hours" },
-	{ name = "Mow Lawns", emoji = "🌿", pay = { 40, 100 }, time = "2 hours" },
-	{ name = "Tutor Students", emoji = "📖", pay = { 30, 75 }, time = "1-2 hours" },
-	{ name = "Drive Rideshare", emoji = "🚗", pay = { 50, 150 }, time = "2-4 hours" },
-	{ name = "Freelance Writing", emoji = "✍️", pay = { 100, 500 }, time = "Varies" },
-	{ name = "Graphic Design", emoji = "🎨", pay = { 150, 800 }, time = "Varies" },
+	{ id = "dog_walking", name = "Walk Dogs", emoji = "🐕", payRange = "$20-50", minAge = 10 },
+	{ id = "mow_lawns", name = "Mow Lawns", emoji = "🌿", payRange = "$40-100", minAge = 10 },
+	{ id = "babysit", name = "Babysit", emoji = "👶", payRange = "$50-120", minAge = 12 },
+	{ id = "tutor", name = "Tutor Students", emoji = "📖", payRange = "$30-75", minAge = 14 },
+	{ id = "food_delivery", name = "Deliver Food", emoji = "🚴", payRange = "$30-80", minAge = 16 },
+	{ id = "writing", name = "Freelance Writing", emoji = "✍️", payRange = "$100-500", minAge = 16 },
+	{ id = "design", name = "Graphic Design", emoji = "🎨", payRange = "$150-800", minAge = 16 },
+	{ id = "rideshare", name = "Drive Rideshare", emoji = "🚗", payRange = "$50-150", minAge = 21 },
 }
 
 local SpecialCareers = {
-	{ name = "Start a Business", emoji = "🏢", description = "Become an entrepreneur", requirement = "$10,000 startup" },
-	{ name = "Become an Actor", emoji = "🎭", description = "Try your luck in Hollywood", requirement = "Looks 70+" },
-	{ name = "Professional Athlete", emoji = "⚽", description = "Go pro in sports", requirement = "Health 80+" },
-	{ name = "Music Career", emoji = "🎤", description = "Become a musician", requirement = "Smarts 50+" },
-	{ name = "Social Media Star", emoji = "📱", description = "Become an influencer", requirement = "Looks 60+" },
-}
-
-----------------------------------------------------------------
--- PLAYER STATE (simulated)
-----------------------------------------------------------------
-
-local PlayerJob = {
-	hasJob = false,
-	currentJob = nil,
-	education = "High School",
-	experience = 0,
+	{ id = "business", name = "Start a Business", emoji = "🏢", description = "Become an entrepreneur", minAge = 18 },
+	{ id = "actor", name = "Become an Actor", emoji = "🎭", description = "Hollywood dreams", minAge = 16 },
+	{ id = "athlete", name = "Pro Athlete", emoji = "⚽", description = "Go pro in sports", minAge = 18 },
+	{ id = "musician", name = "Music Career", emoji = "🎤", description = "Become a musician", minAge = 14 },
+	{ id = "influencer", name = "Social Media Star", emoji = "📱", description = "Become an influencer", minAge = 13 },
 }
 
 ----------------------------------------------------------------
@@ -148,35 +146,16 @@ local function tween(obj, info, props)
 end
 
 local function formatSalary(amount)
-	local str = tostring(amount)
-	local formatted = ""
-	local count = 0
-	for i = #str, 1, -1 do
-		count = count + 1
-		formatted = str:sub(i, i) .. formatted
-		if count % 3 == 0 and i > 1 then
-			formatted = "," .. formatted
-		end
-	end
-	return "$" .. formatted .. "/yr"
+	return "$" .. string.format("%d", amount / 1000) .. "K/yr"
 end
 
 local function formatMoney(amount)
-	local str = tostring(math.floor(amount))
-	local formatted = ""
-	local count = 0
-	for i = #str, 1, -1 do
-		count = count + 1
-		formatted = str:sub(i, i) .. formatted
-		if count % 3 == 0 and i > 1 then
-			formatted = "," .. formatted
-		end
-	end
-	return "$" .. formatted
+	if amount >= 1000 then return "$" .. string.format("%.0fK", amount / 1000) end
+	return "$" .. amount
 end
 
 ----------------------------------------------------------------
--- SCREEN CREATION
+-- SCREEN
 ----------------------------------------------------------------
 
 function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
@@ -187,10 +166,22 @@ function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	self.isVisible = false
 	
 	self:createUI()
-	self:createApplicationModal()
+	self:createConfirmModal()
 	self:createResultModal()
 	
 	return self
+end
+
+function OccupationScreen:getPlayerAge()
+	return self.playerState and self.playerState.Age or 0
+end
+
+function OccupationScreen:getPlayerMoney()
+	return self.playerState and self.playerState.Money or 0
+end
+
+function OccupationScreen:getPlayerEducation()
+	return self.playerState and self.playerState.Education or "None"
 end
 
 function OccupationScreen:createUI()
@@ -246,90 +237,30 @@ function OccupationScreen:createUI()
 	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.15), { BackgroundTransparency = 0.9 }) end)
 	closeBtn.MouseButton1Click:Connect(function() self:hide() end)
 	
-	-- Current Job Card
-	local currentJobCard = Instance.new("Frame")
-	currentJobCard.Size = UDim2.new(1, -32, 0, 90)
-	currentJobCard.Position = UDim2.new(0, 16, 0, 70)
-	currentJobCard.BackgroundColor3 = Colors.CardWhite
-	currentJobCard.ZIndex = 82
-	currentJobCard.Parent = self.overlay
-	createUICorner(currentJobCard, 16)
-	createUIStroke(currentJobCard, 2, 0.7, Colors.BitLifeBlue)
+	-- Player Info Bar
+	local infoBar = Instance.new("Frame")
+	infoBar.Size = UDim2.new(1, -32, 0, 50)
+	infoBar.Position = UDim2.new(0, 16, 0, 70)
+	infoBar.BackgroundColor3 = Colors.CardWhite
+	infoBar.ZIndex = 82
+	infoBar.Parent = self.overlay
+	createUICorner(infoBar, 12)
+	createUIStroke(infoBar, 1, 0.8, Colors.MediumGray)
 	
-	local jobIcon = Instance.new("TextLabel")
-	jobIcon.Size = UDim2.new(0, 50, 0, 50)
-	jobIcon.Position = UDim2.new(0, 16, 0.5, -25)
-	jobIcon.BackgroundTransparency = 1
-	jobIcon.Font = Fonts.Body
-	jobIcon.TextSize = 36
-	jobIcon.Text = "😴"
-	jobIcon.ZIndex = 83
-	jobIcon.Parent = currentJobCard
-	self.jobIcon = jobIcon
+	self.infoLabel = Instance.new("TextLabel")
+	self.infoLabel.Size = UDim2.fromScale(1, 1)
+	self.infoLabel.BackgroundTransparency = 1
+	self.infoLabel.Font = Fonts.Body
+	self.infoLabel.TextSize = 13
+	self.infoLabel.TextColor3 = Colors.DarkGray
+	self.infoLabel.Text = "Loading..."
+	self.infoLabel.ZIndex = 83
+	self.infoLabel.Parent = infoBar
 	
-	local jobTitle = Instance.new("TextLabel")
-	jobTitle.Size = UDim2.new(0.6, 0, 0, 24)
-	jobTitle.Position = UDim2.new(0, 76, 0, 16)
-	jobTitle.BackgroundTransparency = 1
-	jobTitle.Font = Fonts.Title
-	jobTitle.TextSize = 16
-	jobTitle.TextColor3 = Colors.TextBlack
-	jobTitle.TextXAlignment = Enum.TextXAlignment.Left
-	jobTitle.Text = "Unemployed"
-	jobTitle.ZIndex = 83
-	jobTitle.Parent = currentJobCard
-	self.jobTitle = jobTitle
-	
-	local jobCompany = Instance.new("TextLabel")
-	jobCompany.Size = UDim2.new(0.6, 0, 0, 18)
-	jobCompany.Position = UDim2.new(0, 76, 0, 40)
-	jobCompany.BackgroundTransparency = 1
-	jobCompany.Font = Fonts.Body
-	jobCompany.TextSize = 13
-	jobCompany.TextColor3 = Colors.MediumGray
-	jobCompany.TextXAlignment = Enum.TextXAlignment.Left
-	jobCompany.Text = "Looking for work..."
-	jobCompany.ZIndex = 83
-	jobCompany.Parent = currentJobCard
-	self.jobCompany = jobCompany
-	
-	local jobSalary = Instance.new("TextLabel")
-	jobSalary.Size = UDim2.new(0.6, 0, 0, 20)
-	jobSalary.Position = UDim2.new(0, 76, 0, 60)
-	jobSalary.BackgroundTransparency = 1
-	jobSalary.Font = Fonts.Title
-	jobSalary.TextSize = 14
-	jobSalary.TextColor3 = Colors.SuccessGreen
-	jobSalary.TextXAlignment = Enum.TextXAlignment.Left
-	jobSalary.Text = "$0/yr"
-	jobSalary.ZIndex = 83
-	jobSalary.Parent = currentJobCard
-	self.jobSalary = jobSalary
-	
-	-- Work button (only visible when employed)
-	self.workBtn = Instance.new("TextButton")
-	self.workBtn.Size = UDim2.new(0, 70, 0, 36)
-	self.workBtn.AnchorPoint = Vector2.new(1, 0.5)
-	self.workBtn.Position = UDim2.new(1, -14, 0.5, 0)
-	self.workBtn.BackgroundColor3 = Colors.BitLifeBlue
-	self.workBtn.Font = Fonts.Button
-	self.workBtn.TextSize = 13
-	self.workBtn.TextColor3 = Colors.White
-	self.workBtn.Text = "Work"
-	self.workBtn.AutoButtonColor = false
-	self.workBtn.Visible = false
-	self.workBtn.ZIndex = 83
-	self.workBtn.Parent = currentJobCard
-	createPillCorner(self.workBtn)
-	
-	self.workBtn.MouseButton1Click:Connect(function()
-		self:doWork()
-	end)
-	
-	-- Content scroll
+	-- Content
 	local contentScroll = Instance.new("ScrollingFrame")
-	contentScroll.Size = UDim2.new(1, 0, 1, -170)
-	contentScroll.Position = UDim2.new(0, 0, 0, 170)
+	contentScroll.Size = UDim2.new(1, 0, 1, -130)
+	contentScroll.Position = UDim2.new(0, 0, 0, 130)
 	contentScroll.BackgroundTransparency = 1
 	contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -345,11 +276,17 @@ function OccupationScreen:createUI()
 	
 	self.contentScroll = contentScroll
 	
-	-- Create sections
 	self:createJobListingsSection(1)
 	self:createEducationSection(2)
 	self:createFreelanceSection(3)
-	self:createSpecialCareersSection(4)
+	self:createSpecialSection(4)
+end
+
+function OccupationScreen:updateInfoBar()
+	local age = self:getPlayerAge()
+	local money = self:getPlayerMoney()
+	local edu = self:getPlayerEducation()
+	self.infoLabel.Text = "📅 Age: " .. age .. " | 💰 Money: $" .. money .. " | 🎓 Education: " .. edu
 end
 
 function OccupationScreen:createJobListingsSection(order)
@@ -388,77 +325,71 @@ end
 
 function OccupationScreen:createJobCard(job, order, parent)
 	local card = Instance.new("Frame")
-	card.Name = "Job_" .. job.title:gsub(" ", "_")
-	card.Size = UDim2.new(1, 0, 0, 95)
+	card.Name = "Job_" .. job.id
+	card.Size = UDim2.new(1, 0, 0, 90)
 	card.BackgroundColor3 = Colors.CardWhite
 	card.LayoutOrder = order
 	card.Parent = parent
 	createUICorner(card, 14)
 	createUIStroke(card, 1, 0.85, Color3.fromRGB(229, 231, 235))
 	
-	local emojiCircle = Instance.new("Frame")
-	emojiCircle.Size = UDim2.new(0, 50, 0, 50)
-	emojiCircle.Position = UDim2.new(0, 14, 0.5, -25)
-	emojiCircle.BackgroundColor3 = Color3.fromRGB(255, 247, 237)
-	emojiCircle.Parent = card
-	createUICorner(emojiCircle, 25)
+	local emoji = Instance.new("TextLabel")
+	emoji.Size = UDim2.new(0, 40, 0, 40)
+	emoji.Position = UDim2.new(0, 12, 0.5, -20)
+	emoji.BackgroundTransparency = 1
+	emoji.Font = Fonts.Body
+	emoji.TextSize = 28
+	emoji.Text = job.emoji
+	emoji.Parent = card
 	
-	local emojiLabel = Instance.new("TextLabel")
-	emojiLabel.Size = UDim2.fromScale(1, 1)
-	emojiLabel.BackgroundTransparency = 1
-	emojiLabel.Font = Fonts.Body
-	emojiLabel.TextSize = 26
-	emojiLabel.Text = job.emoji
-	emojiLabel.Parent = emojiCircle
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(0.5, 0, 0, 18)
+	title.Position = UDim2.new(0, 58, 0, 10)
+	title.BackgroundTransparency = 1
+	title.Font = Fonts.Title
+	title.TextSize = 14
+	title.TextColor3 = Colors.TextBlack
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Text = job.title
+	title.Parent = card
 	
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(0.5, 0, 0, 20)
-	titleLabel.Position = UDim2.new(0, 74, 0, 10)
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Font = Fonts.Title
-	titleLabel.TextSize = 14
-	titleLabel.TextColor3 = Colors.TextBlack
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.Text = job.title
-	titleLabel.Parent = card
+	local company = Instance.new("TextLabel")
+	company.Size = UDim2.new(0.5, 0, 0, 14)
+	company.Position = UDim2.new(0, 58, 0, 28)
+	company.BackgroundTransparency = 1
+	company.Font = Fonts.Body
+	company.TextSize = 11
+	company.TextColor3 = Colors.MediumGray
+	company.TextXAlignment = Enum.TextXAlignment.Left
+	company.Text = "🏢 " .. job.company
+	company.Parent = card
 	
-	local companyLabel = Instance.new("TextLabel")
-	companyLabel.Size = UDim2.new(0.5, 0, 0, 14)
-	companyLabel.Position = UDim2.new(0, 74, 0, 30)
-	companyLabel.BackgroundTransparency = 1
-	companyLabel.Font = Fonts.Body
-	companyLabel.TextSize = 11
-	companyLabel.TextColor3 = Colors.MediumGray
-	companyLabel.TextXAlignment = Enum.TextXAlignment.Left
-	companyLabel.Text = "🏢 " .. job.company
-	companyLabel.Parent = card
+	local reqs = Instance.new("TextLabel")
+	reqs.Size = UDim2.new(0.6, 0, 0, 14)
+	reqs.Position = UDim2.new(0, 58, 0, 44)
+	reqs.BackgroundTransparency = 1
+	reqs.Font = Fonts.Body
+	reqs.TextSize = 10
+	reqs.TextColor3 = Colors.MediumGray
+	reqs.TextXAlignment = Enum.TextXAlignment.Left
+	reqs.Text = "📜 " .. job.education .. " | Age " .. job.minAge .. "+" .. (job.exp > 0 and (" | " .. job.exp .. "yr exp") or "")
+	reqs.Parent = card
 	
-	local reqLabel = Instance.new("TextLabel")
-	reqLabel.Size = UDim2.new(0.5, 0, 0, 14)
-	reqLabel.Position = UDim2.new(0, 74, 0, 46)
-	reqLabel.BackgroundTransparency = 1
-	reqLabel.Font = Fonts.Body
-	reqLabel.TextSize = 10
-	reqLabel.TextColor3 = Colors.MediumGray
-	reqLabel.TextXAlignment = Enum.TextXAlignment.Left
-	reqLabel.Text = "📜 " .. job.education .. (job.exp > 0 and (" • " .. job.exp .. " yr exp") or "")
-	reqLabel.Parent = card
-	
-	local salaryLabel = Instance.new("TextLabel")
-	salaryLabel.Size = UDim2.new(0.5, 0, 0, 18)
-	salaryLabel.Position = UDim2.new(0, 74, 0, 64)
-	salaryLabel.BackgroundTransparency = 1
-	salaryLabel.Font = Fonts.Title
-	salaryLabel.TextSize = 14
-	salaryLabel.TextColor3 = Colors.SuccessGreen
-	salaryLabel.TextXAlignment = Enum.TextXAlignment.Left
-	salaryLabel.Text = formatSalary(job.salary)
-	salaryLabel.Parent = card
+	local salary = Instance.new("TextLabel")
+	salary.Size = UDim2.new(0.5, 0, 0, 16)
+	salary.Position = UDim2.new(0, 58, 0, 62)
+	salary.BackgroundTransparency = 1
+	salary.Font = Fonts.Title
+	salary.TextSize = 13
+	salary.TextColor3 = Colors.SuccessGreen
+	salary.TextXAlignment = Enum.TextXAlignment.Left
+	salary.Text = formatSalary(job.salary)
+	salary.Parent = card
 	
 	local applyBtn = Instance.new("TextButton")
-	applyBtn.Size = UDim2.new(0, 65, 0, 36)
+	applyBtn.Size = UDim2.new(0, 60, 0, 32)
 	applyBtn.AnchorPoint = Vector2.new(1, 0.5)
-	applyBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	applyBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	applyBtn.BackgroundColor3 = Colors.JobOrange
 	applyBtn.Font = Fonts.Button
 	applyBtn.TextSize = 12
@@ -472,7 +403,7 @@ function OccupationScreen:createJobCard(job, order, parent)
 	applyBtn.MouseLeave:Connect(function() tween(applyBtn, TweenInfo.new(0.1), { BackgroundColor3 = Colors.JobOrange }) end)
 	
 	applyBtn.MouseButton1Click:Connect(function()
-		self:showApplicationModal(job, "job")
+		self:showConfirm("job", job)
 	end)
 end
 
@@ -512,69 +443,63 @@ end
 
 function OccupationScreen:createEducationCard(edu, order, parent)
 	local card = Instance.new("Frame")
-	card.Name = "Education_" .. edu.name:gsub(" ", "_")
-	card.Size = UDim2.new(1, 0, 0, 85)
+	card.Name = "Edu_" .. edu.id
+	card.Size = UDim2.new(1, 0, 0, 80)
 	card.BackgroundColor3 = Colors.CardWhite
 	card.LayoutOrder = order
 	card.Parent = parent
 	createUICorner(card, 14)
 	createUIStroke(card, 1, 0.85, Color3.fromRGB(229, 231, 235))
 	
-	local emojiCircle = Instance.new("Frame")
-	emojiCircle.Size = UDim2.new(0, 46, 0, 46)
-	emojiCircle.Position = UDim2.new(0, 14, 0.5, -23)
-	emojiCircle.BackgroundColor3 = Color3.fromRGB(245, 243, 255)
-	emojiCircle.Parent = card
-	createUICorner(emojiCircle, 23)
+	local emoji = Instance.new("TextLabel")
+	emoji.Size = UDim2.new(0, 40, 0, 40)
+	emoji.Position = UDim2.new(0, 12, 0.5, -20)
+	emoji.BackgroundTransparency = 1
+	emoji.Font = Fonts.Body
+	emoji.TextSize = 26
+	emoji.Text = edu.emoji
+	emoji.Parent = card
 	
-	local emojiLabel = Instance.new("TextLabel")
-	emojiLabel.Size = UDim2.fromScale(1, 1)
-	emojiLabel.BackgroundTransparency = 1
-	emojiLabel.Font = Fonts.Body
-	emojiLabel.TextSize = 24
-	emojiLabel.Text = edu.emoji
-	emojiLabel.Parent = emojiCircle
+	local name = Instance.new("TextLabel")
+	name.Size = UDim2.new(0.5, 0, 0, 18)
+	name.Position = UDim2.new(0, 58, 0, 12)
+	name.BackgroundTransparency = 1
+	name.Font = Fonts.Title
+	name.TextSize = 13
+	name.TextColor3 = Colors.TextBlack
+	name.TextXAlignment = Enum.TextXAlignment.Left
+	name.Text = edu.name
+	name.Parent = card
 	
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0.5, 0, 0, 20)
-	nameLabel.Position = UDim2.new(0, 70, 0, 12)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = Fonts.Title
-	nameLabel.TextSize = 14
-	nameLabel.TextColor3 = Colors.TextBlack
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Text = edu.name
-	nameLabel.Parent = card
+	local info = Instance.new("TextLabel")
+	info.Size = UDim2.new(0.6, 0, 0, 14)
+	info.Position = UDim2.new(0, 58, 0, 30)
+	info.BackgroundTransparency = 1
+	info.Font = Fonts.Body
+	info.TextSize = 10
+	info.TextColor3 = Colors.MediumGray
+	info.TextXAlignment = Enum.TextXAlignment.Left
+	info.Text = "⏱️ " .. edu.duration .. " | Age " .. edu.minAge .. "-" .. edu.maxAge .. " | Req: " .. edu.requirement
+	info.Parent = card
 	
-	local durationLabel = Instance.new("TextLabel")
-	durationLabel.Size = UDim2.new(0.5, 0, 0, 14)
-	durationLabel.Position = UDim2.new(0, 70, 0, 32)
-	durationLabel.BackgroundTransparency = 1
-	durationLabel.Font = Fonts.Body
-	durationLabel.TextSize = 11
-	durationLabel.TextColor3 = Colors.MediumGray
-	durationLabel.TextXAlignment = Enum.TextXAlignment.Left
-	durationLabel.Text = "⏱️ " .. edu.duration .. " • Req: " .. edu.requirement
-	durationLabel.Parent = card
-	
-	local costLabel = Instance.new("TextLabel")
-	costLabel.Size = UDim2.new(0.5, 0, 0, 16)
-	costLabel.Position = UDim2.new(0, 70, 0, 52)
-	costLabel.BackgroundTransparency = 1
-	costLabel.Font = Fonts.Title
-	costLabel.TextSize = 13
-	costLabel.TextColor3 = edu.cost > 0 and Colors.ErrorRed or Colors.SuccessGreen
-	costLabel.TextXAlignment = Enum.TextXAlignment.Left
-	costLabel.Text = edu.cost > 0 and formatMoney(edu.cost) or "FREE"
-	costLabel.Parent = card
+	local cost = Instance.new("TextLabel")
+	cost.Size = UDim2.new(0.5, 0, 0, 16)
+	cost.Position = UDim2.new(0, 58, 0, 48)
+	cost.BackgroundTransparency = 1
+	cost.Font = Fonts.Title
+	cost.TextSize = 12
+	cost.TextColor3 = edu.cost > 0 and Colors.ErrorRed or Colors.SuccessGreen
+	cost.TextXAlignment = Enum.TextXAlignment.Left
+	cost.Text = edu.cost > 0 and formatMoney(edu.cost) or "FREE"
+	cost.Parent = card
 	
 	local enrollBtn = Instance.new("TextButton")
-	enrollBtn.Size = UDim2.new(0, 65, 0, 34)
+	enrollBtn.Size = UDim2.new(0, 60, 0, 32)
 	enrollBtn.AnchorPoint = Vector2.new(1, 0.5)
-	enrollBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	enrollBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	enrollBtn.BackgroundColor3 = Colors.EducationPurple
 	enrollBtn.Font = Fonts.Button
-	enrollBtn.TextSize = 12
+	enrollBtn.TextSize = 11
 	enrollBtn.TextColor3 = Colors.White
 	enrollBtn.Text = "Enroll"
 	enrollBtn.AutoButtonColor = false
@@ -585,7 +510,7 @@ function OccupationScreen:createEducationCard(edu, order, parent)
 	enrollBtn.MouseLeave:Connect(function() tween(enrollBtn, TweenInfo.new(0.1), { BackgroundColor3 = Colors.EducationPurple }) end)
 	
 	enrollBtn.MouseButton1Click:Connect(function()
-		self:showApplicationModal(edu, "education")
+		self:showConfirm("education", edu)
 	end)
 end
 
@@ -619,79 +544,70 @@ function OccupationScreen:createFreelanceSection(order)
 	headerText.Parent = headerFrame
 	
 	for i, gig in ipairs(FreelanceGigs) do
-		self:createGigCard(gig, i + 1, section)
+		self:createFreelanceCard(gig, i + 1, section)
 	end
 end
 
-function OccupationScreen:createGigCard(gig, order, parent)
+function OccupationScreen:createFreelanceCard(gig, order, parent)
 	local card = Instance.new("Frame")
-	card.Name = "Gig_" .. gig.name:gsub(" ", "_")
-	card.Size = UDim2.new(1, 0, 0, 70)
+	card.Name = "Gig_" .. gig.id
+	card.Size = UDim2.new(1, 0, 0, 60)
 	card.BackgroundColor3 = Colors.CardWhite
 	card.LayoutOrder = order
 	card.Parent = parent
 	createUICorner(card, 14)
 	createUIStroke(card, 1, 0.85, Color3.fromRGB(229, 231, 235))
 	
-	local emojiCircle = Instance.new("Frame")
-	emojiCircle.Size = UDim2.new(0, 46, 0, 46)
-	emojiCircle.Position = UDim2.new(0, 14, 0.5, -23)
-	emojiCircle.BackgroundColor3 = Color3.fromRGB(209, 250, 229)
-	emojiCircle.Parent = card
-	createUICorner(emojiCircle, 23)
+	local emoji = Instance.new("TextLabel")
+	emoji.Size = UDim2.new(0, 36, 0, 36)
+	emoji.Position = UDim2.new(0, 12, 0.5, -18)
+	emoji.BackgroundTransparency = 1
+	emoji.Font = Fonts.Body
+	emoji.TextSize = 24
+	emoji.Text = gig.emoji
+	emoji.Parent = card
 	
-	local emojiLabel = Instance.new("TextLabel")
-	emojiLabel.Size = UDim2.fromScale(1, 1)
-	emojiLabel.BackgroundTransparency = 1
-	emojiLabel.Font = Fonts.Body
-	emojiLabel.TextSize = 24
-	emojiLabel.Text = gig.emoji
-	emojiLabel.Parent = emojiCircle
+	local name = Instance.new("TextLabel")
+	name.Size = UDim2.new(0.4, 0, 0, 18)
+	name.Position = UDim2.new(0, 54, 0, 10)
+	name.BackgroundTransparency = 1
+	name.Font = Fonts.Title
+	name.TextSize = 13
+	name.TextColor3 = Colors.TextBlack
+	name.TextXAlignment = Enum.TextXAlignment.Left
+	name.Text = gig.name
+	name.Parent = card
 	
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0.5, 0, 0, 20)
-	nameLabel.Position = UDim2.new(0, 70, 0, 14)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = Fonts.Title
-	nameLabel.TextSize = 14
-	nameLabel.TextColor3 = Colors.TextBlack
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Text = gig.name
-	nameLabel.Parent = card
-	
-	local payLabel = Instance.new("TextLabel")
-	payLabel.Size = UDim2.new(0.5, 0, 0, 14)
-	payLabel.Position = UDim2.new(0, 70, 0, 34)
-	payLabel.BackgroundTransparency = 1
-	payLabel.Font = Fonts.Body
-	payLabel.TextSize = 11
-	payLabel.TextColor3 = Colors.SuccessGreen
-	payLabel.TextXAlignment = Enum.TextXAlignment.Left
-	payLabel.Text = "💰 $" .. gig.pay[1] .. " - $" .. gig.pay[2] .. " • " .. gig.time
-	payLabel.Parent = card
+	local info = Instance.new("TextLabel")
+	info.Size = UDim2.new(0.5, 0, 0, 14)
+	info.Position = UDim2.new(0, 54, 0, 30)
+	info.BackgroundTransparency = 1
+	info.Font = Fonts.Body
+	info.TextSize = 11
+	info.TextColor3 = Colors.SuccessGreen
+	info.TextXAlignment = Enum.TextXAlignment.Left
+	info.Text = "💰 " .. gig.payRange .. " | Age " .. gig.minAge .. "+"
+	info.Parent = card
 	
 	local doBtn = Instance.new("TextButton")
-	doBtn.Size = UDim2.new(0, 54, 0, 32)
+	doBtn.Size = UDim2.new(0, 50, 0, 28)
 	doBtn.AnchorPoint = Vector2.new(1, 0.5)
-	doBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	doBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	doBtn.BackgroundColor3 = Colors.FreelanceGreen
 	doBtn.Font = Fonts.Button
-	doBtn.TextSize = 12
+	doBtn.TextSize = 11
 	doBtn.TextColor3 = Colors.White
 	doBtn.Text = "Do It"
 	doBtn.AutoButtonColor = false
 	doBtn.Parent = card
 	createPillCorner(doBtn)
 	
-	doBtn.MouseEnter:Connect(function() tween(doBtn, TweenInfo.new(0.1), { BackgroundColor3 = Colors.FreelanceGreenDark }) end)
-	doBtn.MouseLeave:Connect(function() tween(doBtn, TweenInfo.new(0.1), { BackgroundColor3 = Colors.FreelanceGreen }) end)
-	
 	doBtn.MouseButton1Click:Connect(function()
-		self:doFreelance(gig)
+		self:doFreelanceAction(gig)
 	end)
 end
 
-function OccupationScreen:createSpecialCareersSection(order)
+function OccupationScreen:createSpecialSection(order)
 	local section = Instance.new("Frame")
 	section.Name = "SpecialSection"
 	section.Size = UDim2.new(1, 0, 0, 0)
@@ -727,145 +643,125 @@ end
 
 function OccupationScreen:createSpecialCard(career, order, parent)
 	local card = Instance.new("Frame")
-	card.Name = "Special_" .. career.name:gsub(" ", "_")
-	card.Size = UDim2.new(1, 0, 0, 75)
+	card.Name = "Special_" .. career.id
+	card.Size = UDim2.new(1, 0, 0, 60)
 	card.BackgroundColor3 = Colors.CardWhite
 	card.LayoutOrder = order
 	card.Parent = parent
 	createUICorner(card, 14)
 	createUIStroke(card, 1, 0.85, Color3.fromRGB(229, 231, 235))
 	
-	local emojiCircle = Instance.new("Frame")
-	emojiCircle.Size = UDim2.new(0, 46, 0, 46)
-	emojiCircle.Position = UDim2.new(0, 14, 0.5, -23)
-	emojiCircle.BackgroundColor3 = Color3.fromRGB(254, 249, 195)
-	emojiCircle.Parent = card
-	createUICorner(emojiCircle, 23)
+	local emoji = Instance.new("TextLabel")
+	emoji.Size = UDim2.new(0, 36, 0, 36)
+	emoji.Position = UDim2.new(0, 12, 0.5, -18)
+	emoji.BackgroundTransparency = 1
+	emoji.Font = Fonts.Body
+	emoji.TextSize = 24
+	emoji.Text = career.emoji
+	emoji.Parent = card
 	
-	local emojiLabel = Instance.new("TextLabel")
-	emojiLabel.Size = UDim2.fromScale(1, 1)
-	emojiLabel.BackgroundTransparency = 1
-	emojiLabel.Font = Fonts.Body
-	emojiLabel.TextSize = 24
-	emojiLabel.Text = career.emoji
-	emojiLabel.Parent = emojiCircle
+	local name = Instance.new("TextLabel")
+	name.Size = UDim2.new(0.4, 0, 0, 18)
+	name.Position = UDim2.new(0, 54, 0, 10)
+	name.BackgroundTransparency = 1
+	name.Font = Fonts.Title
+	name.TextSize = 13
+	name.TextColor3 = Colors.TextBlack
+	name.TextXAlignment = Enum.TextXAlignment.Left
+	name.Text = career.name
+	name.Parent = card
 	
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0.5, 0, 0, 20)
-	nameLabel.Position = UDim2.new(0, 70, 0, 14)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = Fonts.Title
-	nameLabel.TextSize = 14
-	nameLabel.TextColor3 = Colors.TextBlack
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Text = career.name
-	nameLabel.Parent = card
-	
-	local descLabel = Instance.new("TextLabel")
-	descLabel.Size = UDim2.new(0.5, 0, 0, 14)
-	descLabel.Position = UDim2.new(0, 70, 0, 34)
-	descLabel.BackgroundTransparency = 1
-	descLabel.Font = Fonts.Body
-	descLabel.TextSize = 11
-	descLabel.TextColor3 = Colors.MediumGray
-	descLabel.TextXAlignment = Enum.TextXAlignment.Left
-	descLabel.Text = career.description .. " • " .. career.requirement
-	descLabel.Parent = card
+	local desc = Instance.new("TextLabel")
+	desc.Size = UDim2.new(0.5, 0, 0, 14)
+	desc.Position = UDim2.new(0, 54, 0, 30)
+	desc.BackgroundTransparency = 1
+	desc.Font = Fonts.Body
+	desc.TextSize = 11
+	desc.TextColor3 = Colors.MediumGray
+	desc.TextXAlignment = Enum.TextXAlignment.Left
+	desc.Text = career.description .. " | Age " .. career.minAge .. "+"
+	desc.Parent = card
 	
 	local tryBtn = Instance.new("TextButton")
-	tryBtn.Size = UDim2.new(0, 54, 0, 32)
+	tryBtn.Size = UDim2.new(0, 50, 0, 28)
 	tryBtn.AnchorPoint = Vector2.new(1, 0.5)
-	tryBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	tryBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	tryBtn.BackgroundColor3 = Colors.SpecialGold
 	tryBtn.Font = Fonts.Button
-	tryBtn.TextSize = 12
+	tryBtn.TextSize = 11
 	tryBtn.TextColor3 = Colors.TextBlack
 	tryBtn.Text = "Try"
 	tryBtn.AutoButtonColor = false
 	tryBtn.Parent = card
 	createPillCorner(tryBtn)
 	
-	tryBtn.MouseEnter:Connect(function() tween(tryBtn, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(202, 138, 4) }) end)
-	tryBtn.MouseLeave:Connect(function() tween(tryBtn, TweenInfo.new(0.1), { BackgroundColor3 = Colors.SpecialGold }) end)
-	
 	tryBtn.MouseButton1Click:Connect(function()
-		self:trySpecialCareer(career)
+		self:trySpecialAction(career)
 	end)
 end
 
-function OccupationScreen:createApplicationModal()
-	self.appOverlay = Instance.new("Frame")
-	self.appOverlay.Name = "ApplicationOverlay"
-	self.appOverlay.Size = UDim2.fromScale(1, 1)
-	self.appOverlay.BackgroundColor3 = Colors.OverlayDark
-	self.appOverlay.BackgroundTransparency = 0.4
-	self.appOverlay.Visible = false
-	self.appOverlay.ZIndex = 90
-	self.appOverlay.Parent = self.screenGui
+function OccupationScreen:createConfirmModal()
+	self.confirmOverlay = Instance.new("Frame")
+	self.confirmOverlay.Name = "ConfirmOverlay"
+	self.confirmOverlay.Size = UDim2.fromScale(1, 1)
+	self.confirmOverlay.BackgroundColor3 = Colors.OverlayDark
+	self.confirmOverlay.BackgroundTransparency = 0.4
+	self.confirmOverlay.Visible = false
+	self.confirmOverlay.ZIndex = 90
+	self.confirmOverlay.Parent = self.screenGui
 	
-	self.appModal = Instance.new("Frame")
-	self.appModal.Size = UDim2.new(0, 320, 0, 0)
-	self.appModal.AutomaticSize = Enum.AutomaticSize.Y
-	self.appModal.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.appModal.Position = UDim2.fromScale(0.5, 0.5)
-	self.appModal.BackgroundColor3 = Colors.CardWhite
-	self.appModal.ZIndex = 91
-	self.appModal.Parent = self.appOverlay
-	createUICorner(self.appModal, 20)
-	
-	createUIPadding(self.appModal, 24, 24, 24, 24)
+	self.confirmModal = Instance.new("Frame")
+	self.confirmModal.Size = UDim2.new(0, 320, 0, 0)
+	self.confirmModal.AutomaticSize = Enum.AutomaticSize.Y
+	self.confirmModal.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.confirmModal.Position = UDim2.fromScale(0.5, 0.5)
+	self.confirmModal.BackgroundColor3 = Colors.CardWhite
+	self.confirmModal.ZIndex = 91
+	self.confirmModal.Parent = self.confirmOverlay
+	createUICorner(self.confirmModal, 20)
+	createUIPadding(self.confirmModal, 24, 24, 24, 24)
 	
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 12)
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Parent = self.appModal
+	layout.Parent = self.confirmModal
 	
-	self.appEmoji = Instance.new("TextLabel")
-	self.appEmoji.Size = UDim2.new(0, 60, 0, 60)
-	self.appEmoji.BackgroundTransparency = 1
-	self.appEmoji.Font = Fonts.Body
-	self.appEmoji.TextSize = 50
-	self.appEmoji.Text = "💼"
-	self.appEmoji.LayoutOrder = 1
-	self.appEmoji.Parent = self.appModal
+	self.confirmEmoji = Instance.new("TextLabel")
+	self.confirmEmoji.Size = UDim2.new(0, 50, 0, 50)
+	self.confirmEmoji.BackgroundTransparency = 1
+	self.confirmEmoji.Font = Fonts.Body
+	self.confirmEmoji.TextSize = 40
+	self.confirmEmoji.Text = "💼"
+	self.confirmEmoji.LayoutOrder = 1
+	self.confirmEmoji.Parent = self.confirmModal
 	
-	self.appTitle = Instance.new("TextLabel")
-	self.appTitle.Size = UDim2.new(1, 0, 0, 24)
-	self.appTitle.BackgroundTransparency = 1
-	self.appTitle.Font = Fonts.Title
-	self.appTitle.TextSize = 18
-	self.appTitle.TextColor3 = Colors.TextBlack
-	self.appTitle.Text = "Apply"
-	self.appTitle.LayoutOrder = 2
-	self.appTitle.Parent = self.appModal
+	self.confirmTitle = Instance.new("TextLabel")
+	self.confirmTitle.Size = UDim2.new(1, 0, 0, 24)
+	self.confirmTitle.BackgroundTransparency = 1
+	self.confirmTitle.Font = Fonts.Title
+	self.confirmTitle.TextSize = 18
+	self.confirmTitle.TextColor3 = Colors.TextBlack
+	self.confirmTitle.Text = "Confirm"
+	self.confirmTitle.LayoutOrder = 2
+	self.confirmTitle.Parent = self.confirmModal
 	
-	self.appDesc = Instance.new("TextLabel")
-	self.appDesc.Size = UDim2.new(1, 0, 0, 0)
-	self.appDesc.AutomaticSize = Enum.AutomaticSize.Y
-	self.appDesc.BackgroundTransparency = 1
-	self.appDesc.Font = Fonts.Body
-	self.appDesc.TextSize = 13
-	self.appDesc.TextColor3 = Colors.DarkGray
-	self.appDesc.TextWrapped = true
-	self.appDesc.Text = "Details"
-	self.appDesc.LayoutOrder = 3
-	self.appDesc.Parent = self.appModal
-	
-	self.appInfo = Instance.new("TextLabel")
-	self.appInfo.Size = UDim2.new(1, 0, 0, 20)
-	self.appInfo.BackgroundTransparency = 1
-	self.appInfo.Font = Fonts.BodyMedium
-	self.appInfo.TextSize = 14
-	self.appInfo.TextColor3 = Colors.SuccessGreen
-	self.appInfo.Text = ""
-	self.appInfo.LayoutOrder = 4
-	self.appInfo.Parent = self.appModal
+	self.confirmDesc = Instance.new("TextLabel")
+	self.confirmDesc.Size = UDim2.new(1, 0, 0, 0)
+	self.confirmDesc.AutomaticSize = Enum.AutomaticSize.Y
+	self.confirmDesc.BackgroundTransparency = 1
+	self.confirmDesc.Font = Fonts.Body
+	self.confirmDesc.TextSize = 13
+	self.confirmDesc.TextColor3 = Colors.DarkGray
+	self.confirmDesc.TextWrapped = true
+	self.confirmDesc.Text = ""
+	self.confirmDesc.LayoutOrder = 3
+	self.confirmDesc.Parent = self.confirmModal
 	
 	local btnContainer = Instance.new("Frame")
-	btnContainer.Size = UDim2.new(1, 0, 0, 48)
+	btnContainer.Size = UDim2.new(1, 0, 0, 44)
 	btnContainer.BackgroundTransparency = 1
-	btnContainer.LayoutOrder = 5
-	btnContainer.Parent = self.appModal
+	btnContainer.LayoutOrder = 4
+	btnContainer.Parent = self.confirmModal
 	
 	local btnLayout = Instance.new("UIListLayout")
 	btnLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -877,27 +773,24 @@ function OccupationScreen:createApplicationModal()
 	cancelBtn.Size = UDim2.new(0.45, 0, 1, 0)
 	cancelBtn.BackgroundColor3 = Colors.LightGray
 	cancelBtn.Font = Fonts.Button
-	cancelBtn.TextSize = 15
+	cancelBtn.TextSize = 14
 	cancelBtn.TextColor3 = Colors.DarkGray
 	cancelBtn.Text = "Cancel"
 	cancelBtn.AutoButtonColor = false
 	cancelBtn.Parent = btnContainer
 	createPillCorner(cancelBtn)
+	cancelBtn.MouseButton1Click:Connect(function() self:hideConfirm() end)
 	
-	cancelBtn.MouseButton1Click:Connect(function()
-		self:hideApplicationModal()
-	end)
-	
-	self.submitBtn = Instance.new("TextButton")
-	self.submitBtn.Size = UDim2.new(0.45, 0, 1, 0)
-	self.submitBtn.BackgroundColor3 = Colors.BitLifeBlue
-	self.submitBtn.Font = Fonts.Button
-	self.submitBtn.TextSize = 15
-	self.submitBtn.TextColor3 = Colors.White
-	self.submitBtn.Text = "Apply"
-	self.submitBtn.AutoButtonColor = false
-	self.submitBtn.Parent = btnContainer
-	createPillCorner(self.submitBtn)
+	self.confirmBtn = Instance.new("TextButton")
+	self.confirmBtn.Size = UDim2.new(0.45, 0, 1, 0)
+	self.confirmBtn.BackgroundColor3 = Colors.BitLifeBlue
+	self.confirmBtn.Font = Fonts.Button
+	self.confirmBtn.TextSize = 14
+	self.confirmBtn.TextColor3 = Colors.White
+	self.confirmBtn.Text = "Confirm"
+	self.confirmBtn.AutoButtonColor = false
+	self.confirmBtn.Parent = btnContainer
+	createPillCorner(self.confirmBtn)
 end
 
 function OccupationScreen:createResultModal()
@@ -919,7 +812,6 @@ function OccupationScreen:createResultModal()
 	self.resultModal.ZIndex = 96
 	self.resultModal.Parent = self.resultOverlay
 	createUICorner(self.resultModal, 20)
-	
 	createUIPadding(self.resultModal, 24, 24, 24, 24)
 	
 	local layout = Instance.new("UIListLayout")
@@ -928,19 +820,19 @@ function OccupationScreen:createResultModal()
 	layout.Parent = self.resultModal
 	
 	self.resultEmoji = Instance.new("TextLabel")
-	self.resultEmoji.Size = UDim2.new(0, 60, 0, 60)
+	self.resultEmoji.Size = UDim2.new(0, 50, 0, 50)
 	self.resultEmoji.BackgroundTransparency = 1
 	self.resultEmoji.Font = Fonts.Body
-	self.resultEmoji.TextSize = 50
+	self.resultEmoji.TextSize = 40
 	self.resultEmoji.Text = "✅"
 	self.resultEmoji.LayoutOrder = 1
 	self.resultEmoji.Parent = self.resultModal
 	
 	self.resultTitle = Instance.new("TextLabel")
-	self.resultTitle.Size = UDim2.new(1, 0, 0, 28)
+	self.resultTitle.Size = UDim2.new(1, 0, 0, 24)
 	self.resultTitle.BackgroundTransparency = 1
 	self.resultTitle.Font = Fonts.Title
-	self.resultTitle.TextSize = 20
+	self.resultTitle.TextSize = 18
 	self.resultTitle.TextColor3 = Colors.SuccessGreen
 	self.resultTitle.Text = "Success!"
 	self.resultTitle.LayoutOrder = 2
@@ -951,176 +843,123 @@ function OccupationScreen:createResultModal()
 	self.resultText.AutomaticSize = Enum.AutomaticSize.Y
 	self.resultText.BackgroundTransparency = 1
 	self.resultText.Font = Fonts.Body
-	self.resultText.TextSize = 15
+	self.resultText.TextSize = 14
 	self.resultText.TextColor3 = Colors.DarkerGray
 	self.resultText.TextWrapped = true
-	self.resultText.Text = "Something happened!"
+	self.resultText.Text = ""
 	self.resultText.LayoutOrder = 3
 	self.resultText.Parent = self.resultModal
 	
 	local okBtn = Instance.new("TextButton")
-	okBtn.Size = UDim2.new(1, 0, 0, 48)
+	okBtn.Size = UDim2.new(1, 0, 0, 44)
 	okBtn.BackgroundColor3 = Colors.BitLifeBlue
 	okBtn.Font = Fonts.Button
-	okBtn.TextSize = 16
+	okBtn.TextSize = 15
 	okBtn.TextColor3 = Colors.White
 	okBtn.Text = "OK"
 	okBtn.AutoButtonColor = false
 	okBtn.LayoutOrder = 4
 	okBtn.Parent = self.resultModal
 	createPillCorner(okBtn)
-	
-	okBtn.MouseButton1Click:Connect(function()
-		self:hideResultModal()
-	end)
+	okBtn.MouseButton1Click:Connect(function() self:hideResult() end)
 end
 
-function OccupationScreen:showApplicationModal(item, itemType)
-	self.currentItem = item
-	self.currentItemType = itemType
+function OccupationScreen:showConfirm(actionType, data)
+	self.currentAction = actionType
+	self.currentData = data
 	
-	if itemType == "job" then
-		self.appEmoji.Text = item.emoji
-		self.appTitle.Text = item.title
-		self.appDesc.Text = "Apply to " .. item.company .. " as a " .. item.title .. ".\n\nRequirements:\n• " .. item.education .. " education\n• " .. item.exp .. " years experience"
-		self.appInfo.Text = "💰 " .. formatSalary(item.salary)
-		self.appInfo.TextColor3 = Colors.SuccessGreen
-		self.submitBtn.Text = "Apply"
-		self.submitBtn.BackgroundColor3 = Colors.JobOrange
-	else
-		self.appEmoji.Text = item.emoji
-		self.appTitle.Text = item.name
-		self.appDesc.Text = "Enroll in " .. item.name .. ".\n\nDuration: " .. item.duration .. "\nRequirement: " .. item.requirement
-		if item.cost > 0 then
-			self.appInfo.Text = "💰 Cost: " .. formatMoney(item.cost)
-			self.appInfo.TextColor3 = Colors.ErrorRed
-		else
-			self.appInfo.Text = "✨ FREE"
-			self.appInfo.TextColor3 = Colors.SuccessGreen
-		end
-		self.submitBtn.Text = "Enroll"
-		self.submitBtn.BackgroundColor3 = Colors.EducationPurple
+	if actionType == "job" then
+		self.confirmEmoji.Text = data.emoji
+		self.confirmTitle.Text = "Apply for " .. data.title .. "?"
+		self.confirmDesc.Text = "Company: " .. data.company .. "\nSalary: " .. formatSalary(data.salary) .. "\nRequirements: " .. data.education .. ", Age " .. data.minAge .. "+"
+		self.confirmBtn.Text = "Apply"
+		self.confirmBtn.BackgroundColor3 = Colors.JobOrange
+	elseif actionType == "education" then
+		self.confirmEmoji.Text = data.emoji
+		self.confirmTitle.Text = "Enroll in " .. data.name .. "?"
+		self.confirmDesc.Text = "Duration: " .. data.duration .. "\nCost: " .. (data.cost > 0 and formatMoney(data.cost) or "FREE") .. "\nAge: " .. data.minAge .. "-" .. data.maxAge .. "\nRequirement: " .. data.requirement
+		self.confirmBtn.Text = "Enroll"
+		self.confirmBtn.BackgroundColor3 = Colors.EducationPurple
 	end
 	
-	if self.submitConnection then
-		self.submitConnection:Disconnect()
-	end
-	
-	self.submitConnection = self.submitBtn.MouseButton1Click:Connect(function()
-		self:hideApplicationModal()
+	if self.confirmConn then self.confirmConn:Disconnect() end
+	self.confirmConn = self.confirmBtn.MouseButton1Click:Connect(function()
+		self:hideConfirm()
 		task.delay(0.2, function()
-			if itemType == "job" then
-				self:applyForJob(item)
-			else
-				self:enrollInEducation(item)
-			end
+			self:executeAction()
 		end)
 	end)
 	
-	self.appOverlay.Visible = true
-	self.appModal.Position = UDim2.new(0.5, 0, 0.5, 30)
-	tween(self.appModal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.fromScale(0.5, 0.5)
-	})
+	self.confirmOverlay.Visible = true
+	tween(self.confirmModal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0.5, 0.5) })
 end
 
-function OccupationScreen:hideApplicationModal()
-	self.appOverlay.Visible = false
+function OccupationScreen:hideConfirm()
+	self.confirmOverlay.Visible = false
 end
 
-function OccupationScreen:applyForJob(job)
-	-- Random acceptance based on job acceptance rate
-	local accepted = math.random(100) <= job.acceptance
+function OccupationScreen:executeAction()
+	local result
 	
-	if accepted then
-		PlayerJob.hasJob = true
-		PlayerJob.currentJob = job
-		
-		-- Update UI
-		self.jobIcon.Text = job.emoji
-		self.jobTitle.Text = job.title
-		self.jobCompany.Text = job.company
-		self.jobSalary.Text = formatSalary(job.salary)
-		self.workBtn.Visible = true
-		
-		self:showResult("🎉", "Hired!", "Congratulations! You got the job as a " .. job.title .. " at " .. job.company .. "!\n\nYour salary is " .. formatSalary(job.salary), true)
+	if self.currentAction == "job" and ApplyForJob then
+		result = ApplyForJob:InvokeServer(self.currentData.id)
+	elseif self.currentAction == "education" and EnrollEducation then
+		result = EnrollEducation:InvokeServer(self.currentData.id)
 	else
-		self:showResult("😔", "Rejected", "Unfortunately, " .. job.company .. " decided not to hire you for the " .. job.title .. " position.\n\nTry again or look for other opportunities!", false)
+		result = { success = false, message = "Server not available" }
 	end
-end
-
-function OccupationScreen:enrollInEducation(edu)
-	self:showResult("📚", "Enrolled!", "You've enrolled in " .. edu.name .. "!\n\nThis will take " .. edu.duration .. " to complete. Good luck with your studies!", true)
-end
-
-function OccupationScreen:doFreelance(gig)
-	local earned = math.random(gig.pay[1], gig.pay[2])
-	self:showResult(gig.emoji, "Gig Complete!", "You completed a " .. gig.name .. " gig and earned $" .. earned .. "!", true)
-end
-
-function OccupationScreen:doWork()
-	if PlayerJob.hasJob and PlayerJob.currentJob then
-		local dailyPay = math.floor(PlayerJob.currentJob.salary / 365)
-		self:showResult("💼", "Day's Work Done!", "You worked hard today at " .. PlayerJob.currentJob.company .. ".\n\nYou earned $" .. dailyPay .. " (daily wage).", true)
-	end
-end
-
-function OccupationScreen:trySpecialCareer(career)
-	local success = math.random(100) <= 30 -- 30% chance
 	
-	if success then
-		self:showResult("🌟", "You Made It!", "You successfully started your journey as a " .. career.name .. "!\n\nThis is just the beginning of your special career!", true)
+	self:showResult(result)
+end
+
+function OccupationScreen:doFreelanceAction(gig)
+	if DoFreelance then
+		local result = DoFreelance:InvokeServer(gig.id)
+		self:showResult(result)
 	else
-		self:showResult("😅", "Not Yet...", "Your attempt at " .. career.name .. " didn't work out this time.\n\nKeep trying! Dreams don't come easy.", false)
+		self:showResult({ success = false, message = "Server not available" })
 	end
 end
 
-function OccupationScreen:showResult(emoji, title, text, success)
-	self.resultEmoji.Text = emoji
-	self.resultTitle.Text = title
-	self.resultTitle.TextColor3 = success and Colors.SuccessGreen or Colors.ErrorRed
-	self.resultText.Text = text
+function OccupationScreen:trySpecialAction(career)
+	if TrySpecialCareer then
+		local result = TrySpecialCareer:InvokeServer(career.id)
+		self:showResult(result)
+	else
+		self:showResult({ success = false, message = "Server not available" })
+	end
+end
+
+function OccupationScreen:showResult(result)
+	self.resultEmoji.Text = result.success and "✅" or "❌"
+	self.resultTitle.Text = result.success and "Success!" or "Failed"
+	self.resultTitle.TextColor3 = result.success and Colors.SuccessGreen or Colors.ErrorRed
+	self.resultText.Text = result.message or ""
 	
 	self.resultOverlay.Visible = true
-	self.resultModal.Position = UDim2.new(0.5, 0, 0.5, 30)
-	tween(self.resultModal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.fromScale(0.5, 0.5)
-	})
+	tween(self.resultModal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0.5, 0.5) })
 end
 
-function OccupationScreen:hideResultModal()
+function OccupationScreen:hideResult()
 	self.resultOverlay.Visible = false
 end
-
-----------------------------------------------------------------
--- VISIBILITY
-----------------------------------------------------------------
 
 function OccupationScreen:show()
 	if self.isVisible then return end
 	self.isVisible = true
-	
+	self:updateInfoBar()
 	self.overlay.Visible = true
 	self.overlay.Position = UDim2.new(1, 0, 0, 0)
-	
-	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0, 0, 0, 0)
-	})
+	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.new(0, 0, 0, 0) })
 end
 
 function OccupationScreen:hide()
 	if not self.isVisible then return end
 	self.isVisible = false
-	
-	self.appOverlay.Visible = false
+	self.confirmOverlay.Visible = false
 	self.resultOverlay.Visible = false
-	
-	local t = tween(self.overlay, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-		Position = UDim2.new(1, 0, 0, 0)
-	})
-	t.Completed:Connect(function()
-		self.overlay.Visible = false
-	end)
+	local t = tween(self.overlay, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Position = UDim2.new(1, 0, 0, 0) })
+	t.Completed:Connect(function() self.overlay.Visible = false end)
 end
 
 function OccupationScreen:toggle()

@@ -82,10 +82,24 @@ local SyncState       = remotesFolder:WaitForChild("SyncState")
 local SetLifeInfo     = remotesFolder:WaitForChild("SetLifeInfo")
 
 ----------------------------------------------------------------
--- STATE
+-- STATE (shared with screen modules)
 ----------------------------------------------------------------
 
-local currentState      = nil
+-- This state table is passed to all screen modules so they can check age/money
+local currentState = {
+	Name = nil,
+	Age = 0,
+	Money = 0,
+	Happiness = 50,
+	Health = 100,
+	Smarts = 50,
+	Looks = 50,
+	Education = "None",
+	Experience = 0,
+	CurrentJob = nil,
+	InJail = false,
+}
+
 local awaitingEvent     = false
 local hasShownAgeHint   = false
 local introComplete     = false
@@ -1411,12 +1425,36 @@ end
 ----------------------------------------------------------------
 
 SyncState.OnClientEvent:Connect(function(state, lastFeedText)
-	currentState = state
+	-- Update currentState table IN PLACE so screen modules see changes
+	-- (They hold a reference to this table)
+	if state then
+		currentState.Name = state.Name or currentState.Name
+		currentState.Age = state.Age or currentState.Age or 0
+		currentState.Money = state.Money or currentState.Money or 0
+		currentState.Happiness = state.Happiness or currentState.Happiness or 50
+		currentState.Health = state.Health or currentState.Health or 100
+		currentState.Smarts = state.Smarts or currentState.Smarts or 50
+		currentState.Looks = state.Looks or currentState.Looks or 50
+		currentState.Education = state.Education or currentState.Education or "None"
+		currentState.Experience = state.Experience or currentState.Experience or 0
+		currentState.CurrentJob = state.CurrentJob
+		currentState.InJail = state.InJail or false
+		
+		-- Copy any other fields from server state
+		for k, v in pairs(state) do
+			if currentState[k] == nil then
+				currentState[k] = v
+			end
+		end
+	end
+	
 	updateFromState()
 	
 	if lastFeedText then
 		addFeedEntry(lastFeedText)
 	end
+	
+	print("[LifeClient] State synced - Age:", currentState.Age, "Money:", currentState.Money)
 end)
 
 PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
