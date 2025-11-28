@@ -8,6 +8,17 @@ local LifeState = require(ReplicatedStorage:WaitForChild("LifeState"))
 local EventLibrary = require(ReplicatedStorage:WaitForChild("EventLibrary"))
 local EventRunner = require(ReplicatedStorage:WaitForChild("EventRunner"))
 
+-- Debug: verify EventRunner loaded correctly
+if EventRunner then
+	print("[LifeManager] EventRunner loaded, functions available:", 
+		EventRunner.getStoryPaths and "getStoryPaths✓" or "getStoryPaths✗",
+		EventRunner.pickEvent and "pickEvent✓" or "pickEvent✗",
+		EventRunner.initHistory and "initHistory✓" or "initHistory✗"
+	)
+else
+	warn("[LifeManager] EventRunner failed to load!")
+end
+
 ----------------------------------------------------------------
 -- REMOTES
 ----------------------------------------------------------------
@@ -62,8 +73,16 @@ local playerLives = {}  -- [Player] = LifeStateType
 local function serializeState(state)
 	state:ClampStats()
 
-	-- Get story path info
-	local paths = EventRunner.getStoryPaths(state)
+	-- Get story path info (with safety check)
+	local paths = {}
+	if EventRunner and EventRunner.getStoryPaths then
+		paths = EventRunner.getStoryPaths(state)
+	else
+		paths = {
+			political = { active = false, level = "None", progress = 0 },
+			criminal = { active = false, level = "None", progress = 0 },
+		}
+	end
 
 	return {
 		PlayerId = state.PlayerId,
