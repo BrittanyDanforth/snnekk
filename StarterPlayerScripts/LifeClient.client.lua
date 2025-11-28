@@ -56,6 +56,12 @@ local selectedGender = nil
 
 local occupationScreenInstance, assetsScreenInstance, relationshipsScreenInstance, activitiesScreenInstance
 
+-- Forward declarations for functions used in callbacks
+local showEvent, hideEvent
+local showIntro, hideIntro
+local showTutorial, hideTutorial
+local updateNameButtons
+
 ----------------------------------------------------------------
 -- COLORS (Premium BitLife Palette)
 ----------------------------------------------------------------
@@ -645,7 +651,7 @@ for i, line in ipairs(tutLines) do
 	lbl.Parent = tutTextCont
 end
 
-local function showTutorial()
+showTutorial = function()
 	if hasShownAgeHint then return end
 	hasShownAgeHint = true
 	tutorialOverlay.Visible = true
@@ -655,7 +661,7 @@ local function showTutorial()
 	if s then tween(s, pulse, { Transparency = 0.6 }) end
 end
 
-local function hideTutorial()
+hideTutorial = function()
 	tutorialOverlay.Visible = false
 	tutorialRing.Visible = false
 end
@@ -894,7 +900,7 @@ surpriseBtn.MouseLeave:Connect(function() surpriseBtn.TextColor3 = C.Gray400 end
 -- EVENT FUNCTIONS
 ----------------------------------------------------------------
 
-local function showEvent(payload)
+showEvent = function(payload)
 	awaitingEvent = true
 	currentEventId = payload.id
 	clearChoices()
@@ -959,7 +965,7 @@ local function showEvent(payload)
 	tween(eventCard, TweenInfo.new(0.3), { BackgroundTransparency = 0 })
 end
 
-local function hideEvent()
+hideEvent = function()
 	awaitingEvent = false
 	currentEventId = nil
 	local t = tween(eventShadowFrame, TweenInfo.new(0.2), { Position = UDim2.new(0.5, 0, 0.5, 40), BackgroundTransparency = 1 })
@@ -1063,7 +1069,7 @@ for i = 1, 3 do
 	end)
 end
 
-local function updateNameButtons()
+updateNameButtons = function()
 	local names = selectedGender == "Male" and maleNames or femaleNames
 	local emoji = selectedGender == "Male" and "👨" or "👩"
 	for _, child in ipairs(nameBtns:GetChildren()) do
@@ -1105,7 +1111,7 @@ for _, g in ipairs(genderData) do
 	end)
 end
 
-local function showIntro()
+showIntro = function()
 	if introComplete then return end
 	introOverlay.Visible = true
 	showBlur()
@@ -1114,7 +1120,7 @@ local function showIntro()
 	nameBtns.Visible = false
 end
 
-local function hideIntro()
+hideIntro = function()
 	introOverlay.Visible = false
 	hideBlur()
 	if not hasShownAgeHint then
