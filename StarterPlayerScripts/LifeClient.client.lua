@@ -1,19 +1,29 @@
 -- StarterPlayerScripts / LifeClient (LocalScript)
 -- BitLife-style UI: Complete recreation with blur overlays, gender + name intro,
 -- life feed, stats, age button, event popups with relationship headers.
+-- Now with full Occupation, Assets, Relationships, Activities screens.
 
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService      = game:GetService("TweenService")
-local UserInputService  = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
+
+----------------------------------------------------------------
+-- SCREEN MODULES
+----------------------------------------------------------------
+
+local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 5)
+local OccupationScreen = ScreensFolder and require(ScreensFolder:WaitForChild("OccupationScreen"))
+local AssetsScreen = ScreensFolder and require(ScreensFolder:WaitForChild("AssetsScreen"))
+local RelationshipsScreen = ScreensFolder and require(ScreensFolder:WaitForChild("RelationshipsScreen"))
+local ActivitiesScreen = ScreensFolder and require(ScreensFolder:WaitForChild("ActivitiesScreen"))
 
 ----------------------------------------------------------------
 -- REMOTES
 ----------------------------------------------------------------
 
-local remotesFolder   = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
+local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
 if not remotesFolder then
 	remotesFolder = ReplicatedStorage:WaitForChild("Life", 10)
 end
@@ -32,6 +42,13 @@ local currentState      = nil
 local awaitingEvent     = false
 local hasShownAgeHint   = false
 local introComplete     = false
+local selectedGender    = nil
+
+-- Screen instances
+local occupationScreenInstance = nil
+local assetsScreenInstance = nil
+local relationshipsScreenInstance = nil
+local activitiesScreenInstance = nil
 
 ----------------------------------------------------------------
 -- COLORS (BitLife Palette)
@@ -145,23 +162,6 @@ local function createUIPadding(parent, left, right, top, bottom)
 	return p
 end
 
-local function createDropShadow(parent, offset, blur, transparency)
-	-- Using a darker frame behind for shadow effect
-	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "Shadow"
-	shadow.BackgroundTransparency = 1
-	shadow.Image = "rbxassetid://5554236805" -- Roblox drop shadow asset
-	shadow.ImageColor3 = Color3.new(0, 0, 0)
-	shadow.ImageTransparency = transparency or 0.6
-	shadow.ScaleType = Enum.ScaleType.Slice
-	shadow.SliceCenter = Rect.new(23, 23, 277, 277)
-	shadow.Size = UDim2.new(1, blur * 2, 1, blur * 2)
-	shadow.Position = UDim2.new(0, -blur + (offset or 0), 0, -blur + (offset or 0))
-	shadow.ZIndex = parent.ZIndex - 1
-	shadow.Parent = parent
-	return shadow
-end
-
 local function tween(obj, info, props)
 	local t = TweenService:Create(obj, info, props)
 	t:Play()
@@ -192,7 +192,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 ----------------------------------------------------------------
--- MAIN GAME BACKGROUND (The actual game screen)
+-- MAIN GAME BACKGROUND
 ----------------------------------------------------------------
 
 local gameBackground = Instance.new("Frame")
@@ -202,7 +202,6 @@ gameBackground.BackgroundColor3 = Color3.fromRGB(240, 242, 245)
 gameBackground.ZIndex = 1
 gameBackground.Parent = screenGui
 
--- Subtle gradient for background
 local bgGradient = Instance.new("UIGradient")
 bgGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(248, 250, 252)),
@@ -243,7 +242,7 @@ local function hideBlur()
 end
 
 ----------------------------------------------------------------
--- MAIN GAME CONTAINER (Contains header, feed, stats, nav, age)
+-- MAIN GAME CONTAINER
 ----------------------------------------------------------------
 
 local mainContainer = Instance.new("Frame")
@@ -254,7 +253,7 @@ mainContainer.ZIndex = 2
 mainContainer.Parent = gameBackground
 
 ----------------------------------------------------------------
--- HEADER BAR (Avatar + Name + Money)
+-- HEADER BAR
 ----------------------------------------------------------------
 
 local headerBar = Instance.new("Frame")
@@ -266,7 +265,6 @@ headerBar.BorderSizePixel = 0
 headerBar.ZIndex = 10
 headerBar.Parent = mainContainer
 
--- Bottom border for header
 local headerBorder = Instance.new("Frame")
 headerBorder.Size = UDim2.new(1, 0, 0, 1)
 headerBorder.Position = UDim2.new(0, 0, 1, 0)
@@ -274,7 +272,6 @@ headerBorder.BackgroundColor3 = Color3.fromRGB(229, 231, 235)
 headerBorder.BorderSizePixel = 0
 headerBorder.Parent = headerBar
 
--- Header content padding
 local headerPadding = createUIPadding(headerBar, 16, 16, 12, 12)
 
 -- Avatar circle
@@ -328,7 +325,7 @@ ageYearLabel.TextXAlignment = Enum.TextXAlignment.Left
 ageYearLabel.Text = "Age 0 • Year 2025"
 ageYearLabel.Parent = nameContainer
 
--- Money chip (right side)
+-- Money chip
 local moneyChip = Instance.new("Frame")
 moneyChip.Name = "MoneyChip"
 moneyChip.Size = UDim2.new(0, 100, 0, 36)
@@ -349,7 +346,7 @@ moneyLabel.Text = "$0"
 moneyLabel.Parent = moneyChip
 
 ----------------------------------------------------------------
--- LIFE FEED AREA (Scrolling feed)
+-- LIFE FEED AREA
 ----------------------------------------------------------------
 
 local feedContainer = Instance.new("Frame")
@@ -398,9 +395,8 @@ local function addFeedEntry(text)
 	entryFrame.Parent = feedScroll
 	createUICorner(entryFrame, 12)
 	
-	local entryPadding = createUIPadding(entryFrame, 14, 14, 10, 10)
+	createUIPadding(entryFrame, 14, 14, 10, 10)
 	
-	-- Check if this is an age line
 	local isAgeLine = text:match("^Age") or text:match("years old")
 	
 	local entryLabel = Instance.new("TextLabel")
@@ -416,7 +412,6 @@ local function addFeedEntry(text)
 	entryLabel.Text = text
 	entryLabel.Parent = entryFrame
 	
-	-- Animate entry
 	entryFrame.BackgroundTransparency = 1
 	entryLabel.TextTransparency = 1
 	tween(entryFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -426,7 +421,6 @@ local function addFeedEntry(text)
 		TextTransparency = 0
 	})
 	
-	-- Scroll to bottom
 	task.delay(0.05, function()
 		feedScroll.CanvasPosition = Vector2.new(
 			0,
@@ -436,7 +430,7 @@ local function addFeedEntry(text)
 end
 
 ----------------------------------------------------------------
--- STATS BAR (Bottom stats panel)
+-- STATS BAR
 ----------------------------------------------------------------
 
 local statsBar = Instance.new("Frame")
@@ -476,7 +470,6 @@ for i, info in ipairs(statMeta) do
 	statRow.LayoutOrder = i
 	statRow.Parent = statsBar
 	
-	-- Icon + Label
 	local labelText = Instance.new("TextLabel")
 	labelText.Size = UDim2.new(0, 90, 1, 0)
 	labelText.BackgroundTransparency = 1
@@ -487,7 +480,6 @@ for i, info in ipairs(statMeta) do
 	labelText.Text = info.icon .. " " .. info.label
 	labelText.Parent = statRow
 	
-	-- Percentage text
 	local percentLabel = Instance.new("TextLabel")
 	percentLabel.Name = "Percent"
 	percentLabel.Size = UDim2.new(0, 40, 1, 0)
@@ -501,7 +493,6 @@ for i, info in ipairs(statMeta) do
 	percentLabel.Text = "100%"
 	percentLabel.Parent = statRow
 	
-	-- Bar background
 	local barBg = Instance.new("Frame")
 	barBg.Name = "BarBg"
 	barBg.Size = UDim2.new(1, -140, 0, 8)
@@ -510,7 +501,6 @@ for i, info in ipairs(statMeta) do
 	barBg.Parent = statRow
 	createUICorner(barBg, 4)
 	
-	-- Bar fill
 	local barFill = Instance.new("Frame")
 	barFill.Name = "BarFill"
 	barFill.Size = UDim2.new(1, 0, 1, 0)
@@ -518,7 +508,6 @@ for i, info in ipairs(statMeta) do
 	barFill.Parent = barBg
 	createUICorner(barFill, 4)
 	
-	-- Boost button (hidden by default)
 	local boostBtn = Instance.new("TextButton")
 	boostBtn.Name = "BoostBtn"
 	boostBtn.Size = UDim2.new(0, 60, 0, 22)
@@ -544,7 +533,7 @@ for i, info in ipairs(statMeta) do
 end
 
 ----------------------------------------------------------------
--- NAVIGATION BAR (Bottom nav icons)
+-- NAVIGATION BAR
 ----------------------------------------------------------------
 
 local navBar = Instance.new("Frame")
@@ -555,9 +544,7 @@ navBar.Position = UDim2.new(0.5, 0, 1, 0)
 navBar.BackgroundColor3 = Colors.NavBarBlue
 navBar.ZIndex = 6
 navBar.Parent = mainContainer
-createUICorner(navBar, 0)
 
--- Gradient for nav bar
 local navGradient = Instance.new("UIGradient")
 navGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Colors.NavBarBlue),
@@ -576,17 +563,16 @@ navLayout.Padding = UDim.new(0, 0)
 navLayout.Parent = navBar
 
 local navItems = {
-	{ icon = "💼", text = "Occupation" },
-	{ icon = "🏠", text = "Assets" },
-	{ icon = "❤️", text = "Relations" },
-	{ icon = "🎭", text = "Activities" },
+	{ icon = "💼", text = "Occupation", screen = "occupation" },
+	{ icon = "🏠", text = "Assets", screen = "assets" },
+	{ icon = "❤️", text = "Relations", screen = "relationships" },
+	{ icon = "🎭", text = "Activities", screen = "activities" },
 }
 
--- Calculate spacing for nav items (leave space for Age button in center)
 local navItemWidth = 70
+local navButtonRefs = {}
 
 for idx, info in ipairs(navItems) do
-	-- Add spacer in middle for Age button
 	if idx == 3 then
 		local spacer = Instance.new("Frame")
 		spacer.Size = UDim2.new(0, 90, 0, 1)
@@ -601,6 +587,7 @@ for idx, info in ipairs(navItems) do
 	navBtn.BackgroundTransparency = 1
 	navBtn.AutoButtonColor = false
 	navBtn.LayoutOrder = idx < 3 and idx or idx + 1
+	navBtn.Text = ""
 	navBtn.Parent = navBar
 	
 	local navBtnLayout = Instance.new("UIListLayout")
@@ -611,6 +598,7 @@ for idx, info in ipairs(navItems) do
 	navBtnLayout.Parent = navBtn
 	
 	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Name = "Icon"
 	iconLabel.Size = UDim2.new(1, 0, 0, 24)
 	iconLabel.BackgroundTransparency = 1
 	iconLabel.Font = Fonts.Body
@@ -620,6 +608,7 @@ for idx, info in ipairs(navItems) do
 	iconLabel.Parent = navBtn
 	
 	local textLabel = Instance.new("TextLabel")
+	textLabel.Name = "Label"
 	textLabel.Size = UDim2.new(1, 0, 0, 14)
 	textLabel.BackgroundTransparency = 1
 	textLabel.Font = Fonts.Body
@@ -634,10 +623,24 @@ for idx, info in ipairs(navItems) do
 	navBtn.MouseLeave:Connect(function()
 		iconLabel.TextColor3 = Colors.White
 	end)
+	
+	navBtn.MouseButton1Click:Connect(function()
+		if info.screen == "occupation" and occupationScreenInstance then
+			occupationScreenInstance:show()
+		elseif info.screen == "assets" and assetsScreenInstance then
+			assetsScreenInstance:show()
+		elseif info.screen == "relationships" and relationshipsScreenInstance then
+			relationshipsScreenInstance:show()
+		elseif info.screen == "activities" and activitiesScreenInstance then
+			activitiesScreenInstance:show()
+		end
+	end)
+	
+	navButtonRefs[info.screen] = navBtn
 end
 
 ----------------------------------------------------------------
--- AGE BUTTON (Big green circular button)
+-- AGE BUTTON
 ----------------------------------------------------------------
 
 local ageButtonContainer = Instance.new("Frame")
@@ -649,7 +652,6 @@ ageButtonContainer.BackgroundTransparency = 1
 ageButtonContainer.ZIndex = 15
 ageButtonContainer.Parent = mainContainer
 
--- Outer white ring
 local ageOuterRing = Instance.new("Frame")
 ageOuterRing.Name = "OuterRing"
 ageOuterRing.Size = UDim2.new(1, 10, 1, 10)
@@ -659,7 +661,6 @@ ageOuterRing.BackgroundColor3 = Colors.White
 ageOuterRing.Parent = ageButtonContainer
 createUICorner(ageOuterRing, 55)
 
--- Main age button
 local ageButton = Instance.new("TextButton")
 ageButton.Name = "AgeButton"
 ageButton.Size = UDim2.new(1, -6, 1, -6)
@@ -673,7 +674,6 @@ ageButton.Parent = ageButtonContainer
 createUICorner(ageButton, 50)
 createUIStroke(ageButton, 3, 0, Colors.AgeGreenRing)
 
--- Age button gradient
 local ageGradient = Instance.new("UIGradient")
 ageGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(74, 222, 128)),
@@ -682,7 +682,6 @@ ageGradient.Color = ColorSequence.new({
 ageGradient.Rotation = 90
 ageGradient.Parent = ageButton
 
--- Plus icon
 local agePlus = Instance.new("TextLabel")
 agePlus.Name = "Plus"
 agePlus.Size = UDim2.new(1, 0, 0, 36)
@@ -695,7 +694,6 @@ agePlus.Text = "+"
 agePlus.ZIndex = 17
 agePlus.Parent = ageButton
 
--- Age text
 local ageText = Instance.new("TextLabel")
 ageText.Name = "AgeText"
 ageText.Size = UDim2.new(1, 0, 0, 22)
@@ -708,7 +706,6 @@ ageText.Text = "Age"
 ageText.ZIndex = 17
 ageText.Parent = ageButton
 
--- Tutorial highlight ring (red)
 local tutorialRing = Instance.new("Frame")
 tutorialRing.Name = "TutorialRing"
 tutorialRing.Size = UDim2.new(1, 30, 1, 30)
@@ -747,7 +744,6 @@ tutorialLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 tutorialLayout.Padding = UDim.new(0, 8)
 tutorialLayout.Parent = tutorialTextContainer
 
--- Pointing hand
 local pointingHand = Instance.new("TextLabel")
 pointingHand.Size = UDim2.new(0, 40, 0, 40)
 pointingHand.BackgroundTransparency = 1
@@ -782,7 +778,6 @@ local function showTutorial()
 	tutorialOverlay.Visible = true
 	tutorialRing.Visible = true
 	
-	-- Animate the ring pulsing
 	local pulseInfo = TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
 	local ringStroke = tutorialRing:FindFirstChildOfClass("UIStroke")
 	if ringStroke then
@@ -796,13 +791,14 @@ local function hideTutorial()
 end
 
 ----------------------------------------------------------------
--- EVENT MODAL (BitLife-style relationship card)
+-- EVENT MODAL (Fixed - no shadow as child causing layout issues)
 ----------------------------------------------------------------
 
 local eventOverlay = Instance.new("Frame")
 eventOverlay.Name = "EventOverlay"
 eventOverlay.Size = UDim2.fromScale(1, 1)
-eventOverlay.BackgroundTransparency = 1
+eventOverlay.BackgroundColor3 = Colors.OverlayBlack
+eventOverlay.BackgroundTransparency = 0.5
 eventOverlay.Visible = false
 eventOverlay.ZIndex = 60
 eventOverlay.Parent = screenGui
@@ -814,29 +810,18 @@ eventCard.AutomaticSize = Enum.AutomaticSize.Y
 eventCard.AnchorPoint = Vector2.new(0.5, 0.5)
 eventCard.Position = UDim2.fromScale(0.5, 0.5)
 eventCard.BackgroundColor3 = Colors.CardWhite
-eventCard.ZIndex = 61
+eventCard.ZIndex = 62
 eventCard.Parent = eventOverlay
 createUICorner(eventCard, 22)
 createUIStroke(eventCard, 2, 0, Colors.RelationshipRed)
 
--- Drop shadow for card
-local eventShadow = Instance.new("Frame")
-eventShadow.Size = UDim2.new(1, 20, 1, 20)
-eventShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-eventShadow.Position = UDim2.new(0.5, 4, 0.5, 4)
-eventShadow.BackgroundColor3 = Color3.new(0, 0, 0)
-eventShadow.BackgroundTransparency = 0.85
-eventShadow.ZIndex = 60
-eventShadow.Parent = eventCard
-createUICorner(eventShadow, 26)
-
--- Event card layout
-local eventLayout = Instance.new("UIListLayout")
-eventLayout.FillDirection = Enum.FillDirection.Vertical
-eventLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-eventLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-eventLayout.Padding = UDim.new(0, 0)
-eventLayout.Parent = eventCard
+-- Event card internal layout
+local eventCardLayout = Instance.new("UIListLayout")
+eventCardLayout.FillDirection = Enum.FillDirection.Vertical
+eventCardLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+eventCardLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+eventCardLayout.Padding = UDim.new(0, 0)
+eventCardLayout.Parent = eventCard
 
 -- Header section (Avatar + Name + Relationship banner)
 local eventHeader = Instance.new("Frame")
@@ -845,13 +830,12 @@ eventHeader.Size = UDim2.new(1, 0, 0, 70)
 eventHeader.BackgroundColor3 = Colors.CardWhite
 eventHeader.ClipsDescendants = true
 eventHeader.LayoutOrder = 1
+eventHeader.Visible = false
 eventHeader.Parent = eventCard
 createUICorner(eventHeader, 22)
 
--- Header inner content
 local headerInnerPadding = createUIPadding(eventHeader, 18, 0, 15, 15)
 
--- Avatar in header
 local eventAvatar = Instance.new("Frame")
 eventAvatar.Name = "Avatar"
 eventAvatar.Size = UDim2.new(0, 44, 0, 44)
@@ -869,7 +853,6 @@ eventAvatarEmoji.TextSize = 24
 eventAvatarEmoji.Text = "👤"
 eventAvatarEmoji.Parent = eventAvatar
 
--- Name text in header
 local eventNameLabel = Instance.new("TextLabel")
 eventNameLabel.Name = "NameLabel"
 eventNameLabel.Size = UDim2.new(0.5, 0, 0, 20)
@@ -882,7 +865,6 @@ eventNameLabel.TextXAlignment = Enum.TextXAlignment.Left
 eventNameLabel.Text = "Bradley Allen"
 eventNameLabel.Parent = eventHeader
 
--- Relationship banner (right side pill)
 local relationshipBanner = Instance.new("Frame")
 relationshipBanner.Name = "RelationshipBanner"
 relationshipBanner.Size = UDim2.new(0, 100, 0, 28)
@@ -890,10 +872,7 @@ relationshipBanner.AnchorPoint = Vector2.new(1, 0.5)
 relationshipBanner.Position = UDim2.new(1, 22, 0.5, 0)
 relationshipBanner.BackgroundColor3 = Colors.BestFriendOrange
 relationshipBanner.Parent = eventHeader
--- Pill shape on left, squared on right (attached to edge)
-local bannerCorner = Instance.new("UICorner")
-bannerCorner.CornerRadius = UDim.new(0, 14)
-bannerCorner.Parent = relationshipBanner
+createUICorner(relationshipBanner, 14)
 
 local relationshipLabel = Instance.new("TextLabel")
 relationshipLabel.Size = UDim2.fromScale(1, 1)
@@ -904,7 +883,7 @@ relationshipLabel.TextColor3 = Colors.White
 relationshipLabel.Text = "Best Friend"
 relationshipLabel.Parent = relationshipBanner
 
--- Title row (emoji + title)
+-- Title section
 local titleSection = Instance.new("Frame")
 titleSection.Name = "TitleSection"
 titleSection.Size = UDim2.new(1, 0, 0, 90)
@@ -936,7 +915,7 @@ eventTitle.BackgroundTransparency = 1
 eventTitle.Font = Fonts.Title
 eventTitle.TextSize = 24
 eventTitle.TextColor3 = Colors.TextBlack
-eventTitle.Text = "Unfriended"
+eventTitle.Text = "Life Event"
 eventTitle.LayoutOrder = 2
 eventTitle.Parent = titleSection
 
@@ -962,7 +941,7 @@ eventBody.TextColor3 = Colors.DarkerGray
 eventBody.TextWrapped = true
 eventBody.TextXAlignment = Enum.TextXAlignment.Center
 eventBody.TextYAlignment = Enum.TextYAlignment.Top
-eventBody.Text = "Your best friend, Bradley, has unfriended you.\nWhat will you do?"
+eventBody.Text = ""
 eventBody.RichText = true
 eventBody.LineHeight = 1.3
 eventBody.Parent = descSection
@@ -995,7 +974,7 @@ local function clearChoices()
 	table.clear(activeChoiceButtons)
 end
 
--- "Surprise me!" button
+-- Surprise me button
 local surpriseMeBtn = Instance.new("TextButton")
 surpriseMeBtn.Name = "SurpriseMe"
 surpriseMeBtn.Size = UDim2.new(1, 0, 0, 32)
@@ -1008,7 +987,6 @@ surpriseMeBtn.AutoButtonColor = false
 surpriseMeBtn.LayoutOrder = 100
 surpriseMeBtn.Parent = choicesSection
 
--- Underline for surprise me
 local surpriseUnderline = Instance.new("Frame")
 surpriseUnderline.Size = UDim2.new(0, 80, 0, 1)
 surpriseUnderline.AnchorPoint = Vector2.new(0.5, 0)
@@ -1025,18 +1003,17 @@ surpriseMeBtn.MouseLeave:Connect(function()
 	surpriseUnderline.BackgroundColor3 = Colors.MediumGray
 end)
 
+local currentPayloadChoices = {}
+
 local function showEvent(payload)
 	awaitingEvent = true
 	currentEventId = payload.id
+	currentPayloadChoices = payload.choices or {}
 	
-	showBlur(true)
-	
-	-- Set event content
 	eventEmoji.Text = payload.emoji or "🙂"
 	eventTitle.Text = payload.title or "Life Event"
 	eventBody.Text = payload.text or ""
 	
-	-- Hide relationship header by default, show for relationship events
 	eventHeader.Visible = payload.showRelationship or false
 	if payload.relationName then
 		eventNameLabel.Text = payload.relationName
@@ -1080,36 +1057,27 @@ local function showEvent(payload)
 			end
 			
 			SubmitChoice:FireServer(payload.id, choice.id)
-			
-			-- Hide event
-			hideBlur()
 			eventOverlay.Visible = false
 		end)
 	end
 	
-	-- Surprise me handler
-	surpriseMeBtn.MouseButton1Click:Connect(function()
-		if not awaitingEvent or #payload.choices == 0 then return end
-		
-		-- Pick random choice
-		local randomChoice = payload.choices[math.random(1, #payload.choices)]
-		awaitingEvent = false
-		
-		SubmitChoice:FireServer(payload.id, randomChoice.id)
-		hideBlur()
-		eventOverlay.Visible = false
-	end)
-	
-	-- Show with animation
-	eventCard.Position = UDim2.new(0.5, 0, 0.5, 50)
-	eventCard.BackgroundTransparency = 1
 	eventOverlay.Visible = true
 	
+	eventCard.Position = UDim2.new(0.5, 0, 0.5, 50)
 	tween(eventCard, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.fromScale(0.5, 0.5),
-		BackgroundTransparency = 0
+		Position = UDim2.fromScale(0.5, 0.5)
 	})
 end
+
+surpriseMeBtn.MouseButton1Click:Connect(function()
+	if not awaitingEvent or #currentPayloadChoices == 0 then return end
+	
+	local randomChoice = currentPayloadChoices[math.random(1, #currentPayloadChoices)]
+	awaitingEvent = false
+	
+	SubmitChoice:FireServer(currentEventId, randomChoice.id)
+	eventOverlay.Visible = false
+end)
 
 ----------------------------------------------------------------
 -- GENDER SELECTION OVERLAY
@@ -1132,7 +1100,6 @@ genderCard.Position = UDim2.fromScale(0.5, 0.5)
 genderCard.BackgroundTransparency = 1
 genderCard.Parent = genderOverlay
 
--- Title
 local genderTitle = Instance.new("TextLabel")
 genderTitle.Size = UDim2.new(1, 0, 0, 40)
 genderTitle.Position = UDim2.new(0, 0, 0, 0)
@@ -1143,7 +1110,6 @@ genderTitle.TextColor3 = Colors.TutorialYellow
 genderTitle.Text = "Start by picking a gender."
 genderTitle.Parent = genderCard
 
--- Buttons container
 local genderButtons = Instance.new("Frame")
 genderButtons.Size = UDim2.new(1, 0, 0, 140)
 genderButtons.Position = UDim2.new(0, 0, 0, 60)
@@ -1156,8 +1122,6 @@ genderButtonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 genderButtonsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 genderButtonsLayout.Padding = UDim.new(0, 14)
 genderButtonsLayout.Parent = genderButtons
-
-local selectedGender = nil
 
 local function createGenderButton(symbol, text, color)
 	local btn = Instance.new("TextButton")
@@ -1212,7 +1176,6 @@ nameCard.Position = UDim2.fromScale(0.5, 0.5)
 nameCard.BackgroundTransparency = 1
 nameCard.Parent = nameOverlay
 
--- Title
 local nameTitle = Instance.new("TextLabel")
 nameTitle.Size = UDim2.new(1, 0, 0, 40)
 nameTitle.Position = UDim2.new(0, 0, 0, 0)
@@ -1223,7 +1186,6 @@ nameTitle.TextColor3 = Colors.TutorialYellow
 nameTitle.Text = "Now, pick someone to become."
 nameTitle.Parent = nameCard
 
--- Buttons container
 local nameButtons = Instance.new("Frame")
 nameButtons.Size = UDim2.new(1, 0, 0, 200)
 nameButtons.Position = UDim2.new(0, 0, 0, 60)
@@ -1237,7 +1199,6 @@ nameButtonsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 nameButtonsLayout.Padding = UDim.new(0, 12)
 nameButtonsLayout.Parent = nameButtons
 
--- Name data
 local maleFirstNames = {
 	"Anthony", "Scott", "Logan", "Ethan", "Noah", "Liam", "Mason", "Jayden", "Caleb", "Damian",
 	"Oliver", "James", "William", "Benjamin", "Lucas", "Henry", "Alexander", "Sebastian", "Jack", "Aiden",
@@ -1253,7 +1214,6 @@ local lastNames = {
 	"Smelley", "Florea", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez",
 }
 
-local selectedName = nil
 local nameButtonInstances = {}
 
 local function clearNameButtons()
@@ -1265,16 +1225,6 @@ end
 
 local function randomFrom(tbl)
 	return tbl[math.random(1, #tbl)]
-end
-
-local function getAvatarEmoji()
-	if selectedGender == "Male" then
-		local maleEmojis = {"👨", "👦", "🧑", "👨‍🦱", "👨‍🦰"}
-		return maleEmojis[math.random(1, #maleEmojis)]
-	else
-		local femaleEmojis = {"👩", "👧", "🧑", "👩‍🦱", "👩‍🦰"}
-		return femaleEmojis[math.random(1, #femaleEmojis)]
-	end
 end
 
 local function generateNameOptions()
@@ -1312,13 +1262,11 @@ local function generateNameOptions()
 		end)
 		
 		btn.MouseButton1Click:Connect(function()
-			selectedName = fullName
+			local selectedName = fullName
 			nameOverlay.Visible = false
 			
-			-- Send to server
 			SetLifeInfo:FireServer(selectedName, selectedGender)
 			
-			-- Show tutorial
 			introComplete = true
 			task.delay(0.5, function()
 				showTutorial()
@@ -1327,7 +1275,6 @@ local function generateNameOptions()
 	end
 end
 
--- Gender button handlers
 maleBtn.MouseButton1Click:Connect(function()
 	selectedGender = "Male"
 	avatarEmoji.Text = "👶"
@@ -1360,14 +1307,8 @@ local function updateStats()
 			Size = UDim2.new(pct, 0, 1, 0)
 		})
 		
-		-- Show boost button if stat is very low
-		if value < 25 then
-			card.boostBtn.Visible = true
-		else
-			card.boostBtn.Visible = false
-		end
+		card.boostBtn.Visible = value < 25
 		
-		-- Color based on value
 		if value < 25 then
 			card.barFill.BackgroundColor3 = Colors.StatRed
 		else
@@ -1388,7 +1329,6 @@ local function updateHeader()
 	local money = currentState.Money or 0
 	moneyLabel.Text = formatMoney(money)
 	
-	-- Update avatar based on age
 	if age < 3 then
 		avatarEmoji.Text = "👶"
 	elseif age < 13 then
@@ -1408,7 +1348,6 @@ local function updateFromState()
 	updateHeader()
 	updateStats()
 	
-	-- Show intro overlays if name not set
 	if not currentState.Name and not introComplete then
 		ageButtonContainer.Visible = false
 		genderOverlay.Visible = true
@@ -1440,7 +1379,6 @@ PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
 		addFeedEntry(ageFeedText)
 	end
 	
-	-- Use server-provided presentation data
 	local payload = {
 		id = eventData.id,
 		text = eventData.text,
@@ -1483,8 +1421,27 @@ ageButton.MouseLeave:Connect(function()
 end)
 
 ----------------------------------------------------------------
+-- INITIALIZE SCREEN MODULES
+----------------------------------------------------------------
+
+if OccupationScreen then
+	occupationScreenInstance = OccupationScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+end
+
+if AssetsScreen then
+	assetsScreenInstance = AssetsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+end
+
+if RelationshipsScreen then
+	relationshipsScreenInstance = RelationshipsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+end
+
+if ActivitiesScreen then
+	activitiesScreenInstance = ActivitiesScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
+end
+
+----------------------------------------------------------------
 -- INITIAL STATE
 ----------------------------------------------------------------
 
--- Hide age button until intro is done
 ageButtonContainer.Visible = false
