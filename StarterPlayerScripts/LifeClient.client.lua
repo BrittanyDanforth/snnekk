@@ -10,7 +10,7 @@ local TweenService      = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 ----------------------------------------------------------------
--- SCREEN MODULES (with error handling)
+-- SCREEN MODULES (with error handling and debug logging)
 ----------------------------------------------------------------
 
 local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 10)
@@ -21,25 +21,49 @@ local RelationshipsScreen = nil
 local ActivitiesScreen = nil
 
 if ScreensFolder then
+	print("[LifeClient] Found Screens folder, loading modules...")
+	
 	local success1, result1 = pcall(function()
 		return require(ScreensFolder:WaitForChild("OccupationScreen", 5))
 	end)
-	if success1 then OccupationScreen = result1 end
+	if success1 then 
+		OccupationScreen = result1 
+		print("[LifeClient] ✅ OccupationScreen loaded")
+	else
+		warn("[LifeClient] ❌ OccupationScreen failed:", result1)
+	end
 	
 	local success2, result2 = pcall(function()
 		return require(ScreensFolder:WaitForChild("AssetsScreen", 5))
 	end)
-	if success2 then AssetsScreen = result2 end
+	if success2 then 
+		AssetsScreen = result2 
+		print("[LifeClient] ✅ AssetsScreen loaded")
+	else
+		warn("[LifeClient] ❌ AssetsScreen failed:", result2)
+	end
 	
 	local success3, result3 = pcall(function()
 		return require(ScreensFolder:WaitForChild("RelationshipsScreen", 5))
 	end)
-	if success3 then RelationshipsScreen = result3 end
+	if success3 then 
+		RelationshipsScreen = result3 
+		print("[LifeClient] ✅ RelationshipsScreen loaded")
+	else
+		warn("[LifeClient] ❌ RelationshipsScreen failed:", result3)
+	end
 	
 	local success4, result4 = pcall(function()
 		return require(ScreensFolder:WaitForChild("ActivitiesScreen", 5))
 	end)
-	if success4 then ActivitiesScreen = result4 end
+	if success4 then 
+		ActivitiesScreen = result4 
+		print("[LifeClient] ✅ ActivitiesScreen loaded")
+	else
+		warn("[LifeClient] ❌ ActivitiesScreen failed:", result4)
+	end
+else
+	warn("[LifeClient] ❌ Could not find Screens folder in ReplicatedStorage!")
 end
 
 ----------------------------------------------------------------
@@ -1444,36 +1468,68 @@ ageButton.MouseLeave:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- INITIALIZE SCREEN MODULES (with error handling)
+-- INITIALIZE SCREEN MODULES (with error handling and debug logging)
 ----------------------------------------------------------------
+
+print("[LifeClient] Initializing screen instances...")
 
 if OccupationScreen and OccupationScreen.new then
 	local success, instance = pcall(function()
 		return OccupationScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
 	end)
-	if success then occupationScreenInstance = instance end
+	if success then 
+		occupationScreenInstance = instance 
+		print("[LifeClient] ✅ OccupationScreen instance created")
+	else
+		warn("[LifeClient] ❌ OccupationScreen.new() failed:", instance)
+	end
+else
+	warn("[LifeClient] ⚠️ OccupationScreen module not available")
 end
 
 if AssetsScreen and AssetsScreen.new then
 	local success, instance = pcall(function()
 		return AssetsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
 	end)
-	if success then assetsScreenInstance = instance end
+	if success then 
+		assetsScreenInstance = instance 
+		print("[LifeClient] ✅ AssetsScreen instance created")
+	else
+		warn("[LifeClient] ❌ AssetsScreen.new() failed:", instance)
+	end
+else
+	warn("[LifeClient] ⚠️ AssetsScreen module not available")
 end
 
 if RelationshipsScreen and RelationshipsScreen.new then
 	local success, instance = pcall(function()
 		return RelationshipsScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
 	end)
-	if success then relationshipsScreenInstance = instance end
+	if success then 
+		relationshipsScreenInstance = instance 
+		print("[LifeClient] ✅ RelationshipsScreen instance created")
+	else
+		warn("[LifeClient] ❌ RelationshipsScreen.new() failed:", instance)
+	end
+else
+	warn("[LifeClient] ⚠️ RelationshipsScreen module not available")
 end
 
 if ActivitiesScreen and ActivitiesScreen.new then
 	local success, instance = pcall(function()
 		return ActivitiesScreen.new(screenGui, blurOverlay, showBlur, hideBlur, currentState)
 	end)
-	if success then activitiesScreenInstance = instance end
+	if success then 
+		activitiesScreenInstance = instance 
+		print("[LifeClient] ✅ ActivitiesScreen instance created")
+	else
+		warn("[LifeClient] ❌ ActivitiesScreen.new() failed:", instance)
+	end
+else
+	warn("[LifeClient] ⚠️ ActivitiesScreen module not available")
 end
+
+print("[LifeClient] Screen initialization complete!")
 
 ----------------------------------------------------------------
 -- INITIAL STATE
