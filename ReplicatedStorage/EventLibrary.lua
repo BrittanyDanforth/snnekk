@@ -55,6 +55,40 @@ local events = {
 			},
 		},
 	},
+	
+	{
+		id = "unfriended",
+		minAge = 10,
+		maxAge = 100,
+		weight = 5,
+		text = "Your best friend, Bradley, has unfriended you.\nWhat will you do?",
+		choices = {
+			{
+				id = "insult",
+				text = "Insult him one last time",
+				effects = {
+					Stats = { Happiness = -5 },
+				},
+				resultText = "You sent one final insult. It felt good, but you lost a friend.",
+			},
+			{
+				id = "let_go",
+				text = "Let him go",
+				effects = {
+					Stats = { Happiness = -2, Smarts = 3 },
+				},
+				resultText = "You accepted the situation and moved on with dignity.",
+			},
+			{
+				id = "salvage",
+				text = "Try to salvage our friendship",
+				effects = {
+					Stats = { Happiness = 5, Smarts = 2 },
+				},
+				resultText = "You reached out and managed to patch things up!",
+			},
+		},
+	},
 }
 
 EventLibrary.Events = events
