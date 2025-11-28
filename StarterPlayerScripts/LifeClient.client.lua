@@ -890,10 +890,16 @@ choicesLayout.Parent = choicesSection
 
 local activeChoiceButtons = {}
 local currentEventId = nil
+local surpriseConnection = nil
 
 local function clearChoices()
 	for _, b in ipairs(activeChoiceButtons) do b:Destroy() end
 	table.clear(activeChoiceButtons)
+	-- Disconnect previous surprise button handler
+	if surpriseConnection then
+		surpriseConnection:Disconnect()
+		surpriseConnection = nil
+	end
 end
 
 -- Surprise Me button
@@ -932,6 +938,9 @@ showEvent = function(payload)
 	eventTitle.Text = payload.title or "Life Event"
 	eventBody.Text = payload.text or ""
 	
+	-- Store choice handlers for "Surprise me" feature
+	local choiceHandlers = {}
+	
 	-- Create choice buttons
 	for i, choice in ipairs(payload.choices or {}) do
 		local btn = Instance.new("TextButton")
@@ -959,7 +968,8 @@ showEvent = function(payload)
 		local choiceIndex = choice.index or i
 		local minigameType = choice.minigame
 		
-		btn.MouseButton1Click:Connect(function()
+		-- Create handler function that can be called directly
+		local function handleChoice()
 			if currentEventId then
 				-- Check if this choice triggers a minigame
 				if minigameType and minigamesInstance then
@@ -984,16 +994,18 @@ showEvent = function(payload)
 					hideEvent()
 				end
 			end
-		end)
+		end
 		
+		btn.MouseButton1Click:Connect(handleChoice)
+		table.insert(choiceHandlers, handleChoice)
 		table.insert(activeChoiceButtons, btn)
 	end
 	
-	-- Surprise me
-	surpriseBtn.MouseButton1Click:Connect(function()
-		if currentEventId and #activeChoiceButtons > 0 then
-			local rand = activeChoiceButtons[math.random(1, #activeChoiceButtons)]
-			rand.MouseButton1Click:Fire()
+	-- Surprise me - pick a random choice and execute its handler
+	surpriseConnection = surpriseBtn.MouseButton1Click:Connect(function()
+		if currentEventId and #choiceHandlers > 0 then
+			local randHandler = choiceHandlers[math.random(1, #choiceHandlers)]
+			randHandler()
 		end
 	end)
 	

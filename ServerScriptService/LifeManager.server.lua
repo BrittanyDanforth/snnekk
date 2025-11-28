@@ -58,19 +58,7 @@ local GetSpecialActions = getRemoteFunction("GetSpecialActions")
 
 local playerLives = {}  -- [Player] = LifeStateType
 
--- Expose state getter for LifeRemoteHandlers integration
-_G.GetPlayerLife = function(player)
-	return playerLives[player]
-end
-
--- Expose state push function for LifeRemoteHandlers
-_G.PushPlayerState = function(player, lastFeedText)
-	local state = playerLives[player]
-	if state then
-		SyncState:FireClient(player, serializeState(state), lastFeedText)
-	end
-end
-
+-- Forward declare serializeState
 local function serializeState(state)
 	state:ClampStats()
 
@@ -96,6 +84,19 @@ local function serializeState(state)
 		-- Flags (for UI)
 		Flags = state.Flags or {},
 	}
+end
+
+-- Expose state getter for LifeRemoteHandlers integration
+_G.GetPlayerLife = function(player)
+	return playerLives[player]
+end
+
+-- Expose state push function for LifeRemoteHandlers
+_G.PushPlayerState = function(player, lastFeedText)
+	local state = playerLives[player]
+	if state then
+		SyncState:FireClient(player, serializeState(state), lastFeedText)
+	end
 end
 
 local function pushState(player, state, lastFeedText)
