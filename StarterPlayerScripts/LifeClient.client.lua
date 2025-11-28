@@ -1017,6 +1017,66 @@ genderBtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 genderBtnLayout.Padding = UDim.new(0, 14)
 genderBtnLayout.Parent = genderBtns
 
+-- Name screen elements (must be created BEFORE gender button handlers reference it)
+local nameBtns = Instance.new("Frame")
+nameBtns.Name = "NameBtns"
+nameBtns.Size = UDim2.new(1, 0, 0, 200)
+nameBtns.BackgroundTransparency = 1
+nameBtns.Visible = false
+nameBtns.LayoutOrder = 3
+nameBtns.ZIndex = 71
+nameBtns.Parent = introContent
+
+local nameBtnLayout = Instance.new("UIListLayout")
+nameBtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+nameBtnLayout.Padding = UDim.new(0, 12)
+nameBtnLayout.Parent = nameBtns
+
+local maleNames = { "James Wilson", "Marcus Chen", "David Thompson" }
+local femaleNames = { "Emma Rodriguez", "Sophia Kim", "Olivia Brown" }
+local nameColors = { C.Green, Color3.fromRGB(234, 179, 8), C.Orange }
+
+for i = 1, 3 do
+	local nameBtn = Instance.new("TextButton")
+	nameBtn.Name = "NameBtn" .. i
+	nameBtn.Size = UDim2.new(0.85, 0, 0, 54)
+	nameBtn.BackgroundColor3 = nameColors[i]
+	nameBtn.Font = F.Title
+	nameBtn.TextSize = 18
+	nameBtn.TextColor3 = C.White
+	nameBtn.Text = ""
+	nameBtn.AutoButtonColor = false
+	nameBtn.LayoutOrder = i
+	nameBtn.ZIndex = 72
+	nameBtn.Parent = nameBtns
+	pill(nameBtn)
+	stroke(nameBtn, 2, 0.6, C.White)
+	
+	nameBtn.MouseEnter:Connect(function() tween(nameBtn, TweenInfo.new(0.1), { Size = UDim2.new(0.88, 0, 0, 58) }) end)
+	nameBtn.MouseLeave:Connect(function() tween(nameBtn, TweenInfo.new(0.1), { Size = UDim2.new(0.85, 0, 0, 54) }) end)
+	
+	nameBtn.MouseButton1Click:Connect(function()
+		local chosenName = nameBtn.Text:match("^.-%s(.+)$") or nameBtn.Text
+		SetLifeInfo:FireServer(chosenName, selectedGender)
+		introComplete = true
+		hideIntro()
+	end)
+end
+
+local function updateNameButtons()
+	local names = selectedGender == "Male" and maleNames or femaleNames
+	local emoji = selectedGender == "Male" and "👨" or "👩"
+	for _, child in ipairs(nameBtns:GetChildren()) do
+		if child:IsA("TextButton") then
+			local idx = tonumber(child.Name:match("%d+"))
+			if idx and names[idx] then
+				child.Text = emoji .. " " .. names[idx]
+			end
+		end
+	end
+end
+
+-- Gender buttons (now nameBtns exists)
 local genderData = { { gender = "Male", icon = "♂", color = C.Male }, { gender = "Female", icon = "♀", color = C.Female } }
 
 for _, g in ipairs(genderData) do
@@ -1041,66 +1101,8 @@ for _, g in ipairs(genderData) do
 		genderTitle.Text = "Now, pick someone to become"
 		genderBtns.Visible = false
 		nameBtns.Visible = true
+		updateNameButtons()
 	end)
-end
-
--- Name screen elements
-local nameBtns = Instance.new("Frame")
-nameBtns.Size = UDim2.new(1, 0, 0, 200)
-nameBtns.BackgroundTransparency = 1
-nameBtns.Visible = false
-nameBtns.LayoutOrder = 3
-nameBtns.ZIndex = 71
-nameBtns.Parent = introContent
-
-local nameBtnLayout = Instance.new("UIListLayout")
-nameBtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-nameBtnLayout.Padding = UDim.new(0, 12)
-nameBtnLayout.Parent = nameBtns
-
-local maleNames = { "James Wilson", "Marcus Chen", "David Thompson" }
-local femaleNames = { "Emma Rodriguez", "Sophia Kim", "Olivia Brown" }
-
-local nameColors = { C.Green, Color3.fromRGB(234, 179, 8), C.Orange }
-
-for i = 1, 3 do
-	local btn = Instance.new("TextButton")
-	btn.Name = "NameBtn" .. i
-	btn.Size = UDim2.new(0.85, 0, 0, 54)
-	btn.BackgroundColor3 = nameColors[i]
-	btn.Font = F.Title
-	btn.TextSize = 18
-	btn.TextColor3 = C.White
-	btn.Text = ""
-	btn.AutoButtonColor = false
-	btn.LayoutOrder = i
-	btn.ZIndex = 72
-	btn.Parent = nameBtns
-	pill(btn)
-	stroke(btn, 2, 0.6, C.White)
-	
-	btn.MouseEnter:Connect(function() tween(btn, TweenInfo.new(0.1), { Size = UDim2.new(0.88, 0, 0, 58) }) end)
-	btn.MouseLeave:Connect(function() tween(btn, TweenInfo.new(0.1), { Size = UDim2.new(0.85, 0, 0, 54) }) end)
-	
-	btn.MouseButton1Click:Connect(function()
-		local chosenName = btn.Text:match("^.-%s(.+)$") or btn.Text
-		SetLifeInfo:FireServer(chosenName, selectedGender)
-		introComplete = true
-		hideIntro()
-	end)
-end
-
-local function updateNameButtons()
-	local names = selectedGender == "Male" and maleNames or femaleNames
-	local emoji = selectedGender == "Male" and "👨" or "👩"
-	for i, child in ipairs(nameBtns:GetChildren()) do
-		if child:IsA("TextButton") then
-			local idx = tonumber(child.Name:match("%d+"))
-			if idx and names[idx] then
-				child.Text = emoji .. " " .. names[idx]
-			end
-		end
-	end
 end
 
 local function showIntro()
