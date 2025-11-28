@@ -10,11 +10,20 @@ local EventRunner = require(ReplicatedStorage:WaitForChild("EventRunner"))
 
 -- Debug: verify EventRunner loaded correctly
 if EventRunner then
-	print("[LifeManager] EventRunner loaded, functions available:", 
+	print("[LifeManager] EventRunner loaded, functions:", 
 		EventRunner.getStoryPaths and "getStoryPaths✓" or "getStoryPaths✗",
 		EventRunner.pickEvent and "pickEvent✓" or "pickEvent✗",
-		EventRunner.initHistory and "initHistory✓" or "initHistory✗"
+		EventRunner.initHistory and "initHistory✓" or "initHistory✗",
+		EventRunner.applyChoice and "applyChoice✓" or "applyChoice✗"
 	)
+	-- List all functions in EventRunner
+	local funcs = {}
+	for k, v in pairs(EventRunner) do
+		if type(v) == "function" then
+			table.insert(funcs, k)
+		end
+	end
+	print("[LifeManager] EventRunner has functions:", table.concat(funcs, ", "))
 else
 	warn("[LifeManager] EventRunner failed to load!")
 end
@@ -229,6 +238,9 @@ local function ageUp(player)
 	-- Initialize event history if needed
 	EventRunner.initHistory(state)
 
+	-- ALWAYS sync state first so client has updated Age
+	pushState(player, state, ageText)
+	
 	-- Decide if a life event should fire
 	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
 	if eventDef then
@@ -245,9 +257,8 @@ local function ageUp(player)
 		-- Mark event as occurred (for one-time/cooldown tracking)
 		EventRunner.markEventOccurred(state, eventDef)
 		
-		PresentEvent:FireClient(player, payload, ageText)
-	else
-		pushState(player, state, ageText)
+		-- Present event (state already synced above)
+		PresentEvent:FireClient(player, payload, nil)
 	end
 end
 
@@ -304,17 +315,28 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 
 	-- Apply choice immediately
 	local dynamicData = pending.dynamicData or {}
+	
+	-- Debug: verify choice exists
+	local choiceDef = eventDef.choices and eventDef.choices[choiceIndex]
+	if not choiceDef or type(choiceDef) ~= "table" then
+		warn("[LifeManager] Invalid choice at index", choiceIndex, "for event", eventDef.id)
+		pendingEvents[player] = nil
+		pushState(player, state, "Choice error.")
+		return
+	end
+	
 	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 	
 	if err then
 		pushState(player, state, "Error: " .. tostring(err))
+		pendingEvents[player] = nil
 		return
 	end
 
 	-- Clear pending event
 	pendingEvents[player] = nil
 
-	local feedText = results.resultText or "Something happened..."
+	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
 	pushState(player, state, feedText)
 end)
