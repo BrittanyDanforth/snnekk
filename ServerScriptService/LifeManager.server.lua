@@ -1,5 +1,5 @@
 -- LifeManager.server.lua
--- Core life simulation + networking.
+-- Core life simulation with story paths + networking.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,11 +32,25 @@ local function getRemote(name)
 	return ev
 end
 
+local function getRemoteFunction(name)
+	local existing = remotesFolder:FindFirstChild(name)
+	if existing and existing:IsA("RemoteFunction") then
+		return existing
+	end
+	local rf = Instance.new("RemoteFunction")
+	rf.Name = name
+	rf.Parent = remotesFolder
+	return rf
+end
+
 local RequestAgeUp = getRemote("RequestAgeUp")
 local PresentEvent = getRemote("PresentEvent")
 local SubmitChoice = getRemote("SubmitChoice")
 local SyncState = getRemote("SyncState")
 local SetLifeInfo = getRemote("SetLifeInfo")
+local MinigameResult = getRemote("MinigameResult")
+local GetStoryPaths = getRemoteFunction("GetStoryPaths")
+local GetSpecialActions = getRemoteFunction("GetSpecialActions")
 
 ----------------------------------------------------------------
 -- STATE
@@ -60,7 +74,9 @@ end
 local function serializeState(state)
 	state:ClampStats()
 
-	-- Flatten stats for easier client access
+	-- Get story path info
+	local paths = EventRunner.getStoryPaths(state)
+
 	return {
 		PlayerId = state.PlayerId,
 		Name = state.Name,
@@ -75,6 +91,10 @@ local function serializeState(state)
 		Smarts = state.Stats.Smarts,
 		-- Also include nested for compatibility
 		Stats = state.Stats,
+		-- Story paths
+		StoryPaths = paths,
+		-- Flags (for UI)
+		Flags = state.Flags or {},
 	}
 end
 
@@ -93,9 +113,14 @@ end
 
 local function createNewLife(player)
 	local state = LifeState.new(player)
+	-- Initialize event history and flags
+	EventRunner.initHistory(state)
 	playerLives[player] = state
 	return state
 end
+
+-- Store pending event data for choice resolution
+local pendingEvents = {} -- [Player] = { eventDef, dynamicData, choiceIndex }
 
 ----------------------------------------------------------------
 -- PLAYER HANDLERS
@@ -103,12 +128,12 @@ end
 
 Players.PlayerAdded:Connect(function(player)
 	local state = createNewLife(player)
-	-- No name yet; client will show "Create Your Life" overlay.
 	pushState(player, state, nil)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
 	playerLives[player] = nil
+	pendingEvents[player] = nil
 end)
 
 ----------------------------------------------------------------
@@ -118,11 +143,9 @@ end)
 SetLifeInfo.OnServerEvent:Connect(function(player, name, gender)
 	local state = getLife(player)
 	if state.Name then
-		-- already set, ignore
 		return
 	end
 
-	-- must be a non-empty string
 	if type(name) ~= "string" then
 		return
 	end
@@ -154,14 +177,10 @@ end)
 -- AGE UP
 ----------------------------------------------------------------
 
--- Store pending event data for choice resolution
-local pendingEvents = {} -- [Player] = { eventDef, dynamicData }
-
 local function ageUp(player)
 	local state = getLife(player)
 
 	if not state.Name then
-		-- must create life first
 		return
 	end
 
@@ -182,6 +201,11 @@ local function ageUp(player)
 		_G.ReduceJailTime(player, 1)
 	end
 
+	-- Add job income if has job
+	if state.Job and state.JobSalary then
+		state.Money = (state.Money or 0) + math.floor(state.JobSalary / 12) -- Monthly income
+	end
+
 	-- Initialize event history if needed
 	EventRunner.initHistory(state)
 
@@ -195,6 +219,7 @@ local function ageUp(player)
 		pendingEvents[player] = {
 			eventDef = eventDef,
 			dynamicData = dynamicData or {},
+			choiceIndex = nil,
 		}
 		
 		-- Mark event as occurred (for one-time/cooldown tracking)
@@ -218,42 +243,213 @@ end)
 -- EVENT CHOICE HANDLING
 ----------------------------------------------------------------
 
-SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceId)
+SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	local state = getLife(player)
 	if not state.Name then
 		return
 	end
 
-	local eventDef = EventLibrary.ById[eventId]
-	if not eventDef then
+	-- Get pending event data
+	local pending = pendingEvents[player]
+	if not pending then
+		pushState(player, state, "Event not found.")
+		return
+	end
+	
+	local eventDef = pending.eventDef
+	if not eventDef or eventDef.id ~= eventId then
+		pushState(player, state, "Event mismatch.")
 		return
 	end
 
-	local choiceDef = nil
-	for _, c in ipairs(eventDef.choices or {}) do
-		if c.id == choiceId then
-			choiceDef = c
-			break
-		end
-	end
-	if not choiceDef then
+	-- Validate choice index
+	if type(choiceIndex) ~= "number" or choiceIndex < 1 or choiceIndex > #eventDef.choices then
+		pushState(player, state, "Invalid choice.")
 		return
 	end
 
-	-- Get stored dynamic data from when event was presented
-	local dynamicData = {}
-	if pendingEvents[player] and pendingEvents[player].eventDef.id == eventId then
-		dynamicData = pendingEvents[player].dynamicData or {}
-		pendingEvents[player] = nil -- Clear pending event
+	local choice = eventDef.choices[choiceIndex]
+	if not choice then
+		pushState(player, state, "Choice not found.")
+		return
 	end
 
-	-- Apply choice with dynamic data
-	local resultText = EventRunner.applyChoice(state, eventDef, choiceDef, dynamicData)
-	state:AddFeed(resultText)
-	pushState(player, state, resultText)
-end)
+	-- Check if choice triggers a minigame
+	if choice.minigame then
+		-- Store choice for after minigame completes
+		pending.choiceIndex = choiceIndex
+		-- Client will handle minigame, then send MinigameResult
+		return
+	end
 
--- Clean up pending events when player leaves
-Players.PlayerRemoving:Connect(function(player)
+	-- Apply choice immediately
+	local dynamicData = pending.dynamicData or {}
+	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
+	
+	if err then
+		pushState(player, state, "Error: " .. tostring(err))
+		return
+	end
+
+	-- Clear pending event
 	pendingEvents[player] = nil
+
+	local feedText = results.resultText or "Something happened..."
+	state:AddFeed(feedText)
+	pushState(player, state, feedText)
 end)
+
+----------------------------------------------------------------
+-- MINIGAME RESULT HANDLING
+----------------------------------------------------------------
+
+MinigameResult.OnServerEvent:Connect(function(player, success, minigameData)
+	local state = getLife(player)
+	if not state.Name then
+		return
+	end
+
+	local pending = pendingEvents[player]
+	if not pending or not pending.choiceIndex then
+		pushState(player, state, "No minigame pending.")
+		return
+	end
+
+	local eventDef = pending.eventDef
+	local choiceIndex = pending.choiceIndex
+	local dynamicData = pending.dynamicData or {}
+
+	-- Apply choice with minigame bonus if won
+	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
+	
+	if err then
+		pushState(player, state, "Error: " .. tostring(err))
+		pendingEvents[player] = nil
+		return
+	end
+
+	-- Modify results based on minigame success
+	local feedText = results.resultText or "Something happened..."
+	
+	if success then
+		-- Bonus for winning minigame
+		if results.effects.Money then
+			local bonus = math.floor(math.abs(results.effects.Money) * 0.5)
+			state.Money = (state.Money or 0) + bonus
+			feedText = feedText .. " (Minigame bonus: +" .. tostring(bonus) .. ")"
+		end
+		if results.effects.Happiness then
+			state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 10, 0, 100)
+		end
+	else
+		-- Penalty for losing minigame
+		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) - 10, 0, 100)
+		feedText = feedText .. " (Minigame failed - morale down)"
+	end
+
+	-- Clear pending event
+	pendingEvents[player] = nil
+
+	state:AddFeed(feedText)
+	pushState(player, state, feedText)
+end)
+
+----------------------------------------------------------------
+-- STORY PATH API
+----------------------------------------------------------------
+
+GetStoryPaths.OnServerInvoke = function(player)
+	local state = getLife(player)
+	if not state then return {} end
+	
+	return EventRunner.getStoryPaths(state)
+end
+
+GetSpecialActions.OnServerInvoke = function(player)
+	local state = getLife(player)
+	if not state then return {} end
+	
+	return EventRunner.getSpecialActions(state)
+end
+
+----------------------------------------------------------------
+-- SPECIAL ACTIONS (For story paths)
+----------------------------------------------------------------
+
+local function createSpecialActionRemote(name)
+	local rf = remotesFolder:FindFirstChild(name)
+	if not rf then
+		rf = Instance.new("RemoteFunction")
+		rf.Name = name
+		rf.Parent = remotesFolder
+	end
+	return rf
+end
+
+local DoSpecialAction = createSpecialActionRemote("DoSpecialAction")
+
+DoSpecialAction.OnServerInvoke = function(player, actionId)
+	local state = getLife(player)
+	if not state or not state.Flags then
+		return { success = false, message = "No active life." }
+	end
+
+	-- Presidential actions
+	if actionId == "executive_order" and state.Flags.president then
+		local orders = {
+			"You signed an executive order on infrastructure!",
+			"You issued an order protecting national parks!",
+			"You signed an order boosting education funding!",
+		}
+		local msg = orders[math.random(#orders)]
+		state:AddFeed(msg)
+		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 15, 0, 100)
+		pushState(player, state, msg)
+		return { success = true, message = msg }
+		
+	elseif actionId == "address_nation" and state.Flags.president then
+		local msg = "You addressed the nation. Approval rating +5%!"
+		state:AddFeed(msg)
+		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 10, 0, 100)
+		pushState(player, state, msg)
+		return { success = true, message = msg }
+	end
+
+	-- Criminal actions
+	if actionId == "collect_debts" and state.Flags.gang_member then
+		local success = math.random() > 0.3
+		if success then
+			local amount = math.random(5000, 20000)
+			state.Money = (state.Money or 0) + amount
+			local msg = "You collected $" .. amount .. " in debts."
+			state:AddFeed(msg)
+			pushState(player, state, msg)
+			return { success = true, message = msg }
+		else
+			local msg = "The debtor fought back! You got nothing."
+			state:AddFeed(msg)
+			state.Stats.Health = math.clamp((state.Stats.Health or 50) - 10, 0, 100)
+			pushState(player, state, msg)
+			return { success = false, message = msg }
+		end
+		
+	elseif actionId == "launder_money" and (state.Flags.underboss or state.Flags.crime_boss) then
+		local amount = math.random(10000, 50000)
+		state.Money = (state.Money or 0) + amount
+		local msg = "You laundered $" .. amount .. " through shell companies."
+		state:AddFeed(msg)
+		pushState(player, state, msg)
+		return { success = true, message = msg }
+		
+	elseif actionId == "order_hit" and (state.Flags.underboss or state.Flags.crime_boss) then
+		local msg = "The hit was carried out successfully. Your rivals fear you."
+		state:AddFeed(msg)
+		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) - 5, 0, 100)
+		pushState(player, state, msg)
+		return { success = true, message = msg }
+	end
+
+	return { success = false, message = "Action not available." }
+end
+
+print("[LifeManager] ✅ Life simulation server initialized!")

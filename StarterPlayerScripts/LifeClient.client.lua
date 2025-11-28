@@ -15,7 +15,8 @@ local player = Players.LocalPlayer
 
 local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 10)
 
-local OccupationScreen, AssetsScreen, RelationshipsScreen, ActivitiesScreen
+local OccupationScreen, AssetsScreen, RelationshipsScreen, ActivitiesScreen, StoryPathsScreen
+local MinigamesModule
 
 if ScreensFolder then
 	local function safeRequire(name)
@@ -26,7 +27,15 @@ if ScreensFolder then
 	AssetsScreen = safeRequire("AssetsScreen")
 	RelationshipsScreen = safeRequire("RelationshipsScreen")
 	ActivitiesScreen = safeRequire("ActivitiesScreen")
+	StoryPathsScreen = safeRequire("StoryPathsScreen")
 end
+
+-- Minigames module (directly in ReplicatedStorage)
+local function safeRequireRS(name)
+	local s, r = pcall(function() return require(ReplicatedStorage:WaitForChild(name, 5)) end)
+	return s and r or nil
+end
+MinigamesModule = safeRequireRS("Minigames")
 
 ----------------------------------------------------------------
 -- REMOTES
@@ -38,6 +47,7 @@ local PresentEvent = remotesFolder:WaitForChild("PresentEvent")
 local SubmitChoice = remotesFolder:WaitForChild("SubmitChoice")
 local SyncState = remotesFolder:WaitForChild("SyncState")
 local SetLifeInfo = remotesFolder:WaitForChild("SetLifeInfo")
+local MinigameResult = remotesFolder:WaitForChild("MinigameResult", 5)
 
 ----------------------------------------------------------------
 -- STATE
@@ -54,7 +64,10 @@ local hasShownAgeHint = false
 local introComplete = false
 local selectedGender = nil
 
-local occupationScreenInstance, assetsScreenInstance, relationshipsScreenInstance, activitiesScreenInstance
+local occupationScreenInstance, assetsScreenInstance, relationshipsScreenInstance, activitiesScreenInstance, storyPathsScreenInstance
+local minigamesInstance
+local pendingMinigameEventId = nil
+local pendingMinigameChoiceIndex = nil
 
 -- Forward declarations for functions used in callbacks
 local showEvent, hideEvent
@@ -474,21 +487,23 @@ local navItems = {
 	{ icon = "🏠", text = "Assets", screen = "assets" },
 	{ icon = "❤️", text = "People", screen = "relationships" },
 	{ icon = "🎭", text = "Activities", screen = "activities" },
+	{ icon = "⭐", text = "Story", screen = "storypaths" },
 }
 
 local navBtnRefs = {}
 
 for idx, info in ipairs(navItems) do
+	-- Create spacer before People (idx 3) for the Age button
 	if idx == 3 then
 		local spacer = Instance.new("Frame")
-		spacer.Size = UDim2.new(0, 80, 0, 1)
+		spacer.Size = UDim2.new(0, 76, 0, 1)
 		spacer.BackgroundTransparency = 1
 		spacer.LayoutOrder = idx
 		spacer.Parent = navBar
 	end
 	
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 64, 0, 52)
+	btn.Size = UDim2.new(0, 54, 0, 52) -- Slightly smaller to fit 5 items
 	btn.BackgroundTransparency = 1
 	btn.AutoButtonColor = false
 	btn.LayoutOrder = idx < 3 and idx or idx + 1
@@ -530,6 +545,7 @@ for idx, info in ipairs(navItems) do
 		elseif info.screen == "assets" and assetsScreenInstance then assetsScreenInstance:show()
 		elseif info.screen == "relationships" and relationshipsScreenInstance then relationshipsScreenInstance:show()
 		elseif info.screen == "activities" and activitiesScreenInstance then activitiesScreenInstance:show()
+		elseif info.screen == "storypaths" and storyPathsScreenInstance then storyPathsScreenInstance:show()
 		end
 	end)
 	
@@ -932,13 +948,41 @@ showEvent = function(payload)
 		pill(btn)
 		stroke(btn, 2, 0.7, C.BlueLight)
 		
+		-- Show minigame indicator
+		if choice.minigame then
+			btn.Text = "🎮 " .. choice.text
+		end
+		
 		btn.MouseEnter:Connect(function() tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.BlueDark }) end)
 		btn.MouseLeave:Connect(function() tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.Blue }) end)
 		
+		local choiceIndex = choice.index or i
+		local minigameType = choice.minigame
+		
 		btn.MouseButton1Click:Connect(function()
 			if currentEventId then
-				SubmitChoice:FireServer(currentEventId, choice.id)
-				hideEvent()
+				-- Check if this choice triggers a minigame
+				if minigameType and minigamesInstance then
+					-- Store pending minigame info
+					pendingMinigameEventId = currentEventId
+					pendingMinigameChoiceIndex = choiceIndex
+					hideEvent()
+					
+					-- Start the minigame
+					minigamesInstance:play(minigameType, function(won, data)
+						-- Send both the choice and minigame result to server
+						SubmitChoice:FireServer(pendingMinigameEventId, pendingMinigameChoiceIndex)
+						if MinigameResult then
+							MinigameResult:FireServer(won, data)
+						end
+						pendingMinigameEventId = nil
+						pendingMinigameChoiceIndex = nil
+					end)
+				else
+					-- No minigame, submit choice directly
+					SubmitChoice:FireServer(currentEventId, choiceIndex)
+					hideEvent()
+				end
 			end
 		end)
 		
@@ -1169,6 +1213,10 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText)
 		if state.Stats then
 			for k, v in pairs(state.Stats) do currentState[k] = v end
 		end
+		-- Update story paths screen if visible
+		if storyPathsScreenInstance and storyPathsScreenInstance.visible then
+			storyPathsScreenInstance:updateUI()
+		end
 	end
 	updateFromState()
 	if lastFeedText then addFeedEntry(lastFeedText) end
@@ -1231,6 +1279,18 @@ occupationScreenInstance = safeNew(OccupationScreen, screenGui, blurOverlay, sho
 assetsScreenInstance = safeNew(AssetsScreen, screenGui, blurOverlay, showBlur, hideBlur, currentState)
 relationshipsScreenInstance = safeNew(RelationshipsScreen, screenGui, blurOverlay, showBlur, hideBlur, currentState)
 activitiesScreenInstance = safeNew(ActivitiesScreen, screenGui, blurOverlay, showBlur, hideBlur, currentState)
+storyPathsScreenInstance = safeNew(StoryPathsScreen, screenGui, currentState)
+
+-- Initialize minigames
+if MinigamesModule then
+	local ok, mg = pcall(MinigamesModule.new, MinigamesModule, screenGui)
+	if ok and mg then
+		minigamesInstance = mg
+		print("[LifeClient] ✅ Minigames initialized!")
+	else
+		warn("[LifeClient] ⚠️ Failed to initialize minigames")
+	end
+end
 
 ----------------------------------------------------------------
 -- INITIAL STATE

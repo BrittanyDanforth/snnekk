@@ -1,292 +1,228 @@
-# BitLife-Style Roblox Life Simulator
+# BloxLife - BitLife Clone for Roblox
 
-A comprehensive BitLife-style life simulation game with **server-validated** actions and **AAA-quality premium UI**. No more 4-year-olds going to law school or broke babies buying mansions!
-
-## ✨ UI Features (v2.0)
-
-### Premium Polish
-- **Header positioned to avoid Roblox logo** - Content starts below the Roblox menu area
-- **Horizontal stats bar** - Stats now display in a compact horizontal row above the nav bar, eliminating overlap with the Age button
-- **Fancy money display** - Green-accented pill with emoji and formatted amounts ($1.5M, $50K, etc.)
-- **Smooth slide-in animations** - All screens animate in/out with Quint easing
-- **Close buttons in TOP RIGHT** - No conflict with Roblox UI elements
-- **Consistent color palette** - Premium gradients and pastel accents throughout
-
-### Event Modals
-- Rounded corners (24px radius)
-- Colored top accent stripe
-- Emoji + bold title
-- Rich text descriptions
-- Full-width pill buttons with hover effects
-- "Surprise me!" random choice option
-- Smooth popup animation with Back easing
-
-### Screen Modules
-Each screen (Occupation, Assets, Relationships, Activities) features:
-- Gradient header with accent color
-- Info bar showing player Age/Money/Status
-- Tab navigation with animated switches
-- Card-based content with icons
-- Pill-shaped action buttons
-- Result modals with success/failure feedback
-
-## 🚀 SETUP INSTRUCTIONS
-
-### Step 1: Create the Remotes Folder
-
-In Roblox Studio, you need to create a folder with all the remotes. You can do this manually OR use the setup script below.
-
-**Option A: Run Setup Script (Recommended)**
-
-Create a **Script** in ServerScriptService with this code, run once, then delete:
-
-```lua
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local folder = ReplicatedStorage:FindFirstChild("LifeRemotes")
-if not folder then
-    folder = Instance.new("Folder")
-    folder.Name = "LifeRemotes"
-    folder.Parent = ReplicatedStorage
-end
-
--- Remote Events (one-way client→server)
-local events = {
-    "RequestAgeUp", "PresentEvent", "SubmitChoice", 
-    "SyncState", "SetLifeInfo", "QuitJob"
-}
-
--- Remote Functions (request→response)
-local functions = {
-    "ApplyForJob", "DoWork", "EnrollEducation", "DoFreelance", "TrySpecialCareer",
-    "BuyProperty", "BuyVehicle", "BuyItem", "BuyCrypto", "SellAsset",
-    "InteractPerson", "GiveMoney",
-    "DoActivity", "CommitCrime", "Gamble"
-}
-
-for _, name in ipairs(events) do
-    if not folder:FindFirstChild(name) then
-        local r = Instance.new("RemoteEvent")
-        r.Name = name
-        r.Parent = folder
-    end
-end
-
-for _, name in ipairs(functions) do
-    if not folder:FindFirstChild(name) then
-        local r = Instance.new("RemoteFunction")
-        r.Name = name
-        r.Parent = folder
-    end
-end
-
-print("✅ All LifeRemotes created! You can delete this script now.")
-```
-
-**Option B: Create Manually**
-
-Create this structure in ReplicatedStorage:
-```
-ReplicatedStorage/
-└── LifeRemotes/           (Folder)
-    ├── RequestAgeUp       (RemoteEvent)
-    ├── PresentEvent       (RemoteEvent)
-    ├── SubmitChoice       (RemoteEvent)
-    ├── SyncState          (RemoteEvent)
-    ├── SetLifeInfo        (RemoteEvent)
-    ├── QuitJob            (RemoteEvent)
-    ├── ApplyForJob        (RemoteFunction)
-    ├── DoWork             (RemoteFunction)
-    ├── EnrollEducation    (RemoteFunction)
-    ├── DoFreelance        (RemoteFunction)
-    ├── TrySpecialCareer   (RemoteFunction)
-    ├── BuyProperty        (RemoteFunction)
-    ├── BuyVehicle         (RemoteFunction)
-    ├── BuyItem            (RemoteFunction)
-    ├── BuyCrypto          (RemoteFunction)
-    ├── SellAsset          (RemoteFunction)
-    ├── InteractPerson     (RemoteFunction)
-    ├── GiveMoney          (RemoteFunction)
-    ├── DoActivity         (RemoteFunction)
-    ├── CommitCrime        (RemoteFunction)
-    └── Gamble             (RemoteFunction)
-```
-
-### Step 2: Place the Scripts
-
-Copy these files to the correct locations:
-
-| File | Location in Roblox |
-|------|-------------------|
-| `LifeClient.client.lua` | StarterPlayer → StarterPlayerScripts |
-| `LifeManager.server.lua` | ServerScriptService |
-| `LifeRemoteHandlers.server.lua` | ServerScriptService |
-| `EventLibrary.lua` | ReplicatedStorage |
-| `EventRunner.lua` | ReplicatedStorage |
-| `LifeState.lua` | ReplicatedStorage |
-| `OccupationScreen.lua` | ReplicatedStorage → Screens |
-| `AssetsScreen.lua` | ReplicatedStorage → Screens |
-| `RelationshipsScreen.lua` | ReplicatedStorage → Screens |
-| `ActivitiesScreen.lua` | ReplicatedStorage → Screens |
-
-### Step 3: Create the Screens Folder
-
-In ReplicatedStorage, create a **Folder** called `Screens` and place all 4 screen modules inside it.
-
----
+A comprehensive BitLife-style life simulation game with deep story paths, minigames, and premium UI.
 
 ## 🎮 Features
 
-### Server-Validated Actions
+### Core Gameplay
+- **Life Simulation**: Age up year by year, making choices that shape your life
+- **Stats System**: Happiness, Health, Smarts, and Looks
+- **Money & Economy**: Earn, spend, gamble, and invest
+- **Relationships**: Family, friends, and enemies
+- **Occupations**: Jobs and education paths
+- **Activities**: Mind & body, social, entertainment, and crime
+- **Assets**: Property, vehicles, and shop items
 
-Every action now checks:
-- ✅ **Age requirements** - Can't go to nightclub at age 5
-- ✅ **Money requirements** - Can't buy a mansion with $0
-- ✅ **Education requirements** - Can't be a doctor without medical school
-- ✅ **Experience requirements** - Can't be senior developer on day 1
+### 🌟 Deep Story Paths (NEW!)
 
-### Occupation Screen (💼)
-| Action | Age Req | Other Requirements |
-|--------|---------|-------------------|
-| Fast Food Worker | 14+ | None |
-| Retail Associate | 16+ | None |
-| Receptionist | 18+ | High School |
-| Software Developer | 22+ | Bachelor's + 2yr exp |
-| Doctor | 30+ | Medical School + 8yr exp |
-| Lawyer | 28+ | Law School + 5yr exp |
+#### Presidential Career Path 🏛️
+Rise from ordinary citizen to the most powerful position in the country!
 
-**Education**
-| Program | Age | Cost | Prerequisite |
-|---------|-----|------|-------------|
-| High School | 14-18 | FREE | None |
-| Community College | 18+ | $15K | High School |
-| Bachelor's | 18+ | $80K | High School |
-| Medical School | 22-45 | $200K | Bachelor's |
-| Law School | 22-50 | $150K | Bachelor's |
+**Progression:**
+1. **Citizen** → Join student council, develop political interest
+2. **Political Intern** → Work on campaigns, learn the ropes
+3. **City Council** → Win your first local election
+4. **State Senator** → Pass legislation, build your reputation
+5. **Congressman** → Go to Washington DC
+6. **U.S. Senator** → National stage politics
+7. **President** → Lead the nation!
 
-**Freelance Gigs**
-| Gig | Age Req | Pay Range |
-|-----|---------|-----------|
-| Walk Dogs | 10+ | $20-50 |
-| Babysit | 12+ | $50-120 |
-| Food Delivery | 16+ | $30-80 |
-| Drive Rideshare | 21+ | $50-150 |
+**Special Events:**
+- Congressional internships
+- Campaign volunteering
+- Corruption opportunities (stay clean or take bribes!)
+- Landmark legislation
+- Presidential debates (with minigame!)
+- National crises
+- Inauguration ceremony
 
-### Assets Screen (💰)
-| Asset Type | Min Age | Examples |
-|------------|---------|----------|
-| Sneakers | 10+ | $350 |
-| Used Car | 16+ | $8,000 |
-| Condo | 18+ | $175,000 |
-| Crypto | 18+ | Varies |
-| Luxury Car | 21+ | $180,000+ |
-| Yacht/Jet | 25+ | $2M-$15M |
+**Special Actions (as President):**
+- Sign executive orders
+- Address the nation
+- Handle crises
 
-### Relationships Screen (❤️)
-| Action | Age Req | Cost | Notes |
-|--------|---------|------|-------|
-| Spend Time | 2+ | FREE | Safe option |
-| Conversation | 3+ | FREE | Build relationship |
-| Compliment | 3+ | FREE | 70% success |
-| Apologize | 4+ | FREE | Repair relationships |
-| Gift | 5+ | $50 | High success rate |
-| Insult | 5+ | FREE | 20% success, high damage |
-| Ask Money | 5+ | FREE | Family only |
+#### Criminal Empire Path 🔫
+Build your criminal organization from petty thief to crime boss!
 
-### Activities Screen (🎭)
-| Activity | Age Req | Cost | Notes |
-|----------|---------|------|-------|
-| Watch TV | 2+ | FREE | +Happiness |
-| Hang Out | 5+ | FREE | Social |
-| Go to Movies | 5+ | $20 | Entertainment |
-| Go to Gym | 14+ | FREE | +Health/Looks |
-| Go to Party | 14+ | FREE | Social |
-| Spa Day | 16+ | $200 | +Looks |
-| Nightclub | 21+ | $50 | Adults only! |
-| Casino | 21+ | $100 | Gambling |
+**Progression:**
+1. **Law-Abiding** → Resist temptation or...
+2. **Petty Criminal** → Shoplifting, small crimes
+3. **Car Thief** → Joyriding, chop shops
+4. **Gang Member** → Join an organization
+5. **Made Member** → Prove yourself in turf wars
+6. **Underboss** → Second in command
+7. **Crime Boss** → Run the whole operation!
 
-**Crime** (Server validates age!)
-| Crime | Age | Risk | Reward |
-|-------|-----|------|--------|
-| Shoplift | 8+ | 25% | $20-150 |
-| Pickpocket | 10+ | 35% | $30-300 |
-| Burglary | 16+ | 50% | $500-5K |
-| Grand Theft Auto | 16+ | 60% | $2K-20K |
-| Bank Robbery | 18+ | 80% | $10K-500K |
+**Special Events:**
+- Gang recruitment
+- Turf wars
+- Drug deals (with heist minigame!)
+- Prison time
+- RICO investigations
+- The coup (take over the organization)
+- Going legitimate
 
----
+**Special Actions (as Crime Boss):**
+- Collect debts
+- Launder money
+- Order hits
+- Hold meetings
 
-## 📁 File Structure
+### 🎮 Minigames (NEW!)
+
+#### Presidential Debate 🎤
+Answer political questions correctly to win debates!
+- Multiple choice questions on policy
+- Time pressure
+- Score against opponent
+- Win to boost campaign success
+
+#### Safe Cracking 🔓
+Crack the 4-digit code to complete heists!
+- Wordle-style guessing game
+- Green = correct digit and position
+- Yellow = correct digit, wrong position
+- 6 attempts to crack the safe
+
+#### Getaway 🚗
+Escape from the cops!
+- Memory sequence game
+- Tap buttons in the correct order
+- Cops are chasing - move fast!
+- Complete sequences to fill escape bar
+
+#### Quick Time Events ⚡
+Precision timing challenges!
+- Tap when indicator is in the green zone
+- Variable difficulty
+- Used for various skill checks
+
+## 📁 Project Structure
 
 ```
-ServerScriptService/
-├── LifeManager.server.lua        # Main game logic
-└── LifeRemoteHandlers.server.lua # NEW! Handles all screen remotes
-
-ReplicatedStorage/
-├── EventLibrary.lua              # Life event definitions
-├── EventRunner.lua               # Event processing
-├── LifeState.lua                 # State management
-├── LifeRemotes/                  # Folder with all remotes
-│   ├── (RemoteEvents)
-│   └── (RemoteFunctions)
+/ReplicatedStorage/
+├── EventLibrary.lua      # All life events with story paths
+├── EventRunner.lua       # Event selection, history, flags
+├── LifeState.lua         # Player state management
+├── Minigames.lua         # All minigame implementations
 └── Screens/
-    ├── OccupationScreen.lua      # Jobs, education, freelance
-    ├── AssetsScreen.lua          # Properties, vehicles, items
-    ├── RelationshipsScreen.lua   # Family, friends, enemies
-    └── ActivitiesScreen.lua      # Activities and crime
+    ├── OccupationScreen.lua
+    ├── AssetsScreen.lua
+    ├── RelationshipsScreen.lua
+    ├── ActivitiesScreen.lua
+    └── StoryPathsScreen.lua  # Story path progress UI
 
-StarterPlayerScripts/
-└── LifeClient.client.lua         # Main client UI
+/ServerScriptService/
+├── LifeManager.server.lua       # Core game loop, events
+└── LifeRemoteHandlers.server.lua # Extended actions handler
+
+/StarterPlayerScripts/
+└── LifeClient.client.lua        # Main UI, minigames integration
 ```
 
----
+## 🔌 Remote Events & Functions
 
-## 🔧 How It Works
+### LifeRemotes Folder
 
-1. **Player opens a screen** (Occupation, Assets, etc.)
-2. **Screen shows current player age/money** from shared state
-3. **Player clicks an action** (Apply, Buy, etc.)
-4. **Client calls RemoteFunction** with action ID
-5. **Server validates:**
-   - Is player old enough?
-   - Does player have enough money?
-   - Does player meet requirements?
-6. **Server returns result** (success/fail + message)
-7. **Client shows result modal** with outcome
+#### Remote Events
+| Name | Direction | Description |
+|------|-----------|-------------|
+| `RequestAgeUp` | Client → Server | Request to age up one year |
+| `PresentEvent` | Server → Client | Send event data for display |
+| `SubmitChoice` | Client → Server | Submit event choice (eventId, choiceIndex) |
+| `SyncState` | Server → Client | Sync player state |
+| `SetLifeInfo` | Client → Server | Set name and gender |
+| `MinigameResult` | Client → Server | Send minigame outcome |
 
----
+#### Remote Functions
+| Name | Description |
+|------|-------------|
+| `GetStoryPaths` | Get player's story path progress |
+| `GetSpecialActions` | Get available special actions |
+| `DoSpecialAction` | Execute a special action |
+| `ApplyForJob` | Apply for a job |
+| `EnrollEducation` | Enroll in education |
+| `BuyAsset` | Purchase an asset |
+| `DoActivity` | Perform an activity |
+| `DoCrime` | Commit a crime |
+| `RelationshipAction` | Interact with relationship |
 
-## 🎯 Quick Start Guide
+## 🎨 UI Features
 
-1. Pick gender (Male/Female)
-2. Pick a character name
-3. Press **Age** to grow older
-4. Open screens using nav buttons:
-   - 💼 Get jobs, education
-   - 💰 Buy stuff (when you have money!)
-   - ❤️ Build relationships
-   - 🎭 Do activities (age-appropriate!)
-5. Make choices when events pop up
-6. Live your best (or worst) life!
+### Premium BitLife-Style Design
+- **Header**: Positioned to avoid Roblox logo overlap
+- **Avatar**: Dynamic emoji based on age
+- **Money Display**: Formatted with icons
+- **Stats Row**: Horizontal layout above nav bar
+- **Event Modals**: Animated slide-in with shadows
 
----
+### Navigation
+- Work (💼) - Jobs & Education
+- Assets (🏠) - Property, Vehicles, Casino
+- People (❤️) - Relationships
+- Activities (🎭) - Mind/Body, Social, Fun, Crime
+- Story (⭐) - Life path progress
 
-## ⚠️ Common Issues
+## 🚀 Getting Started
 
-**"Server not available" error**
-- Make sure the LifeRemotes folder exists
-- Make sure LifeRemoteHandlers.server.lua is in ServerScriptService
-- Run the setup script to create missing remotes
+1. Place all files in their respective locations in Roblox Studio
+2. The `LifeRemotes` folder will be auto-created on first run
+3. Play and enjoy your BitLife experience!
 
-**Screens not showing age/money**
-- The playerState needs to be synced from server
-- Check that SyncState remote is firing properly
+## 📝 Event System
 
-**Actions always fail validation**
-- Make sure you've aged up your character
-- Check that money is being tracked
+### Event Properties
+```lua
+{
+    id = "unique_id",
+    minAge = 18,           -- Minimum age to fire
+    maxAge = 65,           -- Maximum age to fire
+    weight = 10,           -- Selection weight
+    oneTime = false,       -- Only fire once ever
+    cooldown = 5,          -- Years between firings
+    milestone = true,      -- Guaranteed to fire if eligible
+    
+    emoji = "🎉",
+    title = "Event Title",
+    text = "Event description with %dynamicData% placeholders",
+    
+    getDynamicData = function(state)
+        return { name = "Random Name" }
+    end,
+    
+    requires = function(state)
+        return state.Flags.some_flag == true
+    end,
+    
+    choices = {
+        {
+            text = "Choice text",
+            effects = { Happiness = 10, Money = -100 },
+            result = "Result text",
+            setFlag = "some_flag",
+            minigame = "debate",  -- Triggers minigame
+        }
+    }
+}
+```
 
----
+### Flags System
+Flags track story progression and unlock events:
+- `political_interest` → Unlocks political events
+- `gang_member` → Unlocks gang events
+- `president` → Unlocks presidential actions
+- `crime_boss` → Unlocks crime boss actions
 
-Built with ❤️ for Roblox
+## 🎯 Future Enhancements
+
+- [ ] Save/Load game progress
+- [ ] More minigames (stock trading, sports)
+- [ ] Celebrity path
+- [ ] Military path
+- [ ] More relationship dynamics
+- [ ] Achievements system
+- [ ] Leaderboards
+
+## 📄 License
+
+MIT License - Feel free to use and modify!

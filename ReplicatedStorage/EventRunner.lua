@@ -1,58 +1,51 @@
 -- EventRunner.lua
--- Advanced event system with tracking, cooldowns, milestones, and dynamic text
+-- Manages event selection, history, flags, and story path progression
 
 local EventRunner = {}
 
---[[
-  Event State Tracking (stored per-player in LifeState.EventHistory):
-  {
-    seenEvents = { [eventId] = true },           -- Events that happened (for oneTime)
-    lastOccurrence = { [eventId] = age },        -- Last age this event fired (for cooldown)
-    milestonesFired = { [age] = true },          -- Milestones that fired this age
-  }
-]]
-
--- Initialize event history for a player state
+-- Initialize event history and flags for a player state
 function EventRunner.initHistory(state)
 	if not state.EventHistory then
 		state.EventHistory = {
-			seenEvents = {},
-			lastOccurrence = {},
-			milestonesFired = {},
+			seenEvents = {},      -- Events that have occurred
+			lastOccurrence = {},  -- When each event last fired (for cooldowns)
+			milestonesFired = {}, -- Milestone events that have been shown
 		}
+	end
+	if not state.Flags then
+		state.Flags = {} -- Story progression flags
 	end
 	return state.EventHistory
 end
 
 -- Check if an event can fire based on all conditions
 function EventRunner.canEventFire(state, eventDef)
+	local history = state.EventHistory or {}
 	local age = state.Age or 0
-	local history = EventRunner.initHistory(state)
 	
-	-- Check age range
-	local minAge = eventDef.minAge or 0
-	local maxAge = eventDef.maxAge or math.huge
-	if age < minAge or age > maxAge then
-		return false
-	end
+	-- Age check
+	if eventDef.minAge and age < eventDef.minAge then return false end
+	if eventDef.maxAge and age > eventDef.maxAge then return false end
 	
-	-- Check one-time events
-	if eventDef.oneTime and history.seenEvents[eventDef.id] then
-		return false
-	end
-	
-	-- Check cooldown
-	if eventDef.cooldown and history.lastOccurrence[eventDef.id] then
-		local lastAge = history.lastOccurrence[eventDef.id]
-		if age - lastAge < eventDef.cooldown then
+	-- One-time event check
+	if eventDef.oneTime then
+		if history.seenEvents and history.seenEvents[eventDef.id] then
 			return false
 		end
 	end
 	
-	-- Check custom requirements function
-	if eventDef.requires and type(eventDef.requires) == "function" then
-		local success, canFire = pcall(eventDef.requires, state)
-		if not success or not canFire then
+	-- Cooldown check
+	if eventDef.cooldown and history.lastOccurrence then
+		local lastAge = history.lastOccurrence[eventDef.id]
+		if lastAge and (age - lastAge) < eventDef.cooldown then
+			return false
+		end
+	end
+	
+	-- Custom requirements function
+	if eventDef.requires then
+		local ok, canFire = pcall(eventDef.requires, state)
+		if not ok or not canFire then
 			return false
 		end
 	end
@@ -60,205 +53,315 @@ function EventRunner.canEventFire(state, eventDef)
 	return true
 end
 
--- Get milestone events for current age (guaranteed to fire)
+-- Get milestone event if one should fire this age
 function EventRunner.getMilestoneEvent(state, events)
+	local history = state.EventHistory or {}
 	local age = state.Age or 0
-	local history = EventRunner.initHistory(state)
 	
-	-- Don't repeat milestones for the same age
-	if history.milestonesFired[age] then
-		return nil
-	end
-	
-	for _, ev in ipairs(events) do
-		if ev.milestone and EventRunner.canEventFire(state, ev) then
-			return ev
+	for _, event in ipairs(events) do
+		if event.milestone and EventRunner.canEventFire(state, event) then
+			-- Check if this milestone hasn't been fired yet
+			if not (history.milestonesFired and history.milestonesFired[event.id]) then
+				return event
+			end
 		end
 	end
 	
 	return nil
 end
 
--- Pick a random event using weighted selection (excludes milestones, respects all rules)
+-- Weighted random selection from eligible events
 function EventRunner.pickRandomEvent(state, events)
-	local pool = {}
+	local eligible = {}
 	local totalWeight = 0
 	
-	for _, ev in ipairs(events) do
-		-- Skip milestones (they're handled separately)
-		if ev.milestone then
-			continue
-		end
-		
-		if EventRunner.canEventFire(state, ev) then
-			local w = ev.weight or 1
-			totalWeight = totalWeight + w
-			table.insert(pool, { def = ev, weight = w })
+	for _, event in ipairs(events) do
+		-- Skip milestones in random selection
+		if not event.milestone and EventRunner.canEventFire(state, event) then
+			table.insert(eligible, event)
+			totalWeight = totalWeight + (event.weight or 10)
 		end
 	end
 	
-	if totalWeight <= 0 or #pool == 0 then
-		return nil
-	end
+	if #eligible == 0 then return nil end
 	
 	-- Weighted random selection
 	local roll = math.random() * totalWeight
-	local running = 0
-	for _, item in ipairs(pool) do
-		running = running + item.weight
-		if roll <= running then
-			return item.def
+	local cumulative = 0
+	
+	for _, event in ipairs(eligible) do
+		cumulative = cumulative + (event.weight or 10)
+		if roll <= cumulative then
+			return event
 		end
 	end
 	
-	-- Fallback
-	return pool[math.random(#pool)].def
+	return eligible[#eligible]
 end
 
--- Main function: pick the best event for this age
+-- Main event picker - milestones take priority
 function EventRunner.pickEvent(state, events)
-	-- First, check for milestone events (guaranteed)
+	-- First check for milestone events
 	local milestone = EventRunner.getMilestoneEvent(state, events)
 	if milestone then
 		return milestone
 	end
 	
-	-- Otherwise, pick a random weighted event
+	-- Otherwise pick a random eligible event
 	return EventRunner.pickRandomEvent(state, events)
 end
 
 -- Mark an event as occurred
 function EventRunner.markEventOccurred(state, eventDef)
-	local history = EventRunner.initHistory(state)
-	local age = state.Age or 0
+	local history = state.EventHistory
+	if not history then return end
 	
-	-- Track for one-time events
-	if eventDef.oneTime then
-		history.seenEvents[eventDef.id] = true
-	end
+	-- Track seen events
+	history.seenEvents = history.seenEvents or {}
+	history.seenEvents[eventDef.id] = true
 	
-	-- Track for cooldown
-	history.lastOccurrence[eventDef.id] = age
+	-- Track last occurrence for cooldowns
+	history.lastOccurrence = history.lastOccurrence or {}
+	history.lastOccurrence[eventDef.id] = state.Age
 	
-	-- Track milestone
+	-- Track milestones
 	if eventDef.milestone then
-		history.milestonesFired[age] = true
+		history.milestonesFired = history.milestonesFired or {}
+		history.milestonesFired[eventDef.id] = true
 	end
 end
 
--- Process dynamic text replacement (%variableName%)
+-- Process dynamic text placeholders
 function EventRunner.processDynamicText(text, dynamicData)
 	if not text or not dynamicData then return text end
 	
+	local result = text
 	for key, value in pairs(dynamicData) do
-		text = text:gsub("%%" .. key .. "%%", tostring(value))
+		-- Handle nested tables (like %bill.name%)
+		if type(value) == "table" then
+			for subKey, subValue in pairs(value) do
+				local placeholder = "%%" .. key .. "%." .. subKey .. "%%"
+				result = string.gsub(result, placeholder, tostring(subValue))
+			end
+		else
+			local placeholder = "%%" .. key .. "%%"
+			result = string.gsub(result, placeholder, tostring(value))
+		end
 	end
 	
-	return text
+	return result
 end
 
--- Build client-safe payload with dynamic text processing
+-- Build client payload with dynamic data
 function EventRunner.buildClientPayload(eventDef, state)
-	-- Generate dynamic data if available
 	local dynamicData = {}
-	if eventDef.getDynamicData and type(eventDef.getDynamicData) == "function" then
-		local success, data = pcall(eventDef.getDynamicData, state)
-		if success and data then
+	
+	-- Generate dynamic data if function exists
+	if eventDef.getDynamicData then
+		local ok, data = pcall(eventDef.getDynamicData, state)
+		if ok and data then
 			dynamicData = data
 		end
 	end
 	
-	-- Process text with dynamic replacements
+	-- Process text
 	local processedText = EventRunner.processDynamicText(eventDef.text, dynamicData)
-	local processedTitle = EventRunner.processDynamicText(eventDef.title, dynamicData)
-	local processedRelationName = EventRunner.processDynamicText(eventDef.relationName, dynamicData)
+	
+	-- Process choices
+	local processedChoices = {}
+	for i, choice in ipairs(eventDef.choices or {}) do
+		local choiceText = EventRunner.processDynamicText(choice.text, dynamicData)
+		local resultText = EventRunner.processDynamicText(choice.result, dynamicData)
+		
+		table.insert(processedChoices, {
+			index = i,
+			text = choiceText,
+			result = resultText,
+			effects = choice.effects,
+			setFlag = choice.setFlag,
+			clearFlag = choice.clearFlag,
+			minigame = choice.minigame,
+		})
+	end
 	
 	local payload = {
 		id = eventDef.id,
-		text = processedText,
-		title = processedTitle,
 		emoji = eventDef.emoji,
-		showRelationship = eventDef.showRelationship,
-		relationName = processedRelationName,
-		relationship = eventDef.relationship,
-		choices = {},
-		_dynamicData = dynamicData, -- Pass to server for result processing
+		title = eventDef.title,
+		text = processedText,
+		choices = processedChoices,
+		hasMinigame = eventDef.minigame ~= nil,
+		minigameType = eventDef.minigame,
 	}
-	
-	for _, choice in ipairs(eventDef.choices or {}) do
-		local processedChoiceText = EventRunner.processDynamicText(choice.text, dynamicData)
-		table.insert(payload.choices, {
-			id = choice.id,
-			text = processedChoiceText,
-		})
-	end
 	
 	return payload, dynamicData
 end
 
--- Apply the chosen branch effects onto the LifeState
-function EventRunner.applyChoice(state, eventDef, choiceDef, dynamicData)
-	local effects = choiceDef.effects or {}
+-- Apply choice effects to state
+function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
+	local choice = eventDef.choices[choiceIndex]
+	if not choice then return nil, "Invalid choice" end
 	
-	-- Apply stat changes
-	if effects.Stats then
-		for key, delta in pairs(effects.Stats) do
-			-- Handle both nested Stats and flat stats
-			if state.Stats and state.Stats[key] ~= nil then
-				state.Stats[key] = state.Stats[key] + delta
-			elseif state[key] ~= nil then
-				state[key] = state[key] + delta
+	local results = {
+		effects = {},
+		flagsSet = {},
+		flagsCleared = {},
+		minigameTriggered = nil,
+	}
+	
+	-- Apply stat effects
+	if choice.effects then
+		for stat, delta in pairs(choice.effects) do
+			if stat == "Money" then
+				state.Money = (state.Money or 0) + delta
+				results.effects.Money = delta
+			elseif stat == "Happiness" then
+				state.Happiness = math.clamp((state.Happiness or 50) + delta, 0, 100)
+				results.effects.Happiness = delta
+			elseif stat == "Health" then
+				state.Health = math.clamp((state.Health or 50) + delta, 0, 100)
+				results.effects.Health = delta
+			elseif stat == "Smarts" then
+				state.Smarts = math.clamp((state.Smarts or 50) + delta, 0, 100)
+				results.effects.Smarts = delta
+			elseif stat == "Looks" then
+				state.Looks = math.clamp((state.Looks or 50) + delta, 0, 100)
+				results.effects.Looks = delta
 			end
 		end
 	end
 	
-	-- Apply money changes
-	if effects.Money then
-		state.Money = (state.Money or 0) + effects.Money
-	end
-	
-	-- Apply dynamic money (from events like lottery, inheritance)
-	if eventDef.applyDynamicMoney and dynamicData and dynamicData.amount then
-		state.Money = (state.Money or 0) + dynamicData.amount
-	end
-	
-	-- Clamp stats
-	if state.ClampStats then
-		state:ClampStats()
-	else
-		-- Manual clamp if method doesn't exist
-		if state.Stats then
-			for key, val in pairs(state.Stats) do
-				state.Stats[key] = math.clamp(val, 0, 100)
-			end
+	-- Apply dynamic money if present
+	if choice.getDynamicMoney and dynamicData then
+		local ok, amount = pcall(choice.getDynamicMoney, dynamicData)
+		if ok and amount then
+			state.Money = (state.Money or 0) + amount
+			results.effects.Money = (results.effects.Money or 0) + amount
 		end
 	end
 	
-	-- Process result text with dynamic data
-	local resultText = EventRunner.processDynamicText(choiceDef.resultText, dynamicData)
+	-- Set flags
+	if choice.setFlag then
+		state.Flags = state.Flags or {}
+		state.Flags[choice.setFlag] = true
+		table.insert(results.flagsSet, choice.setFlag)
+	end
 	
-	return resultText or "You made a choice that shaped your life."
+	-- Clear flags
+	if choice.clearFlag then
+		state.Flags = state.Flags or {}
+		state.Flags[choice.clearFlag] = nil
+		table.insert(results.flagsCleared, choice.clearFlag)
+	end
+	
+	-- Check for minigame trigger
+	if choice.minigame then
+		results.minigameTriggered = choice.minigame
+	end
+	
+	-- Process result text
+	local resultText = EventRunner.processDynamicText(choice.result, dynamicData)
+	results.resultText = resultText
+	
+	return results, nil
 end
 
--- Get a summary of event history (for debugging)
-function EventRunner.getHistorySummary(state)
-	local history = EventRunner.initHistory(state)
-	local seenCount = 0
-	for _ in pairs(history.seenEvents) do seenCount = seenCount + 1 end
+-- Get story path status for UI
+function EventRunner.getStoryPaths(state)
+	local flags = state.Flags or {}
 	
-	return {
-		seenEvents = seenCount,
-		lastOccurrences = history.lastOccurrence,
+	local paths = {
+		political = {
+			active = flags.political_interest or flags.elected_official or false,
+			level = "None",
+			progress = 0,
+		},
+		criminal = {
+			active = flags.criminal_tendencies or flags.gang_member or false,
+			level = "None", 
+			progress = 0,
+		},
 	}
+	
+	-- Political career progression
+	if flags.president then
+		paths.political.level = "President"
+		paths.political.progress = 100
+	elseif flags.us_senator then
+		paths.political.level = "U.S. Senator"
+		paths.political.progress = 85
+	elseif flags.congressman then
+		paths.political.level = "Congressman"
+		paths.political.progress = 70
+	elseif flags.state_senator then
+		paths.political.level = "State Senator"
+		paths.political.progress = 50
+	elseif flags.elected_official then
+		paths.political.level = "City Council"
+		paths.political.progress = 30
+	elseif flags.political_experience then
+		paths.political.level = "Political Intern"
+		paths.political.progress = 15
+	elseif flags.political_interest then
+		paths.political.level = "Interested"
+		paths.political.progress = 5
+	end
+	
+	-- Criminal career progression
+	if flags.crime_boss then
+		paths.criminal.level = "Crime Boss"
+		paths.criminal.progress = 100
+	elseif flags.underboss then
+		paths.criminal.level = "Underboss"
+		paths.criminal.progress = 75
+	elseif flags.gang_member and flags.war_veteran then
+		paths.criminal.level = "Made Member"
+		paths.criminal.progress = 50
+	elseif flags.gang_member then
+		paths.criminal.level = "Gang Member"
+		paths.criminal.progress = 35
+	elseif flags.car_thief then
+		paths.criminal.level = "Car Thief"
+		paths.criminal.progress = 20
+	elseif flags.criminal_tendencies then
+		paths.criminal.level = "Petty Criminal"
+		paths.criminal.progress = 10
+	end
+	
+	return paths
 end
 
--- Reset event history (for new game)
-function EventRunner.resetHistory(state)
-	state.EventHistory = {
-		seenEvents = {},
-		lastOccurrence = {},
-		milestonesFired = {},
-	}
+-- Get available special actions based on flags
+function EventRunner.getSpecialActions(state)
+	local flags = state.Flags or {}
+	local actions = {}
+	
+	-- Political actions
+	if flags.elected_official then
+		table.insert(actions, { id = "campaign", name = "Campaign", emoji = "📢", type = "political" })
+	end
+	if flags.state_senator or flags.congressman or flags.us_senator then
+		table.insert(actions, { id = "propose_bill", name = "Propose Bill", emoji = "📜", type = "political" })
+	end
+	if flags.president then
+		table.insert(actions, { id = "executive_order", name = "Executive Order", emoji = "✍️", type = "political" })
+		table.insert(actions, { id = "address_nation", name = "Address Nation", emoji = "📺", type = "political" })
+	end
+	
+	-- Criminal actions
+	if flags.gang_member then
+		table.insert(actions, { id = "collect_debts", name = "Collect Debts", emoji = "💰", type = "criminal" })
+		table.insert(actions, { id = "expand_territory", name = "Expand Territory", emoji = "🗺️", type = "criminal" })
+	end
+	if flags.underboss or flags.crime_boss then
+		table.insert(actions, { id = "launder_money", name = "Launder Money", emoji = "🏦", type = "criminal" })
+		table.insert(actions, { id = "order_hit", name = "Order a Hit", emoji = "🎯", type = "criminal" })
+	end
+	if flags.crime_boss then
+		table.insert(actions, { id = "hold_meeting", name = "Hold Meeting", emoji = "🤝", type = "criminal" })
+	end
+	
+	return actions
 end
 
 return EventRunner
