@@ -1,6 +1,34 @@
 # BitLife-Style Roblox Life Simulator
 
-A comprehensive BitLife-style life simulation game with **server-validated** actions. No more 4-year-olds going to law school or broke babies buying mansions!
+A comprehensive BitLife-style life simulation game with **server-validated** actions and **AAA-quality premium UI**. No more 4-year-olds going to law school or broke babies buying mansions!
+
+## ✨ UI Features (v2.0)
+
+### Premium Polish
+- **Header positioned to avoid Roblox logo** - Content starts below the Roblox menu area
+- **Horizontal stats bar** - Stats now display in a compact horizontal row above the nav bar, eliminating overlap with the Age button
+- **Fancy money display** - Green-accented pill with emoji and formatted amounts ($1.5M, $50K, etc.)
+- **Smooth slide-in animations** - All screens animate in/out with Quint easing
+- **Close buttons in TOP RIGHT** - No conflict with Roblox UI elements
+- **Consistent color palette** - Premium gradients and pastel accents throughout
+
+### Event Modals
+- Rounded corners (24px radius)
+- Colored top accent stripe
+- Emoji + bold title
+- Rich text descriptions
+- Full-width pill buttons with hover effects
+- "Surprise me!" random choice option
+- Smooth popup animation with Back easing
+
+### Screen Modules
+Each screen (Occupation, Assets, Relationships, Activities) features:
+- Gradient header with accent color
+- Info bar showing player Age/Money/Status
+- Tab navigation with animated switches
+- Card-based content with icons
+- Pill-shaped action buttons
+- Result modals with success/failure feedback
 
 ## 🚀 SETUP INSTRUCTIONS
 

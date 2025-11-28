@@ -1,6 +1,5 @@
 -- ActivitiesScreen.lua
--- BitLife-style Activities screen with SERVER VALIDATION
--- Uses remotes - no more toddlers at nightclubs!
+-- Premium AAA-quality Activities screen with server validation
 
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,782 +7,651 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ActivitiesScreen = {}
 ActivitiesScreen.__index = ActivitiesScreen
 
-----------------------------------------------------------------
--- REMOTES
-----------------------------------------------------------------
-
 local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
 local DoActivity = remotesFolder and remotesFolder:FindFirstChild("DoActivity")
 local CommitCrime = remotesFolder and remotesFolder:FindFirstChild("CommitCrime")
 local Gamble = remotesFolder and remotesFolder:FindFirstChild("Gamble")
 
-----------------------------------------------------------------
--- COLORS
-----------------------------------------------------------------
-
-local Colors = {
-	BitLifeBlue      = Color3.fromRGB(37, 99, 235),
-	ActivitiesPurple = Color3.fromRGB(139, 92, 246),
-	ActivitiesPurpleDark = Color3.fromRGB(109, 40, 217),
-	MindBodyGreen    = Color3.fromRGB(16, 185, 129),
-	CrimeRed         = Color3.fromRGB(220, 38, 38),
-	SocialBlue       = Color3.fromRGB(59, 130, 246),
-	EntertainmentOrange = Color3.fromRGB(249, 115, 22),
-	SuccessGreen     = Color3.fromRGB(34, 197, 94),
-	ErrorRed         = Color3.fromRGB(239, 68, 68),
-	White            = Color3.fromRGB(255, 255, 255),
-	CardWhite        = Color3.fromRGB(255, 255, 255),
-	LightGray        = Color3.fromRGB(243, 244, 246),
-	MediumGray       = Color3.fromRGB(156, 163, 175),
-	DarkGray         = Color3.fromRGB(75, 85, 99),
-	DarkerGray       = Color3.fromRGB(55, 65, 81),
-	TextBlack        = Color3.fromRGB(17, 24, 39),
-	ScreenBg         = Color3.fromRGB(241, 245, 249),
-	OverlayDark      = Color3.fromRGB(0, 0, 0),
-	WarningYellow    = Color3.fromRGB(254, 243, 199),
-	WarningText      = Color3.fromRGB(146, 64, 14),
+-- Premium Colors
+local C = {
+	Amber = Color3.fromRGB(245, 158, 11),
+	AmberDark = Color3.fromRGB(217, 119, 6),
+	AmberPale = Color3.fromRGB(254, 243, 199),
+	Blue = Color3.fromRGB(37, 99, 235),
+	BlueDark = Color3.fromRGB(29, 78, 216),
+	BluePale = Color3.fromRGB(219, 234, 254),
+	Green = Color3.fromRGB(34, 197, 94),
+	GreenDark = Color3.fromRGB(22, 163, 74),
+	GreenPale = Color3.fromRGB(220, 252, 231),
+	Purple = Color3.fromRGB(139, 92, 246),
+	PurplePale = Color3.fromRGB(237, 233, 254),
+	Red = Color3.fromRGB(239, 68, 68),
+	RedDark = Color3.fromRGB(220, 38, 38),
+	RedPale = Color3.fromRGB(254, 226, 226),
+	Pink = Color3.fromRGB(236, 72, 153),
+	PinkPale = Color3.fromRGB(252, 231, 243),
+	Cyan = Color3.fromRGB(6, 182, 212),
+	CyanPale = Color3.fromRGB(207, 250, 254),
+	White = Color3.fromRGB(255, 255, 255),
+	Gray50 = Color3.fromRGB(249, 250, 251),
+	Gray100 = Color3.fromRGB(243, 244, 246),
+	Gray200 = Color3.fromRGB(229, 231, 235),
+	Gray300 = Color3.fromRGB(209, 213, 219),
+	Gray400 = Color3.fromRGB(156, 163, 175),
+	Gray500 = Color3.fromRGB(107, 114, 128),
+	Gray600 = Color3.fromRGB(75, 85, 99),
+	Gray700 = Color3.fromRGB(55, 65, 81),
+	Gray900 = Color3.fromRGB(17, 24, 39),
+	Black = Color3.fromRGB(0, 0, 0),
+	Bg = Color3.fromRGB(241, 245, 249),
 }
 
-local Fonts = {
-	Title = Enum.Font.GothamBold,
-	Body = Enum.Font.Gotham,
-	BodyMedium = Enum.Font.GothamMedium,
-	Button = Enum.Font.GothamBold,
+local F = { Title = Enum.Font.GothamBold, Body = Enum.Font.Gotham, Medium = Enum.Font.GothamMedium, Button = Enum.Font.GothamBold }
+
+-- Sample Data
+local MindBody = {
+	{ id = "gym", name = "Hit the Gym", emoji = "🏋️", effect = "+Health", minAge = 12, cost = 0 },
+	{ id = "meditate", name = "Meditate", emoji = "🧘", effect = "+Happiness", minAge = 10, cost = 0 },
+	{ id = "study", name = "Study", emoji = "📚", effect = "+Smarts", minAge = 6, cost = 0 },
+	{ id = "spa", name = "Visit Spa", emoji = "💆", effect = "+Looks", minAge = 16, cost = 200 },
 }
 
-----------------------------------------------------------------
--- DATA WITH AGE REQUIREMENTS
-----------------------------------------------------------------
-
-local MindBodyActivities = {
-	{ id = "tv", name = "Watch TV", emoji = "📺", minAge = 2, cost = 0, desc = "Relax" },
-	{ id = "read", name = "Read a Book", emoji = "📚", minAge = 5, cost = 0, desc = "+Smarts" },
-	{ id = "games", name = "Play Video Games", emoji = "🎮", minAge = 5, cost = 0, desc = "Fun!" },
-	{ id = "run", name = "Go for a Run", emoji = "🏃", minAge = 6, cost = 0, desc = "+Health" },
-	{ id = "meditate", name = "Meditate", emoji = "🧘", minAge = 8, cost = 0, desc = "+Happiness" },
-	{ id = "yoga", name = "Yoga", emoji = "🧘‍♀️", minAge = 10, cost = 0, desc = "+Health/Happy" },
-	{ id = "salon", name = "Salon Visit", emoji = "💇", minAge = 12, cost = 80, desc = "+Looks" },
-	{ id = "gym", name = "Go to the Gym", emoji = "🏋️", minAge = 14, cost = 0, desc = "+Health/Looks" },
-	{ id = "spa", name = "Spa Day", emoji = "💆", minAge = 16, cost = 200, desc = "+Looks/Happy" },
+local Social = {
+	{ id = "party", name = "Go to Party", emoji = "🎉", effect = "+Happiness", minAge = 16, cost = 0 },
+	{ id = "date", name = "Go on a Date", emoji = "💕", effect = "+Happiness", minAge = 16, cost = 100 },
+	{ id = "club", name = "Night Club", emoji = "🕺", effect = "+Happiness", minAge = 21, cost = 150 },
 }
 
-local SocialActivities = {
-	{ id = "hangout", name = "Hang Out", emoji = "👥", minAge = 5, cost = 0, desc = "With friends" },
-	{ id = "party", name = "Go to a Party", emoji = "🎉", minAge = 14, cost = 0, desc = "Social!" },
-	{ id = "host_party", name = "Host a Party", emoji = "🏠", minAge = 16, cost = 300, desc = "Be the host" },
-	{ id = "nightclub", name = "Nightclub", emoji = "🕺", minAge = 21, cost = 50, desc = "21+ only!" },
+local Entertainment = {
+	{ id = "movie", name = "Watch Movie", emoji = "🎬", effect = "+Happiness", minAge = 5, cost = 20 },
+	{ id = "concert", name = "Concert", emoji = "🎤", effect = "+Happiness", minAge = 12, cost = 100 },
+	{ id = "vacation", name = "Vacation", emoji = "✈️", effect = "+Happiness", minAge = 10, cost = 2000 },
 }
 
-local EntertainmentActivities = {
-	{ id = "movies", name = "Go to Movies", emoji = "🎬", minAge = 5, cost = 20, desc = "Cinema" },
-	{ id = "concert", name = "Concert", emoji = "🎸", minAge = 12, cost = 150, desc = "Live music!" },
-	{ id = "vacation", name = "Vacation", emoji = "✈️", minAge = 5, cost = 2000, desc = "Travel!" },
-	{ id = "casino", name = "Casino", emoji = "🎰", minAge = 21, cost = 100, desc = "Gambling" },
+local Crimes = {
+	{ id = "shoplift", name = "Shoplift", emoji = "🛒", risk = 30, reward = "up to $100", minAge = 10 },
+	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", risk = 40, reward = "up to $500", minAge = 12 },
+	{ id = "burglary", name = "Burglary", emoji = "🏠", risk = 60, reward = "up to $5,000", minAge = 16 },
+	{ id = "robbery", name = "Armed Robbery", emoji = "🔫", risk = 80, reward = "up to $50,000", minAge = 18 },
 }
 
-local CrimeActivities = {
-	{ id = "shoplift", name = "Shoplift", emoji = "🛒", minAge = 8, risk = 25, reward = "$20-150" },
-	{ id = "porch_pirate", name = "Porch Pirate", emoji = "📦", minAge = 10, risk = 20, reward = "$10-200" },
-	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", minAge = 10, risk = 35, reward = "$30-300" },
-	{ id = "burglary", name = "Burglary", emoji = "🏠", minAge = 16, risk = 50, reward = "$500-5K" },
-	{ id = "gta", name = "Grand Theft Auto", emoji = "🚗", minAge = 16, risk = 60, reward = "$2K-20K" },
-	{ id = "bank_robbery", name = "Bank Robbery", emoji = "🏦", minAge = 18, risk = 80, reward = "$10K-500K" },
-}
+-- Helpers
+local function corner(p, r) local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, r); c.Parent = p; return c end
+local function pill(p) local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0.5, 0); c.Parent = p; return c end
+local function stroke(p, t, tr, col) local s = Instance.new("UIStroke"); s.Thickness = t; s.Transparency = tr or 0; s.Color = col or C.White; s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; s.Parent = p; return s end
+local function pad(p, l, r, t, b) local pd = Instance.new("UIPadding"); pd.PaddingLeft = UDim.new(0, l or 0); pd.PaddingRight = UDim.new(0, r or 0); pd.PaddingTop = UDim.new(0, t or 0); pd.PaddingBottom = UDim.new(0, b or 0); pd.Parent = p; return pd end
+local function tween(o, i, p) local t = TweenService:Create(o, i, p); t:Play(); return t end
 
-----------------------------------------------------------------
--- HELPERS
-----------------------------------------------------------------
-
-local function createUICorner(parent, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius)
-	c.Parent = parent
-	return c
+local function formatMoney(n)
+	if n >= 1000000 then return "$" .. string.format("%.1f", n/1000000) .. "M"
+	elseif n >= 1000 then return "$" .. string.format("%.0f", n/1000) .. "K"
+	else return "$" .. n end
 end
-
-local function createPillCorner(parent)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0.5, 0)
-	c.Parent = parent
-	return c
-end
-
-local function createUIStroke(parent, thickness, transparency, color)
-	local s = Instance.new("UIStroke")
-	s.Thickness = thickness
-	s.Transparency = transparency or 0
-	s.Color = color or Colors.White
-	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	s.Parent = parent
-	return s
-end
-
-local function createUIPadding(parent, left, right, top, bottom)
-	local p = Instance.new("UIPadding")
-	p.PaddingLeft = UDim.new(0, left or 0)
-	p.PaddingRight = UDim.new(0, right or 0)
-	p.PaddingTop = UDim.new(0, top or 0)
-	p.PaddingBottom = UDim.new(0, bottom or 0)
-	p.Parent = parent
-	return p
-end
-
-local function tween(obj, info, props)
-	local t = TweenService:Create(obj, info, props)
-	t:Play()
-	return t
-end
-
-local function formatMoney(amount)
-	if amount >= 1000 then return "$" .. string.format("%.0fK", amount / 1000) end
-	return "$" .. amount
-end
-
-----------------------------------------------------------------
--- SCREEN
-----------------------------------------------------------------
 
 function ActivitiesScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
 	local self = setmetatable({}, ActivitiesScreen)
-	
 	self.screenGui = screenGui
 	self.playerState = playerState
+	self.showBlur = showBlurFunc
+	self.hideBlur = hideBlurFunc
 	self.isVisible = false
-	
+	self.currentTab = "mindbody"
 	self:createUI()
-	self:createConfirmModal()
 	self:createResultModal()
-	
 	return self
 end
 
-function ActivitiesScreen:getPlayerAge()
-	return self.playerState and self.playerState.Age or 0
-end
-
-function ActivitiesScreen:getPlayerMoney()
-	return self.playerState and self.playerState.Money or 0
-end
+function ActivitiesScreen:getAge() return self.playerState and self.playerState.Age or 0 end
+function ActivitiesScreen:getMoney() return self.playerState and self.playerState.Money or 0 end
+function ActivitiesScreen:isInJail() return self.playerState and self.playerState.InJail or false end
 
 function ActivitiesScreen:createUI()
 	self.overlay = Instance.new("Frame")
 	self.overlay.Name = "ActivitiesOverlay"
 	self.overlay.Size = UDim2.fromScale(1, 1)
-	self.overlay.BackgroundColor3 = Colors.ScreenBg
+	self.overlay.BackgroundColor3 = C.Bg
 	self.overlay.Visible = false
 	self.overlay.ZIndex = 80
 	self.overlay.Parent = self.screenGui
 	
 	-- Header
 	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0, 60)
-	header.BackgroundColor3 = Colors.ActivitiesPurple
-	header.BorderSizePixel = 0
+	header.Size = UDim2.new(1, 0, 0, 56)
+	header.BackgroundColor3 = C.Amber
 	header.ZIndex = 85
 	header.Parent = self.overlay
 	
-	local headerGrad = Instance.new("UIGradient")
-	headerGrad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Colors.ActivitiesPurple), ColorSequenceKeypoint.new(1, Colors.ActivitiesPurpleDark) })
-	headerGrad.Rotation = 90
-	headerGrad.Parent = header
+	local hGrad = Instance.new("UIGradient")
+	hGrad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C.Amber), ColorSequenceKeypoint.new(1, C.AmberDark) })
+	hGrad.Rotation = 90
+	hGrad.Parent = header
 	
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(1, -80, 1, 0)
-	titleLabel.Position = UDim2.new(0, 16, 0, 0)
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Font = Fonts.Title
-	titleLabel.TextSize = 20
-	titleLabel.TextColor3 = Colors.White
-	titleLabel.Text = "🎭 Activities"
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.ZIndex = 86
-	titleLabel.Parent = header
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -100, 1, 0)
+	title.Position = UDim2.new(0, 20, 0, 0)
+	title.BackgroundTransparency = 1
+	title.Font = F.Title
+	title.TextSize = 20
+	title.TextColor3 = C.White
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Text = "🎭 Activities"
+	title.ZIndex = 86
+	title.Parent = header
 	
+	-- Close button
 	local closeBtn = Instance.new("TextButton")
 	closeBtn.Size = UDim2.new(0, 44, 0, 44)
 	closeBtn.AnchorPoint = Vector2.new(1, 0.5)
-	closeBtn.Position = UDim2.new(1, -10, 0.5, 0)
-	closeBtn.BackgroundColor3 = Colors.White
+	closeBtn.Position = UDim2.new(1, -8, 0.5, 0)
+	closeBtn.BackgroundColor3 = C.White
 	closeBtn.BackgroundTransparency = 0.9
-	closeBtn.Font = Fonts.Title
-	closeBtn.TextSize = 24
-	closeBtn.TextColor3 = Colors.White
+	closeBtn.Font = F.Title
+	closeBtn.TextSize = 22
+	closeBtn.TextColor3 = C.White
 	closeBtn.Text = "✕"
 	closeBtn.AutoButtonColor = false
 	closeBtn.ZIndex = 86
 	closeBtn.Parent = header
-	createUICorner(closeBtn, 22)
+	corner(closeBtn, 22)
 	
-	closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.15), { BackgroundTransparency = 0.7 }) end)
-	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.15), { BackgroundTransparency = 0.9 }) end)
 	closeBtn.MouseButton1Click:Connect(function() self:hide() end)
+	closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.7 }) end)
+	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.9 }) end)
 	
 	-- Info bar
-	local infoBar = Instance.new("Frame")
-	infoBar.Size = UDim2.new(1, -32, 0, 50)
-	infoBar.Position = UDim2.new(0, 16, 0, 70)
-	infoBar.BackgroundColor3 = Colors.CardWhite
-	infoBar.ZIndex = 82
-	infoBar.Parent = self.overlay
-	createUICorner(infoBar, 12)
-	createUIStroke(infoBar, 1, 0.8, Colors.ActivitiesPurple)
+	self.infoBar = Instance.new("Frame")
+	self.infoBar.Size = UDim2.new(1, -16, 0, 44)
+	self.infoBar.Position = UDim2.new(0, 8, 0, 64)
+	self.infoBar.BackgroundColor3 = C.White
+	self.infoBar.ZIndex = 84
+	self.infoBar.Parent = self.overlay
+	corner(self.infoBar, 12)
+	stroke(self.infoBar, 1, 0.9, C.Gray200)
 	
-	self.infoLabel = Instance.new("TextLabel")
-	self.infoLabel.Size = UDim2.fromScale(1, 1)
-	self.infoLabel.BackgroundTransparency = 1
-	self.infoLabel.Font = Fonts.BodyMedium
-	self.infoLabel.TextSize = 14
-	self.infoLabel.TextColor3 = Colors.ActivitiesPurple
-	self.infoLabel.Text = "📅 Age: 0 | 💰 Money: $0"
-	self.infoLabel.ZIndex = 83
-	self.infoLabel.Parent = infoBar
+	local infoLayout = Instance.new("UIListLayout")
+	infoLayout.FillDirection = Enum.FillDirection.Horizontal
+	infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	infoLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	infoLayout.Padding = UDim.new(0, 16)
+	infoLayout.Parent = self.infoBar
+	
+	self.ageChip = self:createInfoChip(self.infoBar, "👤", "Age 0", 1)
+	self.moneyChip = self:createInfoChip(self.infoBar, "💵", "$0", 2)
+	self.statusChip = self:createInfoChip(self.infoBar, "✓", "Free", 3)
+	
+	-- Tab bar
+	local tabBar = Instance.new("Frame")
+	tabBar.Size = UDim2.new(1, -16, 0, 42)
+	tabBar.Position = UDim2.new(0, 8, 0, 116)
+	tabBar.BackgroundColor3 = C.Gray100
+	tabBar.ZIndex = 84
+	tabBar.Parent = self.overlay
+	corner(tabBar, 12)
+	
+	pad(tabBar, 3, 3, 4, 4)
+	
+	local tabLayout = Instance.new("UIListLayout")
+	tabLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	tabLayout.Padding = UDim.new(0, 3)
+	tabLayout.Parent = tabBar
+	
+	self.tabBtns = {}
+	local tabs = {
+		{ id = "mindbody", text = "🧘 Mind" },
+		{ id = "social", text = "🎉 Social" },
+		{ id = "fun", text = "🎬 Fun" },
+		{ id = "crime", text = "💀 Crime" },
+	}
+	
+	for i, tab in ipairs(tabs) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0.24, 0, 1, 0)
+		btn.BackgroundColor3 = i == 1 and C.Amber or C.White
+		btn.Font = F.Button
+		btn.TextSize = 10
+		btn.TextColor3 = i == 1 and C.White or C.Gray600
+		btn.Text = tab.text
+		btn.AutoButtonColor = false
+		btn.LayoutOrder = i
+		btn.ZIndex = 85
+		btn.Parent = tabBar
+		corner(btn, 10)
+		
+		self.tabBtns[tab.id] = btn
+		btn.MouseButton1Click:Connect(function() self:switchTab(tab.id) end)
+	end
 	
 	-- Content
-	local contentScroll = Instance.new("ScrollingFrame")
-	contentScroll.Size = UDim2.new(1, 0, 1, -130)
-	contentScroll.Position = UDim2.new(0, 0, 0, 130)
-	contentScroll.BackgroundTransparency = 1
-	contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	contentScroll.ScrollBarThickness = 4
-	contentScroll.ZIndex = 81
-	contentScroll.Parent = self.overlay
+	self.contentScroll = Instance.new("ScrollingFrame")
+	self.contentScroll.Size = UDim2.new(1, -16, 1, -180)
+	self.contentScroll.Position = UDim2.new(0, 8, 0, 166)
+	self.contentScroll.BackgroundTransparency = 1
+	self.contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	self.contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	self.contentScroll.ScrollBarThickness = 3
+	self.contentScroll.ScrollBarImageColor3 = C.Gray300
+	self.contentScroll.ZIndex = 81
+	self.contentScroll.Parent = self.overlay
 	
-	createUIPadding(contentScroll, 16, 16, 0, 16)
+	self.contentLayout = Instance.new("UIListLayout")
+	self.contentLayout.Padding = UDim.new(0, 10)
+	self.contentLayout.Parent = self.contentScroll
 	
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 16)
-	layout.Parent = contentScroll
+	self:populateMindBody()
+end
+
+function ActivitiesScreen:createInfoChip(parent, icon, text, order)
+	local chip = Instance.new("Frame")
+	chip.Size = UDim2.new(0, 85, 0, 32)
+	chip.BackgroundColor3 = C.Gray50
+	chip.LayoutOrder = order
+	chip.ZIndex = 85
+	chip.Parent = parent
+	corner(chip, 8)
 	
-	self.contentScroll = contentScroll
+	local iconLbl = Instance.new("TextLabel")
+	iconLbl.Size = UDim2.new(0, 22, 1, 0)
+	iconLbl.Position = UDim2.new(0, 6, 0, 0)
+	iconLbl.BackgroundTransparency = 1
+	iconLbl.Font = F.Body
+	iconLbl.TextSize = 13
+	iconLbl.Text = icon
+	iconLbl.ZIndex = 86
+	iconLbl.Parent = chip
 	
-	self:createActivitySection("Mind & Body", "🧠", Colors.MindBodyGreen, MindBodyActivities, 1)
-	self:createActivitySection("Social", "👥", Colors.SocialBlue, SocialActivities, 2)
-	self:createActivitySection("Entertainment", "🎉", Colors.EntertainmentOrange, EntertainmentActivities, 3)
-	self:createCrimeSection(4)
+	local textLbl = Instance.new("TextLabel")
+	textLbl.Name = "Text"
+	textLbl.Size = UDim2.new(1, -28, 1, 0)
+	textLbl.Position = UDim2.new(0, 26, 0, 0)
+	textLbl.BackgroundTransparency = 1
+	textLbl.Font = F.Medium
+	textLbl.TextSize = 11
+	textLbl.TextColor3 = C.Gray700
+	textLbl.TextXAlignment = Enum.TextXAlignment.Left
+	textLbl.Text = text
+	textLbl.ZIndex = 86
+	textLbl.Parent = chip
+	
+	return textLbl
 end
 
 function ActivitiesScreen:updateInfoBar()
-	local age = self:getPlayerAge()
-	local money = self:getPlayerMoney()
-	self.infoLabel.Text = "📅 Age: " .. age .. " | 💰 Money: " .. formatMoney(money)
+	self.ageChip.Text = "Age " .. self:getAge()
+	self.moneyChip.Text = formatMoney(self:getMoney())
+	self.statusChip.Text = self:isInJail() and "In Jail" or "Free"
+	local chip = self.statusChip.Parent
+	chip.BackgroundColor3 = self:isInJail() and C.RedPale or C.GreenPale
 end
 
-function ActivitiesScreen:createActivitySection(title, emoji, color, activities, order)
-	local section = Instance.new("Frame")
-	section.Name = title:gsub(" ", "") .. "Section"
-	section.Size = UDim2.new(1, 0, 0, 0)
-	section.AutomaticSize = Enum.AutomaticSize.Y
-	section.BackgroundTransparency = 1
-	section.LayoutOrder = order
-	section.Parent = self.contentScroll
+function ActivitiesScreen:switchTab(tabId)
+	self.currentTab = tabId
 	
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.Parent = section
-	
-	local headerFrame = Instance.new("Frame")
-	headerFrame.Size = UDim2.new(1, 0, 0, 44)
-	headerFrame.BackgroundColor3 = color
-	headerFrame.LayoutOrder = 1
-	headerFrame.Parent = section
-	createUICorner(headerFrame, 12)
-	
-	local headerText = Instance.new("TextLabel")
-	headerText.Size = UDim2.fromScale(1, 1)
-	headerText.BackgroundTransparency = 1
-	headerText.Font = Fonts.Title
-	headerText.TextSize = 16
-	headerText.TextColor3 = Colors.White
-	headerText.Text = emoji .. "  " .. title
-	headerText.Parent = headerFrame
-	
-	for i, activity in ipairs(activities) do
-		self:createActivityCard(activity, color, i + 1, section)
+	for id, btn in pairs(self.tabBtns) do
+		local isActive = id == tabId
+		tween(btn, TweenInfo.new(0.15), {
+			BackgroundColor3 = isActive and (tabId == "crime" and C.Red or C.Amber) or C.White,
+			TextColor3 = isActive and C.White or C.Gray600
+		})
 	end
+	
+	for _, child in ipairs(self.contentScroll:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+	
+	if tabId == "mindbody" then self:populateMindBody()
+	elseif tabId == "social" then self:populateSocial()
+	elseif tabId == "fun" then self:populateFun()
+	else self:populateCrime() end
 end
 
-function ActivitiesScreen:createActivityCard(activity, color, order, parent)
+function ActivitiesScreen:createActivityCard(parent, item, order, bgColor, accentColor)
+	local age = self:getAge()
+	local money = self:getMoney()
+	local cost = item.cost or 0
+	local canDo = age >= item.minAge and money >= cost and not self:isInJail()
+	
 	local card = Instance.new("Frame")
-	card.Name = "Activity_" .. activity.id
-	card.Size = UDim2.new(1, 0, 0, 60)
-	card.BackgroundColor3 = Colors.CardWhite
+	card.Size = UDim2.new(1, 0, 0, 76)
+	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
+	card.ZIndex = 82
 	card.Parent = parent
-	createUICorner(card, 14)
-	createUIStroke(card, 1, 0.85, Color3.fromRGB(229, 231, 235))
+	corner(card, 14)
+	stroke(card, 1, 0.9, C.Gray200)
 	
-	local emoji = Instance.new("TextLabel")
-	emoji.Size = UDim2.new(0, 36, 0, 36)
-	emoji.Position = UDim2.new(0, 12, 0.5, -18)
-	emoji.BackgroundTransparency = 1
-	emoji.Font = Fonts.Body
-	emoji.TextSize = 24
-	emoji.Text = activity.emoji
-	emoji.Parent = card
+	-- Icon
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 50, 0, 50)
+	iconFrame.Position = UDim2.new(0, 12, 0.5, -25)
+	iconFrame.BackgroundColor3 = bgColor
+	iconFrame.ZIndex = 83
+	iconFrame.Parent = card
+	corner(iconFrame, 12)
 	
-	local name = Instance.new("TextLabel")
-	name.Size = UDim2.new(0.4, 0, 0, 18)
-	name.Position = UDim2.new(0, 54, 0, 10)
-	name.BackgroundTransparency = 1
-	name.Font = Fonts.Title
-	name.TextSize = 13
-	name.TextColor3 = Colors.TextBlack
-	name.TextXAlignment = Enum.TextXAlignment.Left
-	name.Text = activity.name
-	name.Parent = card
+	local iconLbl = Instance.new("TextLabel")
+	iconLbl.Size = UDim2.fromScale(1, 1)
+	iconLbl.BackgroundTransparency = 1
+	iconLbl.Font = F.Body
+	iconLbl.TextSize = 26
+	iconLbl.Text = item.emoji
+	iconLbl.ZIndex = 84
+	iconLbl.Parent = iconFrame
 	
-	local infoText = "Age " .. activity.minAge .. "+"
-	if activity.cost and activity.cost > 0 then
-		infoText = infoText .. " | " .. formatMoney(activity.cost)
-	end
-	if activity.desc then
-		infoText = infoText .. " | " .. activity.desc
-	end
+	-- Name
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0.5, 0, 0, 20)
+	nameLbl.Position = UDim2.new(0, 72, 0, 14)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Font = F.Title
+	nameLbl.TextSize = 14
+	nameLbl.TextColor3 = C.Gray900
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Text = item.name
+	nameLbl.ZIndex = 83
+	nameLbl.Parent = card
 	
-	local info = Instance.new("TextLabel")
-	info.Size = UDim2.new(0.5, 0, 0, 14)
-	info.Position = UDim2.new(0, 54, 0, 30)
-	info.BackgroundTransparency = 1
-	info.Font = Fonts.Body
-	info.TextSize = 10
-	info.TextColor3 = Colors.MediumGray
-	info.TextXAlignment = Enum.TextXAlignment.Left
-	info.Text = infoText
-	info.Parent = card
+	-- Effect/Cost
+	local effectBadge = Instance.new("Frame")
+	effectBadge.Size = UDim2.new(0, 80, 0, 22)
+	effectBadge.Position = UDim2.new(0, 72, 0, 40)
+	effectBadge.BackgroundColor3 = cost > 0 and C.AmberPale or C.GreenPale
+	effectBadge.ZIndex = 83
+	effectBadge.Parent = card
+	pill(effectBadge)
 	
-	local goBtn = Instance.new("TextButton")
-	goBtn.Size = UDim2.new(0, 50, 0, 28)
-	goBtn.AnchorPoint = Vector2.new(1, 0.5)
-	goBtn.Position = UDim2.new(1, -12, 0.5, 0)
-	goBtn.BackgroundColor3 = color
-	goBtn.Font = Fonts.Button
-	goBtn.TextSize = 11
-	goBtn.TextColor3 = Colors.White
-	goBtn.Text = "Go"
-	goBtn.AutoButtonColor = false
-	goBtn.Parent = card
-	createPillCorner(goBtn)
+	local effectLbl = Instance.new("TextLabel")
+	effectLbl.Size = UDim2.fromScale(1, 1)
+	effectLbl.BackgroundTransparency = 1
+	effectLbl.Font = F.Medium
+	effectLbl.TextSize = 10
+	effectLbl.TextColor3 = cost > 0 and C.AmberDark or C.GreenDark
+	effectLbl.Text = item.effect .. (cost > 0 and " • $" .. cost or "")
+	effectLbl.ZIndex = 84
+	effectLbl.Parent = effectBadge
 	
-	goBtn.MouseButton1Click:Connect(function()
-		self:showConfirm("activity", activity, color)
-	end)
-end
-
-function ActivitiesScreen:createCrimeSection(order)
-	local section = Instance.new("Frame")
-	section.Name = "CrimeSection"
-	section.Size = UDim2.new(1, 0, 0, 0)
-	section.AutomaticSize = Enum.AutomaticSize.Y
-	section.BackgroundTransparency = 1
-	section.LayoutOrder = order
-	section.Parent = self.contentScroll
+	-- Do button
+	local doBtn = Instance.new("TextButton")
+	doBtn.Size = UDim2.new(0, 60, 0, 34)
+	doBtn.AnchorPoint = Vector2.new(1, 0.5)
+	doBtn.Position = UDim2.new(1, -12, 0.5, 0)
+	doBtn.BackgroundColor3 = canDo and accentColor or C.Gray300
+	doBtn.Font = F.Button
+	doBtn.TextSize = 12
+	doBtn.TextColor3 = canDo and C.White or C.Gray500
+	doBtn.Text = canDo and "Go" or (age < item.minAge and "Age " .. item.minAge .. "+" or money < cost and "Need $" or "Jailed")
+	doBtn.AutoButtonColor = false
+	doBtn.ZIndex = 83
+	doBtn.Parent = card
+	pill(doBtn)
 	
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.Parent = section
-	
-	local headerFrame = Instance.new("Frame")
-	headerFrame.Size = UDim2.new(1, 0, 0, 44)
-	headerFrame.BackgroundColor3 = Colors.CrimeRed
-	headerFrame.LayoutOrder = 1
-	headerFrame.Parent = section
-	createUICorner(headerFrame, 12)
-	
-	local headerText = Instance.new("TextLabel")
-	headerText.Size = UDim2.fromScale(1, 1)
-	headerText.BackgroundTransparency = 1
-	headerText.Font = Fonts.Title
-	headerText.TextSize = 16
-	headerText.TextColor3 = Colors.White
-	headerText.Text = "🔪 Crime"
-	headerText.Parent = headerFrame
-	
-	-- Warning
-	local warning = Instance.new("Frame")
-	warning.Size = UDim2.new(1, 0, 0, 36)
-	warning.BackgroundColor3 = Colors.WarningYellow
-	warning.LayoutOrder = 2
-	warning.Parent = section
-	createUICorner(warning, 10)
-	
-	local warnText = Instance.new("TextLabel")
-	warnText.Size = UDim2.fromScale(1, 1)
-	warnText.BackgroundTransparency = 1
-	warnText.Font = Fonts.Body
-	warnText.TextSize = 11
-	warnText.TextColor3 = Colors.WarningText
-	warnText.Text = "⚠️ Crime is risky! You could go to PRISON!"
-	warnText.Parent = warning
-	
-	for i, crime in ipairs(CrimeActivities) do
-		self:createCrimeCard(crime, i + 2, section)
+	if canDo then
+		doBtn.MouseEnter:Connect(function() tween(doBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 66, 0, 38) }) end)
+		doBtn.MouseLeave:Connect(function() tween(doBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 60, 0, 34) }) end)
+		doBtn.MouseButton1Click:Connect(function()
+			if DoActivity then
+				local result = DoActivity:InvokeServer(item.id)
+				if result then
+					self:showResult(result.success, result.message, result.emoji)
+				else
+					self:showResult(false, "Server error")
+				end
+			end
+		end)
 	end
 end
 
-function ActivitiesScreen:createCrimeCard(crime, order, parent)
+function ActivitiesScreen:createCrimeCard(parent, item, order)
+	local age = self:getAge()
+	local canDo = age >= item.minAge and not self:isInJail()
+	
 	local card = Instance.new("Frame")
-	card.Name = "Crime_" .. crime.id
-	card.Size = UDim2.new(1, 0, 0, 70)
-	card.BackgroundColor3 = Colors.CardWhite
+	card.Size = UDim2.new(1, 0, 0, 80)
+	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
+	card.ZIndex = 82
 	card.Parent = parent
-	createUICorner(card, 14)
-	createUIStroke(card, 1, 0.85, Color3.fromRGB(229, 231, 235))
+	corner(card, 14)
+	stroke(card, 1, 0.9, canDo and C.Red or C.Gray200)
 	
-	local emoji = Instance.new("TextLabel")
-	emoji.Size = UDim2.new(0, 40, 0, 40)
-	emoji.Position = UDim2.new(0, 12, 0.5, -20)
-	emoji.BackgroundTransparency = 1
-	emoji.Font = Fonts.Body
-	emoji.TextSize = 26
-	emoji.Text = crime.emoji
-	emoji.Parent = card
+	-- Icon
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 50, 0, 50)
+	iconFrame.Position = UDim2.new(0, 12, 0.5, -25)
+	iconFrame.BackgroundColor3 = C.RedPale
+	iconFrame.ZIndex = 83
+	iconFrame.Parent = card
+	corner(iconFrame, 12)
 	
-	local name = Instance.new("TextLabel")
-	name.Size = UDim2.new(0.4, 0, 0, 18)
-	name.Position = UDim2.new(0, 58, 0, 10)
-	name.BackgroundTransparency = 1
-	name.Font = Fonts.Title
-	name.TextSize = 13
-	name.TextColor3 = Colors.TextBlack
-	name.TextXAlignment = Enum.TextXAlignment.Left
-	name.Text = crime.name
-	name.Parent = card
+	local iconLbl = Instance.new("TextLabel")
+	iconLbl.Size = UDim2.fromScale(1, 1)
+	iconLbl.BackgroundTransparency = 1
+	iconLbl.Font = F.Body
+	iconLbl.TextSize = 26
+	iconLbl.Text = item.emoji
+	iconLbl.ZIndex = 84
+	iconLbl.Parent = iconFrame
 	
-	local riskColor = crime.risk < 30 and Colors.SuccessGreen or crime.risk < 60 and Colors.EntertainmentOrange or Colors.CrimeRed
-	local risk = Instance.new("TextLabel")
-	risk.Size = UDim2.new(0.5, 0, 0, 14)
-	risk.Position = UDim2.new(0, 58, 0, 28)
-	risk.BackgroundTransparency = 1
-	risk.Font = Fonts.BodyMedium
-	risk.TextSize = 11
-	risk.TextColor3 = riskColor
-	risk.TextXAlignment = Enum.TextXAlignment.Left
-	risk.Text = "⚠️ " .. crime.risk .. "% Risk | Age " .. crime.minAge .. "+"
-	risk.Parent = card
+	-- Name
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0.5, 0, 0, 18)
+	nameLbl.Position = UDim2.new(0, 72, 0, 12)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Font = F.Title
+	nameLbl.TextSize = 14
+	nameLbl.TextColor3 = C.Gray900
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Text = item.name
+	nameLbl.ZIndex = 83
+	nameLbl.Parent = card
 	
-	local reward = Instance.new("TextLabel")
-	reward.Size = UDim2.new(0.5, 0, 0, 14)
-	reward.Position = UDim2.new(0, 58, 0, 44)
-	reward.BackgroundTransparency = 1
-	reward.Font = Fonts.Body
-	reward.TextSize = 10
-	reward.TextColor3 = Colors.SuccessGreen
-	reward.TextXAlignment = Enum.TextXAlignment.Left
-	reward.Text = "💰 " .. crime.reward
-	reward.Parent = card
+	-- Risk badge
+	local riskBadge = Instance.new("Frame")
+	riskBadge.Size = UDim2.new(0, 70, 0, 20)
+	riskBadge.Position = UDim2.new(0, 72, 0, 34)
+	riskBadge.BackgroundColor3 = item.risk >= 60 and C.RedPale or item.risk >= 40 and C.AmberPale or C.GreenPale
+	riskBadge.ZIndex = 83
+	riskBadge.Parent = card
+	pill(riskBadge)
 	
+	local riskLbl = Instance.new("TextLabel")
+	riskLbl.Size = UDim2.fromScale(1, 1)
+	riskLbl.BackgroundTransparency = 1
+	riskLbl.Font = F.Medium
+	riskLbl.TextSize = 10
+	riskLbl.TextColor3 = item.risk >= 60 and C.RedDark or item.risk >= 40 and C.AmberDark or C.GreenDark
+	riskLbl.Text = "⚠️ " .. item.risk .. "% risk"
+	riskLbl.ZIndex = 84
+	riskLbl.Parent = riskBadge
+	
+	-- Reward
+	local rewardLbl = Instance.new("TextLabel")
+	rewardLbl.Size = UDim2.new(0.4, 0, 0, 16)
+	rewardLbl.Position = UDim2.new(0, 72, 0, 56)
+	rewardLbl.BackgroundTransparency = 1
+	rewardLbl.Font = F.Body
+	rewardLbl.TextSize = 10
+	rewardLbl.TextColor3 = C.Gray500
+	rewardLbl.TextXAlignment = Enum.TextXAlignment.Left
+	rewardLbl.Text = "💰 " .. item.reward
+	rewardLbl.ZIndex = 83
+	rewardLbl.Parent = card
+	
+	-- Commit button
 	local commitBtn = Instance.new("TextButton")
-	commitBtn.Size = UDim2.new(0, 60, 0, 30)
+	commitBtn.Size = UDim2.new(0, 70, 0, 36)
 	commitBtn.AnchorPoint = Vector2.new(1, 0.5)
 	commitBtn.Position = UDim2.new(1, -12, 0.5, 0)
-	commitBtn.BackgroundColor3 = Colors.CrimeRed
-	commitBtn.Font = Fonts.Button
+	commitBtn.BackgroundColor3 = canDo and C.Red or C.Gray300
+	commitBtn.Font = F.Button
 	commitBtn.TextSize = 11
-	commitBtn.TextColor3 = Colors.White
-	commitBtn.Text = "Commit"
+	commitBtn.TextColor3 = canDo and C.White or C.Gray500
+	commitBtn.Text = canDo and "Commit" or (age < item.minAge and "Age " .. item.minAge .. "+" or "Jailed")
 	commitBtn.AutoButtonColor = false
+	commitBtn.ZIndex = 83
 	commitBtn.Parent = card
-	createPillCorner(commitBtn)
+	pill(commitBtn)
 	
-	commitBtn.MouseButton1Click:Connect(function()
-		self:showConfirm("crime", crime, Colors.CrimeRed)
-	end)
+	if canDo then
+		commitBtn.MouseEnter:Connect(function() tween(commitBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.RedDark }) end)
+		commitBtn.MouseLeave:Connect(function() tween(commitBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Red }) end)
+		commitBtn.MouseButton1Click:Connect(function()
+			if CommitCrime then
+				local result = CommitCrime:InvokeServer(item.id)
+				if result then
+					local emoji = result.caught and "🚔" or "💰"
+					self:showResult(result.success, result.message, emoji)
+				else
+					self:showResult(false, "Server error")
+				end
+			end
+		end)
+	end
 end
 
-function ActivitiesScreen:createConfirmModal()
-	self.confirmOverlay = Instance.new("Frame")
-	self.confirmOverlay.Name = "ConfirmOverlay"
-	self.confirmOverlay.Size = UDim2.fromScale(1, 1)
-	self.confirmOverlay.BackgroundColor3 = Colors.OverlayDark
-	self.confirmOverlay.BackgroundTransparency = 0.4
-	self.confirmOverlay.Visible = false
-	self.confirmOverlay.ZIndex = 90
-	self.confirmOverlay.Parent = self.screenGui
-	
-	self.confirmModal = Instance.new("Frame")
-	self.confirmModal.Size = UDim2.new(0, 320, 0, 0)
-	self.confirmModal.AutomaticSize = Enum.AutomaticSize.Y
-	self.confirmModal.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.confirmModal.Position = UDim2.fromScale(0.5, 0.5)
-	self.confirmModal.BackgroundColor3 = Colors.CardWhite
-	self.confirmModal.ZIndex = 91
-	self.confirmModal.Parent = self.confirmOverlay
-	createUICorner(self.confirmModal, 20)
-	createUIPadding(self.confirmModal, 24, 24, 24, 24)
-	
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 12)
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Parent = self.confirmModal
-	
-	self.confirmEmoji = Instance.new("TextLabel")
-	self.confirmEmoji.Size = UDim2.new(0, 50, 0, 50)
-	self.confirmEmoji.BackgroundTransparency = 1
-	self.confirmEmoji.Font = Fonts.Body
-	self.confirmEmoji.TextSize = 40
-	self.confirmEmoji.Text = "🎮"
-	self.confirmEmoji.LayoutOrder = 1
-	self.confirmEmoji.Parent = self.confirmModal
-	
-	self.confirmTitle = Instance.new("TextLabel")
-	self.confirmTitle.Size = UDim2.new(1, 0, 0, 24)
-	self.confirmTitle.BackgroundTransparency = 1
-	self.confirmTitle.Font = Fonts.Title
-	self.confirmTitle.TextSize = 18
-	self.confirmTitle.TextColor3 = Colors.TextBlack
-	self.confirmTitle.Text = "Do Activity?"
-	self.confirmTitle.LayoutOrder = 2
-	self.confirmTitle.Parent = self.confirmModal
-	
-	self.confirmInfo = Instance.new("TextLabel")
-	self.confirmInfo.Size = UDim2.new(1, 0, 0, 0)
-	self.confirmInfo.AutomaticSize = Enum.AutomaticSize.Y
-	self.confirmInfo.BackgroundTransparency = 1
-	self.confirmInfo.Font = Fonts.Body
-	self.confirmInfo.TextSize = 13
-	self.confirmInfo.TextColor3 = Colors.DarkGray
-	self.confirmInfo.TextWrapped = true
-	self.confirmInfo.Text = ""
-	self.confirmInfo.LayoutOrder = 3
-	self.confirmInfo.Parent = self.confirmModal
-	
-	local btnContainer = Instance.new("Frame")
-	btnContainer.Size = UDim2.new(1, 0, 0, 44)
-	btnContainer.BackgroundTransparency = 1
-	btnContainer.LayoutOrder = 4
-	btnContainer.Parent = self.confirmModal
-	
-	local btnLayout = Instance.new("UIListLayout")
-	btnLayout.FillDirection = Enum.FillDirection.Horizontal
-	btnLayout.Padding = UDim.new(0, 12)
-	btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	btnLayout.Parent = btnContainer
-	
-	local cancelBtn = Instance.new("TextButton")
-	cancelBtn.Size = UDim2.new(0.45, 0, 1, 0)
-	cancelBtn.BackgroundColor3 = Colors.LightGray
-	cancelBtn.Font = Fonts.Button
-	cancelBtn.TextSize = 14
-	cancelBtn.TextColor3 = Colors.DarkGray
-	cancelBtn.Text = "Cancel"
-	cancelBtn.AutoButtonColor = false
-	cancelBtn.Parent = btnContainer
-	createPillCorner(cancelBtn)
-	cancelBtn.MouseButton1Click:Connect(function() self:hideConfirm() end)
-	
-	self.confirmBtn = Instance.new("TextButton")
-	self.confirmBtn.Size = UDim2.new(0.45, 0, 1, 0)
-	self.confirmBtn.BackgroundColor3 = Colors.BitLifeBlue
-	self.confirmBtn.Font = Fonts.Button
-	self.confirmBtn.TextSize = 14
-	self.confirmBtn.TextColor3 = Colors.White
-	self.confirmBtn.Text = "Do It!"
-	self.confirmBtn.AutoButtonColor = false
-	self.confirmBtn.Parent = btnContainer
-	createPillCorner(self.confirmBtn)
+function ActivitiesScreen:populateMindBody()
+	self:updateInfoBar()
+	for i, item in ipairs(MindBody) do
+		self:createActivityCard(self.contentScroll, item, i, C.CyanPale, C.Cyan)
+	end
+end
+
+function ActivitiesScreen:populateSocial()
+	self:updateInfoBar()
+	for i, item in ipairs(Social) do
+		self:createActivityCard(self.contentScroll, item, i, C.PinkPale, C.Pink)
+	end
+end
+
+function ActivitiesScreen:populateFun()
+	self:updateInfoBar()
+	for i, item in ipairs(Entertainment) do
+		self:createActivityCard(self.contentScroll, item, i, C.PurplePale, C.Purple)
+	end
+end
+
+function ActivitiesScreen:populateCrime()
+	self:updateInfoBar()
+	for i, item in ipairs(Crimes) do
+		self:createCrimeCard(self.contentScroll, item, i)
+	end
 end
 
 function ActivitiesScreen:createResultModal()
 	self.resultOverlay = Instance.new("Frame")
-	self.resultOverlay.Name = "ResultOverlay"
 	self.resultOverlay.Size = UDim2.fromScale(1, 1)
-	self.resultOverlay.BackgroundColor3 = Colors.OverlayDark
+	self.resultOverlay.BackgroundColor3 = C.Black
 	self.resultOverlay.BackgroundTransparency = 0.5
 	self.resultOverlay.Visible = false
 	self.resultOverlay.ZIndex = 95
 	self.resultOverlay.Parent = self.screenGui
 	
-	self.resultModal = Instance.new("Frame")
-	self.resultModal.Size = UDim2.new(0, 320, 0, 0)
-	self.resultModal.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultModal.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.resultModal.Position = UDim2.fromScale(0.5, 0.5)
-	self.resultModal.BackgroundColor3 = Colors.CardWhite
-	self.resultModal.ZIndex = 96
-	self.resultModal.Parent = self.resultOverlay
-	createUICorner(self.resultModal, 20)
-	createUIPadding(self.resultModal, 24, 24, 24, 24)
+	self.resultCard = Instance.new("Frame")
+	self.resultCard.Size = UDim2.new(0.85, 0, 0, 0)
+	self.resultCard.AutomaticSize = Enum.AutomaticSize.Y
+	self.resultCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.resultCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.resultCard.BackgroundColor3 = C.White
+	self.resultCard.ZIndex = 96
+	self.resultCard.Parent = self.resultOverlay
+	corner(self.resultCard, 24)
 	
 	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 16)
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Parent = self.resultModal
+	layout.Padding = UDim.new(0, 12)
+	layout.Parent = self.resultCard
+	
+	pad(self.resultCard, 24, 24, 28, 24)
 	
 	self.resultEmoji = Instance.new("TextLabel")
-	self.resultEmoji.Size = UDim2.new(0, 50, 0, 50)
+	self.resultEmoji.Size = UDim2.new(0, 60, 0, 60)
 	self.resultEmoji.BackgroundTransparency = 1
-	self.resultEmoji.Font = Fonts.Body
-	self.resultEmoji.TextSize = 40
+	self.resultEmoji.Font = F.Body
+	self.resultEmoji.TextSize = 50
 	self.resultEmoji.Text = "✅"
 	self.resultEmoji.LayoutOrder = 1
-	self.resultEmoji.Parent = self.resultModal
+	self.resultEmoji.ZIndex = 97
+	self.resultEmoji.Parent = self.resultCard
 	
 	self.resultTitle = Instance.new("TextLabel")
-	self.resultTitle.Size = UDim2.new(1, 0, 0, 24)
+	self.resultTitle.Size = UDim2.new(1, 0, 0, 28)
 	self.resultTitle.BackgroundTransparency = 1
-	self.resultTitle.Font = Fonts.Title
-	self.resultTitle.TextSize = 18
-	self.resultTitle.TextColor3 = Colors.SuccessGreen
-	self.resultTitle.Text = "Success!"
+	self.resultTitle.Font = F.Title
+	self.resultTitle.TextSize = 22
+	self.resultTitle.TextColor3 = C.Gray900
+	self.resultTitle.Text = "Result"
 	self.resultTitle.LayoutOrder = 2
-	self.resultTitle.Parent = self.resultModal
+	self.resultTitle.ZIndex = 97
+	self.resultTitle.Parent = self.resultCard
 	
-	self.resultText = Instance.new("TextLabel")
-	self.resultText.Size = UDim2.new(1, 0, 0, 0)
-	self.resultText.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultText.BackgroundTransparency = 1
-	self.resultText.Font = Fonts.Body
-	self.resultText.TextSize = 14
-	self.resultText.TextColor3 = Colors.DarkerGray
-	self.resultText.TextWrapped = true
-	self.resultText.Text = ""
-	self.resultText.LayoutOrder = 3
-	self.resultText.Parent = self.resultModal
+	self.resultMsg = Instance.new("TextLabel")
+	self.resultMsg.Size = UDim2.new(1, 0, 0, 0)
+	self.resultMsg.AutomaticSize = Enum.AutomaticSize.Y
+	self.resultMsg.BackgroundTransparency = 1
+	self.resultMsg.Font = F.Body
+	self.resultMsg.TextSize = 15
+	self.resultMsg.TextColor3 = C.Gray600
+	self.resultMsg.TextWrapped = true
+	self.resultMsg.LineHeight = 1.4
+	self.resultMsg.Text = ""
+	self.resultMsg.LayoutOrder = 3
+	self.resultMsg.ZIndex = 97
+	self.resultMsg.Parent = self.resultCard
 	
 	local okBtn = Instance.new("TextButton")
-	okBtn.Size = UDim2.new(1, 0, 0, 44)
-	okBtn.BackgroundColor3 = Colors.BitLifeBlue
-	okBtn.Font = Fonts.Button
-	okBtn.TextSize = 15
-	okBtn.TextColor3 = Colors.White
+	okBtn.Size = UDim2.new(1, 0, 0, 48)
+	okBtn.BackgroundColor3 = C.Amber
+	okBtn.Font = F.Button
+	okBtn.TextSize = 16
+	okBtn.TextColor3 = C.White
 	okBtn.Text = "OK"
 	okBtn.AutoButtonColor = false
 	okBtn.LayoutOrder = 4
-	okBtn.Parent = self.resultModal
-	createPillCorner(okBtn)
-	okBtn.MouseButton1Click:Connect(function() self:hideResult() end)
+	okBtn.ZIndex = 97
+	okBtn.Parent = self.resultCard
+	pill(okBtn)
+	
+	okBtn.MouseButton1Click:Connect(function() self:hideResultModal() end)
+	okBtn.MouseEnter:Connect(function() tween(okBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.AmberDark }) end)
+	okBtn.MouseLeave:Connect(function() tween(okBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Amber }) end)
 end
 
-function ActivitiesScreen:showConfirm(actionType, data, color)
-	self.currentType = actionType
-	self.currentData = data
-	
-	local age = self:getPlayerAge()
-	local money = self:getPlayerMoney()
-	local canDo = age >= data.minAge
-	local canAfford = not data.cost or money >= data.cost
-	
-	self.confirmEmoji.Text = data.emoji
-	self.confirmTitle.Text = data.name
-	
-	if actionType == "crime" then
-		self.confirmInfo.Text = "⚠️ " .. data.risk .. "% chance of getting caught!\nPotential reward: " .. data.reward .. "\nYour age: " .. age .. " (Req: " .. data.minAge .. "+)"
-		self.confirmBtn.Text = canDo and "Commit!" or "Age " .. data.minAge .. "+"
-		self.confirmBtn.BackgroundColor3 = canDo and Colors.CrimeRed or Colors.MediumGray
-	else
-		local infoText = "Your age: " .. age .. " (Req: " .. data.minAge .. "+)"
-		if data.cost and data.cost > 0 then
-			infoText = infoText .. "\nCost: " .. formatMoney(data.cost) .. " | Your cash: " .. formatMoney(money)
-		end
-		self.confirmInfo.Text = infoText
-		
-		if not canDo then
-			self.confirmBtn.Text = "Age " .. data.minAge .. "+"
-			self.confirmBtn.BackgroundColor3 = Colors.MediumGray
-		elseif not canAfford then
-			self.confirmBtn.Text = "Can't Afford"
-			self.confirmBtn.BackgroundColor3 = Colors.MediumGray
-		else
-			self.confirmBtn.Text = "Do It!"
-			self.confirmBtn.BackgroundColor3 = color
-		end
-	end
-	
-	if self.confirmConn then self.confirmConn:Disconnect() end
-	self.confirmConn = self.confirmBtn.MouseButton1Click:Connect(function()
-		if (actionType == "crime" and canDo) or (canDo and canAfford) then
-			self:hideConfirm()
-			task.delay(0.2, function()
-				self:executeAction()
-			end)
-		end
-	end)
-	
-	self.confirmOverlay.Visible = true
-	tween(self.confirmModal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0.5, 0.5) })
-end
-
-function ActivitiesScreen:hideConfirm()
-	self.confirmOverlay.Visible = false
-end
-
-function ActivitiesScreen:executeAction()
-	local result
-	
-	if self.currentType == "crime" then
-		if CommitCrime then
-			result = CommitCrime:InvokeServer(self.currentData.id)
-		else
-			result = { success = false, message = "Server not available" }
-		end
-	elseif self.currentData.id == "casino" then
-		if Gamble then
-			result = Gamble:InvokeServer(100)
-		else
-			result = { success = false, message = "Server not available" }
-		end
-	else
-		if DoActivity then
-			result = DoActivity:InvokeServer(self.currentData.id)
-		else
-			result = { success = false, message = "Server not available" }
-		end
-	end
-	
-	self:showResult(result)
-end
-
-function ActivitiesScreen:showResult(result)
-	local isGood = result.success and not result.caught
-	
-	if result.caught then
-		self.resultEmoji.Text = "🚔"
-		self.resultTitle.Text = "BUSTED!"
-		self.resultTitle.TextColor3 = Colors.CrimeRed
-	elseif result.success then
-		self.resultEmoji.Text = self.currentType == "crime" and "💰" or "✅"
-		self.resultTitle.Text = "Success!"
-		self.resultTitle.TextColor3 = Colors.SuccessGreen
-	else
-		self.resultEmoji.Text = "❌"
-		self.resultTitle.Text = "Failed"
-		self.resultTitle.TextColor3 = Colors.ErrorRed
-	end
-	
-	self.resultText.Text = result.message or ""
+function ActivitiesScreen:showResult(success, message, emoji)
+	self.resultEmoji.Text = emoji or (success and "✅" or "❌")
+	self.resultTitle.Text = success and "Done!" or "Uh Oh..."
+	self.resultTitle.TextColor3 = success and C.Green or C.Red
+	self.resultMsg.Text = message or ""
 	
 	self.resultOverlay.Visible = true
-	tween(self.resultModal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0.5, 0.5) })
-	
-	self:updateInfoBar()
+	self.resultCard.Position = UDim2.new(0.5, 0, 0.5, 30)
+	tween(self.resultCard, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0.5, 0.5) })
 end
 
-function ActivitiesScreen:hideResult()
-	self.resultOverlay.Visible = false
+function ActivitiesScreen:hideResultModal()
+	local t = tween(self.resultCard, TweenInfo.new(0.15), { Position = UDim2.new(0.5, 0, 0.5, 30) })
+	t.Completed:Connect(function()
+		self.resultOverlay.Visible = false
+		self:switchTab(self.currentTab)
+	end)
 end
 
 function ActivitiesScreen:show()
-	if self.isVisible then return end
-	self.isVisible = true
-	self:updateInfoBar()
 	self.overlay.Visible = true
 	self.overlay.Position = UDim2.new(1, 0, 0, 0)
-	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.new(0, 0, 0, 0) })
+	self:updateInfoBar()
+	self:switchTab(self.currentTab)
+	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0, 0) })
+	self.isVisible = true
 end
 
 function ActivitiesScreen:hide()
-	if not self.isVisible then return end
-	self.isVisible = false
-	self.confirmOverlay.Visible = false
-	self.resultOverlay.Visible = false
 	local t = tween(self.overlay, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Position = UDim2.new(1, 0, 0, 0) })
-	t.Completed:Connect(function() self.overlay.Visible = false end)
-end
-
-function ActivitiesScreen:toggle()
-	if self.isVisible then self:hide() else self:show() end
+	t.Completed:Connect(function()
+		self.overlay.Visible = false
+		self.resultOverlay.Visible = false
+	end)
+	self.isVisible = false
 end
 
 return ActivitiesScreen
