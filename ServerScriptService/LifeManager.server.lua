@@ -154,6 +154,9 @@ end)
 -- AGE UP
 ----------------------------------------------------------------
 
+-- Store pending event data for choice resolution
+local pendingEvents = {} -- [Player] = { eventDef, dynamicData }
+
 local function ageUp(player)
 	local state = getLife(player)
 
@@ -167,7 +170,7 @@ local function ageUp(player)
 
 	local ageText
 	if state.Age == 1 then
-		ageText = "You are now 1 years old."
+		ageText = "You are now 1 year old."
 	else
 		ageText = string.format("You are now %d years old.", state.Age)
 	end
@@ -179,10 +182,24 @@ local function ageUp(player)
 		_G.ReduceJailTime(player, 1)
 	end
 
-	-- decide if a life event should fire
+	-- Initialize event history if needed
+	EventRunner.initHistory(state)
+
+	-- Decide if a life event should fire
 	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
 	if eventDef then
-		local payload = EventRunner.buildClientPayload(eventDef)
+		-- Build client payload with dynamic data
+		local payload, dynamicData = EventRunner.buildClientPayload(eventDef, state)
+		
+		-- Store for choice resolution
+		pendingEvents[player] = {
+			eventDef = eventDef,
+			dynamicData = dynamicData or {},
+		}
+		
+		-- Mark event as occurred (for one-time/cooldown tracking)
+		EventRunner.markEventOccurred(state, eventDef)
+		
 		PresentEvent:FireClient(player, payload, ageText)
 	else
 		pushState(player, state, ageText)
@@ -223,7 +240,20 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceId)
 		return
 	end
 
-	local resultText = EventRunner.applyChoice(state, eventDef, choiceDef)
+	-- Get stored dynamic data from when event was presented
+	local dynamicData = {}
+	if pendingEvents[player] and pendingEvents[player].eventDef.id == eventId then
+		dynamicData = pendingEvents[player].dynamicData or {}
+		pendingEvents[player] = nil -- Clear pending event
+	end
+
+	-- Apply choice with dynamic data
+	local resultText = EventRunner.applyChoice(state, eventDef, choiceDef, dynamicData)
 	state:AddFeed(resultText)
 	pushState(player, state, resultText)
+end)
+
+-- Clean up pending events when player leaves
+Players.PlayerRemoving:Connect(function(player)
+	pendingEvents[player] = nil
 end)
