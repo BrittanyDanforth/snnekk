@@ -40,6 +40,11 @@ function EventRunner.buildClientPayload(eventDef)
 	local payload = {
 		id = eventDef.id,
 		text = eventDef.text,
+		title = eventDef.title,
+		emoji = eventDef.emoji,
+		showRelationship = eventDef.showRelationship,
+		relationName = eventDef.relationName,
+		relationship = eventDef.relationship,
 		choices = {},
 	}
 
