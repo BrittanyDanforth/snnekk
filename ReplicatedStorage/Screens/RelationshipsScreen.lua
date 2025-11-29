@@ -181,8 +181,14 @@ function RelationshipsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurF
 	return self
 end
 
+function RelationshipsScreen:updateState(newState)
+	if newState then self.playerState = newState end
+end
+
 function RelationshipsScreen:getAge()
-	return self.playerState and self.playerState.Age or 0
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Age or (state.Stats and state.Stats.Age) or 0
 end
 
 function RelationshipsScreen:getMoney()

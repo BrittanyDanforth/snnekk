@@ -107,9 +107,27 @@ function AssetsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, pl
 	return self
 end
 
-function AssetsScreen:getAge() return self.playerState and self.playerState.Age or 0 end
-function AssetsScreen:getMoney() return self.playerState and self.playerState.Money or 0 end
-function AssetsScreen:getAssets() return self.playerState and self.playerState.Assets or {} end
+function AssetsScreen:updateState(newState)
+	if newState then self.playerState = newState end
+end
+
+function AssetsScreen:getAge()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Age or (state.Stats and state.Stats.Age) or 0
+end
+
+function AssetsScreen:getMoney()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Money or (state.Stats and state.Stats.Money) or 0
+end
+
+function AssetsScreen:getAssets()
+	local state = self.playerState
+	if not state then return {} end
+	return state.Assets or {}
+end
 
 function AssetsScreen:createUI()
 	self.overlay = Instance.new("Frame")

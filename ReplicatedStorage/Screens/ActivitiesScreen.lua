@@ -132,9 +132,27 @@ function ActivitiesScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	return self
 end
 
-function ActivitiesScreen:getAge() return self.playerState and self.playerState.Age or 0 end
-function ActivitiesScreen:getMoney() return self.playerState and self.playerState.Money or 0 end
-function ActivitiesScreen:isInJail() return self.playerState and self.playerState.InJail or false end
+function ActivitiesScreen:updateState(newState)
+	if newState then self.playerState = newState end
+end
+
+function ActivitiesScreen:getAge()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Age or (state.Stats and state.Stats.Age) or 0
+end
+
+function ActivitiesScreen:getMoney()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Money or (state.Stats and state.Stats.Money) or 0
+end
+
+function ActivitiesScreen:isInJail()
+	local state = self.playerState
+	if not state then return false end
+	return state.InJail or (state.Flags and state.Flags.in_prison) or false
+end
 
 function ActivitiesScreen:createUI()
 	self.overlay = Instance.new("Frame")

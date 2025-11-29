@@ -98,10 +98,52 @@ function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	return self
 end
 
-function OccupationScreen:getAge() return self.playerState and self.playerState.Age or 0 end
-function OccupationScreen:getMoney() return self.playerState and self.playerState.Money or 0 end
-function OccupationScreen:getEducation() return self.playerState and self.playerState.Education or "None" end
-function OccupationScreen:getCurrentJob() return self.playerState and self.playerState.Job or nil end
+function OccupationScreen:updateState(newState)
+	if newState then
+		self.playerState = newState
+	end
+end
+
+function OccupationScreen:getAge()
+	local state = self.playerState
+	if not state then return 0 end
+	-- Check both direct Age and nested Stats.Age
+	return state.Age or (state.Stats and state.Stats.Age) or 0
+end
+
+function OccupationScreen:getMoney()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Money or (state.Stats and state.Stats.Money) or 0
+end
+
+function OccupationScreen:getEducation()
+	local state = self.playerState
+	if not state then return "None" end
+	-- Check Education directly, in Career, or in Flags
+	if state.Education then
+		if type(state.Education) == "table" then
+			return state.Education.level or state.Education.schoolLevel or "None"
+		end
+		return state.Education
+	end
+	if state.Career and state.Career.education then return state.Career.education end
+	-- Check flags for education level
+	local flags = state.Flags or {}
+	if flags.college_graduate or flags.has_degree then return "College" end
+	if flags.high_school_graduate then return "High School" end
+	if flags.in_high_school then return "High School" end
+	if flags.in_middle_school then return "Middle School" end
+	return "None"
+end
+
+function OccupationScreen:getCurrentJob()
+	local state = self.playerState
+	if not state then return nil end
+	if state.Job then return state.Job end
+	if state.Career and state.Career.jobTitle then return state.Career.jobTitle end
+	return nil
+end
 
 function OccupationScreen:createUI()
 	self.overlay = Instance.new("Frame")
@@ -610,6 +652,26 @@ end
 
 function OccupationScreen:populateJobs()
 	self:updateInfoBar()
+	
+	-- Debug: print state info when populating jobs
+	local age = self:getAge()
+	local edu = self:getEducation()
+	print("[OccupationScreen] PopulateJobs - Player Age:", age, "Education:", edu)
+	if self.playerState then
+		print("[OccupationScreen] playerState.Age:", self.playerState.Age)
+		print("[OccupationScreen] playerState keys:", table.concat(
+			(function()
+				local keys = {}
+				for k, v in pairs(self.playerState) do
+					table.insert(keys, tostring(k) .. "=" .. tostring(type(v) == "table" and "table" or v))
+				end
+				return keys
+			end)(), ", "
+		))
+	else
+		print("[OccupationScreen] playerState is nil!")
+	end
+	
 	for i, job in ipairs(Jobs) do
 		self:createJobCard(self.contentScroll, job, i)
 	end
@@ -817,8 +879,15 @@ end
 function OccupationScreen:show()
 	self.overlay.Visible = true
 	self.overlay.Position = UDim2.new(1, 0, 0, 0)
+	
+	-- Debug: print current state info
+	local age = self:getAge()
+	local edu = self:getEducation()
+	print("[OccupationScreen] Opening - Age:", age, "Education:", edu)
+	
 	self:updateInfoBar()
-	self:switchTab(self.currentTab)
+	self:switchTab(self.currentTab) -- This forces repopulate
+	
 	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { 
 		Position = UDim2.fromScale(0, 0) 
 	})

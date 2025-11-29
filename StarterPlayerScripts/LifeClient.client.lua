@@ -1745,6 +1745,25 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 				previousState[k] = v
 			end
 		end
+		
+		-- Also copy Age directly if it's in the state
+		if state.Age then
+			currentState.Age = state.Age
+		end
+
+		-- Update all screen instances with latest state
+		if occupationScreenInstance and occupationScreenInstance.updateState then
+			occupationScreenInstance:updateState(currentState)
+		end
+		if assetsScreenInstance and assetsScreenInstance.updateState then
+			assetsScreenInstance:updateState(currentState)
+		end
+		if relationshipsScreenInstance and relationshipsScreenInstance.updateState then
+			relationshipsScreenInstance:updateState(currentState)
+		end
+		if activitiesScreenInstance and activitiesScreenInstance.updateState then
+			activitiesScreenInstance:updateState(currentState)
+		end
 
 		if storyPathsScreenInstance and storyPathsScreenInstance.visible then
 			storyPathsScreenInstance:updateUI()

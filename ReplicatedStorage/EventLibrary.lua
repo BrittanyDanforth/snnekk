@@ -6801,6 +6801,12 @@ local events = {
 		weight = 1, oneTime = true, milestone = true,
 		emoji = "🎰", title = "LOTTERY JACKPOT!",
 		category = "money",
+		-- ULTRA RARE: Only 1 in 500 chance when this event is even considered
+		requires = function(state)
+			if state.Flags and state.Flags.lottery_winner then return false end
+			-- 0.2% chance per year this can even fire
+			return math.random(1, 500) == 1
+		end,
 		getDynamicData = function() return { amount = math.random(1, 10) * 1000000 } end,
 		text = "YOU WON THE LOTTERY! $%amount%!!! THIS IS REAL!!!",
 		choices = {
