@@ -234,8 +234,11 @@ function ActivitiesScreen:createUI()
 	
 	self.tabBtns = {}
 	self.tabBar = tabBar  -- Store reference for dynamic updates
+	self.currentTab = "mindbody"  -- Set default tab
 	
 	self:rebuildTabs()
+	self:createContentScroll()
+	self:populateMindBody()
 end
 
 function ActivitiesScreen:rebuildTabs()
@@ -262,6 +265,10 @@ function ActivitiesScreen:rebuildTabs()
 			{ id = "fun", text = "🎬 Fun", color = C.Purple },
 			{ id = "crime", text = "💀 Crime", color = C.Red },
 		}
+		-- Only set default if not already set
+		if not self.currentTab then
+			self.currentTab = "mindbody"
+		end
 	end
 	
 	local tabWidth = 1 / #tabs - 0.01
@@ -283,6 +290,11 @@ function ActivitiesScreen:rebuildTabs()
 		self.tabBtns[tab.id] = { btn = btn, color = tab.color }
 		btn.MouseButton1Click:Connect(function() self:switchTab(tab.id) end)
 	end
+end
+
+function ActivitiesScreen:createContentScroll()
+	-- Only create once
+	if self.contentScroll then return end
 	
 	-- Content
 	local scrollTop = contentTopOffset + 56 + 54 -- info bar + tab bar + spacing
@@ -300,8 +312,6 @@ function ActivitiesScreen:rebuildTabs()
 	self.contentLayout = Instance.new("UIListLayout")
 	self.contentLayout.Padding = UDim.new(0, 12)
 	self.contentLayout.Parent = self.contentScroll
-	
-	self:populateMindBody()
 end
 
 function ActivitiesScreen:createInfoChip(parent, icon, text, bgColor, textColor, order)
@@ -365,8 +375,11 @@ function ActivitiesScreen:switchTab(tabId)
 		})
 	end
 	
-	for _, child in ipairs(self.contentScroll:GetChildren()) do
-		if child:IsA("Frame") then child:Destroy() end
+	-- Clear content - ensure contentScroll exists
+	if self.contentScroll then
+		for _, child in ipairs(self.contentScroll:GetChildren()) do
+			if child:IsA("Frame") then child:Destroy() end
+		end
 	end
 	
 	if tabId == "prison" then self:populatePrison()
@@ -1193,6 +1206,7 @@ function ActivitiesScreen:show()
 	self.overlay.Position = UDim2.new(1, 0, 0, 0)
 	self:updateInfoBar()
 	self:rebuildTabs()  -- Rebuild tabs based on jail status
+	self:createContentScroll()  -- Ensure content scroll exists
 	self:switchTab(self.currentTab)
 	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { 
 		Position = UDim2.fromScale(0, 0) 

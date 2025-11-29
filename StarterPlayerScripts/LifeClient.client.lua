@@ -969,14 +969,20 @@ local function createNavButton(info, parent, order)
 	end)
 
 	btn.MouseButton1Click:Connect(function()
+		print("[LifeClient] Nav button clicked:", info.screen)
 		if info.screen == "occupation" and occupationScreenInstance then
 			occupationScreenInstance:show()
 		elseif info.screen == "assets" and assetsScreenInstance then
 			assetsScreenInstance:show()
 		elseif info.screen == "relationships" and relationshipsScreenInstance then
 			relationshipsScreenInstance:show()
-		elseif info.screen == "activities" and activitiesScreenInstance then
-			activitiesScreenInstance:show()
+		elseif info.screen == "activities" then
+			if activitiesScreenInstance then
+				print("[LifeClient] Opening activities screen...")
+				activitiesScreenInstance:show()
+			else
+				warn("[LifeClient] ❌ activitiesScreenInstance is nil!")
+			end
 		elseif info.screen == "storypaths" and storyPathsScreenInstance then
 			storyPathsScreenInstance:show()
 		end
@@ -1850,19 +1856,26 @@ end)
 -- SCREEN MODULE INIT
 ----------------------------------------------------------------
 
-local function safeNew(mod, ...)
+local function safeNew(mod, name, ...)
 	if mod and mod.new then
 		local s, r = pcall(mod.new, ...)
-		return s and r or nil
+		if s and r then
+			print("[LifeClient] ✅ " .. name .. " initialized")
+			return r
+		else
+			warn("[LifeClient] ❌ Failed to initialize " .. name .. ": " .. tostring(r))
+			return nil
+		end
 	end
+	warn("[LifeClient] ❌ Module not found: " .. name)
 	return nil
 end
 
-occupationScreenInstance    = safeNew(OccupationScreen,    screenGui, blurOverlay, showBlur, hideBlur, currentState)
-assetsScreenInstance        = safeNew(AssetsScreen,        screenGui, blurOverlay, showBlur, hideBlur, currentState)
-relationshipsScreenInstance = safeNew(RelationshipsScreen, screenGui, blurOverlay, showBlur, hideBlur, currentState)
-activitiesScreenInstance    = safeNew(ActivitiesScreen,    screenGui, blurOverlay, showBlur, hideBlur, currentState)
-storyPathsScreenInstance    = safeNew(StoryPathsScreen,    screenGui, currentState)
+occupationScreenInstance    = safeNew(OccupationScreen,    "OccupationScreen",    screenGui, blurOverlay, showBlur, hideBlur, currentState)
+assetsScreenInstance        = safeNew(AssetsScreen,        "AssetsScreen",        screenGui, blurOverlay, showBlur, hideBlur, currentState)
+relationshipsScreenInstance = safeNew(RelationshipsScreen, "RelationshipsScreen", screenGui, blurOverlay, showBlur, hideBlur, currentState)
+activitiesScreenInstance    = safeNew(ActivitiesScreen,    "ActivitiesScreen",    screenGui, blurOverlay, showBlur, hideBlur, currentState)
+storyPathsScreenInstance    = safeNew(StoryPathsScreen,    "StoryPathsScreen",    screenGui, currentState)
 
 if MinigamesModule then
 	local ok, mg = pcall(MinigamesModule.new, MinigamesModule, screenGui)
