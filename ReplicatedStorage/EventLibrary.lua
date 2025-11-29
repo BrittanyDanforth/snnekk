@@ -53,6 +53,10 @@ local events = {
 	-- UNIVERSAL CHILDHOOD EVENTS
 	-- ═══════════════════════════════════════════════════════════════
 	
+	-- ═══════════════════════════════════════════════════════════════
+	-- INFANT YEARS (0-2) - Multiple varied events
+	-- ═══════════════════════════════════════════════════════════════
+	
 	{
 		id = "birth",
 		minAge = 0, maxAge = 0,
@@ -68,16 +72,142 @@ local events = {
 	},
 	
 	{
+		id = "first_smile",
+		minAge = 0, maxAge = 1,
+		weight = 60, oneTime = true,
+		emoji = "😊", title = "First Smile!",
+		category = "family",
+		text = "You smiled for the first time! Everyone melted.",
+		choices = {
+			{ text = "😄 Smile more!", effects = { Happiness = 5, Looks = 2 }, resultText = "Your smile brightened everyone's day." },
+			{ text = "🤗 Reach for a hug", effects = { Happiness = 6 }, resultText = "You're already so affectionate!" },
+		},
+	},
+	
+	{
+		id = "first_crawl",
+		minAge = 0, maxAge = 1,
+		weight = 50, oneTime = true,
+		emoji = "🐛", title = "First Crawl!",
+		category = "family",
+		text = "You started crawling! Nothing is safe anymore.",
+		choices = {
+			{ text = "🏃 Crawl everywhere!", effects = { Health = 3, Smarts = 2 }, resultText = "You became an unstoppable explorer." },
+			{ text = "🧸 Crawl to your toys", effects = { Happiness = 4 }, resultText = "You love your teddy bear the most." },
+		},
+	},
+	
+	{
 		id = "first_word",
 		minAge = 1, maxAge = 2,
 		weight = 80, oneTime = true,
 		emoji = "🗣️", title = "First Word!",
 		category = "family",
+		getDynamicData = function()
+			local words = {"Mama", "Dada", "No!", "Ball", "More", "Dog", "Cat", "Bye-bye"}
+			return { word = words[math.random(#words)] }
+		end,
 		text = "Everyone is watching as you're about to speak your first word...",
 		choices = {
 			{ text = "👩 Say 'Mama'", effects = { Happiness = 5 }, resultText = "Your mother cried happy tears." },
 			{ text = "👨 Say 'Dada'", effects = { Happiness = 5 }, resultText = "Your father was so proud." },
-			{ text = "🙅 Say 'NO!'", effects = { Happiness = 3, Smarts = 3 }, resultText = "Your rebellious streak started early." },
+			{ text = "🙅 Say 'NO!'", effects = { Happiness = 3, Smarts = 3 }, resultText = "Your rebellious streak started early.", setFlag = "strong_willed" },
+		},
+	},
+	
+	{
+		id = "first_steps",
+		minAge = 1, maxAge = 2,
+		weight = 70, oneTime = true,
+		emoji = "🚶", title = "First Steps!",
+		category = "family",
+		text = "You took your first wobbly steps! The whole family cheered!",
+		choices = {
+			{ text = "🏃 Try to run!", effects = { Health = 4, Happiness = 3 }, resultText = "You fell down but got right back up. Determined!", setFlag = "determined" },
+			{ text = "👐 Walk to parent", effects = { Happiness = 6 }, resultText = "You walked right into their arms." },
+			{ text = "🤸 Dance around", effects = { Happiness = 5, Looks = 2 }, resultText = "You've got natural rhythm!" },
+		},
+	},
+	
+	{
+		id = "first_birthday",
+		minAge = 1, maxAge = 1,
+		weight = 100, oneTime = true, milestone = true,
+		emoji = "🎂", title = "First Birthday!",
+		category = "family",
+		text = "Happy birthday! You're 1 year old! Time for cake (and to smash it).",
+		choices = {
+			{ text = "🎂 Smash the cake!", effects = { Happiness = 8 }, resultText = "You made a glorious mess!" },
+			{ text = "🤔 What is this?", effects = { Smarts = 3, Happiness = 3 }, resultText = "You examined the cake curiously before eating it." },
+			{ text = "😭 Too many people!", effects = { Happiness = -2 }, resultText = "You got overwhelmed. It's okay, little one." },
+		},
+	},
+	
+	{
+		id = "baby_tantrum",
+		minAge = 1, maxAge = 3,
+		weight = 40, cooldown = 2,
+		emoji = "😠", title = "Tantrum Time!",
+		category = "family",
+		text = "You didn't get what you wanted. Time to let the world know!",
+		choices = {
+			{ text = "😭 SCREAM!", effects = { Health = 2, Happiness = -3 }, resultText = "You got attention... but not what you wanted." },
+			{ text = "🥺 Puppy eyes", effects = { Looks = 2, Happiness = 5 }, resultText = "You learned that cuteness works. Noted." },
+			{ text = "🤷 Give up", effects = { Smarts = 2 }, resultText = "You learned to pick your battles early." },
+		},
+	},
+	
+	{
+		id = "baby_sibling",
+		minAge = 1, maxAge = 5,
+		weight = 25, oneTime = true,
+		emoji = "👶", title = "New Sibling!",
+		category = "family",
+		getDynamicData = function()
+			local genders = {"brother", "sister"}
+			return { siblingType = genders[math.random(#genders)] }
+		end,
+		text = "Your parents brought home a new baby %siblingType%!",
+		choices = {
+			{ text = "🤗 Love them!", effects = { Happiness = 6 }, resultText = "You adore your new sibling!", setFlag = "has_sibling" },
+			{ text = "😤 Jealous...", effects = { Happiness = -5 }, resultText = "You're not sure about sharing attention.", setFlag = "has_sibling" },
+			{ text = "🤷 Meh", effects = { Smarts = 2 }, resultText = "You're indifferent. You've got your own thing going.", setFlag = "has_sibling" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- TODDLER YEARS (3-4) - Expanded variety
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "potty_training",
+		minAge = 2, maxAge = 3,
+		weight = 60, oneTime = true,
+		emoji = "🚽", title = "Potty Training!",
+		category = "family",
+		text = "Your parents are trying to potty train you. This is a big deal!",
+		choices = {
+			{ text = "✅ Nail it!", effects = { Smarts = 4, Happiness = 5 }, resultText = "You're a potty training prodigy!" },
+			{ text = "😅 Accidents happen", effects = { Happiness = -2 }, resultText = "It took a while, but you got there." },
+			{ text = "🙅 Refuse to cooperate", effects = { Happiness = 3, Smarts = -2 }, resultText = "You showed them who's boss (for now).", setFlag = "stubborn" },
+		},
+	},
+	
+	{
+		id = "imaginary_friend",
+		minAge = 3, maxAge = 5,
+		weight = 35, oneTime = true,
+		emoji = "👻", title = "Imaginary Friend",
+		category = "social",
+		getDynamicData = function()
+			local names = {"Mr. Whiskers", "Sparkle", "Captain Thunder", "Princess Luna", "Dino"}
+			return { friendName = names[math.random(#names)] }
+		end,
+		text = "You've created an imaginary friend named %friendName%!",
+		choices = {
+			{ text = "🤝 Best friends forever!", effects = { Happiness = 6, Smarts = 3 }, resultText = "%friendName% goes everywhere with you.", setFlag = "creative_mind" },
+			{ text = "🏰 Build a whole world", effects = { Smarts = 5, Happiness = 4 }, resultText = "Your imagination is incredible.", setFlag = "creative_mind" },
+			{ text = "🤷 They're just pretend", effects = { Smarts = 4 }, resultText = "You know the difference between real and pretend." },
 		},
 	},
 	
@@ -89,15 +219,66 @@ local events = {
 		category = "school",
 		text = "It's your first day away from home!",
 		choices = {
-			{ text = "🎉 Excited!", effects = { Happiness = 5, Smarts = 3 }, resultText = "You made friends immediately." },
+			{ text = "🎉 Excited!", effects = { Happiness = 5, Smarts = 3 }, resultText = "You made friends immediately.", setFlag = "social_butterfly" },
 			{ text = "😰 Scared", effects = { Happiness = -2 }, resultText = "You clung to your parent but warmed up." },
-			{ text = "🤝 Make a friend", effects = { Happiness = 6 }, resultText = "You found a best friend on day one!" },
+			{ text = "🤝 Make a friend", effects = { Happiness = 6 }, resultText = "You found a best friend on day one!", setFlag = "has_best_friend" },
 		},
 	},
 	
 	{
+		id = "playground_incident",
+		minAge = 3, maxAge = 6,
+		weight = 40, cooldown = 2,
+		emoji = "🛝", title = "Playground Drama",
+		category = "social",
+		getDynamicData = function() return { kidName = randomName() } end,
+		text = "Another kid named %kidName% pushed you on the playground!",
+		choices = {
+			{ text = "👊 Push back", effects = { Health = -2, Happiness = 2 }, resultText = "You stood your ground. They won't mess with you again.", setFlag = "fights_back" },
+			{ text = "😭 Cry for help", effects = { Happiness = -3 }, resultText = "An adult intervened. You felt protected." },
+			{ text = "🗣️ Talk it out", effects = { Smarts = 4, Happiness = 2 }, resultText = "You resolved it maturely. Impressive for your age!" },
+		},
+	},
+	
+	{
+		id = "first_drawing",
+		minAge = 3, maxAge = 5,
+		weight = 45, oneTime = true,
+		emoji = "🖍️", title = "Your First Drawing!",
+		category = "school",
+		text = "You drew something and your parents put it on the fridge!",
+		choices = {
+			{ text = "🎨 Keep drawing!", effects = { Smarts = 3, Happiness = 5 }, resultText = "Art becomes your passion.", setFlag = "art_interest" },
+			{ text = "🏠 Draw your family", effects = { Happiness = 6 }, resultText = "Your parents were so touched." },
+			{ text = "🤷 Meh, not interested", effects = { Happiness = 2 }, resultText = "Art isn't your thing." },
+		},
+	},
+	
+	{
+		id = "first_pet_encounter",
+		minAge = 2, maxAge = 6,
+		weight = 35, oneTime = true,
+		emoji = "🐕", title = "Meeting a Pet",
+		category = "family",
+		getDynamicData = function()
+			local pets = {"dog", "cat", "hamster", "goldfish"}
+			return { petType = pets[math.random(#pets)] }
+		end,
+		text = "Your family got a pet %petType%!",
+		choices = {
+			{ text = "🤗 Love it!", effects = { Happiness = 8 }, resultText = "You and your pet are inseparable!", setFlag = "animal_lover" },
+			{ text = "😨 Scared of it", effects = { Happiness = -3 }, resultText = "Pets aren't for everyone." },
+			{ text = "🔬 Study it", effects = { Smarts = 4, Happiness = 3 }, resultText = "You're fascinated by animals!", setFlag = "science_interest" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CHILDHOOD YEARS (5-11) - More variety
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
 		id = "elementary_start",
-		minAge = 6, maxAge = 6,
+		minAge = 5, maxAge = 6,
 		weight = 100, oneTime = true, milestone = true,
 		emoji = "🎒", title = "Elementary School Begins!",
 		category = "school",
@@ -106,6 +287,86 @@ local events = {
 			{ text = "📚 Focus on learning", effects = { Smarts = 5 }, resultText = "You became the smart kid.", setFlag = "studious" },
 			{ text = "🎨 Focus on creativity", effects = { Smarts = 2, Happiness = 4 }, resultText = "You discovered your creative side.", setFlag = "creative_child" },
 			{ text = "⚽ Focus on sports", effects = { Health = 5, Happiness = 3 }, resultText = "You became the star of gym class.", setFlag = "athletic_child" },
+		},
+	},
+	
+	{
+		id = "first_computer",
+		minAge = 6, maxAge = 10,
+		weight = 50, oneTime = true,
+		emoji = "💻", title = "First Computer!",
+		category = "family",
+		text = "Your family got a computer! A whole new world opens up.",
+		choices = {
+			{ text = "🎮 Play games!", effects = { Happiness = 6 }, resultText = "Gaming becomes your hobby." },
+			{ text = "💻 Learn how it works", effects = { Smarts = 6, Happiness = 3 }, resultText = "You're fascinated by technology!", setFlag = "computer_interest" },
+			{ text = "🌐 Explore the internet", effects = { Smarts = 4, Happiness = 4 }, resultText = "You discovered so much online.", setFlag = "computer_interest" },
+		},
+	},
+	
+	{
+		id = "first_book_love",
+		minAge = 6, maxAge = 10,
+		weight = 40, oneTime = true,
+		emoji = "📖", title = "Book Worm!",
+		category = "school",
+		getDynamicData = function()
+			local genres = {"fantasy", "mystery", "science fiction", "adventure", "comedy"}
+			return { genre = genres[math.random(#genres)] }
+		end,
+		text = "You discovered a love for %genre% books!",
+		choices = {
+			{ text = "📚 Read everything!", effects = { Smarts = 8, Happiness = 5 }, resultText = "Books became your best friends.", setFlag = "bookworm" },
+			{ text = "✍️ Try writing your own", effects = { Smarts = 6, Happiness = 4 }, resultText = "You started writing stories!", setFlag = "writer_interest" },
+			{ text = "🤷 It's okay", effects = { Smarts = 3 }, resultText = "Reading is fine, but not your passion." },
+		},
+	},
+	
+	{
+		id = "science_fair",
+		minAge = 8, maxAge = 12,
+		weight = 35, cooldown = 3,
+		emoji = "🔬", title = "Science Fair",
+		category = "school",
+		getDynamicData = function()
+			local projects = {"volcano", "solar system model", "plant growth experiment", "robot", "crystal growing"}
+			return { project = projects[math.random(#projects)] }
+		end,
+		text = "The school science fair is coming up! You're making a %project%.",
+		choices = {
+			{ text = "🏆 Win it!", effects = { Smarts = 8, Happiness = 8 }, resultText = "First place! You're a science star!", setFlag = "science_interest" },
+			{ text = "🤝 Help others", effects = { Smarts = 4, Happiness = 6 }, resultText = "You helped friends with their projects.", setFlag = "teaching_interest" },
+			{ text = "😅 Just pass", effects = { Smarts = 3, Happiness = 2 }, resultText = "You did okay. Science isn't your thing." },
+		},
+	},
+	
+	{
+		id = "talent_show",
+		minAge = 7, maxAge = 12,
+		weight = 30, cooldown = 3,
+		emoji = "🎤", title = "Talent Show",
+		category = "school",
+		text = "There's a school talent show! Will you perform?",
+		choices = {
+			{ text = "🎤 Sing!", effects = { Happiness = 7, Looks = 3 }, resultText = "You wowed the crowd!", setFlag = "performer" },
+			{ text = "🎸 Play music", effects = { Happiness = 6, Smarts = 3 }, resultText = "Your musical talent impressed everyone.", setFlag = "musician" },
+			{ text = "🙅 Too nervous", effects = { Happiness = -3 }, resultText = "Stage fright got you. Maybe next time." },
+		},
+	},
+	
+	{
+		id = "childhood_bully",
+		minAge = 7, maxAge = 12,
+		weight = 35, cooldown = 3,
+		emoji = "😈", title = "Dealing with a Bully",
+		category = "school",
+		getDynamicData = function() return { bullyName = randomName() } end,
+		text = "%bullyName% has been picking on you at school.",
+		choices = {
+			{ text = "🗣️ Tell an adult", effects = { Smarts = 4, Happiness = 3 }, resultText = "The teacher handled it. Good call." },
+			{ text = "👊 Stand up to them", effects = { Health = -3, Happiness = 5 }, resultText = "They backed off after you confronted them.", setFlag = "brave" },
+			{ text = "🤝 Try to befriend them", effects = { Smarts = 5, Happiness = 4 }, resultText = "Turns out they just needed a friend.", setFlag = "compassionate" },
+			{ text = "😔 Suffer in silence", effects = { Happiness = -8 }, resultText = "It was a hard year." },
 		},
 	},
 

@@ -376,13 +376,31 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		return
 	end
 
-	-- Validate choice index
-	if type(choiceIndex) ~= "number" or choiceIndex < 1 or choiceIndex > #eventDef.choices then
+	-- Handle special events (stage transitions, death) - just continue
+	if pending.isStageTransition or pending.isDeath then
+		pendingEvents[player] = nil
+		if pending.isDeath then
+			-- Handle death - could reset or show game over
+			state:AddFeed("Your journey has ended.")
+		end
+		pushState(player, state, "Life continues...")
+		return
+	end
+
+	-- Validate choice index - ensure choices exists
+	local choices = eventDef.choices
+	if not choices or type(choices) ~= "table" then
+		pendingEvents[player] = nil
+		pushState(player, state, "Event processed.")
+		return
+	end
+	
+	if type(choiceIndex) ~= "number" or choiceIndex < 1 or choiceIndex > #choices then
 		pushState(player, state, "Invalid choice.")
 		return
 	end
 
-	local choice = eventDef.choices[choiceIndex]
+	local choice = choices[choiceIndex]
 	if not choice then
 		pushState(player, state, "Choice not found.")
 		return
