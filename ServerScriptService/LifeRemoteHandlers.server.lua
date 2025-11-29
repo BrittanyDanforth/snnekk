@@ -329,7 +329,7 @@ local CareerSkills = {
 local CareerPerks = {
 	health_insurance = { stat = "Health", bonus = 2, desc = "Health insurance" },
 	gym_membership = { stat = "Health", bonus = 3, desc = "Free gym membership" },
-	401k = { money_bonus = 0.05, desc = "401k matching" },
+	["401k"] = { money_bonus = 0.05, desc = "401k matching" },
 	stock_options = { money_bonus = 0.10, desc = "Stock options" },
 	company_car = { asset = "vehicle", desc = "Company car" },
 	travel = { stat = "Happiness", bonus = 5, desc = "Travel opportunities" },
