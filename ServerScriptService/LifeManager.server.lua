@@ -153,18 +153,18 @@ end
 local function resetPlayerLife(player)
 	-- Create a completely new life state
 	local newState = LifeState.new(player)
-
+	
 	-- Initialize event history and flags
 	EventRunner.initHistory(newState)
-
+	
 	playerLives[player] = newState
-
+	
 	-- Clear pending events
 	pendingEvents[player] = nil
-
+	
 	-- Sync the fresh state to client (will show intro screen again)
 	SyncState:FireClient(player, serializeState(newState), "🔄 A new life begins...", nil)
-
+	
 	print("[LifeManager] Player", player.Name, "started a new life")
 end
 
@@ -253,33 +253,33 @@ local function generateLifeSummary(state, deathCause)
 	local flags = state.Flags or {}
 	local achievements = {}
 	local stats = state.Stats or {}
-
+	
 	-- Career achievements
 	if flags.president then table.insert(achievements, "🏛️ Became President of the United States") end
 	if flags.governor then table.insert(achievements, "🏛️ Served as State Governor") end
 	if flags.us_senator then table.insert(achievements, "🏛️ Served in the U.S. Senate") end
 	if flags.congressman then table.insert(achievements, "🏛️ Served in Congress") end
 	if flags.mayor then table.insert(achievements, "🏙️ Served as Mayor") end
-
+	
 	if flags.crime_boss then table.insert(achievements, "💀 Became a Crime Boss") end
 	if flags.gang_member then table.insert(achievements, "⛓️ Joined a Gang") end
 	if flags.escaped_prison then table.insert(achievements, "🔓 Escaped from Prison") end
-
+	
 	if flags.f1_champion then table.insert(achievements, "🏎️ Won F1 World Championship") end
 	if flags.f1_driver then table.insert(achievements, "🏎️ Became an F1 Driver") end
 	if flags.karting_champion then table.insert(achievements, "🏎️ Won Karting Championship") end
-
+	
 	if flags.famous_artist then table.insert(achievements, "🎨 Became a Famous Artist") end
 	if flags.museum_exhibit then table.insert(achievements, "🏛️ Had Art in a Museum") end
-
+	
 	if flags.elite_hacker then table.insert(achievements, "💻 Became an Elite Hacker") end
 	if flags.white_hat then table.insert(achievements, "🛡️ Became a White Hat Security Expert") end
 	if flags.black_hat then table.insert(achievements, "🖤 Became a Black Hat Hacker") end
-
+	
 	if flags.principal then table.insert(achievements, "📚 Became School Principal") end
 	if flags.teacher then table.insert(achievements, "📚 Became a Teacher") end
 	if flags.teacher_of_year then table.insert(achievements, "🏆 Won Teacher of the Year") end
-
+	
 	-- Life achievements
 	if flags.married then table.insert(achievements, "💒 Got Married") end
 	if flags.has_children then table.insert(achievements, "👶 Had Children") end
@@ -287,17 +287,17 @@ local function generateLifeSummary(state, deathCause)
 	if flags.millionaire then table.insert(achievements, "💰 Became a Millionaire") end
 	if flags.college_graduate then table.insert(achievements, "🎓 Graduated College") end
 	if flags.doctorate then table.insert(achievements, "🎓 Earned a Doctorate") end
-
+	
 	-- Personality traits
 	if flags.brave then table.insert(achievements, "🦁 Known for Bravery") end
 	if flags.compassionate then table.insert(achievements, "❤️ Known for Compassion") end
 	if flags.creative_mind then table.insert(achievements, "🎨 Creative Mind") end
-
+	
 	-- Build summary text
 	local summaryParts = {}
 	table.insert(summaryParts, string.format("💀 %s passed away at age %d from %s.", state.Name or "You", state.Age, deathCause))
 	table.insert(summaryParts, "")
-
+	
 	-- Stats summary
 	table.insert(summaryParts, "📊 Final Stats:")
 	table.insert(summaryParts, string.format("   💰 Net Worth: $%s", formatMoney(state.Money or 0)))
@@ -305,7 +305,7 @@ local function generateLifeSummary(state, deathCause)
 	table.insert(summaryParts, string.format("   ❤️ Health: %d%%", stats.Health or 0))
 	table.insert(summaryParts, string.format("   🧠 Smarts: %d%%", stats.Smarts or 50))
 	table.insert(summaryParts, string.format("   ✨ Looks: %d%%", stats.Looks or 50))
-
+	
 	if #achievements > 0 then
 		table.insert(summaryParts, "")
 		table.insert(summaryParts, "🏆 Life Achievements:")
@@ -313,14 +313,14 @@ local function generateLifeSummary(state, deathCause)
 			table.insert(summaryParts, "   " .. achievement)
 		end
 	end
-
+	
 	-- Life rating
 	local score = 0
 	score = score + (state.Age or 0) -- Points for longevity
 	score = score + (#achievements * 10) -- Points for achievements
 	score = score + math.floor((state.Money or 0) / 10000) -- Points for wealth
 	score = score + (stats.Happiness or 0) -- Points for happiness
-
+	
 	local rating = "F"
 	if score >= 500 then rating = "S+"
 	elseif score >= 400 then rating = "S"
@@ -332,10 +332,10 @@ local function generateLifeSummary(state, deathCause)
 	elseif score >= 75 then rating = "C"
 	elseif score >= 50 then rating = "D"
 	end
-
+	
 	table.insert(summaryParts, "")
 	table.insert(summaryParts, string.format("⭐ Life Rating: %s (Score: %d)", rating, score))
-
+	
 	return {
 		summaryText = table.concat(summaryParts, "\n"),
 		achievements = achievements,
@@ -358,7 +358,7 @@ local function ageUp(player)
 	if not state.Name then
 		return
 	end
-
+	
 	-- Check if already dead
 	if state.IsDead then
 		return -- Can't age up when dead
@@ -377,7 +377,7 @@ local function ageUp(player)
 	end
 
 	state:AddFeed(ageText)
-
+	
 	-- Reduce jail time if in jail (integration with LifeRemoteHandlers)
 	if _G.ReduceJailTime then
 		_G.ReduceJailTime(player, 1)
@@ -390,13 +390,13 @@ local function ageUp(player)
 
 	-- Initialize event history if needed
 	EventRunner.initHistory(state)
-
+	
 	-- Get current stage info for client
 	local stageInfo = EventRunner.getStageSummary(state)
 
 	-- ALWAYS sync state first so client has updated Age
 	pushState(player, state, ageText)
-
+	
 	-- Check for life stage transition FIRST (these take priority)
 	local transitionEvent = EventRunner.checkStageTransition(oldAge, newAge)
 	if transitionEvent then
@@ -414,7 +414,7 @@ local function ageUp(player)
 				{ index = 1, text = "🎉 Continue", effects = {}, result = "Life goes on!" }
 			}
 		}
-
+		
 		-- Store for choice resolution
 		pendingEvents[player] = {
 			eventDef = transitionEvent,
@@ -422,22 +422,22 @@ local function ageUp(player)
 			choiceIndex = nil,
 			isStageTransition = true,
 		}
-
+		
 		state:AddFeed(transitionEvent.title .. " - " .. transitionEvent.text)
 		PresentEvent:FireClient(player, payload, nil)
 		return -- Don't pick another event this year
 	end
-
+	
 	-- Check for death (elder years)
 	local deathCheck = EventRunner.checkDeath(state)
 	if deathCheck.died then
 		-- Mark as dead - prevent further aging
 		state.IsDead = true
 		state:SetFlag("deceased")
-
+		
 		-- Generate life summary
 		local lifeSummary = generateLifeSummary(state, deathCheck.cause)
-
+		
 		-- Handle death
 		local deathPayload = {
 			id = "death",
@@ -451,7 +451,7 @@ local function ageUp(player)
 				{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
 			}
 		}
-
+		
 		pendingEvents[player] = {
 			eventDef = { id = "death", category = "death" },
 			dynamicData = {},
@@ -460,12 +460,12 @@ local function ageUp(player)
 			deathCause = deathCheck.cause,
 			lifeSummary = lifeSummary,
 		}
-
+		
 		state:AddFeed("💀 " .. state.Name .. " has passed away from " .. deathCheck.cause .. " at age " .. state.Age)
 		PresentEvent:FireClient(player, deathPayload, nil)
 		return
 	end
-
+	
 	-- Decide if a life event should fire (filtered by stage)
 	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
 	if eventDef then
@@ -476,20 +476,20 @@ local function ageUp(player)
 			-- Just skip this year
 			return
 		end
-
+		
 		-- Build client payload with dynamic data
 		local payload, dynamicData = EventRunner.buildClientPayload(eventDef, state)
-
+		
 		-- Store for choice resolution
 		pendingEvents[player] = {
 			eventDef = eventDef,
 			dynamicData = dynamicData or {},
 			choiceIndex = nil,
 		}
-
+		
 		-- Mark event as occurred (for one-time/cooldown tracking)
 		EventRunner.markEventOccurred(state, eventDef)
-
+		
 		-- Present event (state already synced above)
 		PresentEvent:FireClient(player, payload, nil)
 	end
@@ -519,7 +519,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		pushState(player, state, "Event not found.")
 		return
 	end
-
+	
 	local eventDef = pending.eventDef
 	if not eventDef or eventDef.id ~= eventId then
 		pushState(player, state, "Event mismatch.")
@@ -532,7 +532,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		pushState(player, state, "Life continues...")
 		return
 	end
-
+	
 	if pending.isDeath then
 		pendingEvents[player] = nil
 		-- Reset the player's life for a new game
@@ -547,7 +547,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		pushState(player, state, "Event processed.")
 		return
 	end
-
+	
 	if type(choiceIndex) ~= "number" or choiceIndex < 1 or choiceIndex > #choices then
 		pushState(player, state, "Invalid choice.")
 		return
@@ -569,7 +569,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 
 	-- Apply choice immediately
 	local dynamicData = pending.dynamicData or {}
-
+	
 	-- Debug: verify choice exists
 	local choiceDef = eventDef.choices and eventDef.choices[choiceIndex]
 	if not choiceDef or type(choiceDef) ~= "table" then
@@ -578,16 +578,16 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		pushState(player, state, "Choice error.")
 		return
 	end
-
+	
 	-- Store state before applying choice for delta calculation
 	local beforeHappiness = state.Stats.Happiness or 50
 	local beforeHealth = state.Stats.Health or 100
 	local beforeSmarts = state.Stats.Smarts or 50
 	local beforeLooks = state.Stats.Looks or 50
 	local beforeMoney = state.Money or 0
-
+	
 	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
-
+	
 	if err then
 		pushState(player, state, "Error: " .. tostring(err))
 		pendingEvents[player] = nil
@@ -599,14 +599,14 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 
 	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
-
+	
 	-- Calculate actual deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
 	local healthDelta = (state.Stats.Health or 100) - beforeHealth
 	local smartsDelta = (state.Stats.Smarts or 50) - beforeSmarts
 	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
 	local moneyDelta = (state.Money or 0) - beforeMoney
-
+	
 	-- Only show popup for SIGNIFICANT events (milestone, big changes, or flags set)
 	local isSignificant = eventDef.milestone 
 		or eventDef.showResultPopup
@@ -614,7 +614,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		or math.abs(healthDelta) >= 15
 		or math.abs(moneyDelta) >= 5000
 		or (#(results.flagsSet or {}) > 0)
-
+	
 	local resultData = nil
 	if isSignificant then
 		resultData = {
@@ -629,7 +629,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 			money = moneyDelta ~= 0 and moneyDelta or nil,
 		}
 	end
-
+	
 	pushState(player, state, feedText, resultData)
 end)
 
@@ -652,7 +652,7 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	local eventDef = pending.eventDef
 	local choiceIndex = pending.choiceIndex
 	local dynamicData = pending.dynamicData or {}
-
+	
 	-- Store state before
 	local beforeHappiness = state.Stats.Happiness or 50
 	local beforeHealth = state.Stats.Health or 100
@@ -660,7 +660,7 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 
 	-- Apply choice with minigame bonus if won
 	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
-
+	
 	if err then
 		pushState(player, state, "Error: " .. tostring(err))
 		pendingEvents[player] = nil
@@ -671,7 +671,7 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	local feedText = results.resultText or "Something happened..."
 	local bonusMoney = 0
 	local bonusHappiness = 0
-
+	
 	if minigameSuccess then
 		-- Bonus for winning minigame
 		if results.effects and results.effects.Money then
@@ -692,12 +692,12 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	pendingEvents[player] = nil
 
 	state:AddFeed(feedText)
-
+	
 	-- Calculate total deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
 	local healthDelta = (state.Stats.Health or 100) - beforeHealth
 	local moneyDelta = (state.Money or 0) - beforeMoney
-
+	
 	-- Minigames always show result popup (they're special)
 	local resultData = {
 		showPopup = true,
@@ -708,7 +708,7 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 		health = healthDelta ~= 0 and healthDelta or nil,
 		money = moneyDelta ~= 0 and moneyDelta or nil,
 	}
-
+	
 	pushState(player, state, feedText, resultData)
 end)
 
@@ -719,14 +719,14 @@ end)
 GetStoryPaths.OnServerInvoke = function(player)
 	local state = getLife(player)
 	if not state then return {} end
-
+	
 	return EventRunner.getStoryPaths(state)
 end
 
 GetSpecialActions.OnServerInvoke = function(player)
 	local state = getLife(player)
 	if not state then return {} end
-
+	
 	return EventRunner.getSpecialActions(state)
 end
 
@@ -762,7 +762,7 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 		local chosen = orders[math.random(#orders)]
 		state:AddFeed(chosen.text)
 		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 15, 0, 100)
-
+		
 		-- Show popup
 		showResultPopup(player, {
 			emoji = chosen.emoji,
@@ -772,12 +772,12 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 		})
 		pushState(player, state, chosen.text)
 		return { success = true, message = chosen.text }
-
+		
 	elseif actionId == "address_nation" and state.Flags.president then
 		local msg = "You addressed the nation in a televised speech. Approval rating up!"
 		state:AddFeed(msg)
 		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 10, 0, 100)
-
+		
 		showResultPopup(player, {
 			emoji = "📺",
 			title = "Address to the Nation",
@@ -796,7 +796,7 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 			state.Money = (state.Money or 0) + amount
 			local msg = "You collected $" .. amount .. " in debts. They paid up without much trouble."
 			state:AddFeed(msg)
-
+			
 			showResultPopup(player, {
 				emoji = "💰",
 				title = "Debt Collection",
@@ -809,7 +809,7 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 			local msg = "The debtor fought back! You got roughed up and got nothing."
 			state:AddFeed(msg)
 			state.Stats.Health = math.clamp((state.Stats.Health or 50) - 10, 0, 100)
-
+			
 			showResultPopup(player, {
 				emoji = "🤕",
 				title = "Debt Collection Failed",
@@ -819,13 +819,13 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 			pushState(player, state, msg)
 			return { success = false, message = msg }
 		end
-
+		
 	elseif actionId == "launder_money" and (state.Flags.underboss or state.Flags.crime_boss) then
 		local amount = math.random(10000, 50000)
 		state.Money = (state.Money or 0) + amount
 		local msg = "You successfully laundered $" .. amount .. " through shell companies."
 		state:AddFeed(msg)
-
+		
 		showResultPopup(player, {
 			emoji = "🏦",
 			title = "Money Laundering",
@@ -834,12 +834,12 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 		})
 		pushState(player, state, msg)
 		return { success = true, message = msg }
-
+		
 	elseif actionId == "order_hit" and (state.Flags.underboss or state.Flags.crime_boss) then
 		local msg = "The hit was carried out successfully. Your rivals will think twice before crossing you again."
 		state:AddFeed(msg)
 		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) - 5, 0, 100)
-
+		
 		showResultPopup(player, {
 			emoji = "🎯",
 			title = "Hit Ordered",

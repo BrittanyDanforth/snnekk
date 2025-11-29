@@ -48,15 +48,15 @@ end
 ----------------------------------------------------------------------
 
 local events = {
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- UNIVERSAL CHILDHOOD EVENTS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- INFANT YEARS (0-2) - Multiple varied events
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "birth",
 		minAge = 0, maxAge = 0,
@@ -70,7 +70,7 @@ local events = {
 			{ text = "👀 Look around curiously", effects = { Smarts = 3 }, resultText = "You observed everything with wide, curious eyes." },
 		},
 	},
-
+	
 	{
 		id = "first_smile",
 		minAge = 0, maxAge = 1,
@@ -83,7 +83,7 @@ local events = {
 			{ text = "🤗 Reach for a hug", effects = { Happiness = 6 }, resultText = "You're already so affectionate!" },
 		},
 	},
-
+	
 	{
 		id = "first_crawl",
 		minAge = 0, maxAge = 1,
@@ -96,7 +96,7 @@ local events = {
 			{ text = "🧸 Crawl to your toys", effects = { Happiness = 4 }, resultText = "You love your teddy bear the most." },
 		},
 	},
-
+	
 	{
 		id = "first_word",
 		minAge = 1, maxAge = 2,
@@ -114,7 +114,7 @@ local events = {
 			{ text = "🙅 Say 'NO!'", effects = { Happiness = 3, Smarts = 3 }, resultText = "Your rebellious streak started early.", setFlag = "strong_willed" },
 		},
 	},
-
+	
 	{
 		id = "first_steps",
 		minAge = 1, maxAge = 2,
@@ -128,7 +128,7 @@ local events = {
 			{ text = "🤸 Dance around", effects = { Happiness = 5, Looks = 2 }, resultText = "You've got natural rhythm!" },
 		},
 	},
-
+	
 	{
 		id = "first_birthday",
 		minAge = 1, maxAge = 1,
@@ -142,7 +142,7 @@ local events = {
 			{ text = "😭 Too many people!", effects = { Happiness = -2 }, resultText = "You got overwhelmed. It's okay, little one." },
 		},
 	},
-
+	
 	{
 		id = "baby_tantrum",
 		minAge = 1, maxAge = 3,
@@ -156,7 +156,7 @@ local events = {
 			{ text = "🤷 Give up", effects = { Smarts = 2 }, resultText = "You learned to pick your battles early." },
 		},
 	},
-
+	
 	{
 		id = "baby_sibling",
 		minAge = 1, maxAge = 5,
@@ -174,11 +174,11 @@ local events = {
 			{ text = "🤷 Meh", effects = { Smarts = 2 }, resultText = "You're indifferent. You've got your own thing going.", setFlag = "has_sibling" },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- TODDLER YEARS (3-4) - Expanded variety
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "potty_training",
 		minAge = 2, maxAge = 3,
@@ -192,7 +192,7 @@ local events = {
 			{ text = "🙅 Refuse to cooperate", effects = { Happiness = 3, Smarts = -2 }, resultText = "You showed them who's boss (for now).", setFlag = "stubborn" },
 		},
 	},
-
+	
 	{
 		id = "imaginary_friend",
 		minAge = 3, maxAge = 5,
@@ -210,7 +210,7 @@ local events = {
 			{ text = "🤷 They're just pretend", effects = { Smarts = 4 }, resultText = "You know the difference between real and pretend." },
 		},
 	},
-
+	
 	{
 		id = "preschool_start",
 		minAge = 4, maxAge = 4,
@@ -224,7 +224,7 @@ local events = {
 			{ text = "🤝 Make a friend", effects = { Happiness = 6 }, resultText = "You found a best friend on day one!", setFlag = "has_best_friend" },
 		},
 	},
-
+	
 	{
 		id = "playground_incident",
 		minAge = 3, maxAge = 6,
@@ -239,7 +239,7 @@ local events = {
 			{ text = "🗣️ Talk it out", effects = { Smarts = 4, Happiness = 2 }, resultText = "You resolved it maturely. Impressive for your age!" },
 		},
 	},
-
+	
 	{
 		id = "first_drawing",
 		minAge = 3, maxAge = 5,
@@ -253,7 +253,7 @@ local events = {
 			{ text = "🤷 Meh, not interested", effects = { Happiness = 2 }, resultText = "Art isn't your thing." },
 		},
 	},
-
+	
 	{
 		id = "first_pet_encounter",
 		minAge = 2, maxAge = 6,
@@ -271,11 +271,11 @@ local events = {
 			{ text = "🔬 Study it", effects = { Smarts = 4, Happiness = 3 }, resultText = "You're fascinated by animals!", setFlag = "science_interest" },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- CHILDHOOD YEARS (5-11) - More variety
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "elementary_start",
 		minAge = 5, maxAge = 6,
@@ -289,7 +289,7 @@ local events = {
 			{ text = "⚽ Focus on sports", effects = { Health = 5, Happiness = 3 }, resultText = "You became the star of gym class.", setFlag = "athletic_child" },
 		},
 	},
-
+	
 	{
 		id = "first_computer",
 		minAge = 6, maxAge = 10,
@@ -303,7 +303,7 @@ local events = {
 			{ text = "🌐 Explore the internet", effects = { Smarts = 4, Happiness = 4 }, resultText = "You discovered so much online.", setFlag = "computer_interest" },
 		},
 	},
-
+	
 	{
 		id = "first_book_love",
 		minAge = 6, maxAge = 10,
@@ -321,7 +321,7 @@ local events = {
 			{ text = "🤷 It's okay", effects = { Smarts = 3 }, resultText = "Reading is fine, but not your passion." },
 		},
 	},
-
+	
 	{
 		id = "science_fair",
 		minAge = 8, maxAge = 12,
@@ -339,7 +339,7 @@ local events = {
 			{ text = "😅 Just pass", effects = { Smarts = 3, Happiness = 2 }, resultText = "You did okay. Science isn't your thing." },
 		},
 	},
-
+	
 	{
 		id = "talent_show",
 		minAge = 7, maxAge = 12,
@@ -353,7 +353,7 @@ local events = {
 			{ text = "🙅 Too nervous", effects = { Happiness = -3 }, resultText = "Stage fright got you. Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "childhood_bully",
 		minAge = 7, maxAge = 12,
@@ -373,7 +373,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- CAREER PATH DISCOVERY EVENTS (Age 8-16)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "discover_computers",
 		minAge = 8, maxAge = 14,
@@ -386,7 +386,7 @@ local events = {
 			{ text = "🎮 Just play games", effects = { Happiness = 3 }, resultText = "You enjoyed gaming." },
 		},
 	},
-
+	
 	{
 		id = "discover_art",
 		minAge = 7, maxAge = 14,
@@ -399,7 +399,7 @@ local events = {
 			{ text = "😊 Thanks but other interests", effects = { Happiness = 2 }, resultText = "You appreciated the compliment." },
 		},
 	},
-
+	
 	{
 		id = "discover_racing",
 		minAge = 8, maxAge = 14,
@@ -412,7 +412,7 @@ local events = {
 			{ text = "😅 Fun but scary", effects = { Happiness = 3 }, resultText = "It was thrilling but not for you." },
 		},
 	},
-
+	
 	{
 		id = "discover_politics",
 		minAge = 12, maxAge = 18,
@@ -425,7 +425,7 @@ local events = {
 			{ text = "✊ Join student council", effects = { Smarts = 3, Happiness = 4 }, resultText = "You ran for student council and won!", setFlags = {"political_interest", "student_council"} },
 		},
 	},
-
+	
 	{
 		id = "discover_teaching",
 		minAge = 10, maxAge = 18,
@@ -438,7 +438,7 @@ local events = {
 			{ text = "🤝 Nice to help occasionally", effects = { Happiness = 3 }, resultText = "You helped but had other plans." },
 		},
 	},
-
+	
 	{
 		id = "first_criminal_temptation",
 		minAge = 10, maxAge = 16,
@@ -456,7 +456,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- HIGH SCHOOL YEARS (14-18)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "high_school_start",
 		minAge = 14, maxAge = 14,
@@ -470,7 +470,7 @@ local events = {
 			{ text = "😈 Rebel", effects = { Happiness = 3, Smarts = -3 }, resultText = "You lived by your own rules.", setFlag = "rebel" },
 		},
 	},
-
+	
 	{
 		id = "first_hacking",
 		minAge = 14, maxAge = 20,
@@ -486,7 +486,7 @@ local events = {
 			{ text = "📢 Report the vulnerability", effects = { Smarts = 4, Happiness = 3 }, resultText = "You reported it responsibly. The IT department thanked you.", setFlag = "white_hat" },
 		},
 	},
-
+	
 	{
 		id = "art_competition",
 		minAge = 14, maxAge = 22,
@@ -501,7 +501,7 @@ local events = {
 			{ text = "😰 Not ready yet", effects = { Happiness = -2 }, resultText = "You didn't enter. Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "karting_championship",
 		minAge = 12, maxAge = 18,
@@ -516,7 +516,7 @@ local events = {
 			{ text = "🏎️ Race for fun", effects = { Happiness = 5 }, resultText = "You had a great time but didn't push for the win." },
 		},
 	},
-
+	
 	{
 		id = "drivers_license",
 		minAge = 16, maxAge = 17,
@@ -529,7 +529,7 @@ local events = {
 			{ text = "🤷 Wing it", effects = { Happiness = -5 }, resultText = "You failed. Parallel parking got you." },
 		},
 	},
-
+	
 	{
 		id = "high_school_graduation",
 		minAge = 18, maxAge = 18,
@@ -547,7 +547,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- PRESIDENT PATH (18 Events)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "political_internship",
 		minAge = 18, maxAge = 25,
@@ -562,7 +562,7 @@ local events = {
 			{ text = "❌ Not interested", effects = {}, resultText = "You passed." },
 		},
 	},
-
+	
 	{
 		id = "campaign_volunteer",
 		minAge = 18, maxAge = 40,
@@ -577,7 +577,7 @@ local events = {
 			{ text = "🙅 Too busy", effects = {}, resultText = "You had other priorities." },
 		},
 	},
-
+	
 	{
 		id = "run_school_board",
 		minAge = 25, maxAge = 50,
@@ -594,7 +594,7 @@ local events = {
 			{ text = "⏳ Not ready yet", effects = {}, resultText = "You decided to wait." },
 		},
 	},
-
+	
 	{
 		id = "run_city_council",
 		minAge = 26, maxAge = 55,
@@ -611,7 +611,7 @@ local events = {
 			{ text = "⏳ Stay where I am", effects = {}, resultText = "You built more experience first." },
 		},
 	},
-
+	
 	{
 		id = "run_mayor",
 		minAge = 30, maxAge = 60,
@@ -628,7 +628,7 @@ local events = {
 			{ text = "⏳ Not my time", effects = {}, resultText = "You stayed on council." },
 		},
 	},
-
+	
 	{
 		id = "run_state_rep",
 		minAge = 28, maxAge = 60,
@@ -645,7 +645,7 @@ local events = {
 			{ text = "⏳ Local is fine", effects = {}, resultText = "You focused on local issues." },
 		},
 	},
-
+	
 	{
 		id = "run_governor",
 		minAge = 35, maxAge = 65,
@@ -666,7 +666,7 @@ local events = {
 			{ text = "⏳ Not ready", effects = {}, resultText = "You stayed in the legislature." },
 		},
 	},
-
+	
 	{
 		id = "run_congress",
 		minAge = 30, maxAge = 70,
@@ -683,7 +683,7 @@ local events = {
 			{ text = "⏳ State politics is enough", effects = {}, resultText = "You stayed in state politics." },
 		},
 	},
-
+	
 	{
 		id = "run_us_senate",
 		minAge = 35, maxAge = 75,
@@ -700,7 +700,7 @@ local events = {
 			{ text = "⏳ The House is fine", effects = {}, resultText = "You stayed in the House." },
 		},
 	},
-
+	
 	{
 		id = "presidential_primary",
 		minAge = 40, maxAge = 75,
@@ -717,7 +717,7 @@ local events = {
 			{ text = "⏳ Maybe next cycle", effects = {}, resultText = "You decided to wait." },
 		},
 	},
-
+	
 	{
 		id = "presidential_debate",
 		minAge = 40, maxAge = 75,
@@ -735,7 +735,7 @@ local events = {
 			{ text = "📚 Play it safe", effects = { Smarts = 5 }, resultText = "You played it safe. Neither gained nor lost." },
 		},
 	},
-
+	
 	{
 		id = "presidential_election",
 		minAge = 40, maxAge = 75,
@@ -751,7 +751,7 @@ local events = {
 			{ text = "🗳️ Watch the results", effects = { Happiness = 30, Smarts = 10 }, resultText = "YOU WON! You are the President-Elect!", setFlag = "president", clearFlags = {"us_senator", "governor", "congressman", "presidential_candidate"} },
 		},
 	},
-
+	
 	{
 		id = "inauguration",
 		minAge = 40, maxAge = 80,
@@ -767,7 +767,7 @@ local events = {
 			{ text = "✋ Take the oath", effects = { Happiness = 30 }, resultText = "You are now the President of the United States.", setFlag = "inaugurated" },
 		},
 	},
-
+	
 	{
 		id = "presidential_crisis",
 		minAge = 40, maxAge = 80,
@@ -793,7 +793,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- CRIMINAL PATH (20 Events)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "shoplifting_escalation",
 		minAge = 12, maxAge = 25,
@@ -810,7 +810,7 @@ local events = {
 			{ text = "🛑 Stop while ahead", effects = { Smarts = 3 }, resultText = "You decided crime wasn't worth it.", clearFlag = "criminal_tendencies" },
 		},
 	},
-
+	
 	{
 		id = "car_theft",
 		minAge = 16, maxAge = 30,
@@ -827,7 +827,7 @@ local events = {
 			{ text = "🚨 Too risky", effects = { Smarts = 3 }, resultText = "Grand theft auto is serious. You walked away." },
 		},
 	},
-
+	
 	{
 		id = "first_arrest",
 		minAge = 14, maxAge = 40,
@@ -845,7 +845,7 @@ local events = {
 			{ text = "🏃 Try to run", effects = { Health = -15 }, resultText = "They tackled you. Extra charges.", setFlag = "arrested", minigame = "getaway" },
 		},
 	},
-
+	
 	{
 		id = "prison_short",
 		minAge = 16, maxAge = 60,
@@ -864,7 +864,7 @@ local events = {
 			{ text = "💪 Work out constantly", effects = { Health = 10, Looks = 3 }, resultText = "You got jacked.", setFlags = {"did_time", "prison_muscles"} },
 		},
 	},
-
+	
 	{
 		id = "gang_recruitment",
 		minAge = 16, maxAge = 35,
@@ -885,7 +885,7 @@ local events = {
 			{ text = "❌ Stay independent", effects = { Happiness = -3 }, resultText = "You said no. They didn't take it well." },
 		},
 	},
-
+	
 	{
 		id = "gang_initiation",
 		minAge = 16, maxAge = 40,
@@ -902,7 +902,7 @@ local events = {
 			{ text = "🏃 I'm out", effects = { Health = -5, Happiness = -5 }, resultText = "You tried to leave. They made sure you'd remember.", clearFlags = {"gang_member", "gang_prospect"} },
 		},
 	},
-
+	
 	{
 		id = "drug_dealing",
 		minAge = 18, maxAge = 50,
@@ -919,7 +919,7 @@ local events = {
 			{ text = "🔫 Prefer other work", effects = {}, resultText = "You stuck to other gang activities." },
 		},
 	},
-
+	
 	{
 		id = "turf_war",
 		minAge = 18, maxAge = 50,
@@ -937,7 +937,7 @@ local events = {
 			{ text = "🤝 Negotiate peace", effects = { Smarts = 5 }, resultText = "You brokered a peace deal." },
 		},
 	},
-
+	
 	{
 		id = "gang_captain",
 		minAge = 22, maxAge = 50,
@@ -953,7 +953,7 @@ local events = {
 			{ text = "⭐ Accept", effects = { Happiness = 10, Money = 10000 }, resultText = "You have soldiers under your command.", setFlag = "gang_captain" },
 		},
 	},
-
+	
 	{
 		id = "heist_opportunity",
 		minAge = 20, maxAge = 55,
@@ -974,7 +974,7 @@ local events = {
 			{ text = "🚨 Too risky", effects = { Smarts = 3 }, resultText = "You passed. Sometimes caution is wisdom." },
 		},
 	},
-
+	
 	{
 		id = "underboss_promotion",
 		minAge = 28, maxAge = 55,
@@ -990,7 +990,7 @@ local events = {
 			{ text = "👔 Accept the position", effects = { Happiness = 15, Money = 50000 }, resultText = "You're now the underboss.", setFlag = "underboss" },
 		},
 	},
-
+	
 	{
 		id = "take_over_gang",
 		minAge = 30, maxAge = 60,
@@ -1008,7 +1008,7 @@ local events = {
 			{ text = "🤝 Stay loyal", effects = { Happiness = 5 }, resultText = "You stayed loyal. The boss appreciated it." },
 		},
 	},
-
+	
 	{
 		id = "crime_empire",
 		minAge = 32, maxAge = 70,
@@ -1024,7 +1024,7 @@ local events = {
 			{ text = "🌆 Expand the empire", effects = { Money = 500000, Happiness = 15 }, resultText = "Your criminal empire spans multiple cities.", setFlag = "empire_built" },
 		},
 	},
-
+	
 	{
 		id = "feds_closing_in",
 		minAge = 25, maxAge = 70,
@@ -1047,7 +1047,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- TEACHER PATH (15 Events)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "education_degree",
 		minAge = 18, maxAge = 25,
@@ -1064,7 +1064,7 @@ local events = {
 			{ text = "📚 Study hard", effects = { Smarts = 8 }, resultText = "You're becoming an excellent educator.", setFlag = "education_degree" },
 		},
 	},
-
+	
 	{
 		id = "student_teaching",
 		minAge = 21, maxAge = 28,
@@ -1082,7 +1082,7 @@ local events = {
 			{ text = "😰 Nervous but try", effects = { Smarts = 3, Happiness = 3 }, resultText = "Rough start but you improved.", setFlag = "student_taught" },
 		},
 	},
-
+	
 	{
 		id = "first_teaching_job",
 		minAge = 22, maxAge = 35,
@@ -1099,7 +1099,7 @@ local events = {
 			{ text = "✅ Accept the job!", effects = { Happiness = 10, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher" },
 		},
 	},
-
+	
 	{
 		id = "difficult_student",
 		minAge = 23, maxAge = 60,
@@ -1118,7 +1118,7 @@ local events = {
 			{ text = "📋 Send to principal", effects = { Happiness = -2 }, resultText = "The problem was passed on. Not a great solution." },
 		},
 	},
-
+	
 	{
 		id = "inspiring_moment",
 		minAge = 24, maxAge = 65,
@@ -1136,7 +1136,7 @@ local events = {
 			{ text = "🤝 Stay humble", effects = { Happiness = 10, Smarts = 3 }, resultText = "You were proud but deflected the credit to them." },
 		},
 	},
-
+	
 	{
 		id = "teacher_of_year",
 		minAge = 28, maxAge = 60,
@@ -1152,7 +1152,7 @@ local events = {
 			{ text = "🏆 Accept graciously", effects = { Happiness = 15, Money = 1000 }, resultText = "You won! Your dedication is recognized.", setFlag = "teacher_award" },
 		},
 	},
-
+	
 	{
 		id = "department_head",
 		minAge = 30, maxAge = 55,
@@ -1169,7 +1169,7 @@ local events = {
 			{ text = "❌ Stay in classroom", effects = { Happiness = 5 }, resultText = "You preferred teaching directly." },
 		},
 	},
-
+	
 	{
 		id = "vice_principal",
 		minAge = 35, maxAge = 60,
@@ -1187,7 +1187,7 @@ local events = {
 			{ text = "❌ Stay in teaching", effects = { Happiness = 3 }, resultText = "You preferred the classroom." },
 		},
 	},
-
+	
 	{
 		id = "principal",
 		minAge = 40, maxAge = 65,
@@ -1203,7 +1203,7 @@ local events = {
 			{ text = "👔 Become Principal", effects = { Happiness = 15, Money = 20000 }, resultText = "You're now the Principal!", setFlag = "principal" },
 		},
 	},
-
+	
 	{
 		id = "superintendent",
 		minAge = 45, maxAge = 70,
@@ -1223,7 +1223,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- RACER PATH (18 Events)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "karting_league",
 		minAge = 12, maxAge = 18,
@@ -1240,7 +1240,7 @@ local events = {
 			{ text = "🏎️ Join the league!", effects = { Happiness = 10, Health = 3 }, resultText = "You're officially a competitive racer!", setFlag = "karting_league" },
 		},
 	},
-
+	
 	{
 		id = "karting_championship_win",
 		minAge = 14, maxAge = 20,
@@ -1257,7 +1257,7 @@ local events = {
 			{ text = "🏎️ Have fun", effects = { Happiness = 5 }, resultText = "You didn't win but had a great time." },
 		},
 	},
-
+	
 	{
 		id = "junior_formula",
 		minAge = 16, maxAge = 22,
@@ -1274,7 +1274,7 @@ local events = {
 			{ text = "✅ Sign with the team!", effects = { Happiness = 15, Money = 10000 }, resultText = "You're now a junior formula driver!", setFlag = "junior_formula" },
 		},
 	},
-
+	
 	{
 		id = "junior_championship",
 		minAge = 18, maxAge = 24,
@@ -1290,7 +1290,7 @@ local events = {
 			{ text = "🏆 Fight for the title!", effects = { Happiness = 15, Money = 25000 }, resultText = "You're the junior formula champion!", setFlag = "junior_champion", minigame = "qte" },
 		},
 	},
-
+	
 	{
 		id = "f1_test_driver",
 		minAge = 20, maxAge = 28,
@@ -1307,7 +1307,7 @@ local events = {
 			{ text = "✅ Accept!", effects = { Happiness = 20, Money = 100000 }, resultText = "You're now an F1 test driver!", setFlag = "f1_test_driver" },
 		},
 	},
-
+	
 	{
 		id = "f1_race_driver",
 		minAge = 21, maxAge = 35,
@@ -1324,7 +1324,7 @@ local events = {
 			{ text = "🏎️ Sign the contract!", effects = { Happiness = 25, Money = 500000 }, resultText = "You're now an F1 driver!", setFlag = "f1_driver", clearFlag = "f1_test_driver" },
 		},
 	},
-
+	
 	{
 		id = "first_f1_race",
 		minAge = 21, maxAge = 40,
@@ -1344,7 +1344,7 @@ local events = {
 			{ text = "🏁 Give it everything!", effects = { Happiness = 20, Health = -5 }, resultText = "You finished in the points! Incredible debut.", setFlag = "first_race_complete", minigame = "qte" },
 		},
 	},
-
+	
 	{
 		id = "first_f1_win",
 		minAge = 22, maxAge = 42,
@@ -1364,7 +1364,7 @@ local events = {
 			{ text = "🏆 Cross the line!", effects = { Happiness = 30, Money = 200000 }, resultText = "YOU WON YOUR FIRST F1 RACE!", setFlag = "f1_winner", minigame = "qte" },
 		},
 	},
-
+	
 	{
 		id = "crash_incident",
 		minAge = 21, maxAge = 45,
@@ -1382,7 +1382,7 @@ local events = {
 			{ text = "💥 Hold your line", effects = { Health = -20, Happiness = -10 }, resultText = "You crashed. Thankfully nothing serious." },
 		},
 	},
-
+	
 	{
 		id = "f1_championship",
 		minAge = 23, maxAge = 45,
@@ -1398,7 +1398,7 @@ local events = {
 			{ text = "🏆 Win the championship!", effects = { Happiness = 50, Money = 5000000 }, resultText = "YOU ARE THE FORMULA 1 WORLD CHAMPION!", setFlag = "world_champion", minigame = "qte" },
 		},
 	},
-
+	
 	{
 		id = "racing_legend",
 		minAge = 30, maxAge = 50,
@@ -1418,7 +1418,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- ARTIST PATH (15 Events)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "art_school",
 		minAge = 18, maxAge = 25,
@@ -1435,7 +1435,7 @@ local events = {
 			{ text = "🎨 Enroll!", effects = { Smarts = 8, Happiness = 10 }, resultText = "You're now studying art professionally!", setFlag = "art_school" },
 		},
 	},
-
+	
 	{
 		id = "first_gallery_show",
 		minAge = 20, maxAge = 35,
@@ -1452,7 +1452,7 @@ local events = {
 			{ text = "🖼️ Show my art!", effects = { Happiness = 15, Money = 2000 }, resultText = "Your first gallery show was a hit!", setFlag = "gallery_show" },
 		},
 	},
-
+	
 	{
 		id = "art_style_development",
 		minAge = 22, maxAge = 40,
@@ -1470,7 +1470,7 @@ local events = {
 			{ text = "🔄 Keep experimenting", effects = { Smarts = 8 }, resultText = "You continued exploring different styles." },
 		},
 	},
-
+	
 	{
 		id = "first_sale",
 		minAge = 21, maxAge = 50,
@@ -1488,7 +1488,7 @@ local events = {
 			{ text = "❤️ Keep it", effects = { Happiness = 5 }, resultText = "Some pieces are too personal to sell." },
 		},
 	},
-
+	
 	{
 		id = "art_critic_review",
 		minAge = 23, maxAge = 60,
@@ -1506,7 +1506,7 @@ local events = {
 			{ text = "😬 Prepare for criticism", effects = { Happiness = -5, Smarts = 5 }, resultText = "Mixed review. You learned from the feedback." },
 		},
 	},
-
+	
 	{
 		id = "commissioned_work",
 		minAge = 25, maxAge = 65,
@@ -1527,7 +1527,7 @@ local events = {
 			{ text = "❌ Decline", effects = { Happiness = 3 }, resultText = "You only work on your own terms." },
 		},
 	},
-
+	
 	{
 		id = "museum_collection",
 		minAge = 30, maxAge = 70,
@@ -1547,7 +1547,7 @@ local events = {
 			{ text = "🏛️ Agree!", effects = { Happiness = 25, Money = 100000 }, resultText = "Your art is now in a world-famous museum!", setFlag = "museum_piece" },
 		},
 	},
-
+	
 	{
 		id = "art_celebrity",
 		minAge = 30, maxAge = 70,
@@ -1563,7 +1563,7 @@ local events = {
 			{ text = "⭐ Embrace fame", effects = { Happiness = 20, Money = 200000 }, resultText = "You're now a household name in the art world.", setFlag = "art_celebrity" },
 		},
 	},
-
+	
 	{
 		id = "art_retrospective",
 		minAge = 45, maxAge = 80,
@@ -1584,7 +1584,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- HACKER PATH (18 Events)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "learn_programming",
 		minAge = 12, maxAge = 20,
@@ -1601,7 +1601,7 @@ local events = {
 			{ text = "🤷 Just basics", effects = { Smarts = 3 }, resultText = "You learned the fundamentals." },
 		},
 	},
-
+	
 	{
 		id = "first_exploit",
 		minAge = 14, maxAge = 25,
@@ -1618,7 +1618,7 @@ local events = {
 			{ text = "📧 Report it responsibly", effects = { Smarts = 6, Money = 500 }, resultText = "They paid you a bug bounty. Ethical hacking pays.", setFlag = "first_exploit", setFlags = {"white_hat"} },
 		},
 	},
-
+	
 	{
 		id = "join_hacker_group",
 		minAge = 16, maxAge = 35,
@@ -1636,7 +1636,7 @@ local events = {
 			{ text = "🐺 Work alone", effects = { Smarts = 3 }, resultText = "You preferred to be a lone wolf." },
 		},
 	},
-
+	
 	{
 		id = "corporate_hack",
 		minAge = 18, maxAge = 40,
@@ -1654,7 +1654,7 @@ local events = {
 			{ text = "🛑 Too risky", effects = { Smarts = 2 }, resultText = "Corporations have resources to hunt you down." },
 		},
 	},
-
+	
 	{
 		id = "cybersecurity_job_offer",
 		minAge = 20, maxAge = 40,
@@ -1672,7 +1672,7 @@ local events = {
 			{ text = "🐺 Stay independent", effects = { Happiness = 3 }, resultText = "You preferred freelance work." },
 		},
 	},
-
+	
 	{
 		id = "government_target",
 		minAge = 20, maxAge = 45,
@@ -1689,7 +1689,7 @@ local events = {
 			{ text = "🛑 Too dangerous", effects = { Smarts = 3 }, resultText = "Government hackers get prison, not bail." },
 		},
 	},
-
+	
 	{
 		id = "fbi_investigation",
 		minAge = 20, maxAge = 50,
@@ -1708,7 +1708,7 @@ local events = {
 			{ text = "🔄 Flip to their side", effects = { Happiness = 5, Money = 10000 }, resultText = "You became an FBI consultant. Immunity in exchange for skills.", setFlag = "fbi_consultant", clearFlags = {"black_hat", "hacker_group"} },
 		},
 	},
-
+	
 	{
 		id = "whistleblower_leak",
 		minAge = 22, maxAge = 50,
@@ -1725,7 +1725,7 @@ local events = {
 			{ text = "🤐 Keep it secret", effects = { Smarts = 3 }, resultText = "Some secrets are too dangerous to reveal." },
 		},
 	},
-
+	
 	{
 		id = "elite_hacker",
 		minAge = 25, maxAge = 50,
@@ -1741,7 +1741,7 @@ local events = {
 			{ text = "👑 Accept the title", effects = { Happiness = 20, Smarts = 10 }, resultText = "You've reached the pinnacle of your field.", setFlag = "elite_hacker" },
 		},
 	},
-
+	
 	{
 		id = "startup_founder",
 		minAge = 25, maxAge = 45,
@@ -1759,7 +1759,7 @@ local events = {
 			{ text = "💼 Stick to employment", effects = {}, resultText = "Entrepreneurship isn't for everyone." },
 		},
 	},
-
+	
 	{
 		id = "tech_billionaire",
 		minAge = 30, maxAge = 60,
@@ -1779,7 +1779,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- RANDOM LIFE EVENTS (Universal)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "lottery_win",
 		minAge = 18, maxAge = 90,
@@ -1791,7 +1791,7 @@ local events = {
 			{ text = "💰 Claim the prize!", effects = { Happiness = 25, Money = 50000 }, resultText = "You're suddenly much richer!" },
 		},
 	},
-
+	
 	{
 		id = "illness",
 		minAge = 5, maxAge = 90,
@@ -1804,7 +1804,7 @@ local events = {
 			{ text = "🛏️ Rest at home", effects = { Health = -5, Happiness = -3 }, resultText = "You recovered slowly." },
 		},
 	},
-
+	
 	{
 		id = "find_money",
 		minAge = 5, maxAge = 90,
@@ -1818,7 +1818,7 @@ local events = {
 			{ text = "🚔 Turn it in", effects = { Happiness = 3, Smarts = 2 }, resultText = "You did the right thing." },
 		},
 	},
-
+	
 	{
 		id = "romantic_encounter",
 		minAge = 16, maxAge = 70,
@@ -1832,7 +1832,7 @@ local events = {
 			{ text = "😳 Too shy", effects = { Happiness = -3 }, resultText = "You couldn't work up the courage." },
 		},
 	},
-
+	
 	{
 		id = "friendship_test",
 		minAge = 8, maxAge = 80,
@@ -1846,7 +1846,7 @@ local events = {
 			{ text = "🙅 Too busy", effects = { Happiness = -5 }, resultText = "They were disappointed in you." },
 		},
 	},
-
+	
 	{
 		id = "exercise_routine",
 		minAge = 12, maxAge = 80,
@@ -1860,7 +1860,7 @@ local events = {
 			{ text = "🛋️ Maybe later", effects = { Health = -2 }, resultText = "Couch potato life continues." },
 		},
 	},
-
+	
 	{
 		id = "social_media_viral",
 		minAge = 13, maxAge = 50,
@@ -1873,7 +1873,7 @@ local events = {
 			{ text = "😰 Delete everything", effects = { Happiness = -5, Smarts = 3 }, resultText = "You deleted it. Privacy preserved." },
 		},
 	},
-
+	
 	{
 		id = "pet_adoption",
 		minAge = 10, maxAge = 80,
@@ -1887,7 +1887,7 @@ local events = {
 			{ text = "🙅 Not ready", effects = {}, resultText = "Maybe another time." },
 		},
 	},
-
+	
 	{
 		id = "inheritance",
 		minAge = 25, maxAge = 80,
@@ -1900,7 +1900,7 @@ local events = {
 			{ text = "💰 Accept it", effects = { Money = 50000, Happiness = -5 }, resultText = "You inherited a substantial amount, but miss them." },
 		},
 	},
-
+	
 	{
 		id = "midlife_crisis",
 		minAge = 38, maxAge = 50,
@@ -1914,7 +1914,7 @@ local events = {
 			{ text = "🤷 Power through", effects = { Happiness = 3 }, resultText = "It passed. Life goes on." },
 		},
 	},
-
+	
 	{
 		id = "career_burnout",
 		minAge = 25, maxAge = 60,
@@ -1931,7 +1931,7 @@ local events = {
 			{ text = "💪 Push through", effects = { Happiness = -10, Health = -5 }, resultText = "You kept going but felt the toll." },
 		},
 	},
-
+	
 	{
 		id = "retirement_age",
 		minAge = 60, maxAge = 70,
@@ -1948,7 +1948,7 @@ local events = {
 			{ text = "💼 Keep working", effects = { Happiness = 5, Smarts = 3 }, resultText = "You're not done yet!" },
 		},
 	},
-
+	
 	{
 		id = "death_approach",
 		minAge = 75, maxAge = 110,
@@ -1965,7 +1965,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- EXTENDED LIFE EVENTS (More Variety)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "bullying_victim",
 		minAge = 8, maxAge = 18,
@@ -1980,7 +1980,7 @@ local events = {
 			{ text = "😔 Suffer in silence", effects = { Happiness = -15 }, resultText = "The bullying continued for months." },
 		},
 	},
-
+	
 	{
 		id = "best_friend_made",
 		minAge = 6, maxAge = 25,
@@ -1993,7 +1993,7 @@ local events = {
 			{ text = "🤗 Best friends forever!", effects = { Happiness = 12 }, resultText = "You found a lifelong friend.", setFlag = "has_best_friend" },
 		},
 	},
-
+	
 	{
 		id = "parents_divorce",
 		minAge = 5, maxAge = 18,
@@ -2007,7 +2007,7 @@ local events = {
 			{ text = "💪 Stay strong", effects = { Happiness = -8, Smarts = 5 }, resultText = "You matured faster than most kids your age." },
 		},
 	},
-
+	
 	{
 		id = "sibling_rivalry",
 		minAge = 5, maxAge = 25,
@@ -2022,7 +2022,7 @@ local events = {
 			{ text = "🗣️ Get parents involved", effects = { Happiness = 2 }, resultText = "Parents made you both apologize." },
 		},
 	},
-
+	
 	{
 		id = "school_talent_show",
 		minAge = 8, maxAge = 18,
@@ -2035,7 +2035,7 @@ local events = {
 			{ text = "🙅 Too nervous", effects = { Happiness = -3 }, resultText = "You watched from the audience with regret." },
 		},
 	},
-
+	
 	{
 		id = "broken_bone",
 		minAge = 5, maxAge = 70,
@@ -2052,7 +2052,7 @@ local events = {
 			{ text = "💪 Tough it out", effects = { Health = -10 }, resultText = "Bad idea. It didn't heal right." },
 		},
 	},
-
+	
 	{
 		id = "family_vacation",
 		minAge = 5, maxAge = 70,
@@ -2069,7 +2069,7 @@ local events = {
 			{ text = "🙄 Boring, but okay", effects = { Happiness = 5, Money = -2000 }, resultText = "It was actually more fun than expected." },
 		},
 	},
-
+	
 	{
 		id = "first_crush",
 		minAge = 10, maxAge = 16,
@@ -2084,7 +2084,7 @@ local events = {
 			{ text = "🤷 Just a phase", effects = { Happiness = 2 }, resultText = "You moved on eventually." },
 		},
 	},
-
+	
 	{
 		id = "prom_night",
 		minAge = 16, maxAge = 18,
@@ -2098,7 +2098,7 @@ local events = {
 			{ text = "🙅 Skip prom", effects = { Happiness = -5 }, resultText = "You stayed home. Maybe it was overrated anyway." },
 		},
 	},
-
+	
 	{
 		id = "college_application",
 		minAge = 17, maxAge = 18,
@@ -2116,7 +2116,7 @@ local events = {
 			{ text = "🎯 Be realistic", effects = { Smarts = 3 }, resultText = "You got into a good state school." },
 		},
 	},
-
+	
 	{
 		id = "college_party",
 		minAge = 18, maxAge = 25,
@@ -2131,7 +2131,7 @@ local events = {
 			{ text = "😎 Show up briefly", effects = { Happiness = 5 }, resultText = "You made an appearance and left early." },
 		},
 	},
-
+	
 	{
 		id = "internship_opportunity",
 		minAge = 19, maxAge = 24,
@@ -2146,7 +2146,7 @@ local events = {
 			{ text = "😴 Too much work", effects = { Happiness = 2 }, resultText = "You passed. Summer freedom was nice." },
 		},
 	},
-
+	
 	{
 		id = "first_job",
 		minAge = 16, maxAge = 25,
@@ -2164,7 +2164,7 @@ local events = {
 			{ text = "😒 Do the minimum", effects = { Money = 300 }, resultText = "You got paid, that's what matters.", setFlag = "first_job_done" },
 		},
 	},
-
+	
 	{
 		id = "apartment_hunting",
 		minAge = 18, maxAge = 35,
@@ -2178,7 +2178,7 @@ local events = {
 			{ text = "🏡 Stay with parents", effects = { Money = 500 }, resultText = "Free rent! Smart choice... maybe." },
 		},
 	},
-
+	
 	{
 		id = "proposal",
 		minAge = 22, maxAge = 60,
@@ -2193,7 +2193,7 @@ local events = {
 			{ text = "⏳ Not ready yet", effects = { Happiness = -5 }, resultText = "You decided to wait a bit longer." },
 		},
 	},
-
+	
 	{
 		id = "wedding_day",
 		minAge = 22, maxAge = 70,
@@ -2207,7 +2207,7 @@ local events = {
 			{ text = "🏃 Elope", effects = { Happiness = 20, Money = -500 }, resultText = "You eloped! Simple but special.", setFlag = "married", clearFlag = "engaged" },
 		},
 	},
-
+	
 	{
 		id = "baby_born",
 		minAge = 20, maxAge = 45,
@@ -2224,7 +2224,7 @@ local events = {
 			{ text = "👶 Embrace parenthood", effects = { Happiness = 20, Money = -5000, Health = -5 }, resultText = "Your heart grew three sizes that day.", setFlag = "has_kids" },
 		},
 	},
-
+	
 	{
 		id = "midlife_affair_temptation",
 		minAge = 35, maxAge = 55,
@@ -2239,7 +2239,7 @@ local events = {
 			{ text = "😈 Give in", effects = { Happiness = 10, Smarts = -5 }, resultText = "You cheated. The guilt is already setting in.", setFlag = "cheater" },
 		},
 	},
-
+	
 	{
 		id = "business_idea",
 		minAge = 25, maxAge = 55,
@@ -2253,7 +2253,7 @@ local events = {
 			{ text = "🤷 Ideas are just ideas", effects = {}, resultText = "You moved on." },
 		},
 	},
-
+	
 	{
 		id = "business_success",
 		minAge = 26, maxAge = 70,
@@ -2267,7 +2267,7 @@ local events = {
 			{ text = "📊 Grow carefully", effects = { Money = 50000, Happiness = 10, Smarts = 5 }, resultText = "Sustainable growth. Smart.", setFlag = "business_owner" },
 		},
 	},
-
+	
 	{
 		id = "business_failure",
 		minAge = 26, maxAge = 70,
@@ -2281,7 +2281,7 @@ local events = {
 			{ text = "🏳️ Declare bankruptcy", effects = { Money = -50000, Happiness = -20 }, resultText = "You lost everything. Time to start over.", setFlag = "bankrupt", clearFlag = "entrepreneur" },
 		},
 	},
-
+	
 	{
 		id = "investment_opportunity",
 		minAge = 25, maxAge = 80,
@@ -2300,7 +2300,7 @@ local events = {
 			{ text = "🙅 Too risky", effects = { Smarts = 3 }, resultText = "You passed. Who knows if it was the right call." },
 		},
 	},
-
+	
 	{
 		id = "stock_crash",
 		minAge = 25, maxAge = 80,
@@ -2314,7 +2314,7 @@ local events = {
 			{ text = "🏃 Sell everything", effects = { Money = -30000, Happiness = -10 }, resultText = "You sold at the bottom. Ouch." },
 		},
 	},
-
+	
 	{
 		id = "charity_donation",
 		minAge = 20, maxAge = 90,
@@ -2332,7 +2332,7 @@ local events = {
 			{ text = "🙅 Not this time", effects = {}, resultText = "You passed on this one." },
 		},
 	},
-
+	
 	{
 		id = "gym_membership",
 		minAge = 18, maxAge = 70,
@@ -2345,7 +2345,7 @@ local events = {
 			{ text = "🛋️ Nah, I'm good", effects = {}, resultText = "The couch wins again." },
 		},
 	},
-
+	
 	{
 		id = "marathon_training",
 		minAge = 20, maxAge = 60,
@@ -2359,7 +2359,7 @@ local events = {
 			{ text = "🙅 No way", effects = {}, resultText = "26 miles? That's crazy." },
 		},
 	},
-
+	
 	{
 		id = "addiction_problem",
 		minAge = 16, maxAge = 60,
@@ -2372,7 +2372,7 @@ local events = {
 			{ text = "🙅 I can handle it", effects = { Happiness = -15, Health = -15 }, resultText = "The problem got worse.", setFlag = "addict" },
 		},
 	},
-
+	
 	{
 		id = "recovery_success",
 		minAge = 17, maxAge = 70,
@@ -2385,7 +2385,7 @@ local events = {
 			{ text = "🎉 Celebrate this victory", effects = { Happiness = 20, Health = 10 }, resultText = "You're sober. You're strong. You made it.", setFlag = "sober", clearFlag = "recovering" },
 		},
 	},
-
+	
 	{
 		id = "near_death_experience",
 		minAge = 18, maxAge = 90,
@@ -2402,7 +2402,7 @@ local events = {
 			{ text = "😨 Traumatized", effects = { Happiness = -15, Smarts = 5 }, resultText = "You can't stop thinking about how close it was." },
 		},
 	},
-
+	
 	{
 		id = "mentor_appears",
 		minAge = 16, maxAge = 40,
@@ -2416,7 +2416,7 @@ local events = {
 			{ text = "🤷 Don't need help", effects = {}, resultText = "You preferred to figure things out alone." },
 		},
 	},
-
+	
 	{
 		id = "become_mentor",
 		minAge = 35, maxAge = 70,
@@ -2431,7 +2431,7 @@ local events = {
 			{ text = "🙅 Too busy", effects = {}, resultText = "You didn't have the time." },
 		},
 	},
-
+	
 	{
 		id = "travel_opportunity",
 		minAge = 18, maxAge = 70,
@@ -2448,7 +2448,7 @@ local events = {
 			{ text = "🏠 Stay home", effects = {}, resultText = "Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "learn_language",
 		minAge = 12, maxAge = 60,
@@ -2465,7 +2465,7 @@ local events = {
 			{ text = "😅 Too difficult", effects = { Smarts = 2 }, resultText = "You learned a few phrases at least." },
 		},
 	},
-
+	
 	{
 		id = "musical_instrument",
 		minAge = 8, maxAge = 50,
@@ -2482,7 +2482,7 @@ local events = {
 			{ text = "🤷 Not for me", effects = {}, resultText = "Maybe someday." },
 		},
 	},
-
+	
 	{
 		id = "write_book",
 		minAge = 20, maxAge = 80,
@@ -2499,7 +2499,7 @@ local events = {
 			{ text = "📅 Later", effects = {}, resultText = "The book stayed in your head." },
 		},
 	},
-
+	
 	{
 		id = "book_published",
 		minAge = 21, maxAge = 85,
@@ -2512,7 +2512,7 @@ local events = {
 			{ text = "📚 Sign the deal", effects = { Money = 10000, Happiness = 20 }, resultText = "You're a published author!", setFlag = "author" },
 		},
 	},
-
+	
 	{
 		id = "volunteer_abroad",
 		minAge = 18, maxAge = 50,
@@ -2529,7 +2529,7 @@ local events = {
 			{ text = "🙅 Can't right now", effects = {}, resultText = "Life got in the way." },
 		},
 	},
-
+	
 	{
 		id = "adopt_pet",
 		minAge = 18, maxAge = 70,
@@ -2547,7 +2547,7 @@ local events = {
 			{ text = "🙅 Not ready", effects = {}, resultText = "Maybe someday." },
 		},
 	},
-
+	
 	{
 		id = "pet_passes",
 		minAge = 25, maxAge = 90,
@@ -2561,7 +2561,7 @@ local events = {
 			{ text = "💙 Celebrate their life", effects = { Happiness = -8, Smarts = 3 }, resultText = "You focused on the happy memories.", clearFlag = "pet_owner" },
 		},
 	},
-
+	
 	{
 		id = "neighbor_conflict",
 		minAge = 20, maxAge = 80,
@@ -2576,7 +2576,7 @@ local events = {
 			{ text = "📞 Call authorities", effects = { Happiness = 2 }, resultText = "They got a warning. Awkward now." },
 		},
 	},
-
+	
 	{
 		id = "jury_duty",
 		minAge = 18, maxAge = 80,
@@ -2589,7 +2589,7 @@ local events = {
 			{ text = "🙅 Try to get out of it", effects = {}, resultText = "You were excused." },
 		},
 	},
-
+	
 	{
 		id = "class_reunion",
 		minAge = 28, maxAge = 60,
@@ -2603,7 +2603,7 @@ local events = {
 			{ text = "🙅 Skip it", effects = { Happiness = -3 }, resultText = "You weren't curious how everyone turned out." },
 		},
 	},
-
+	
 	{
 		id = "existential_crisis",
 		minAge = 25, maxAge = 60,
@@ -2617,7 +2617,7 @@ local events = {
 			{ text = "😔 Spiral deeper", effects = { Happiness = -10, Smarts = 5 }, resultText = "You're still searching for answers." },
 		},
 	},
-
+	
 	{
 		id = "famous_encounter",
 		minAge = 10, maxAge = 80,
@@ -2635,7 +2635,7 @@ local events = {
 			{ text = "🚶 Respect their privacy", effects = { Smarts = 3 }, resultText = "They appreciated not being mobbed." },
 		},
 	},
-
+	
 	{
 		id = "unexpected_windfall",
 		minAge = 18, maxAge = 90,
@@ -2651,7 +2651,7 @@ local events = {
 			{ text = "💰 Celebrate!", effects = { Money = 25000, Happiness = 15 }, resultText = "Free money! Life is good." },
 		},
 	},
-
+	
 	{
 		id = "lawsuit_filed",
 		minAge = 25, maxAge = 80,
@@ -2665,7 +2665,7 @@ local events = {
 			{ text = "🤝 Settle out of court", effects = { Money = -20000, Happiness = -5 }, resultText = "You settled to avoid the hassle." },
 		},
 	},
-
+	
 	{
 		id = "award_nomination",
 		minAge = 25, maxAge = 80,
@@ -2689,7 +2689,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE CAREER DEPTH: PRESIDENT PATH EXTRAS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "cabinet_appointment",
 		minAge = 40, maxAge = 80,
@@ -2710,7 +2710,7 @@ local events = {
 			{ text = "🔍 Keep looking", effects = { Smarts = 2 }, resultText = "You continued the search for the right person." },
 		},
 	},
-
+	
 	{
 		id = "foreign_summit",
 		minAge = 40, maxAge = 80,
@@ -2732,7 +2732,7 @@ local events = {
 			{ text = "🕊️ Seek peace", effects = { Smarts = 5, Happiness = 8 }, resultText = "A historic peace agreement was reached!" },
 		},
 	},
-
+	
 	{
 		id = "presidential_speech",
 		minAge = 40, maxAge = 80,
@@ -2753,7 +2753,7 @@ local events = {
 			{ text = "📄 Read the teleprompter", effects = { Happiness = 3 }, resultText = "The speech was adequate. Nothing memorable." },
 		},
 	},
-
+	
 	{
 		id = "impeachment_threat",
 		minAge = 40, maxAge = 80,
@@ -2770,11 +2770,11 @@ local events = {
 			{ text = "🏳️ Resign with dignity", effects = { Happiness = -20 }, resultText = "You resigned from the presidency.", clearFlags = {"president", "inaugurated"} },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE CAREER DEPTH: CRIMINAL PATH EXTRAS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "witness_intimidation",
 		minAge = 20, maxAge = 60,
@@ -2793,7 +2793,7 @@ local events = {
 			{ text = "🤷 Let it play out", effects = { Happiness = -5 }, resultText = "The testimony hurt the gang but you stayed clean." },
 		},
 	},
-
+	
 	{
 		id = "prison_experience",
 		minAge = 18, maxAge = 70,
@@ -2811,11 +2811,11 @@ local events = {
 			{ text = "🏋️ Work out constantly", effects = { Health = 10, Looks = 3 }, resultText = "You came out in the best shape of your life." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- DEEP PRISON PATH EVENTS (While In Prison)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "prison_yard_fight",
 		minAge = 16, maxAge = 70,
@@ -2834,7 +2834,7 @@ local events = {
 			{ text = "🗣️ De-escalate", effects = { Smarts = 5, Happiness = 2 }, resultText = "You talked your way out. Brains over brawn." },
 		},
 	},
-
+	
 	{
 		id = "prison_contraband",
 		minAge = 18, maxAge = 70,
@@ -2853,7 +2853,7 @@ local events = {
 			{ text = "🐀 Report him", effects = { Smarts = 3, Happiness = -5 }, resultText = "The guard got fired. Now everyone thinks you're a snitch." },
 		},
 	},
-
+	
 	{
 		id = "prison_cellmate_story",
 		minAge = 18, maxAge = 70,
@@ -2871,7 +2871,7 @@ local events = {
 			{ text = "🙅 Keep to yourself", effects = { Happiness = -2 }, resultText = "You minded your own business. Probably safer." },
 		},
 	},
-
+	
 	{
 		id = "prison_escape_opportunity",
 		minAge = 18, maxAge = 70,
@@ -2888,7 +2888,7 @@ local events = {
 			{ text = "⏰ Not yet", effects = { Smarts = 3 }, resultText = "You decided to wait for a better opportunity.", setFlag = "attempted_escape" },
 		},
 	},
-
+	
 	{
 		id = "prison_parole_hearing",
 		minAge = 18, maxAge = 70,
@@ -2906,7 +2906,7 @@ local events = {
 			{ text = "🤷 Be honest", effects = { Smarts = 5, Happiness = 3 }, resultText = "Your honesty was refreshing. They'll reconsider next time." },
 		},
 	},
-
+	
 	{
 		id = "prison_riot_survive",
 		minAge = 18, maxAge = 70,
@@ -2924,7 +2924,7 @@ local events = {
 			{ text = "🚪 Use it to escape", effects = { Health = -10, Happiness = 20 }, resultText = "In the chaos, you slipped away!", setFlags = {"escaped_prison", "fugitive"}, clearFlag = "in_prison", minigame = "getaway" },
 		},
 	},
-
+	
 	{
 		id = "prison_release",
 		minAge = 18, maxAge = 70,
@@ -2942,11 +2942,11 @@ local events = {
 			{ text = "🏠 Lay low", effects = { Happiness = 3 }, resultText = "You kept a low profile. Time to figure things out.", setFlag = "released_from_prison" },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- FUGITIVE PATH (After Escaping Prison)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "fugitive_hideout",
 		minAge = 18, maxAge = 70,
@@ -2965,7 +2965,7 @@ local events = {
 			{ text = "🚗 Keep moving", effects = { Health = -5, Happiness = -5 }, resultText = "You never stay in one place too long.", setFlag = "found_hideout" },
 		},
 	},
-
+	
 	{
 		id = "fugitive_close_call",
 		minAge = 18, maxAge = 70,
@@ -2983,7 +2983,7 @@ local events = {
 			{ text = "🙋 Turn yourself in", effects = { Happiness = -15 }, resultText = "The running is over. Back to prison.", clearFlag = "fugitive", setFlags = {"recaptured", "in_prison"} },
 		},
 	},
-
+	
 	{
 		id = "fugitive_new_identity",
 		minAge = 18, maxAge = 70,
@@ -3001,7 +3001,7 @@ local events = {
 			{ text = "🚫 Too expensive", effects = { Happiness = -5 }, resultText = "You can't afford it. You'll stay on the run." },
 		},
 	},
-
+	
 	{
 		id = "fugitive_recaptured",
 		minAge = 18, maxAge = 70,
@@ -3018,7 +3018,7 @@ local events = {
 			{ text = "🥊 Go down fighting", effects = { Health = -30, Happiness = 5 }, resultText = "You fought until you couldn't anymore. Solitary confinement.", clearFlag = "fugitive", setFlags = {"recaptured", "in_prison", "violent_offender"} },
 		},
 	},
-
+	
 	{
 		id = "money_laundering",
 		minAge = 25, maxAge = 60,
@@ -3036,7 +3036,7 @@ local events = {
 			{ text = "🚫 Too risky", effects = { Smarts = 3 }, resultText = "You passed. Live to fight another day." },
 		},
 	},
-
+	
 	{
 		id = "criminal_empire_expansion",
 		minAge = 30, maxAge = 70,
@@ -3057,11 +3057,11 @@ local events = {
 			{ text = "🤝 Partner with locals", effects = { Money = 50000, Smarts = 5 }, resultText = "A smart partnership. Less risk, steady profits." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE CAREER DEPTH: TEACHER PATH EXTRAS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "parent_conference",
 		minAge = 23, maxAge = 65,
@@ -3076,7 +3076,7 @@ local events = {
 			{ text = "📊 Be direct with facts", effects = { Smarts = 5 }, resultText = "You delivered honest feedback. Some parents can't handle the truth." },
 		},
 	},
-
+	
 	{
 		id = "student_crisis",
 		minAge = 23, maxAge = 65,
@@ -3092,7 +3092,7 @@ local events = {
 			{ text = "🤷 Not your business", effects = { Happiness = -5 }, resultText = "You let it slide. Hopefully it's nothing serious." },
 		},
 	},
-
+	
 	{
 		id = "curriculum_innovation",
 		minAge = 28, maxAge = 65,
@@ -3109,11 +3109,11 @@ local events = {
 			{ text = "🤷 It's too much work", effects = {}, resultText = "You stuck with the traditional approach." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE CAREER DEPTH: RACER PATH EXTRAS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "racing_sponsor",
 		minAge = 18, maxAge = 45,
@@ -3134,7 +3134,7 @@ local events = {
 			{ text = "🤔 Negotiate harder", effects = { Money = 300000, Smarts = 3 }, resultText = "You got an even better deal!" },
 		},
 	},
-
+	
 	{
 		id = "racing_injury",
 		minAge = 18, maxAge = 50,
@@ -3151,7 +3151,7 @@ local events = {
 			{ text = "🏥 Full recovery", effects = { Health = 5, Happiness = -5 }, resultText = "You took the time to heal properly. Smart choice." },
 		},
 	},
-
+	
 	{
 		id = "team_drama",
 		minAge = 20, maxAge = 50,
@@ -3169,11 +3169,11 @@ local events = {
 			{ text = "🔥 Fuel the rivalry", effects = { Happiness = 8 }, resultText = "The rivalry intensifies. Great for ratings, bad for team chemistry." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE CAREER DEPTH: ARTIST PATH EXTRAS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "art_controversy",
 		minAge = 25, maxAge = 70,
@@ -3191,7 +3191,7 @@ local events = {
 			{ text = "🗑️ Pull the piece", effects = { Happiness = -10 }, resultText = "You caved to pressure. Some saw it as weakness." },
 		},
 	},
-
+	
 	{
 		id = "art_forgery",
 		minAge = 25, maxAge = 60,
@@ -3208,7 +3208,7 @@ local events = {
 			{ text = "🤐 Ignore them", effects = { Happiness = -10 }, resultText = "The rumors persist. Some doubt lingers." },
 		},
 	},
-
+	
 	{
 		id = "art_teaching",
 		minAge = 30, maxAge = 70,
@@ -3225,11 +3225,11 @@ local events = {
 			{ text = "🙅 Decline", effects = { Happiness = 3 }, resultText = "You preferred to focus on your own work." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE CAREER DEPTH: HACKER PATH EXTRAS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "dark_web_deal",
 		minAge = 18, maxAge = 50,
@@ -3250,7 +3250,7 @@ local events = {
 			{ text = "🚫 Too risky", effects = { Smarts = 3 }, resultText = "Some jobs aren't worth the heat." },
 		},
 	},
-
+	
 	{
 		id = "cyber_bounty",
 		minAge = 20, maxAge = 50,
@@ -3268,7 +3268,7 @@ local events = {
 			{ text = "💻 Exploit it secretly", effects = { Money = 50000, Smarts = 3 }, resultText = "You exploited it before anyone noticed.", setFlag = "black_hat", clearFlag = "white_hat" },
 		},
 	},
-
+	
 	{
 		id = "ransomware_attack",
 		minAge = 20, maxAge = 50,
@@ -3289,7 +3289,7 @@ local events = {
 			{ text = "🚫 I have limits", effects = { Happiness = 5, Smarts = 5 }, resultText = "Some lines shouldn't be crossed." },
 		},
 	},
-
+	
 	{
 		id = "security_conference",
 		minAge = 22, maxAge = 60,
@@ -3306,11 +3306,11 @@ local events = {
 			{ text = "🙅 Stay anonymous", effects = { Smarts = 3 }, resultText = "You preferred to keep a low profile." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- EVEN MORE LIFE EVENTS
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "dream_house",
 		minAge = 30, maxAge = 70,
@@ -3324,7 +3324,7 @@ local events = {
 			{ text = "🤔 Too expensive", effects = {}, resultText = "You let someone else have your dream." },
 		},
 	},
-
+	
 	{
 		id = "online_dating",
 		minAge = 18, maxAge = 60,
@@ -3338,7 +3338,7 @@ local events = {
 			{ text = "😰 Too awkward", effects = { Happiness = -3 }, resultText = "You deleted the app after a week." },
 		},
 	},
-
+	
 	{
 		id = "bad_breakup",
 		minAge = 16, maxAge = 60,
@@ -3355,7 +3355,7 @@ local events = {
 			{ text = "💪 Focus on yourself", effects = { Happiness = -10, Smarts = 5 }, resultText = "You channeled the pain into self-improvement.", clearFlag = "in_love" },
 		},
 	},
-
+	
 	{
 		id = "surprise_party",
 		minAge = 10, maxAge = 80,
@@ -3368,7 +3368,7 @@ local events = {
 			{ text = "😱 Hate surprises", effects = { Happiness = 5 }, resultText = "You don't love surprises but appreciated the thought." },
 		},
 	},
-
+	
 	{
 		id = "helping_stranger",
 		minAge = 12, maxAge = 80,
@@ -3382,7 +3382,7 @@ local events = {
 			{ text = "🚶 Walk by", effects = { Happiness = -3 }, resultText = "You ignored them. Maybe someone else will help." },
 		},
 	},
-
+	
 	{
 		id = "scam_attempt",
 		minAge = 18, maxAge = 90,
@@ -3395,7 +3395,7 @@ local events = {
 			{ text = "💸 Pay them", effects = { Money = -5000, Happiness = -10, Smarts = -5 }, resultText = "You got scammed. That money is gone forever." },
 		},
 	},
-
+	
 	{
 		id = "food_poisoning",
 		minAge = 5, maxAge = 90,
@@ -3412,7 +3412,7 @@ local events = {
 			{ text = "🛏️ Ride it out", effects = { Health = -5, Happiness = -5 }, resultText = "Two days of misery, but you survived." },
 		},
 	},
-
+	
 	{
 		id = "dentist_visit",
 		minAge = 6, maxAge = 90,
@@ -3425,7 +3425,7 @@ local events = {
 			{ text = "🙅 Skip it", effects = { Health = -3 }, resultText = "Avoiding the dentist will catch up to you eventually." },
 		},
 	},
-
+	
 	{
 		id = "flat_tire",
 		minAge = 16, maxAge = 90,
@@ -3439,7 +3439,7 @@ local events = {
 			{ text = "📞 Call for help", effects = { Money = -100 }, resultText = "Roadside assistance saved the day." },
 		},
 	},
-
+	
 	{
 		id = "noisy_neighbors",
 		minAge = 18, maxAge = 70,
@@ -3454,7 +3454,7 @@ local events = {
 			{ text = "😤 Suffer in silence", effects = { Happiness = -5, Health = -2 }, resultText = "You didn't sleep at all." },
 		},
 	},
-
+	
 	{
 		id = "lost_wallet",
 		minAge = 12, maxAge = 90,
@@ -3467,7 +3467,7 @@ local events = {
 			{ text = "😢 Give up", effects = { Money = -500, Happiness = -10 }, resultText = "It's gone. Cancel those cards." },
 		},
 	},
-
+	
 	{
 		id = "social_media_drama",
 		minAge = 13, maxAge = 50,
@@ -3481,7 +3481,7 @@ local events = {
 			{ text = "📵 Delete social media", effects = { Happiness = 10, Smarts = 3 }, resultText = "You're free! Mental health improved instantly." },
 		},
 	},
-
+	
 	{
 		id = "work_promotion",
 		minAge = 22, maxAge = 65,
@@ -3498,7 +3498,7 @@ local events = {
 			{ text = "🤷 Content where I am", effects = { Happiness = 2 }, resultText = "You stayed in your current role." },
 		},
 	},
-
+	
 	{
 		id = "workplace_conflict",
 		minAge = 18, maxAge = 65,
@@ -3513,7 +3513,7 @@ local events = {
 			{ text = "😤 Escalate", effects = { Happiness = -5 }, resultText = "Things got worse before they got better." },
 		},
 	},
-
+	
 	{
 		id = "fired_from_job",
 		minAge = 18, maxAge = 65,
@@ -3534,11 +3534,11 @@ local events = {
 			{ text = "😤 Fight it", effects = { Happiness = -10, Money = 5000 }, resultText = "You negotiated a severance package." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════
 	-- MORE EVERYDAY RANDOM EVENTS (Age Variety)
 	-- ═══════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "random_kindness",
 		minAge = 8, maxAge = 80,
@@ -3552,7 +3552,7 @@ local events = {
 			{ text = "🙏 Just say thanks", effects = { Happiness = 5 }, resultText = "You were grateful for the kindness." },
 		},
 	},
-
+	
 	{
 		id = "found_money",
 		minAge = 6, maxAge = 80,
@@ -3566,7 +3566,7 @@ local events = {
 			{ text = "🤝 Try to find owner", effects = { Smarts = 3, Happiness = 5 }, resultText = "You tried but nobody claimed it. You kept it guilt-free." },
 		},
 	},
-
+	
 	{
 		id = "traffic_ticket",
 		minAge = 16, maxAge = 80,
@@ -3581,7 +3581,7 @@ local events = {
 			{ text = "😢 Cry", effects = { Money = -150, Happiness = 5 }, resultText = "The officer felt bad. Reduced fine." },
 		},
 	},
-
+	
 	{
 		id = "new_hobby",
 		minAge = 10, maxAge = 70,
@@ -3598,7 +3598,7 @@ local events = {
 			{ text = "🤷 Casual interest", effects = { Happiness = 5 }, resultText = "It's a nice occasional activity." },
 		},
 	},
-
+	
 	{
 		id = "health_checkup",
 		minAge = 20, maxAge = 80,
@@ -3611,7 +3611,7 @@ local events = {
 			{ text = "🙅 Skip it", effects = { Happiness = 3 }, resultText = "You put off the appointment. Hopefully nothing's wrong." },
 		},
 	},
-
+	
 	{
 		id = "food_poisoning",
 		minAge = 10, maxAge = 80,
@@ -3628,7 +3628,7 @@ local events = {
 			{ text = "🏠 Tough it out", effects = { Health = -15, Happiness = -10 }, resultText = "That was a rough few days..." },
 		},
 	},
-
+	
 	{
 		id = "viral_video",
 		minAge = 13, maxAge = 50,
@@ -3641,7 +3641,7 @@ local events = {
 			{ text = "😰 Try to hide", effects = { Happiness = -5 }, resultText = "The attention faded eventually." },
 		},
 	},
-
+	
 	{
 		id = "bad_haircut",
 		minAge = 8, maxAge = 60,
@@ -3655,7 +3655,7 @@ local events = {
 			{ text = "🎩 Wear a hat", effects = { Happiness = -3 }, resultText = "Hat season it is." },
 		},
 	},
-
+	
 	{
 		id = "neighbor_dispute",
 		minAge = 18, maxAge = 80,
@@ -3670,7 +3670,7 @@ local events = {
 			{ text = "📞 Call police", effects = { Happiness = 3 }, resultText = "The cops told them to quiet down." },
 		},
 	},
-
+	
 	{
 		id = "strange_dream",
 		minAge = 6, maxAge = 80,
@@ -3684,7 +3684,7 @@ local events = {
 			{ text = "🤷 Forget it", effects = {}, resultText = "Just a dream, nothing more." },
 		},
 	},
-
+	
 	{
 		id = "find_pet",
 		minAge = 8, maxAge = 70,
@@ -3702,7 +3702,7 @@ local events = {
 			{ text = "🤷 Shoo it away", effects = { Happiness = -3 }, resultText = "You felt a little guilty." },
 		},
 	},
-
+	
 	{
 		id = "surprise_gift",
 		minAge = 10, maxAge = 80,
@@ -3716,7 +3716,7 @@ local events = {
 			{ text = "🤔 What's the catch?", effects = { Smarts = 3, Happiness = 5 }, resultText = "No catch! Just a thoughtful person." },
 		},
 	},
-
+	
 	{
 		id = "minor_accident",
 		minAge = 16, maxAge = 80,
@@ -3730,7 +3730,7 @@ local events = {
 			{ text = "🏃 Drive away", effects = { Happiness = -10, Smarts = -5 }, resultText = "You hope nobody saw. Guilt lingers." },
 		},
 	},
-
+	
 	{
 		id = "volunteer_opportunity",
 		minAge = 14, maxAge = 80,
@@ -3747,7 +3747,7 @@ local events = {
 			{ text = "⏰ Too busy", effects = { Happiness = -2 }, resultText = "Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "rainy_day",
 		minAge = 5, maxAge = 80,
@@ -3761,7 +3761,7 @@ local events = {
 			{ text = "🌧️ Go out anyway", effects = { Health = 3, Happiness = 5 }, resultText = "Dancing in the rain is underrated!" },
 		},
 	},
-
+	
 	{
 		id = "insomnia",
 		minAge = 15, maxAge = 80,
@@ -3781,11 +3781,11 @@ local events = {
 	-- MASSIVE EXPANSION PART 1: EARLY LIFE EVENTS (0-11)
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	-- ─────────────────────────────────────────────────────────────────
 	-- MORE INFANT EVENTS (Ages 0-2)
 	-- ─────────────────────────────────────────────────────────────────
-
+	
 	{
 		id = "baby_food_reaction",
 		minAge = 0, maxAge = 1,
@@ -3803,7 +3803,7 @@ local events = {
 			{ text = "🤔 Cautiously curious", effects = { Smarts = 3, Health = 2 }, resultText = "You examined each bite before eating. Thoughtful baby!" },
 		},
 	},
-
+	
 	{
 		id = "baby_music_discovery",
 		minAge = 0, maxAge = 2,
@@ -3817,7 +3817,7 @@ local events = {
 			{ text = "😴 Fall asleep", effects = { Health = 3 }, resultText = "Lullabies work wonders on you." },
 		},
 	},
-
+	
 	{
 		id = "baby_bath_time",
 		minAge = 0, maxAge = 2,
@@ -3831,7 +3831,7 @@ local events = {
 			{ text = "😭 Hate bath time", effects = { Happiness = -3 }, resultText = "You screamed through the whole thing." },
 		},
 	},
-
+	
 	{
 		id = "baby_peek_a_boo",
 		minAge = 0, maxAge = 1,
@@ -3844,7 +3844,7 @@ local events = {
 			{ text = "🙈 Cover your own eyes", effects = { Happiness = 5, Smarts = 4 }, resultText = "You learned the game! So clever!" },
 		},
 	},
-
+	
 	{
 		id = "baby_mirror_discovery",
 		minAge = 0, maxAge = 2,
@@ -3858,7 +3858,7 @@ local events = {
 			{ text = "😠 Get upset at 'other baby'", effects = { Happiness = 2 }, resultText = "Who is that baby and why are they copying you?!" },
 		},
 	},
-
+	
 	{
 		id = "baby_grandparents_visit",
 		minAge = 0, maxAge = 3,
@@ -3872,7 +3872,7 @@ local events = {
 			{ text = "💤 Sleep through it", effects = { Health = 2 }, resultText = "They just watched you sleep peacefully." },
 		},
 	},
-
+	
 	{
 		id = "baby_separation_anxiety",
 		minAge = 1, maxAge = 3,
@@ -3886,7 +3886,7 @@ local events = {
 			{ text = "🎮 Get distracted by toys", effects = { Happiness = 4 }, resultText = "You forgot they were gone. Self-soothing mastered!" },
 		},
 	},
-
+	
 	{
 		id = "baby_stacking_blocks",
 		minAge = 1, maxAge = 3,
@@ -3901,7 +3901,7 @@ local events = {
 			{ text = "🎨 Sort by color", effects = { Smarts = 6 }, resultText = "You organized them perfectly. Pattern recognition!" },
 		},
 	},
-
+	
 	{
 		id = "baby_animal_sounds",
 		minAge = 1, maxAge = 3,
@@ -3915,7 +3915,7 @@ local events = {
 			{ text = "🦁 Roar like a lion", effects = { Happiness = 6, Smarts = 3 }, resultText = "RAWR! You're fearsome!" },
 		},
 	},
-
+	
 	{
 		id = "baby_picture_book",
 		minAge = 1, maxAge = 3,
@@ -3933,7 +3933,7 @@ local events = {
 			{ text = "😴 Fall asleep", effects = { Health = 3 }, resultText = "Perfect bedtime routine." },
 		},
 	},
-
+	
 	{
 		id = "baby_daycare_first",
 		minAge = 1, maxAge = 3,
@@ -3947,7 +3947,7 @@ local events = {
 			{ text = "🧸 Bring comfort item", effects = { Happiness = 3 }, resultText = "Your teddy bear helped you feel safe." },
 		},
 	},
-
+	
 	{
 		id = "baby_halloween",
 		minAge = 0, maxAge = 3,
@@ -3964,7 +3964,7 @@ local events = {
 			{ text = "😠 Hate the costume", effects = { Happiness = -2 }, resultText = "You kept trying to take it off." },
 		},
 	},
-
+	
 	{
 		id = "baby_first_holiday",
 		minAge = 0, maxAge = 2,
@@ -3978,11 +3978,11 @@ local events = {
 			{ text = "😱 Scared of decorations", effects = { Happiness = -2 }, resultText = "Giant inflatable Santa was terrifying." },
 		},
 	},
-
+	
 	-- ─────────────────────────────────────────────────────────────────
 	-- MORE TODDLER EVENTS (Ages 3-4)
 	-- ─────────────────────────────────────────────────────────────────
-
+	
 	{
 		id = "toddler_playground_hero",
 		minAge = 3, maxAge = 5,
@@ -3997,7 +3997,7 @@ local events = {
 			{ text = "🤷 Keep playing", effects = {}, resultText = "Someone else helped them." },
 		},
 	},
-
+	
 	{
 		id = "toddler_picky_eater",
 		minAge = 2, maxAge = 5,
@@ -4015,7 +4015,7 @@ local events = {
 			{ text = "🎭 Make a game of it", effects = { Happiness = 4, Health = 3 }, resultText = "Pretending to be a dinosaur eating trees made it fun!", setFlag = "imaginative" },
 		},
 	},
-
+	
 	{
 		id = "toddler_first_sleepover",
 		minAge = 4, maxAge = 6,
@@ -4030,7 +4030,7 @@ local events = {
 			{ text = "🧸 Bring backup", effects = { Happiness = 5 }, resultText = "Your stuffed animal made you feel brave enough." },
 		},
 	},
-
+	
 	{
 		id = "toddler_coloring_mastery",
 		minAge = 3, maxAge = 5,
@@ -4044,7 +4044,7 @@ local events = {
 			{ text = "🎨 Start drawing own pictures", effects = { Smarts = 5, Happiness = 3 }, resultText = "You graduated from coloring to creating!", setFlag = "art_interest" },
 		},
 	},
-
+	
 	{
 		id = "toddler_question_phase",
 		minAge = 3, maxAge = 5,
@@ -4058,7 +4058,7 @@ local events = {
 			{ text = "📚 Look at books", effects = { Smarts = 4 }, resultText = "Pictures helped answer some questions." },
 		},
 	},
-
+	
 	{
 		id = "toddler_sharing_lesson",
 		minAge = 2, maxAge = 5,
@@ -4073,7 +4073,7 @@ local events = {
 			{ text = "🔄 Take turns", effects = { Smarts = 5, Happiness = 4 }, resultText = "You invented a turn-taking game! Problem solved.", setFlag = "problem_solver" },
 		},
 	},
-
+	
 	{
 		id = "toddler_monster_fear",
 		minAge = 3, maxAge = 6,
@@ -4087,7 +4087,7 @@ local events = {
 			{ text = "🔦 Keep a flashlight", effects = { Happiness = 4, Smarts = 2 }, resultText = "Monsters hate light. You're prepared now." },
 		},
 	},
-
+	
 	{
 		id = "toddler_owie",
 		minAge = 2, maxAge = 5,
@@ -4101,7 +4101,7 @@ local events = {
 			{ text = "🩹 Want a cool bandaid", effects = { Happiness = 3, Health = 2 }, resultText = "The dinosaur bandaid made everything better." },
 		},
 	},
-
+	
 	{
 		id = "toddler_counting",
 		minAge = 3, maxAge = 5,
@@ -4115,7 +4115,7 @@ local events = {
 			{ text = "🤷 Numbers are boring", effects = { Smarts = 2 }, resultText = "You preferred other activities." },
 		},
 	},
-
+	
 	{
 		id = "toddler_abc",
 		minAge = 3, maxAge = 5,
@@ -4129,7 +4129,7 @@ local events = {
 			{ text = "📚 Find letters everywhere", effects = { Smarts = 5, Happiness = 3 }, resultText = "You point out letters on signs, cereal boxes, everywhere!" },
 		},
 	},
-
+	
 	{
 		id = "toddler_bike_training",
 		minAge = 3, maxAge = 5,
@@ -4143,7 +4143,7 @@ local events = {
 			{ text = "🏃 Prefer running", effects = { Health = 4, Happiness = 2 }, resultText = "Bikes aren't your thing." },
 		},
 	},
-
+	
 	{
 		id = "toddler_first_lie",
 		minAge = 3, maxAge = 5,
@@ -4161,11 +4161,11 @@ local events = {
 			{ text = "🐕 Blame the pet", effects = { Smarts = 3, Happiness = 2 }, resultText = "Creative, but they didn't buy it." },
 		},
 	},
-
+	
 	-- ─────────────────────────────────────────────────────────────────
 	-- MORE CHILDHOOD EVENTS (Ages 5-11)
 	-- ─────────────────────────────────────────────────────────────────
-
+	
 	{
 		id = "child_school_play",
 		minAge = 6, maxAge = 11,
@@ -4184,7 +4184,7 @@ local events = {
 			{ text = "🙅 Too nervous", effects = { Happiness = -2 }, resultText = "Maybe next time you'll be braver." },
 		},
 	},
-
+	
 	{
 		id = "child_sports_tryout",
 		minAge = 6, maxAge = 12,
@@ -4202,7 +4202,7 @@ local events = {
 			{ text = "📚 Sports aren't my thing", effects = { Smarts = 2 }, resultText = "You focused on other activities instead." },
 		},
 	},
-
+	
 	{
 		id = "child_class_president",
 		minAge = 8, maxAge = 12,
@@ -4216,7 +4216,7 @@ local events = {
 			{ text = "🙅 Not interested", effects = {}, resultText = "Politics isn't your thing." },
 		},
 	},
-
+	
 	{
 		id = "child_spelling_bee",
 		minAge = 7, maxAge = 12,
@@ -4233,7 +4233,7 @@ local events = {
 			{ text = "😰 Panic and guess", effects = { Smarts = 3, Happiness = -2 }, resultText = "You got it wrong but learned from the experience." },
 		},
 	},
-
+	
 	{
 		id = "child_first_crush",
 		minAge = 8, maxAge = 12,
@@ -4248,7 +4248,7 @@ local events = {
 			{ text = "🗣️ Tell everyone", effects = { Happiness = -3 }, resultText = "Kids are cruel. You got teased." },
 		},
 	},
-
+	
 	{
 		id = "child_club_join",
 		minAge = 7, maxAge = 12,
@@ -4265,7 +4265,7 @@ local events = {
 			{ text = "🤔 Not for me", effects = {}, resultText = "You passed. Something else will come along." },
 		},
 	},
-
+	
 	{
 		id = "child_library_discovery",
 		minAge = 6, maxAge = 12,
@@ -4279,7 +4279,7 @@ local events = {
 			{ text = "💻 Use the computers", effects = { Smarts = 5, Happiness = 3 }, resultText = "You discovered the internet at the library!", setFlag = "computer_interest" },
 		},
 	},
-
+	
 	{
 		id = "child_allowance",
 		minAge = 6, maxAge = 12,
@@ -4294,7 +4294,7 @@ local events = {
 			{ text = "📊 Save half, spend half", effects = { Smarts = 6, Happiness = 3, Money = 25 }, resultText = "Balanced approach. Financially smart!" },
 		},
 	},
-
+	
 	{
 		id = "child_instrument_choice",
 		minAge = 6, maxAge = 10,
@@ -4310,7 +4310,7 @@ local events = {
 			{ text = "🙅 No music", effects = { Happiness = 2 }, resultText = "Music isn't your thing." },
 		},
 	},
-
+	
 	{
 		id = "child_camp_summer",
 		minAge = 7, maxAge = 12,
@@ -4328,7 +4328,7 @@ local events = {
 			{ text = "🙅 Stay home", effects = { Happiness = 3 }, resultText = "You had a quiet summer instead." },
 		},
 	},
-
+	
 	{
 		id = "child_video_game_love",
 		minAge = 6, maxAge = 12,
@@ -4346,7 +4346,7 @@ local events = {
 			{ text = "🛠️ Start modding games", effects = { Smarts = 6, Happiness = 4 }, resultText = "You started customizing games! Future developer?", setFlag = "computer_interest" },
 		},
 	},
-
+	
 	{
 		id = "child_cooking_helper",
 		minAge = 6, maxAge = 11,
@@ -4360,7 +4360,7 @@ local events = {
 			{ text = "📺 Rather watch TV", effects = { Happiness = 3 }, resultText = "You missed a bonding moment." },
 		},
 	},
-
+	
 	{
 		id = "child_lost_tooth",
 		minAge = 5, maxAge = 10,
@@ -4374,7 +4374,7 @@ local events = {
 			{ text = "😰 Scared", effects = { Happiness = -2 }, resultText = "It was scary but you're okay." },
 		},
 	},
-
+	
 	{
 		id = "child_homework_struggle",
 		minAge = 6, maxAge = 12,
@@ -4392,7 +4392,7 @@ local events = {
 			{ text = "😴 Give up", effects = { Smarts = -2, Happiness = -3 }, resultText = "You didn't finish it. Teacher was disappointed." },
 		},
 	},
-
+	
 	{
 		id = "child_glasses_needed",
 		minAge = 6, maxAge = 12,
@@ -4405,7 +4405,7 @@ local events = {
 			{ text = "😞 Don't want them", effects = { Happiness = -3, Smarts = 3 }, resultText = "You got them anyway. At least you can see now.", setFlag = "wears_glasses" },
 		},
 	},
-
+	
 	{
 		id = "child_nature_discovery",
 		minAge = 5, maxAge = 11,
@@ -4419,7 +4419,7 @@ local events = {
 			{ text = "😱 Eww, gross!", effects = { Happiness = 2 }, resultText = "You ran away. Bugs aren't for everyone." },
 		},
 	},
-
+	
 	{
 		id = "child_standing_up_bully",
 		minAge = 7, maxAge = 12,
@@ -4434,7 +4434,7 @@ local events = {
 			{ text = "👀 Watch from afar", effects = { Happiness = -5 }, resultText = "You felt guilty for not helping." },
 		},
 	},
-
+	
 	{
 		id = "child_bike_no_training",
 		minAge = 5, maxAge = 8,
@@ -4448,7 +4448,7 @@ local events = {
 			{ text = "😰 Not ready yet", effects = { Happiness = -2 }, resultText = "Maybe next time you'll be braver." },
 		},
 	},
-
+	
 	{
 		id = "child_chores",
 		minAge = 6, maxAge = 12,
@@ -4466,7 +4466,7 @@ local events = {
 			{ text = "🙅 Refuse", effects = { Happiness = -5 }, resultText = "You got in trouble. Not worth it." },
 		},
 	},
-
+	
 	{
 		id = "child_new_kid_school",
 		minAge = 6, maxAge = 12,
@@ -4487,7 +4487,7 @@ local events = {
 	-- MASSIVE EXPANSION PART 2: TEEN YEARS (12-17)
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "teen_middle_school",
 		minAge = 12, maxAge = 12,
@@ -4501,7 +4501,7 @@ local events = {
 			{ text = "🏃 Focus on activities", effects = { Health = 5, Happiness = 4 }, resultText = "You joined everything! Sports, clubs, you name it.", setFlag = "active_kid" },
 		},
 	},
-
+	
 	{
 		id = "teen_puberty_start",
 		minAge = 12, maxAge = 14,
@@ -4515,7 +4515,7 @@ local events = {
 			{ text = "🤷 Go with the flow", effects = { Happiness = 2, Health = 2 }, resultText = "You handled it with grace." },
 		},
 	},
-
+	
 	{
 		id = "teen_acne_struggle",
 		minAge = 12, maxAge = 18,
@@ -4529,7 +4529,7 @@ local events = {
 			{ text = "😭 Hide at home", effects = { Happiness = -5, Looks = -2 }, resultText = "You missed out and felt worse." },
 		},
 	},
-
+	
 	{
 		id = "teen_first_job_offer",
 		minAge = 14, maxAge = 17,
@@ -4547,7 +4547,7 @@ local events = {
 			{ text = "🎮 Too busy", effects = { Happiness = 3 }, resultText = "You had other priorities." },
 		},
 	},
-
+	
 	{
 		id = "teen_first_party",
 		minAge = 14, maxAge = 18,
@@ -4563,7 +4563,7 @@ local events = {
 			{ text = "🚔 Tell parents", effects = { Happiness = -5, Smarts = 3 }, resultText = "Party got shut down. You're not popular now." },
 		},
 	},
-
+	
 	{
 		id = "teen_first_date",
 		minAge = 14, maxAge = 18,
@@ -4578,7 +4578,7 @@ local events = {
 			{ text = "🤔 Friends first", effects = { Happiness = 3, Smarts = 3 }, resultText = "You wanted to know them better first. Mature!" },
 		},
 	},
-
+	
 	{
 		id = "teen_social_media_account",
 		minAge = 13, maxAge = 16,
@@ -4592,7 +4592,7 @@ local events = {
 			{ text = "🙅 Stay offline", effects = { Smarts = 4, Happiness = -2 }, resultText = "You missed out socially but avoided drama." },
 		},
 	},
-
+	
 	{
 		id = "teen_gaming_career",
 		minAge = 13, maxAge = 18,
@@ -4607,7 +4607,7 @@ local events = {
 			{ text = "🤷 Just for fun", effects = { Happiness = 3 }, resultText = "Games are a hobby, not a career. That's okay." },
 		},
 	},
-
+	
 	{
 		id = "teen_peer_pressure_alcohol",
 		minAge = 15, maxAge = 18,
@@ -4622,7 +4622,7 @@ local events = {
 			{ text = "🏃 Leave the party", effects = { Happiness = -3, Health = 2 }, resultText = "You removed yourself from the situation. Smart." },
 		},
 	},
-
+	
 	{
 		id = "teen_peer_pressure_drugs",
 		minAge = 15, maxAge = 18,
@@ -4637,7 +4637,7 @@ local events = {
 			{ text = "🚔 Report them", effects = { Smarts = 5, Happiness = -3 }, resultText = "You did the right thing but made an enemy." },
 		},
 	},
-
+	
 	{
 		id = "teen_body_image",
 		minAge = 13, maxAge = 18,
@@ -4651,7 +4651,7 @@ local events = {
 			{ text = "😔 Spiral down", effects = { Happiness = -10, Health = -5 }, resultText = "It got bad. Please talk to someone." },
 		},
 	},
-
+	
 	{
 		id = "teen_SAT_prep",
 		minAge = 16, maxAge = 17,
@@ -4665,7 +4665,7 @@ local events = {
 			{ text = "🤷 Wing it", effects = { Smarts = 2, Happiness = 3 }, resultText = "Could have gone better. More options would be nice." },
 		},
 	},
-
+	
 	{
 		id = "teen_college_tour",
 		minAge = 16, maxAge = 17,
@@ -4680,7 +4680,7 @@ local events = {
 			{ text = "🙅 College isn't for me", effects = { Happiness = 2, Smarts = -2 }, resultText = "You're considering other paths." },
 		},
 	},
-
+	
 	{
 		id = "teen_part_time_coding",
 		minAge = 15, maxAge = 18,
@@ -4694,7 +4694,7 @@ local events = {
 			{ text = "😰 Too much pressure", effects = { Smarts = 2 }, resultText = "You passed. Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "teen_volunteer_work",
 		minAge = 14, maxAge = 18,
@@ -4711,7 +4711,7 @@ local events = {
 			{ text = "⏰ Too busy", effects = {}, resultText = "You had other commitments." },
 		},
 	},
-
+	
 	{
 		id = "teen_fight_at_school",
 		minAge = 13, maxAge = 18,
@@ -4726,7 +4726,7 @@ local events = {
 			{ text = "🏃 Walk away", effects = { Happiness = -5, Smarts = 4 }, resultText = "Some called you a coward. You called it smart." },
 		},
 	},
-
+	
 	{
 		id = "teen_heartbreak",
 		minAge = 14, maxAge = 18,
@@ -4742,7 +4742,7 @@ local events = {
 			{ text = "💪 Focus on yourself", effects = { Happiness = 3, Health = 5 }, resultText = "You hit the gym and worked on yourself." },
 		},
 	},
-
+	
 	{
 		id = "teen_prom_ask",
 		minAge = 16, maxAge = 18,
@@ -4757,7 +4757,7 @@ local events = {
 			{ text = "🙅 Go alone/with friends", effects = { Happiness = 5 }, resultText = "You don't need a date to have fun!" },
 		},
 	},
-
+	
 	{
 		id = "teen_prom_night",
 		minAge = 17, maxAge = 18,
@@ -4771,7 +4771,7 @@ local events = {
 			{ text = "😔 Disaster", effects = { Happiness = -10 }, resultText = "Everything went wrong. At least it's over." },
 		},
 	},
-
+	
 	{
 		id = "teen_summer_romance",
 		minAge = 15, maxAge = 18,
@@ -4786,7 +4786,7 @@ local events = {
 			{ text = "💔 Long distance is hard", effects = { Happiness = -5 }, resultText = "You tried but distance won." },
 		},
 	},
-
+	
 	{
 		id = "teen_mentor_discovered",
 		minAge = 14, maxAge = 18,
@@ -4800,7 +4800,7 @@ local events = {
 			{ text = "🤷 I don't need help", effects = { Smarts = 2 }, resultText = "You missed an opportunity." },
 		},
 	},
-
+	
 	{
 		id = "teen_startup_idea",
 		minAge = 15, maxAge = 18,
@@ -4815,7 +4815,7 @@ local events = {
 			{ text = "🤷 Someone's probably done it", effects = { Happiness = -2 }, resultText = "Self-doubt killed the dream." },
 		},
 	},
-
+	
 	{
 		id = "teen_car_accident",
 		minAge = 16, maxAge = 18,
@@ -4830,13 +4830,13 @@ local events = {
 			{ text = "😰 Scared to drive", effects = { Happiness = -5, Smarts = 2 }, resultText = "It took a while to get behind the wheel again." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════════════════
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- MASSIVE EXPANSION PART 3: DEEP HACKER CAREER PATH
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "hacker_computer_build",
 		minAge = 12, maxAge = 18,
@@ -4850,7 +4850,7 @@ local events = {
 			{ text = "💻 Upgrade what you have", effects = { Smarts = 4, Happiness = 4, Money = -200 }, resultText = "Upgrades made a big difference!" },
 		},
 	},
-
+	
 	{
 		id = "hacker_ctf_competition",
 		minAge = 14, maxAge = 30,
@@ -4868,7 +4868,7 @@ local events = {
 			{ text = "📚 Participate to learn", effects = { Smarts = 6, Happiness = 5 }, resultText = "You learned so much! Great experience." },
 		},
 	},
-
+	
 	{
 		id = "hacker_found_backdoor",
 		minAge = 16, maxAge = 35,
@@ -4886,7 +4886,7 @@ local events = {
 			{ text = "🤫 Use it yourself", effects = { Smarts = 5, Money = 2000 }, resultText = "You now have access whenever you want.", setFlags = {"backdoor_found", "black_hat"} },
 		},
 	},
-
+	
 	{
 		id = "hacker_cryptocurrency",
 		minAge = 18, maxAge = 45,
@@ -4901,7 +4901,7 @@ local events = {
 			{ text = "🔧 Build trading bots", effects = { Smarts = 8, Money = 5000 }, resultText = "Your algorithms made money while you slept!", setFlag = "algo_trader" },
 		},
 	},
-
+	
 	{
 		id = "hacker_social_engineering",
 		minAge = 16, maxAge = 40,
@@ -4916,7 +4916,7 @@ local events = {
 			{ text = "🙅 That's manipulation", effects = { Smarts = 2, Happiness = 3 }, resultText = "You prefer technical challenges." },
 		},
 	},
-
+	
 	{
 		id = "hacker_virus_creation",
 		minAge = 16, maxAge = 40,
@@ -4934,7 +4934,7 @@ local events = {
 			{ text = "🚫 That's too far", effects = { Happiness = 5, Smarts = 3 }, resultText = "Some lines shouldn't be crossed." },
 		},
 	},
-
+	
 	{
 		id = "hacker_darknet_market",
 		minAge = 18, maxAge = 45,
@@ -4952,7 +4952,7 @@ local events = {
 			{ text = "🚫 Too risky", effects = { Smarts = 3, Happiness = 5 }, resultText = "Smart call. That life ends badly." },
 		},
 	},
-
+	
 	{
 		id = "hacker_zero_day",
 		minAge = 20, maxAge = 50,
@@ -4974,7 +4974,7 @@ local events = {
 			{ text = "🏛️ Sell to government", effects = { Money = 100000, Smarts = 3 }, resultText = "The NSA is your new client." },
 		},
 	},
-
+	
 	{
 		id = "hacker_arrested_risk",
 		minAge = 18, maxAge = 50,
@@ -4992,7 +4992,7 @@ local events = {
 			{ text = "⚖️ Lawyer up", effects = { Money = -10000, Smarts = 5 }, resultText = "Expensive but necessary protection." },
 		},
 	},
-
+	
 	{
 		id = "hacker_job_nsa",
 		minAge = 22, maxAge = 45,
@@ -5010,7 +5010,7 @@ local events = {
 			{ text = "🐺 Stay independent", effects = { Happiness = 5, Smarts = 3 }, resultText = "You prefer freedom." },
 		},
 	},
-
+	
 	{
 		id = "hacker_silicon_valley",
 		minAge = 22, maxAge = 40,
@@ -5032,7 +5032,7 @@ local events = {
 			{ text = "🚀 Start my own thing", effects = { Happiness = 5, Smarts = 3 }, resultText = "You'd rather be the founder than the employee." },
 		},
 	},
-
+	
 	{
 		id = "hacker_security_breach_response",
 		minAge = 24, maxAge = 50,
@@ -5047,7 +5047,7 @@ local events = {
 			{ text = "📢 Go public", effects = { Smarts = 3, Happiness = -5 }, resultText = "Whistleblowing made you unpopular but it was right." },
 		},
 	},
-
+	
 	{
 		id = "hacker_conference_speaker",
 		minAge = 25, maxAge = 55,
@@ -5068,7 +5068,7 @@ local events = {
 			{ text = "😰 Too scary", effects = { Happiness = -5 }, resultText = "You passed. Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "hacker_open_source",
 		minAge = 18, maxAge = 50,
@@ -5083,13 +5083,13 @@ local events = {
 			{ text = "🏢 Sell to a company", effects = { Money = 100000, Happiness = -5 }, resultText = "They bought it but you lost control." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════════════════
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- MASSIVE EXPANSION PART 4: DEEP TEACHER CAREER PATH
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "teacher_education_degree",
 		minAge = 18, maxAge = 30,
@@ -5107,7 +5107,7 @@ local events = {
 			{ text = "🎓 Focus on pedagogy", effects = { Smarts = 8, Happiness = 6 }, resultText = "You became an expert in how people learn.", setFlag = "education_degree" },
 		},
 	},
-
+	
 	{
 		id = "teacher_student_teaching",
 		minAge = 21, maxAge = 30,
@@ -5125,7 +5125,7 @@ local events = {
 			{ text = "📚 Learn by observing", effects = { Smarts = 8, Happiness = 4 }, resultText = "You learned so much watching an expert.", setFlag = "student_teaching_done" },
 		},
 	},
-
+	
 	{
 		id = "teacher_first_classroom",
 		minAge = 22, maxAge = 35,
@@ -5142,7 +5142,7 @@ local events = {
 			{ text = "😍 Best day ever!", effects = { Happiness = 15, Smarts = 5, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher" },
 		},
 	},
-
+	
 	{
 		id = "teacher_first_year_challenge",
 		minAge = 22, maxAge = 40,
@@ -5160,7 +5160,7 @@ local events = {
 			{ text = "😭 Consider quitting", effects = { Happiness = -10 }, resultText = "Many new teachers quit. You're not alone in struggling." },
 		},
 	},
-
+	
 	{
 		id = "teacher_difficult_student",
 		minAge = 23, maxAge = 65,
@@ -5176,7 +5176,7 @@ local events = {
 			{ text = "📝 Document and escalate", effects = { Smarts = 4 }, resultText = "Administration got involved. Problem handled." },
 		},
 	},
-
+	
 	{
 		id = "teacher_breakthrough_moment",
 		minAge = 23, maxAge = 65,
@@ -5190,7 +5190,7 @@ local events = {
 			{ text = "🎉 This is why I teach!", effects = { Happiness = 15, Smarts = 3 }, resultText = "That moment made everything worth it." },
 		},
 	},
-
+	
 	{
 		id = "teacher_extra_curricular",
 		minAge = 23, maxAge = 55,
@@ -5208,7 +5208,7 @@ local events = {
 			{ text = "⏰ No time", effects = { Happiness = 2 }, resultText = "You need to protect your work-life balance." },
 		},
 	},
-
+	
 	{
 		id = "teacher_grad_school",
 		minAge = 25, maxAge = 50,
@@ -5226,7 +5226,7 @@ local events = {
 			{ text = "⏰ Maybe later", effects = {}, resultText = "The timing isn't right." },
 		},
 	},
-
+	
 	{
 		id = "teacher_national_board",
 		minAge = 28, maxAge = 55,
@@ -5243,7 +5243,7 @@ local events = {
 			{ text = "😰 Too much work", effects = {}, resultText = "Maybe when you have more time." },
 		},
 	},
-
+	
 	{
 		id = "teacher_department_head_offer",
 		minAge = 30, maxAge = 55,
@@ -5260,7 +5260,7 @@ local events = {
 			{ text = "📚 Stay in classroom", effects = { Happiness = 3 }, resultText = "You prefer direct student impact." },
 		},
 	},
-
+	
 	{
 		id = "teacher_admin_track",
 		minAge = 35, maxAge = 55,
@@ -5277,7 +5277,7 @@ local events = {
 			{ text = "🙅 Teaching is where I belong", effects = { Happiness = 5 }, resultText = "Not everyone should be admin. Teachers matter." },
 		},
 	},
-
+	
 	{
 		id = "teacher_assistant_principal",
 		minAge = 35, maxAge = 58,
@@ -5295,7 +5295,7 @@ local events = {
 			{ text = "📚 Stay a teacher", effects = { Happiness = 5 }, resultText = "Administration isn't for everyone." },
 		},
 	},
-
+	
 	{
 		id = "teacher_principal_promotion",
 		minAge = 38, maxAge = 62,
@@ -5312,7 +5312,7 @@ local events = {
 			{ text = "🎓 This is my moment!", effects = { Money = 15000, Happiness = 15, Smarts = 5 }, resultText = "You're the principal! Your school, your vision.", setFlag = "principal" },
 		},
 	},
-
+	
 	{
 		id = "teacher_superintendent",
 		minAge = 45, maxAge = 65,
@@ -5329,7 +5329,7 @@ local events = {
 			{ text = "🏫 Stay at my school", effects = { Happiness = 5 }, resultText = "You love your school community too much to leave." },
 		},
 	},
-
+	
 	{
 		id = "teacher_union_leadership",
 		minAge = 28, maxAge = 55,
@@ -5344,7 +5344,7 @@ local events = {
 			{ text = "🙅 Stay out of politics", effects = {}, resultText = "You focus on your students instead." },
 		},
 	},
-
+	
 	{
 		id = "teacher_scholarship_student",
 		minAge = 25, maxAge = 55,
@@ -5358,7 +5358,7 @@ local events = {
 			{ text = "🎉 This is my legacy!", effects = { Happiness = 15 }, resultText = "Changing lives - that's what it's all about." },
 		},
 	},
-
+	
 	{
 		id = "teacher_former_student_success",
 		minAge = 30, maxAge = 65,
@@ -5372,7 +5372,7 @@ local events = {
 			{ text = "🥹 This means everything", effects = { Happiness = 20 }, resultText = "The impact you've made is immeasurable." },
 		},
 	},
-
+	
 	{
 		id = "teacher_write_curriculum",
 		minAge = 30, maxAge = 60,
@@ -5389,7 +5389,7 @@ local events = {
 			{ text = "⏰ No time", effects = {}, resultText = "You passed on the opportunity." },
 		},
 	},
-
+	
 	{
 		id = "teacher_conference_presenter",
 		minAge = 28, maxAge = 60,
@@ -5416,7 +5416,7 @@ local events = {
 	-- MASSIVE EXPANSION PART 5: DEEP CRIMINAL CAREER PATH
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "crime_first_fight",
 		minAge = 12, maxAge = 20,
@@ -5431,7 +5431,7 @@ local events = {
 			{ text = "🏃 Walk away", effects = { Happiness = -3 }, resultText = "Live to fight another day." },
 		},
 	},
-
+	
 	{
 		id = "crime_steal_from_store",
 		minAge = 12, maxAge = 25,
@@ -5453,7 +5453,7 @@ local events = {
 			{ text = "🚨 Get caught!", effects = { Happiness = -10, Money = -100 }, resultText = "Security grabbed you. Your parents are so disappointed." },
 		},
 	},
-
+	
 	{
 		id = "crime_vandalism",
 		minAge = 13, maxAge = 22,
@@ -5467,7 +5467,7 @@ local events = {
 			{ text = "🙅 Nah, too risky", effects = { Smarts = 3 }, resultText = "You passed. Smart choice." },
 		},
 	},
-
+	
 	{
 		id = "crime_sell_drugs_start",
 		minAge = 16, maxAge = 30,
@@ -5485,7 +5485,7 @@ local events = {
 			{ text = "🚫 Not for me", effects = { Smarts = 5 }, resultText = "You don't want that life." },
 		},
 	},
-
+	
 	{
 		id = "crime_street_race",
 		minAge = 17, maxAge = 35,
@@ -5501,7 +5501,7 @@ local events = {
 			{ text = "🚫 Too dangerous", effects = { Smarts = 3 }, resultText = "Someone got hurt that night. Good call." },
 		},
 	},
-
+	
 	{
 		id = "crime_burglary_first",
 		minAge = 18, maxAge = 40,
@@ -5518,7 +5518,7 @@ local events = {
 			{ text = "🚫 Too far", effects = { Smarts = 3 }, resultText = "That's someone's home. You passed." },
 		},
 	},
-
+	
 	{
 		id = "crime_fence_connection",
 		minAge = 18, maxAge = 50,
@@ -5536,7 +5536,7 @@ local events = {
 			{ text = "🚫 Don't trust them", effects = {}, resultText = "Could be a cop. Better safe." },
 		},
 	},
-
+	
 	{
 		id = "crime_gang_war_battle",
 		minAge = 18, maxAge = 45,
@@ -5555,7 +5555,7 @@ local events = {
 			{ text = "🕊️ Negotiate peace", effects = { Smarts = 8, Happiness = 3 }, resultText = "You talked it out. Bloodshed avoided." },
 		},
 	},
-
+	
 	{
 		id = "crime_police_informant",
 		minAge = 20, maxAge = 50,
@@ -5573,7 +5573,7 @@ local events = {
 			{ text = "🤐 Stay loyal", effects = { Happiness = 5 }, resultText = "You kept your mouth shut. Respect." },
 		},
 	},
-
+	
 	{
 		id = "crime_witness_murder",
 		minAge = 18, maxAge = 55,
@@ -5591,7 +5591,7 @@ local events = {
 			{ text = "🏃 Get out", effects = { Happiness = -10, Health = -5 }, resultText = "You tried to leave the life. They didn't make it easy." },
 		},
 	},
-
+	
 	{
 		id = "crime_corrupt_cop",
 		minAge = 22, maxAge = 55,
@@ -5609,7 +5609,7 @@ local events = {
 			{ text = "🚫 Don't trust cops", effects = { Smarts = 3 }, resultText = "Could be a setup. You passed." },
 		},
 	},
-
+	
 	{
 		id = "crime_family_threat",
 		minAge = 25, maxAge = 60,
@@ -5627,7 +5627,7 @@ local events = {
 			{ text = "🏃 Leave the life", effects = { Happiness = 10, Money = -50000 }, resultText = "You tried to go straight. For your family.", clearFlags = {"gang_member", "gang_captain"} },
 		},
 	},
-
+	
 	{
 		id = "crime_rico_investigation",
 		minAge = 28, maxAge = 60,
@@ -5645,7 +5645,7 @@ local events = {
 			{ text = "🤝 Make a deal", effects = { Happiness = -20, Smarts = 3 }, resultText = "You cooperated. Witness protection awaits.", setFlag = "witness_protection", clearFlag = "crime_boss" },
 		},
 	},
-
+	
 	{
 		id = "crime_prison_life_hard",
 		minAge = 18, maxAge = 70,
@@ -5663,7 +5663,7 @@ local events = {
 			{ text = "🤝 Make connections", effects = { Smarts = 4, Happiness = 3 }, resultText = "Prison networks might be useful on the outside." },
 		},
 	},
-
+	
 	{
 		id = "crime_prison_fight",
 		minAge = 18, maxAge = 70,
@@ -5679,7 +5679,7 @@ local events = {
 			{ text = "🛡️ Get protection", effects = { Money = -500 }, resultText = "You paid for protection. Safe for now." },
 		},
 	},
-
+	
 	{
 		id = "crime_prison_gang",
 		minAge = 18, maxAge = 60,
@@ -5700,7 +5700,7 @@ local events = {
 			{ text = "🙅 Stay independent", effects = { Health = -5, Happiness = -3 }, resultText = "Dangerous choice but you kept your freedom." },
 		},
 	},
-
+	
 	{
 		id = "crime_empire_built",
 		minAge = 35, maxAge = 65,
@@ -5716,7 +5716,7 @@ local events = {
 			{ text = "👑 Long live the king", effects = { Money = 500000, Happiness = 15 }, resultText = "You are the kingpin. Everyone answers to you.", setFlag = "empire_built" },
 		},
 	},
-
+	
 	{
 		id = "crime_go_legit",
 		minAge = 35, maxAge = 65,
@@ -5733,13 +5733,13 @@ local events = {
 			{ text = "👑 This is who I am", effects = { Happiness = 5 }, resultText = "Once a boss, always a boss." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════════════════
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- MASSIVE EXPANSION PART 6: ADULT LIFE EVENTS (25-60)
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "adult_first_apartment",
 		minAge = 18, maxAge = 30,
@@ -5753,7 +5753,7 @@ local events = {
 			{ text = "👨‍👩‍👧 Stay with family", effects = { Money = 1000, Happiness = -3 }, resultText = "You saved money but sacrificed independence." },
 		},
 	},
-
+	
 	{
 		id = "adult_career_change",
 		minAge = 25, maxAge = 50,
@@ -5767,7 +5767,7 @@ local events = {
 			{ text = "🛡️ Stay safe", effects = { Happiness = -3 }, resultText = "The familiar path continues." },
 		},
 	},
-
+	
 	{
 		id = "adult_proposal",
 		minAge = 22, maxAge = 45,
@@ -5785,7 +5785,7 @@ local events = {
 			{ text = "⏳ Wait a bit longer", effects = { Happiness = -3 }, resultText = "The timing didn't feel right." },
 		},
 	},
-
+	
 	{
 		id = "adult_wedding",
 		minAge = 22, maxAge = 50,
@@ -5802,7 +5802,7 @@ local events = {
 			{ text = "😰 Cold feet...", effects = { Happiness = -30 }, resultText = "You couldn't go through with it.", clearFlag = "engaged" },
 		},
 	},
-
+	
 	{
 		id = "adult_having_baby",
 		minAge = 22, maxAge = 45,
@@ -5819,7 +5819,7 @@ local events = {
 			{ text = "😰 Terrified", effects = { Happiness = 5, Smarts = 3 }, resultText = "You're scared but committed.", setFlag = "has_children" },
 		},
 	},
-
+	
 	{
 		id = "adult_baby_born",
 		minAge = 22, maxAge = 48,
@@ -5840,7 +5840,7 @@ local events = {
 			{ text = "❤️ Pure joy", effects = { Happiness = 25 }, resultText = "Holding your child for the first time is indescribable.", setFlag = "baby_born" },
 		},
 	},
-
+	
 	{
 		id = "adult_sleep_deprivation",
 		minAge = 22, maxAge = 50,
@@ -5854,7 +5854,7 @@ local events = {
 			{ text = "🤝 Get help", effects = { Money = -500, Happiness = 3 }, resultText = "A night nurse saved your sanity." },
 		},
 	},
-
+	
 	{
 		id = "adult_first_house",
 		minAge = 25, maxAge = 50,
@@ -5868,7 +5868,7 @@ local events = {
 			{ text = "🏢 Keep renting", effects = { Happiness = -3 }, resultText = "Maybe next year." },
 		},
 	},
-
+	
 	{
 		id = "adult_job_loss",
 		minAge = 25, maxAge = 60,
@@ -5883,7 +5883,7 @@ local events = {
 			{ text = "😔 Wallow", effects = { Happiness = -15, Health = -5 }, resultText = "It took a while to recover." },
 		},
 	},
-
+	
 	{
 		id = "adult_affair_opportunity",
 		minAge = 25, maxAge = 55,
@@ -5898,7 +5898,7 @@ local events = {
 			{ text = "💍 Stay faithful", effects = { Happiness = 5, Smarts = 5 }, resultText = "You honored your vows. Good choice." },
 		},
 	},
-
+	
 	{
 		id = "adult_divorce",
 		minAge = 25, maxAge = 65,
@@ -5915,7 +5915,7 @@ local events = {
 			{ text = "💪 Fight for it", effects = { Happiness = -10, Money = -5000 }, resultText = "Marriage counseling might help." },
 		},
 	},
-
+	
 	{
 		id = "adult_kids_graduation",
 		minAge = 40, maxAge = 70,
@@ -5930,7 +5930,7 @@ local events = {
 			{ text = "😢 Happy tears", effects = { Happiness = 15 }, resultText = "Where did the time go?" },
 		},
 	},
-
+	
 	{
 		id = "adult_empty_nest",
 		minAge = 45, maxAge = 65,
@@ -5945,7 +5945,7 @@ local events = {
 			{ text = "🏡 Downsize", effects = { Money = 50000, Happiness = 5 }, resultText = "You sold the big house. Fresh start." },
 		},
 	},
-
+	
 	{
 		id = "adult_health_scare",
 		minAge = 35, maxAge = 70,
@@ -5962,7 +5962,7 @@ local events = {
 			{ text = "🤷 Ignore it", effects = { Health = -15, Happiness = 3 }, resultText = "Bad choice. It got worse." },
 		},
 	},
-
+	
 	{
 		id = "adult_become_millionaire",
 		minAge = 30, maxAge = 70,
@@ -5975,13 +5975,13 @@ local events = {
 			{ text = "💰 I made it!", effects = { Happiness = 25 }, resultText = "You're officially a millionaire!", setFlag = "millionaire" },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════════════════
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- MASSIVE EXPANSION PART 7: SENIOR & ELDER EVENTS (60+)
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "senior_retirement_official",
 		minAge = 60, maxAge = 70,
@@ -5998,7 +5998,7 @@ local events = {
 			{ text = "💼 Keep working", effects = { Happiness = 5, Money = 5000 }, resultText = "You're not ready to slow down." },
 		},
 	},
-
+	
 	{
 		id = "senior_grandchildren",
 		minAge = 50, maxAge = 80,
@@ -6015,7 +6015,7 @@ local events = {
 			{ text = "👶 Pure joy!", effects = { Happiness = 25 }, resultText = "Grandchildren are the best!", setFlag = "grandparent" },
 		},
 	},
-
+	
 	{
 		id = "senior_spoil_grandkids",
 		minAge = 55, maxAge = 90,
@@ -6029,7 +6029,7 @@ local events = {
 			{ text = "📚 Teach them things", effects = { Happiness = 10, Smarts = 3 }, resultText = "You're passing on wisdom." },
 		},
 	},
-
+	
 	{
 		id = "senior_bucket_list",
 		minAge = 60, maxAge = 85,
@@ -6043,7 +6043,7 @@ local events = {
 			{ text = "📖 Write your memoir", effects = { Smarts = 8, Happiness = 10 }, resultText = "Your life story is now written.", setFlag = "memoir_written" },
 		},
 	},
-
+	
 	{
 		id = "senior_health_decline",
 		minAge = 65, maxAge = 90,
@@ -6057,7 +6057,7 @@ local events = {
 			{ text = "😔 Accept it", effects = { Health = -5, Happiness = -5 }, resultText = "Age catches up with everyone." },
 		},
 	},
-
+	
 	{
 		id = "senior_lose_spouse",
 		minAge = 60, maxAge = 100,
@@ -6072,7 +6072,7 @@ local events = {
 			{ text = "💪 Honor their memory", effects = { Happiness = -15, Smarts = 5 }, resultText = "You'll carry them in your heart forever.", clearFlag = "married", setFlag = "widowed" },
 		},
 	},
-
+	
 	{
 		id = "senior_legacy_planning",
 		minAge = 65, maxAge = 90,
@@ -6086,7 +6086,7 @@ local events = {
 			{ text = "🤷 Deal with it later", effects = { Happiness = -3 }, resultText = "Procrastination might cause problems." },
 		},
 	},
-
+	
 	{
 		id = "senior_assisted_living",
 		minAge = 75, maxAge = 100,
@@ -6100,7 +6100,7 @@ local events = {
 			{ text = "🏠 Stay home", effects = { Health = -10, Happiness = 5 }, resultText = "You're stubborn. Hopefully it works out." },
 		},
 	},
-
+	
 	{
 		id = "senior_find_old_friend",
 		minAge = 60, maxAge = 90,
@@ -6114,7 +6114,7 @@ local events = {
 			{ text = "📞 Stay in touch", effects = { Happiness = 8 }, resultText = "You'll call each other regularly now." },
 		},
 	},
-
+	
 	{
 		id = "senior_life_reflection",
 		minAge = 70, maxAge = 100,
@@ -6128,7 +6128,7 @@ local events = {
 			{ text = "😢 Many regrets", effects = { Happiness = -10 }, resultText = "If only you could do it all again..." },
 		},
 	},
-
+	
 	{
 		id = "senior_centenarian",
 		minAge = 100, maxAge = 120,
@@ -6140,7 +6140,7 @@ local events = {
 			{ text = "🎂 Celebrate!", effects = { Happiness = 30 }, resultText = "You're a living legend! What a life!", setFlag = "centenarian" },
 		},
 	},
-
+	
 	{
 		id = "elder_final_wisdom",
 		minAge = 85, maxAge = 110,
@@ -6154,7 +6154,7 @@ local events = {
 			{ text = "😊 Live fully", effects = { Happiness = 15 }, resultText = "You taught them to seize every moment." },
 		},
 	},
-
+	
 	{
 		id = "elder_peaceful_day",
 		minAge = 75, maxAge = 110,
@@ -6174,7 +6174,7 @@ local events = {
 	-- MASSIVE EXPANSION PART 8: DEEP RACER CAREER PATH
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "racer_first_gokart",
 		minAge = 8, maxAge = 14,
@@ -6187,7 +6187,7 @@ local events = {
 			{ text = "😬 A bit scary", effects = { Happiness = 3 }, resultText = "Fun but the speed was intense." },
 		},
 	},
-
+	
 	{
 		id = "racer_junior_karting",
 		minAge = 10, maxAge = 16,
@@ -6201,7 +6201,7 @@ local events = {
 			{ text = "👀 Watch first", effects = { Happiness = 5 }, resultText = "You observed but didn't compete yet." },
 		},
 	},
-
+	
 	{
 		id = "racer_first_win",
 		minAge = 12, maxAge = 18,
@@ -6214,7 +6214,7 @@ local events = {
 			{ text = "🏆 Victory!", effects = { Happiness = 20, Money = 200 }, resultText = "The crowd cheered your name!", setFlag = "first_race_win" },
 		},
 	},
-
+	
 	{
 		id = "racer_talent_spotted",
 		minAge = 14, maxAge = 20,
@@ -6232,7 +6232,7 @@ local events = {
 			{ text = "📚 Focus on school first", effects = { Smarts = 5, Happiness = -5 }, resultText = "Maybe later. Education comes first." },
 		},
 	},
-
+	
 	{
 		id = "racer_formula_4",
 		minAge = 16, maxAge = 20,
@@ -6246,7 +6246,7 @@ local events = {
 			{ text = "🏁 Stay in karting", effects = { Happiness = 5, Money = 1000 }, resultText = "You dominated karting but missed the step up." },
 		},
 	},
-
+	
 	{
 		id = "racer_crash_injury",
 		minAge = 16, maxAge = 45,
@@ -6263,7 +6263,7 @@ local events = {
 			{ text = "💪 Back in the car", effects = { Health = -10, Happiness = 5 }, resultText = "You showed courage getting back in immediately." },
 		},
 	},
-
+	
 	{
 		id = "racer_formula_3",
 		minAge = 17, maxAge = 23,
@@ -6278,7 +6278,7 @@ local events = {
 			{ text = "💰 Negotiate harder", effects = { Smarts = 5, Money = 20000 }, resultText = "You got a better deal!", setFlag = "f3_driver" },
 		},
 	},
-
+	
 	{
 		id = "racer_rivalry",
 		minAge = 17, maxAge = 35,
@@ -6297,7 +6297,7 @@ local events = {
 			{ text = "🤝 Stay professional", effects = { Smarts = 5 }, resultText = "You took the high road." },
 		},
 	},
-
+	
 	{
 		id = "racer_formula_2",
 		minAge = 18, maxAge = 25,
@@ -6311,7 +6311,7 @@ local events = {
 			{ text = "🏎️ This is it!", effects = { Happiness = 25, Money = 50000 }, resultText = "F2! The final step before the pinnacle!", setFlag = "f2_driver" },
 		},
 	},
-
+	
 	{
 		id = "racer_f2_championship",
 		minAge = 18, maxAge = 26,
@@ -6327,7 +6327,7 @@ local events = {
 			{ text = "🏆 Win it all!", effects = { Happiness = 30, Money = 100000 }, resultText = "F2 WORLD CHAMPION! F1 is calling!", setFlag = "f2_champion", minigame = "getaway" },
 		},
 	},
-
+	
 	{
 		id = "racer_f1_call",
 		minAge = 19, maxAge = 30,
@@ -6347,7 +6347,7 @@ local events = {
 			{ text = "📝 SIGN EVERYTHING!", effects = { Happiness = 50, Money = 500000 }, resultText = "YOU'RE AN F1 DRIVER! CHILDHOOD DREAM ACHIEVED!", setFlag = "f1_driver" },
 		},
 	},
-
+	
 	{
 		id = "racer_f1_first_race",
 		minAge = 19, maxAge = 35,
@@ -6360,7 +6360,7 @@ local events = {
 			{ text = "🏎️ Full focus", effects = { Happiness = 25, Smarts = 5 }, resultText = "You finished! An F1 finisher!", setFlag = "f1_debut" },
 		},
 	},
-
+	
 	{
 		id = "racer_f1_first_points",
 		minAge = 19, maxAge = 40,
@@ -6376,7 +6376,7 @@ local events = {
 			{ text = "🎉 Incredible!", effects = { Happiness = 25, Money = 50000 }, resultText = "Points on the board! You're competing with the best!", setFlag = "f1_points" },
 		},
 	},
-
+	
 	{
 		id = "racer_f1_podium",
 		minAge = 20, maxAge = 42,
@@ -6392,7 +6392,7 @@ local events = {
 			{ text = "🍾 Spray the champagne!", effects = { Happiness = 35, Money = 200000 }, resultText = "AN F1 PODIUM! This feeling is unreal!", setFlag = "f1_podium" },
 		},
 	},
-
+	
 	{
 		id = "racer_f1_first_win",
 		minAge = 20, maxAge = 45,
@@ -6408,7 +6408,7 @@ local events = {
 			{ text = "🏆 CHAMPION FEELING!", effects = { Happiness = 50, Money = 500000 }, resultText = "F1 RACE WINNER! You're among legends now!", setFlag = "f1_winner" },
 		},
 	},
-
+	
 	{
 		id = "racer_f1_world_champion",
 		minAge = 21, maxAge = 45,
@@ -6424,7 +6424,7 @@ local events = {
 			{ text = "👑 I AM THE CHAMPION!", effects = { Happiness = 100, Money = 5000000 }, resultText = "F1 WORLD CHAMPION! Your name is etched in history forever!", setFlag = "f1_champion" },
 		},
 	},
-
+	
 	{
 		id = "racer_multi_champion",
 		minAge = 23, maxAge = 45,
@@ -6437,7 +6437,7 @@ local events = {
 			{ text = "🌟 LEGEND STATUS!", effects = { Happiness = 50, Money = 10000000 }, resultText = "Multi-time World Champion! Among the all-time greats!", setFlag = "multi_champion" },
 		},
 	},
-
+	
 	{
 		id = "racer_team_switch",
 		minAge = 22, maxAge = 40,
@@ -6455,7 +6455,7 @@ local events = {
 			{ text = "🤝 Stay loyal", effects = { Happiness = 5 }, resultText = "You're committed to your current team." },
 		},
 	},
-
+	
 	{
 		id = "racer_sponsor_deal",
 		minAge = 20, maxAge = 45,
@@ -6476,7 +6476,7 @@ local events = {
 			{ text = "🚫 Too commercial", effects = { Smarts = 3 }, resultText = "You prefer to stay focused on racing." },
 		},
 	},
-
+	
 	{
 		id = "racer_retire",
 		minAge = 35, maxAge = 50,
@@ -6490,13 +6490,13 @@ local events = {
 			{ text = "🏎️ One more season", effects = { Health = -5, Happiness = 10 }, resultText = "You're not done yet!" },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════════════════
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- MASSIVE EXPANSION PART 9: DEEP ARTIST CAREER PATH
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "artist_childhood_talent",
 		minAge = 5, maxAge = 10,
@@ -6509,7 +6509,7 @@ local events = {
 			{ text = "🤷 It's just doodles", effects = { Happiness = 3 }, resultText = "You don't think much of it." },
 		},
 	},
-
+	
 	{
 		id = "artist_art_class",
 		minAge = 8, maxAge = 18,
@@ -6523,7 +6523,7 @@ local events = {
 			{ text = "🎮 Rather play games", effects = { Happiness = 3 }, resultText = "Maybe another time." },
 		},
 	},
-
+	
 	{
 		id = "artist_find_style",
 		minAge = 14, maxAge = 25,
@@ -6537,7 +6537,7 @@ local events = {
 			{ text = "✨ My signature!", effects = { Happiness = 15, Smarts = 5 }, resultText = "You found your artistic voice!", setFlag = "has_art_style" },
 		},
 	},
-
+	
 	{
 		id = "artist_first_sale",
 		minAge = 16, maxAge = 30,
@@ -6552,7 +6552,7 @@ local events = {
 			{ text = "❤️ Not for sale", effects = { Happiness = 3 }, resultText = "Some pieces are too personal." },
 		},
 	},
-
+	
 	{
 		id = "artist_art_school",
 		minAge = 18, maxAge = 25,
@@ -6573,7 +6573,7 @@ local events = {
 			{ text = "🛠️ Self-taught path", effects = { Smarts = 5, Money = 40000 }, resultText = "You'll learn on your own." },
 		},
 	},
-
+	
 	{
 		id = "artist_gallery_showing",
 		minAge = 20, maxAge = 45,
@@ -6591,7 +6591,7 @@ local events = {
 			{ text = "😰 Not ready yet", effects = { Happiness = -5 }, resultText = "Maybe next time." },
 		},
 	},
-
+	
 	{
 		id = "artist_commissions",
 		minAge = 20, maxAge = 60,
@@ -6609,7 +6609,7 @@ local events = {
 			{ text = "🎨 Pure art only", effects = { Happiness = 3, Smarts = 3 }, resultText = "You prefer personal projects." },
 		},
 	},
-
+	
 	{
 		id = "artist_solo_show",
 		minAge = 25, maxAge = 60,
@@ -6626,7 +6626,7 @@ local events = {
 			{ text = "🌟 Dreams come true!", effects = { Happiness = 30, Money = 20000, Looks = 10 }, resultText = "Your solo show was a massive success!", setFlag = "solo_show" },
 		},
 	},
-
+	
 	{
 		id = "artist_critic_praise",
 		minAge = 25, maxAge = 70,
@@ -6643,7 +6643,7 @@ local events = {
 			{ text = "📰 Frame that review!", effects = { Happiness = 20, Looks = 5, Smarts = 5 }, resultText = "Critical acclaim feels amazing!", setFlag = "critical_acclaim" },
 		},
 	},
-
+	
 	{
 		id = "artist_museum_acquisition",
 		minAge = 30, maxAge = 80,
@@ -6663,7 +6663,7 @@ local events = {
 			{ text = "🏛️ IMMORTALIZED!", effects = { Happiness = 50, Money = 250000 }, resultText = "Your art will be seen for generations!", setFlag = "museum_artist" },
 		},
 	},
-
+	
 	{
 		id = "artist_art_market_boom",
 		minAge = 30, maxAge = 70,
@@ -6678,7 +6678,7 @@ local events = {
 			{ text = "🎨 Keep creating", effects = { Happiness = 10, Smarts = 5 }, resultText = "The art matters more than the money." },
 		},
 	},
-
+	
 	{
 		id = "artist_famous_portrait",
 		minAge = 30, maxAge = 70,
@@ -6696,7 +6696,7 @@ local events = {
 			{ text = "🚫 Too commercial", effects = { Smarts = 5 }, resultText = "You prefer to choose your own subjects." },
 		},
 	},
-
+	
 	{
 		id = "artist_retrospective",
 		minAge = 50, maxAge = 90,
@@ -6716,7 +6716,7 @@ local events = {
 			{ text = "🎨 A lifetime of work!", effects = { Happiness = 40, Money = 100000 }, resultText = "Your life's work celebrated in one place. Incredible.", setFlag = "retrospective" },
 		},
 	},
-
+	
 	{
 		id = "artist_legacy_foundation",
 		minAge = 55, maxAge = 90,
@@ -6730,13 +6730,13 @@ local events = {
 			{ text = "💰 Keep the money", effects = { Money = 100000, Happiness = 5 }, resultText = "You'll help in other ways." },
 		},
 	},
-
+	
 	-- ═══════════════════════════════════════════════════════════════════════════
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- MASSIVE EXPANSION PART 10: MORE RANDOM LIFE EVENTS (ALL AGES)
 	-- ███████████████████████████████████████████████████████████████████████████
 	-- ═══════════════════════════════════════════════════════════════════════════
-
+	
 	{
 		id = "random_find_money",
 		minAge = 5, maxAge = 90,
@@ -6750,7 +6750,7 @@ local events = {
 			{ text = "👮 Turn it in", effects = { Happiness = 8, Smarts = 3 }, resultText = "You did the right thing." },
 		},
 	},
-
+	
 	{
 		id = "random_car_accident",
 		minAge = 16, maxAge = 90,
@@ -6764,7 +6764,7 @@ local events = {
 			{ text = "😰 Just scared", effects = { Happiness = -5 }, resultText = "Thankfully just a fender bender." },
 		},
 	},
-
+	
 	{
 		id = "random_natural_disaster",
 		minAge = 0, maxAge = 100,
@@ -6781,7 +6781,7 @@ local events = {
 			{ text = "🏠 Shelter in place", effects = { Health = -10, Happiness = -10 }, resultText = "You rode it out. Scary but survived." },
 		},
 	},
-
+	
 	{
 		id = "random_lottery_small",
 		minAge = 18, maxAge = 100,
@@ -6794,7 +6794,7 @@ local events = {
 			{ text = "😔 Nothing...", effects = { Money = -5, Happiness = -3 }, resultText = "Better luck next time." },
 		},
 	},
-
+	
 	{
 		id = "random_lottery_jackpot",
 		minAge = 18, maxAge = 100,
@@ -6813,7 +6813,7 @@ local events = {
 			{ text = "🎉 LIFE CHANGED!", effects = { Money = 5000000, Happiness = 50 }, resultText = "You're RICH! What will you do with it all?", setFlag = "lottery_winner" },
 		},
 	},
-
+	
 	{
 		id = "random_pet_adoption",
 		minAge = 10, maxAge = 80,
@@ -6831,7 +6831,7 @@ local events = {
 			{ text = "😢 Can't right now", effects = { Happiness = -5 }, resultText = "Maybe someday." },
 		},
 	},
-
+	
 	{
 		id = "random_pet_death",
 		minAge = 15, maxAge = 100,
@@ -6845,7 +6845,7 @@ local events = {
 			{ text = "😢 Goodbye friend", effects = { Happiness = -20 }, resultText = "They were family. You'll miss them forever.", clearFlag = "has_pet" },
 		},
 	},
-
+	
 	{
 		id = "random_random_act_kindness",
 		minAge = 10, maxAge = 100,
@@ -6859,7 +6859,7 @@ local events = {
 			{ text = "😊 Just smile", effects = { Happiness = 10 }, resultText = "Faith in humanity restored!" },
 		},
 	},
-
+	
 	{
 		id = "random_viral_moment",
 		minAge = 12, maxAge = 60,
@@ -6872,7 +6872,7 @@ local events = {
 			{ text = "😰 Delete everything", effects = { Happiness = -5 }, resultText = "You didn't want that attention." },
 		},
 	},
-
+	
 	{
 		id = "random_identity_theft",
 		minAge = 18, maxAge = 90,
@@ -6885,7 +6885,7 @@ local events = {
 			{ text = "😤 Track them down", effects = { Money = -3000, Happiness = 5, Smarts = 5 }, resultText = "You actually found the culprit!" },
 		},
 	},
-
+	
 	{
 		id = "random_surprise_inheritance",
 		minAge = 20, maxAge = 80,
@@ -6901,7 +6901,7 @@ local events = {
 			{ text = "💰 Unexpected!", effects = { Money = 50000, Happiness = 10 }, resultText = "A bittersweet surprise.", setFlag = "got_inheritance" },
 		},
 	},
-
+	
 	{
 		id = "random_home_invasion",
 		minAge = 18, maxAge = 90,
@@ -6914,7 +6914,7 @@ local events = {
 			{ text = "🔒 Security upgrade", effects = { Money = -8000, Happiness = -15 }, resultText = "You invested in serious security.", setFlag = "has_security" },
 		},
 	},
-
+	
 	{
 		id = "random_jury_duty",
 		minAge = 18, maxAge = 80,
@@ -6927,7 +6927,7 @@ local events = {
 			{ text = "🏃 Try to get out of it", effects = { Happiness = 3, Smarts = -3 }, resultText = "You dodged it this time." },
 		},
 	},
-
+	
 	{
 		id = "random_midlife_crisis",
 		minAge = 40, maxAge = 55,
@@ -6941,7 +6941,7 @@ local events = {
 			{ text = "🧘 Accept yourself", effects = { Happiness = 20 }, resultText = "You found peace with who you are." },
 		},
 	},
-
+	
 	{
 		id = "random_scam_attempt",
 		minAge = 18, maxAge = 100,
@@ -6958,7 +6958,7 @@ local events = {
 			{ text = "😰 Almost fell for it", effects = { Smarts = 3, Happiness = -5 }, resultText = "That was close..." },
 		},
 	},
-
+	
 	{
 		id = "random_reunion",
 		minAge = 25, maxAge = 80,
@@ -6972,7 +6972,7 @@ local events = {
 			{ text = "🙅 Skip it", effects = { Happiness = -3 }, resultText = "You weren't that close anyway." },
 		},
 	},
-
+	
 	{
 		id = "random_good_deed_reward",
 		minAge = 10, maxAge = 90,
@@ -6989,7 +6989,7 @@ local events = {
 			{ text = "🙅 Refuse it", effects = { Happiness = 20, Smarts = 3 }, resultText = "The deed was reward enough." },
 		},
 	},
-
+	
 	{
 		id = "random_stranger_conversation",
 		minAge = 10, maxAge = 100,
@@ -7003,7 +7003,7 @@ local events = {
 			{ text = "👋 Part ways", effects = { Happiness = 8 }, resultText = "Ships passing in the night, but memorable." },
 		},
 	},
-
+	
 	{
 		id = "random_embarrassing_moment",
 		minAge = 5, maxAge = 80,
@@ -7020,7 +7020,7 @@ local events = {
 			{ text = "😳 Cringe", effects = { Happiness = -5 }, resultText = "You'll be thinking about this at 3am for years." },
 		},
 	},
-
+	
 	{
 		id = "random_perfect_day",
 		minAge = 5, maxAge = 100,
@@ -7032,7 +7032,7 @@ local events = {
 			{ text = "✨ Appreciate it", effects = { Happiness = 20, Health = 5 }, resultText = "These days are rare. You savored every moment." },
 		},
 	},
-
+	
 	{
 		id = "random_terrible_day",
 		minAge = 5, maxAge = 100,
@@ -7045,7 +7045,7 @@ local events = {
 			{ text = "😤 Get angry", effects = { Happiness = -5, Health = -3 }, resultText = "Sometimes you just need to vent." },
 		},
 	},
-
+	
 	{
 		id = "random_deja_vu",
 		minAge = 10, maxAge = 100,
@@ -7058,7 +7058,7 @@ local events = {
 			{ text = "🧠 Just a brain glitch", effects = { Smarts = 5 }, resultText = "Science says it's just neural misfiring." },
 		},
 	},
-
+	
 	{
 		id = "random_insomnia",
 		minAge = 15, maxAge = 90,
@@ -7071,7 +7071,7 @@ local events = {
 			{ text = "☕ Power through", effects = { Health = -5, Happiness = -5, Smarts = 3 }, resultText = "You're exhausted but managing." },
 		},
 	},
-
+	
 	{
 		id = "random_food_poisoning",
 		minAge = 5, maxAge = 100,
@@ -7088,7 +7088,7 @@ local events = {
 			{ text = "🏥 Hospital", effects = { Health = -5, Money = -500, Happiness = -5 }, resultText = "They gave you IV fluids. Felt better faster." },
 		},
 	},
-
+	
 	{
 		id = "random_new_hobby",
 		minAge = 10, maxAge = 80,
@@ -7105,7 +7105,7 @@ local events = {
 			{ text = "🤷 Not for me", effects = { Happiness = 3 }, resultText = "Maybe something else will click." },
 		},
 	},
-
+	
 	{
 		id = "random_weather_extreme",
 		minAge = 0, maxAge = 100,
@@ -7122,7 +7122,7 @@ local events = {
 			{ text = "🚶 Brave the elements", effects = { Health = -5, Happiness = 5 }, resultText = "An adventure, but a bit rough." },
 		},
 	},
-
+	
 	{
 		id = "random_strange_dream",
 		minAge = 5, maxAge = 100,

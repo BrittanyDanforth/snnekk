@@ -26,10 +26,10 @@ local RelationshipLines = NarrativeContent.RelationshipLines
 
 local function formatMoney(n: number): string
 	if not n then return "$0" end
-
+	
 	local absN = math.abs(n)
 	local sign = n < 0 and "-" or ""
-
+	
 	if absN >= 1_000_000_000 then
 		return sign .. string.format("$%.1fB", absN / 1_000_000_000)
 	elseif absN >= 1_000_000 then
@@ -89,50 +89,50 @@ end
 
 local function describeStatLine(statKey: string, delta: number, finalValue: number?): string?
 	if not delta or delta == 0 then return nil end
-
+	
 	local statTable = StatNarrative[statKey]
 	if not statTable then return nil end
-
+	
 	local direction = (delta > 0) and "up" or "down"
 	local absDelta = math.abs(delta)
 	local bucket = classifyMagnitude(absDelta)
-
+	
 	local bucketTable = statTable[direction] and statTable[direction][bucket]
 	if not bucketTable or #bucketTable == 0 then return nil end
-
+	
 	local template = pickRandom(bucketTable)
 	if not template then return nil end
-
+	
 	-- Clean prose - no percentage formatting needed
 	return template
 end
 
 local function describeMoneyLine(delta: number, finalMoney: number?): string?
 	if not delta or delta == 0 then return nil end
-
+	
 	local direction = (delta > 0) and "gain" or "loss"
 	local absDelta = math.abs(delta)
-
+	
 	local bucket
 	if absDelta >= 50_000 then bucket = "large"
 	elseif absDelta >= 5_000 then bucket = "medium"
 	else bucket = "small"
 	end
-
+	
 	local dirTable = MoneyNarrative[direction]
 	local bucketTbl = dirTable and dirTable[bucket]
 	if not bucketTbl or #bucketTbl == 0 then return nil end
-
+	
 	local template = pickRandom(bucketTbl)
 	if not template then return nil end
-
+	
 	-- Clean prose - no amount formatting needed
 	return template
 end
 
 local function describeFlags(flagsSet, flagsCleared)
 	local lines = {}
-
+	
 	if flagsSet and #flagsSet > 0 then
 		for _, flag in ipairs(flagsSet) do
 			local desc = FlagDescriptions[flag]
@@ -142,7 +142,7 @@ local function describeFlags(flagsSet, flagsCleared)
 			-- Don't add generic text for unknown flags - keep it clean
 		end
 	end
-
+	
 	if flagsCleared and #flagsCleared > 0 then
 		for _, flag in ipairs(flagsCleared) do
 			local desc = FlagDescriptions[flag]
@@ -151,7 +151,7 @@ local function describeFlags(flagsSet, flagsCleared)
 			end
 		end
 	end
-
+	
 	return lines
 end
 
@@ -159,11 +159,11 @@ end
 
 local function getYearRecap(state)
 	if not YearRecapTemplates then return nil end
-
+	
 	local flags = state.Flags or {}
 	local age = state.Age or 0
 	local lifeStage = getLifeStage(age)
-
+	
 	-- Prioritize special career paths over life stage
 	local bucket
 	if flags.crime_boss or flags.underboss or flags.gang_member or flags.gang_captain then
@@ -187,20 +187,20 @@ local function getYearRecap(state)
 	else
 		bucket = lifeStage
 	end
-
+	
 	local templates = YearRecapTemplates[bucket]
 	if not templates or #templates == 0 then
 		-- Fallback to life stage
 		templates = YearRecapTemplates[lifeStage]
 	end
-
+	
 	if templates and #templates > 0 then
 		local recap = pickRandom(templates)
 		if recap then
 			return string.format(recap, age)
 		end
 	end
-
+	
 	return nil
 end
 
@@ -210,23 +210,23 @@ end
 
 function EventRunner.buildNarrativeText(state, eventDef, choice, results, dynamicData, explicitResultText)
 	local lines = {}
-
+	
 	-- 1) Start with explicit result text if provided
 	if explicitResultText and explicitResultText ~= "" then
 		table.insert(lines, explicitResultText)
 	end
-
+	
 	-- 2) Add money / stat summaries
 	local snapshot = getStatSnapshot(state)
 	local effects = results.effects or {}
-
+	
 	if effects.Money and effects.Money ~= 0 then
 		local moneyLine = describeMoneyLine(effects.Money, snapshot.Money)
 		if moneyLine then
 			table.insert(lines, moneyLine)
 		end
 	end
-
+	
 	local orderedStats = { "Happiness", "Health", "Smarts", "Looks" }
 	for _, key in ipairs(orderedStats) do
 		local delta = effects[key]
@@ -238,13 +238,13 @@ function EventRunner.buildNarrativeText(state, eventDef, choice, results, dynami
 			end
 		end
 	end
-
+	
 	-- 3) Flag / story-path flavor
 	local flagLines = describeFlags(results.flagsSet, results.flagsCleared)
 	for _, l in ipairs(flagLines) do
 		table.insert(lines, l)
 	end
-
+	
 	-- 4) Fallbacks when event/choice had no explicit text or effects
 	if #lines == 0 then
 		if eventDef and eventDef.title then
@@ -256,9 +256,9 @@ function EventRunner.buildNarrativeText(state, eventDef, choice, results, dynami
 			table.insert(lines, "Life moved on, but nothing dramatic stood out this year.")
 		end
 	end
-
+	
 	-- NOTE: Removed category flavor text - was too repetitive/spammy
-
+	
 	return table.concat(lines, "\n")
 end
 
@@ -308,7 +308,7 @@ end
 
 function EventRunner.getMilestoneEvent(state, events)
 	local history = state.EventHistory or {}
-
+	
 	for _, event in ipairs(events) do
 		if event.milestone and EventRunner.canEventFire(state, event) then
 			if not (history.milestonesFired and history.milestonesFired[event.id]) then
@@ -316,33 +316,33 @@ function EventRunner.getMilestoneEvent(state, events)
 			end
 		end
 	end
-
+	
 	return nil
 end
 
 function EventRunner.pickRandomEvent(state, events)
 	local eligible = {}
 	local totalWeight = 0
-
+	
 	for _, event in ipairs(events) do
 		if not event.milestone and EventRunner.canEventFire(state, event) then
 			table.insert(eligible, event)
 			totalWeight += (event.weight or 10)
 		end
 	end
-
+	
 	if #eligible == 0 then return nil end
-
+	
 	local roll = math.random() * totalWeight
 	local cumulative = 0
-
+	
 	for _, event in ipairs(eligible) do
 		cumulative += (event.weight or 10)
 		if roll <= cumulative then
 			return event
 		end
 	end
-
+	
 	return eligible[#eligible]
 end
 
@@ -382,7 +382,7 @@ end
 -- Validate if an action is allowed
 function EventRunner.canDoAction(actionType, state)
 	local caps = LifeStageSystem.getCapabilities(state)
-
+	
 	if actionType == "work" then return caps.canWork end
 	if actionType == "work_fulltime" then return caps.canWorkFullTime end
 	if actionType == "date" then return caps.canDate end
@@ -394,7 +394,7 @@ function EventRunner.canDoAction(actionType, state)
 	if actionType == "gamble" then return caps.canGamble end
 	if actionType == "college" then return caps.canEnrollCollege end
 	if actionType == "retire" then return caps.canRetire end
-
+	
 	return true -- Unknown action, allow
 end
 
@@ -406,13 +406,13 @@ end
 function EventRunner.markEventOccurred(state, eventDef)
 	local history = state.EventHistory
 	if not history then return end
-
+	
 	history.seenEvents = history.seenEvents or {}
 	history.seenEvents[eventDef.id] = true
-
+	
 	history.lastOccurrence = history.lastOccurrence or {}
 	history.lastOccurrence[eventDef.id] = state.Age
-
+	
 	if eventDef.milestone then
 		history.milestonesFired = history.milestonesFired or {}
 		history.milestonesFired[eventDef.id] = true
@@ -425,7 +425,7 @@ end
 
 function EventRunner.processDynamicText(text, dynamicData)
 	if not text or not dynamicData then return text end
-
+	
 	local result = text
 	for key, value in pairs(dynamicData) do
 		if type(value) == "table" then
@@ -438,27 +438,27 @@ function EventRunner.processDynamicText(text, dynamicData)
 			result = string.gsub(result, placeholder, tostring(value))
 		end
 	end
-
+	
 	return result
 end
 
 function EventRunner.buildClientPayload(eventDef, state)
 	local dynamicData = {}
-
+	
 	if eventDef.getDynamicData then
 		local ok, data = pcall(eventDef.getDynamicData, state)
 		if ok and data then
 			dynamicData = data
 		end
 	end
-
+	
 	local processedText = EventRunner.processDynamicText(eventDef.text, dynamicData)
-
+	
 	local processedChoices = {}
 	for i, choice in ipairs(eventDef.choices or {}) do
 		local choiceText = EventRunner.processDynamicText(choice.text, dynamicData)
 		local resultText = EventRunner.processDynamicText(choice.result or choice.resultText, dynamicData)
-
+		
 		table.insert(processedChoices, {
 			index     = i,
 			text      = choiceText,
@@ -470,7 +470,7 @@ function EventRunner.buildClientPayload(eventDef, state)
 			outcome   = choice.outcome,
 		})
 	end
-
+	
 	return {
 		id          = eventDef.id,
 		emoji       = eventDef.emoji,
@@ -491,16 +491,16 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 	if type(choiceIndex) ~= "number" then
 		return nil, "choiceIndex must be a number"
 	end
-
+	
 	if not eventDef or not eventDef.choices then
 		return nil, "Invalid event definition"
 	end
-
+	
 	local choice = eventDef.choices[choiceIndex]
 	if not choice or type(choice) ~= "table" then
 		return nil, "Invalid choice at index " .. tostring(choiceIndex)
 	end
-
+	
 	local results = {
 		effects = {},
 		flagsSet = {},
@@ -508,7 +508,7 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 		minigameTriggered = nil,
 		resultText = "",
 	}
-
+	
 	-- Apply stat / money effects
 	if choice.effects and type(choice.effects) == "table" then
 		for stat, delta in pairs(choice.effects) do
@@ -540,7 +540,7 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 			end
 		end
 	end
-
+	
 	-- Apply dynamic money callback if present
 	if choice.getDynamicMoney and dynamicData then
 		local ok, amount = pcall(choice.getDynamicMoney, dynamicData)
@@ -549,14 +549,14 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 			results.effects.Money = (results.effects.Money or 0) + amount
 		end
 	end
-
+	
 	-- Set flags
 	if choice.setFlag then
 		state.Flags = state.Flags or {}
 		state.Flags[choice.setFlag] = true
 		table.insert(results.flagsSet, choice.setFlag)
 	end
-
+	
 	-- Set multiple flags
 	if choice.setFlags and type(choice.setFlags) == "table" then
 		state.Flags = state.Flags or {}
@@ -565,14 +565,14 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 			table.insert(results.flagsSet, flag)
 		end
 	end
-
+	
 	-- Clear flags
 	if choice.clearFlag then
 		state.Flags = state.Flags or {}
 		state.Flags[choice.clearFlag] = nil
 		table.insert(results.flagsCleared, choice.clearFlag)
 	end
-
+	
 	-- Clear multiple flags
 	if choice.clearFlags and type(choice.clearFlags) == "table" then
 		state.Flags = state.Flags or {}
@@ -581,18 +581,18 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 			table.insert(results.flagsCleared, flag)
 		end
 	end
-
+	
 	-- Minigame trigger (if any)
 	if choice.minigame then
 		results.minigameTriggered = choice.minigame
 	end
-
+	
 	-- Explicit result text from choice, if given
 	local explicitResultText
 	if choice.result or choice.resultText then
 		explicitResultText = EventRunner.processDynamicText(choice.result or choice.resultText, dynamicData)
 	end
-
+	
 	-- Final narrative that the client will show in the life feed
 	results.resultText = EventRunner.buildNarrativeText(
 		state,
@@ -602,7 +602,7 @@ function EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 		dynamicData,
 		explicitResultText
 	)
-
+	
 	return results, nil
 end
 
@@ -612,7 +612,7 @@ end
 
 function EventRunner.getStoryPaths(state)
 	local flags = state and state.Flags or {}
-
+	
 	local paths = {
 		political = {
 			active = flags.political_interest or flags.elected_official or false,
@@ -639,7 +639,7 @@ function EventRunner.getStoryPaths(state)
 			milestones = {},
 		},
 	}
-
+	
 	-- Political career progression
 	if flags.president then
 		paths.political.level = "President"
@@ -682,7 +682,7 @@ function EventRunner.getStoryPaths(state)
 		paths.political.level = "Interested"
 		paths.political.progress = 5
 	end
-
+	
 	-- Criminal career progression
 	if flags.kingpin then
 		paths.criminal.level = "Kingpin"
@@ -718,7 +718,7 @@ function EventRunner.getStoryPaths(state)
 		paths.criminal.level = "Delinquent"
 		paths.criminal.progress = 5
 	end
-
+	
 	-- Celebrity career progression
 	if flags.famous and (flags.actor or flags.musician or flags.author) then
 		paths.celebrity.level = "A-List Celebrity"
@@ -733,7 +733,7 @@ function EventRunner.getStoryPaths(state)
 		paths.celebrity.level = "Artist"
 		paths.celebrity.progress = 30
 	end
-
+	
 	-- Business career progression
 	if flags.billionaire then
 		paths.business.level = "Billionaire"
@@ -754,14 +754,14 @@ function EventRunner.getStoryPaths(state)
 		paths.business.level = "Self-Made"
 		paths.business.progress = 25
 	end
-
+	
 	return paths
 end
 
 function EventRunner.getSpecialActions(state)
 	local flags = state and state.Flags or {}
 	local actions = {}
-
+	
 	-- Political actions
 	if flags.elected_official then
 		table.insert(actions, { id = "campaign", name = "Campaign", emoji = "📢", type = "political", description = "Run a campaign to gain support" })
@@ -778,7 +778,7 @@ function EventRunner.getSpecialActions(state)
 		table.insert(actions, { id = "veto_bill", name = "Veto Bill", emoji = "🚫", type = "political", description = "Veto a congressional bill" })
 		table.insert(actions, { id = "pardon", name = "Grant Pardon", emoji = "⚖️", type = "political", description = "Pardon someone" })
 	end
-
+	
 	-- Criminal actions
 	if flags.criminal_tendencies then
 		table.insert(actions, { id = "pickpocket", name = "Pickpocket", emoji = "🖐️", type = "criminal", description = "Steal from someone's pocket" })
@@ -802,7 +802,7 @@ function EventRunner.getSpecialActions(state)
 		table.insert(actions, { id = "hold_meeting", name = "Hold Meeting", emoji = "🤝", type = "criminal", description = "Meet with other bosses" })
 		table.insert(actions, { id = "go_legit", name = "Go Legitimate", emoji = "📑", type = "criminal", description = "Try to leave the criminal life" })
 	end
-
+	
 	-- Celebrity actions
 	if flags.famous or flags.influencer then
 		table.insert(actions, { id = "post_social", name = "Post Content", emoji = "📱", type = "celebrity", description = "Post on social media" })
@@ -815,7 +815,7 @@ function EventRunner.getSpecialActions(state)
 		table.insert(actions, { id = "release_album", name = "Release Album", emoji = "💿", type = "celebrity", description = "Drop new music" })
 		table.insert(actions, { id = "concert", name = "Concert", emoji = "🎸", type = "celebrity", description = "Perform live" })
 	end
-
+	
 	-- Business actions
 	if flags.entrepreneur then
 		table.insert(actions, { id = "expand_business", name = "Expand Business", emoji = "📈", type = "business", description = "Grow your company" })
@@ -829,7 +829,7 @@ function EventRunner.getSpecialActions(state)
 		table.insert(actions, { id = "invest", name = "Invest", emoji = "💎", type = "business", description = "Make an investment" })
 		table.insert(actions, { id = "charity", name = "Donate", emoji = "❤️", type = "business", description = "Give to charity" })
 	end
-
+	
 	return actions
 end
 

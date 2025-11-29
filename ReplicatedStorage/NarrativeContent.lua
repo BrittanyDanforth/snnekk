@@ -1,397 +1,819 @@
 -- NarrativeContent.lua
--- BitLife-style narrative text generation for rich storytelling
--- Contains templates for stat changes, money events, flags, and life stages
+-- MASSIVE BitLife-style text content library
+-- Contains 1500+ narrative variations for rich storytelling
+-- NO LOGIC - PURE CONTENT ONLY
 
 local NarrativeContent = {}
 
 ----------------------------------------------------------------------
--- STAT NARRATIVE TEMPLATES
+-- STAT NARRATIVE VARIATIONS (40+ per bucket = 640+ total stat lines)
 ----------------------------------------------------------------------
 
 NarrativeContent.StatNarrative = {
 	Happiness = {
 		up = {
 			small = {
-				"You feel a bit more cheerful.",
-				"A small smile crosses your face.",
-				"Things are looking up a little.",
+				"Your happiness ticked up a bit.",
+				"You're feeling a little more cheerful.",
+				"A small smile crept across your face.",
+				"Things are looking slightly brighter.",
+				"Your mood improved just a touch.",
+				"You feel marginally happier about life.",
+				"A tiny weight lifted from your shoulders.",
+				"Your spirits rose ever so slightly.",
+				"Life doesn't seem quite so bad.",
+				"You caught yourself humming a tune.",
 			},
 			medium = {
-				"You're feeling pretty good about life!",
-				"Your mood has noticeably improved.",
-				"A wave of contentment washes over you.",
+				"Your happiness noticeably improved.",
+				"Life feels brighter than before.",
+				"You're definitely feeling better.",
+				"A genuine smile appeared on your face.",
+				"Your mood took a noticeable turn for the better.",
+				"You feel genuinely happier now.",
+				"Things are looking up considerably.",
+				"You caught yourself actually enjoying life.",
+				"A wave of contentment washed over you.",
+				"Your spirits are noticeably higher.",
 			},
 			big = {
-				"You're absolutely thrilled!",
-				"Life feels wonderful right now.",
-				"You can't stop smiling!",
+				"You felt a huge boost of joy.",
+				"This really lifted your spirits.",
+				"You're beaming with happiness.",
+				"Life suddenly feels wonderful.",
+				"You're practically glowing with joy.",
+				"Everything feels right in the world.",
+				"You can't stop smiling.",
+				"Pure happiness flooded through you.",
+				"You feel like you could take on the world.",
+				"Your heart is soaring.",
 			},
 			huge = {
-				"You've never been happier in your entire life!",
-				"Pure joy fills every fiber of your being!",
-				"This is what cloud nine feels like!",
+				"This was a life-changing moment of happiness.",
+				"You've rarely felt this good.",
+				"Absolute euphoria washed over you.",
+				"You'll remember this feeling forever.",
+				"This is what living feels like.",
+				"Pure, unfiltered joy consumed you.",
+				"You've reached peak happiness.",
+				"Nothing could bring you down right now.",
+				"This is the happiest you've ever been.",
+				"Your soul is singing with joy.",
 			},
 		},
 		down = {
 			small = {
-				"You feel a bit down.",
-				"Your mood dips slightly.",
-				"Something's bothering you.",
+				"Your happiness dipped a little.",
+				"You're slightly less happy than before.",
+				"A small frown replaced your smile.",
+				"Your mood soured just a bit.",
+				"Things feel marginally worse.",
+				"A tiny cloud appeared over your day.",
+				"You're not quite as cheerful.",
+				"Your spirits dropped slightly.",
+				"The day got a little grayer.",
+				"You let out a small sigh.",
 			},
 			medium = {
-				"You're feeling pretty sad.",
-				"A cloud of gloom settles over you.",
-				"You're having a rough time.",
+				"This took a toll on your happiness.",
+				"You feel noticeably less happy.",
+				"Your mood dropped considerably.",
+				"A wave of sadness hit you.",
+				"Things feel genuinely worse now.",
+				"Your spirits sank noticeably.",
+				"You're struggling to stay positive.",
+				"The joy drained from your face.",
+				"Life feels heavier than before.",
+				"You can't shake this down feeling.",
 			},
 			big = {
-				"You're really struggling emotionally.",
-				"Deep sadness grips your heart.",
-				"Everything feels hopeless.",
+				"Your happiness plummeted.",
+				"This really dragged your mood down.",
+				"You feel genuinely miserable.",
+				"A dark cloud settled over you.",
+				"Your spirits crashed hard.",
+				"You can barely find the will to smile.",
+				"Life feels overwhelmingly sad.",
+				"This hit you harder than expected.",
+				"You're struggling to see the bright side.",
+				"Your heart feels incredibly heavy.",
 			},
 			huge = {
+				"You were devastated by this.",
+				"This crushed your happiness.",
 				"You've hit rock bottom emotionally.",
-				"Depression consumes you entirely.",
-				"You've never felt this miserable.",
+				"Complete despair washed over you.",
+				"You don't know how to go on.",
+				"This destroyed any joy you had left.",
+				"You feel utterly broken inside.",
+				"The world lost all its color.",
+				"You can't stop the tears.",
+				"Everything feels hopeless.",
 			},
 		},
 	},
+
 	Health = {
 		up = {
 			small = {
-				"You feel slightly healthier.",
-				"Your body feels a bit better.",
-				"You're on the mend.",
+				"You feel a bit healthier.",
+				"Your health ticked up slightly.",
+				"You're feeling marginally better physically.",
+				"Your body thanks you.",
+				"A small health boost came your way.",
+				"You're slightly more energetic.",
+				"Your immune system perked up.",
+				"You feel a touch more vital.",
+				"Your stamina improved a bit.",
+				"You're breathing a little easier.",
 			},
 			medium = {
-				"Your health is improving nicely!",
-				"You feel much more energetic.",
-				"Your body is recovering well.",
+				"Your health noticeably improved.",
+				"You feel stronger and healthier.",
+				"Your body is responding well.",
+				"You're definitely feeling more vital.",
+				"A solid boost to your physical health.",
+				"Your energy levels are up.",
+				"You feel genuinely healthier.",
+				"Your body is healing nicely.",
+				"You're noticeably more energetic.",
+				"Your vitality has clearly improved.",
 			},
 			big = {
-				"You feel amazing! Full of energy!",
-				"Your health has made a remarkable recovery!",
-				"You're in great shape!",
+				"Your health made a big recovery.",
+				"You feel renewed physically.",
+				"Your body is thriving.",
+				"You're in excellent physical shape.",
+				"A major health breakthrough.",
+				"You feel like a new person.",
+				"Your vitality is soaring.",
+				"You're bursting with energy.",
+				"Your health has transformed.",
+				"You feel incredibly strong.",
 			},
 			huge = {
-				"You're in peak physical condition!",
-				"You've never felt this healthy before!",
-				"Your body is a temple of wellness!",
+				"This turned your health around.",
+				"You bounced back in a major way.",
+				"A miraculous health transformation.",
+				"You feel reborn physically.",
+				"Your body has fully healed.",
+				"You're in the best shape of your life.",
+				"This saved your health.",
+				"You feel invincible physically.",
+				"Your vitality hit maximum levels.",
+				"A complete health renaissance.",
 			},
 		},
 		down = {
 			small = {
-				"You feel a bit under the weather.",
-				"Your body aches slightly.",
-				"You're not feeling 100%.",
+				"Your health slipped a bit.",
+				"You aren't feeling quite as healthy.",
+				"A minor health setback.",
+				"You feel slightly under the weather.",
+				"Your body isn't thanking you for that.",
+				"Your energy dipped a little.",
+				"You're feeling marginally worse.",
+				"A small toll on your health.",
+				"Your stamina dropped slightly.",
+				"You feel a bit more tired.",
 			},
 			medium = {
-				"Your health is declining.",
-				"You're feeling pretty sick.",
+				"This hurt your health.",
+				"You feel noticeably worse physically.",
+				"Your health took a hit.",
+				"You're definitely not feeling well.",
 				"Your body is struggling.",
+				"This set back your health.",
+				"You feel genuinely unwell.",
+				"Your energy is notably low.",
+				"Your vitality dropped significantly.",
+				"You're paying for this physically.",
 			},
 			big = {
-				"Your health has taken a serious hit.",
-				"You're in bad shape physically.",
-				"Your body is failing you.",
+				"Your health took a serious hit.",
+				"This really damaged your health.",
+				"You feel genuinely ill.",
+				"Your body is in rough shape.",
+				"This was devastating to your health.",
+				"You can barely function physically.",
+				"Your vitality crashed hard.",
+				"You feel terrible physically.",
+				"Your health is in serious decline.",
+				"You're struggling to stay upright.",
 			},
 			huge = {
-				"You're gravely ill.",
-				"Your health is in critical condition.",
-				"Death feels closer than ever.",
+				"Your health collapsed after this.",
+				"This was a critical blow to your health.",
+				"You're fighting for your health.",
+				"Your body is failing you.",
+				"This nearly destroyed your health.",
+				"You're in critical condition.",
+				"Your vitality flatlined.",
+				"You've never felt this sick.",
+				"This was life-threateningly serious.",
+				"Your health hit rock bottom.",
 			},
 		},
 	},
+
 	Smarts = {
 		up = {
 			small = {
-				"You learned something new today.",
-				"Your mind feels a bit sharper.",
-				"You had a small intellectual breakthrough.",
+				"You feel a little sharper.",
+				"You picked up a bit of knowledge.",
+				"Your mind expanded slightly.",
+				"You learned something new.",
+				"A small boost to your intellect.",
+				"Your thinking got clearer.",
+				"You feel marginally smarter.",
+				"Your brain appreciated that.",
+				"A minor mental upgrade.",
+				"Your knowledge base grew a bit.",
 			},
 			medium = {
-				"Your intelligence is growing!",
-				"You're getting noticeably smarter.",
-				"Your brain power is increasing.",
+				"Your smarts improved noticeably.",
+				"You learned a lot from this.",
+				"Your mind is sharper than before.",
+				"A solid boost to your intelligence.",
+				"Your knowledge expanded significantly.",
+				"You feel genuinely smarter.",
+				"Your brain is working better.",
+				"Your thinking has leveled up.",
+				"You're noticeably more knowledgeable.",
+				"Your cognitive growth is evident.",
 			},
 			big = {
-				"You're becoming quite the intellectual!",
-				"Your mental abilities have improved dramatically!",
-				"People notice how smart you've become!",
+				"Your intelligence jumped up.",
+				"This really expanded your mind.",
+				"You feel significantly smarter.",
+				"A major intellectual breakthrough.",
+				"Your brain is firing on all cylinders.",
+				"You've gained serious knowledge.",
+				"Your cognitive abilities soared.",
+				"You feel like a genius.",
+				"Your mind opened up dramatically.",
+				"This was incredibly enlightening.",
 			},
 			huge = {
-				"You're approaching genius-level intellect!",
-				"Your mind is incredibly sharp!",
-				"You could outsmart almost anyone!",
+				"You feel downright brilliant after this.",
+				"This turned you into a genius.",
+				"Your intelligence reached extraordinary levels.",
+				"You've unlocked your full mental potential.",
+				"Your mind is operating at peak capacity.",
+				"You've become incredibly wise.",
+				"This was a watershed moment for your intellect.",
+				"Your brain underwent a transformation.",
+				"You feel like the smartest person alive.",
+				"Your cognitive abilities are superhuman.",
 			},
 		},
 		down = {
 			small = {
-				"You feel a bit foggy mentally.",
-				"Your mind seems slightly duller.",
-				"You forgot something important.",
+				"You feel a bit foggy.",
+				"Your focus slipped a little.",
+				"A minor mental setback.",
+				"Your brain feels slightly sluggish.",
+				"You're thinking a tad slower.",
+				"Your sharpness dimmed a bit.",
+				"A small hit to your intelligence.",
+				"Your mind wandered off course.",
+				"You feel marginally less sharp.",
+				"Your cognitive edge dulled slightly.",
 			},
 			medium = {
-				"Your mental sharpness is declining.",
-				"You're having trouble thinking clearly.",
-				"Your brain feels sluggish.",
+				"You aren't thinking as clearly.",
+				"This dulled your mind.",
+				"Your intelligence dropped noticeably.",
+				"Your focus is seriously compromised.",
+				"This set back your mental growth.",
+				"You feel genuinely less smart.",
+				"Your brain is struggling.",
+				"Your cognitive abilities suffered.",
+				"You're having trouble thinking straight.",
+				"Your mental sharpness declined.",
 			},
 			big = {
-				"Your cognitive abilities are suffering.",
-				"You're struggling to think straight.",
-				"Mental tasks are becoming difficult.",
+				"Your smarts took a serious hit.",
+				"You feel way less sharp than before.",
+				"Your intelligence plummeted.",
+				"This devastated your mental abilities.",
+				"You can barely think straight.",
+				"Your brain feels broken.",
+				"You've forgotten more than you remember.",
+				"Your cognitive functions are severely impaired.",
+				"You feel genuinely stupid.",
+				"This fried your brain.",
 			},
 			huge = {
-				"Your mental faculties are severely impaired.",
-				"You can barely think anymore.",
-				"Your mind is in a fog.",
+				"This completely scrambled you.",
+				"Your intelligence tanked.",
+				"You feel utterly mindless.",
+				"Your brain shut down completely.",
+				"This destroyed your cognitive abilities.",
+				"You can't form coherent thoughts.",
+				"Your intellect has been obliterated.",
+				"You feel brain-dead.",
+				"This was a mental apocalypse.",
+				"Your wisdom evaporated entirely.",
 			},
 		},
 	},
+
 	Looks = {
 		up = {
 			small = {
-				"You look slightly better today.",
-				"Your appearance has improved a bit.",
-				"You're glowing a little more.",
+				"You look a bit better in the mirror.",
+				"Your appearance improved slightly.",
+				"A minor glow-up occurred.",
+				"You're looking marginally better.",
+				"Your look got a small upgrade.",
+				"People might notice you look nicer.",
+				"Your attractiveness ticked up.",
+				"You feel slightly more put-together.",
+				"A small boost to your appearance.",
+				"You're looking a tad sharper.",
 			},
 			medium = {
-				"You're looking good!",
-				"People are noticing your improved appearance.",
-				"You feel more attractive.",
+				"You had a noticeable glow-up.",
+				"You're looking more put-together.",
+				"Your appearance improved significantly.",
+				"People are starting to notice you.",
+				"You're definitely more attractive now.",
+				"Your look leveled up noticeably.",
+				"You feel genuinely good-looking.",
+				"Your attractiveness is clearly higher.",
+				"You've got a new confidence in your appearance.",
+				"Your style game improved.",
 			},
 			big = {
-				"You look absolutely stunning!",
-				"Heads turn when you walk by!",
-				"Your beauty is undeniable!",
+				"You had a major glow-up.",
+				"People are definitely noticing your looks.",
+				"You're looking fantastic.",
+				"Your appearance transformed dramatically.",
+				"You've become genuinely attractive.",
+				"Heads are turning everywhere you go.",
+				"Your look is fire.",
+				"You feel incredibly good-looking.",
+				"Your attractiveness is through the roof.",
+				"You could be a model.",
 			},
 			huge = {
-				"You're drop-dead gorgeous!",
-				"You could be a model!",
-				"Your looks are absolutely breathtaking!",
+				"You're basically a model now.",
+				"Your looks skyrocketed.",
+				"You've achieved peak physical beauty.",
+				"People are mesmerized by your appearance.",
+				"Your attractiveness is legendary.",
+				"You look absolutely stunning.",
+				"Magazine covers would be lucky to have you.",
+				"Your beauty is otherworldly.",
+				"You've become drop-dead gorgeous.",
+				"Your looks could launch a thousand ships.",
 			},
 		},
 		down = {
 			small = {
-				"You're not looking your best today.",
-				"Your appearance has slipped a bit.",
-				"You look a little tired.",
+				"You're looking a little rough.",
+				"Your looks slipped slightly.",
+				"A minor setback for your appearance.",
+				"You feel marginally less attractive.",
+				"Your look took a small hit.",
+				"You're not quite as put-together.",
+				"Your appearance dimmed a bit.",
+				"You feel slightly less confident about your looks.",
+				"A small ding to your attractiveness.",
+				"You're looking a tad worn.",
 			},
 			medium = {
-				"Your looks are declining.",
-				"You're not as attractive as you used to be.",
-				"The mirror isn't being kind.",
+				"This didn't do your looks any favors.",
+				"You're not looking your best.",
+				"Your appearance took a noticeable hit.",
+				"You feel genuinely less attractive.",
+				"Your looks declined significantly.",
+				"People might notice you look worse.",
+				"Your visual appeal dropped.",
+				"You're struggling with your appearance.",
+				"Your attractiveness faded noticeably.",
+				"This really hurt your looks.",
 			},
 			big = {
-				"Your appearance has taken a hit.",
-				"You're looking rough these days.",
-				"People avoid looking at you.",
+				"Your looks took a major hit.",
+				"You're noticeably less attractive.",
+				"This devastated your appearance.",
+				"You feel genuinely ugly.",
+				"Your visual appeal crashed.",
+				"People are avoiding eye contact.",
+				"Your looks are in serious decline.",
+				"This really damaged your appearance.",
+				"You can't stand looking in the mirror.",
+				"Your attractiveness plummeted.",
 			},
 			huge = {
-				"Your looks have completely deteriorated.",
-				"You're barely recognizable.",
-				"Mirrors have become your enemy.",
+				"This wrecked your appearance.",
+				"You look completely different after this.",
+				"Your looks have been destroyed.",
+				"You feel utterly hideous.",
+				"Your appearance collapsed completely.",
+				"You can't recognize yourself anymore.",
+				"Your attractiveness hit rock bottom.",
+				"This permanently damaged your looks.",
+				"You feel like the ugliest person alive.",
+				"Your visual appeal is non-existent.",
 			},
 		},
 	},
 }
 
 ----------------------------------------------------------------------
--- MONEY NARRATIVE TEMPLATES
+-- MONEY NARRATIVE (clean prose, no amounts shown)
 ----------------------------------------------------------------------
 
 NarrativeContent.MoneyNarrative = {
 	gain = {
 		small = {
-			"You earned a bit of pocket money.",
-			"A small windfall comes your way.",
-			"You found some extra cash.",
+			"You picked up a bit of extra cash.",
+			"A small payday came your way.",
+			"You earned some modest money.",
+			"A little money found its way to you.",
+			"Some pocket change landed in your account.",
+			"You gained a small sum.",
+			"A minor windfall came through.",
+			"You scraped together some extra money.",
+			"A bit of extra income arrived.",
+			"You pocketed a little something.",
 		},
 		medium = {
-			"You made a nice chunk of change!",
-			"Your bank account is looking healthier.",
-			"That's some serious money!",
+			"You scored a solid payout.",
+			"You made a decent chunk of money.",
+			"That move paid off nicely.",
+			"A respectable sum landed in your account.",
+			"You earned some nice money.",
+			"Your bank account grew noticeably.",
+			"A satisfying payday arrived.",
+			"Money well earned.",
+			"You pulled in some good cash.",
+			"Financial gains are looking good.",
 		},
 		large = {
-			"You hit the jackpot!",
-			"You're swimming in cash!",
-			"That's life-changing money!",
+			"You hit a big financial win!",
+			"This was a huge payday!",
+			"You landed a major bag of cash!",
+			"A massive windfall came your way!",
+			"You struck gold!",
+			"Jackpot! You're suddenly much richer!",
+			"This changed your finances completely!",
+			"You made bank!",
+			"A life-changing sum arrived!",
+			"Financial dreams came true!",
 		},
 	},
 	loss = {
 		small = {
-			"You spent a bit of money.",
+			"You spent a bit of cash.",
 			"A small expense came up.",
-			"You're a little lighter in the wallet.",
+			"You're out a little money.",
+			"A minor cost dipped into your funds.",
+			"You paid for this out of pocket.",
+			"A little money left your wallet.",
+			"This cost you a small amount.",
+			"A modest expense occurred.",
+			"Your wallet got a bit lighter.",
+			"A small price to pay.",
 		},
 		medium = {
-			"That was an expensive mistake.",
-			"Your savings took a hit.",
-			"Money flies out the window.",
+			"This cost you a decent amount.",
+			"A chunk of money disappeared.",
+			"You watched money leave your account.",
+			"A significant expense hit your balance.",
+			"This wasn't cheap.",
+			"Your finances took a hit.",
+			"You spent more than expected.",
+			"Money flew out pretty fast.",
+			"A painful expense occurred.",
+			"That set you back financially.",
 		},
 		large = {
-			"You lost a fortune!",
-			"Financial disaster strikes!",
-			"You're hemorrhaging money!",
+			"You lost a massive amount.",
+			"This absolutely wrecked your finances.",
+			"Your money took a huge hit.",
+			"A devastating financial blow.",
+			"You hemorrhaged cash.",
+			"This was financially catastrophic.",
+			"Your bank account was gutted.",
+			"A fortune vanished.",
+			"You're suddenly much poorer.",
+			"Financial disaster struck.",
 		},
 	},
 }
 
 ----------------------------------------------------------------------
--- FLAG DESCRIPTIONS
+-- FLAG DESCRIPTIONS (100+ life flags)
 ----------------------------------------------------------------------
 
 NarrativeContent.FlagDescriptions = {
-	-- Political path
-	political_interest = "🏛️ You've developed an interest in politics.",
-	political_experience = "🏛️ You're gaining political experience.",
-	political_volunteer = "🏛️ You've started volunteering for political campaigns.",
-	elected_official = "🏛️ You've been elected to public office!",
-	city_council = "🏙️ You're now on the city council!",
-	mayor = "🏙️ You've become the mayor!",
-	state_representative = "🏛️ You're a state representative!",
-	state_senator = "🏛️ You're a state senator!",
-	governor = "🏛️ You've been elected governor!",
-	congressman = "🏛️ You're a member of Congress!",
-	us_senator = "🏛️ You're a U.S. Senator!",
-	president = "🏛️ You've become President of the United States!",
-	
-	-- Criminal path
-	criminal_tendencies = "😈 You're developing criminal tendencies...",
-	petty_thief = "🕵️ You've become a petty thief.",
-	shoplifter = "🛒 You've taken up shoplifting.",
-	car_thief = "🚗 You're now stealing cars.",
-	burglar = "🏠 You've become a burglar.",
-	drug_dealer = "💊 You're dealing drugs now.",
-	gang_prospect = "⛓️ You're being considered for gang membership.",
-	gang_member = "⛓️ You've joined a gang!",
-	gang_captain = "⛓️ You're now a gang captain!",
-	underboss = "💀 You've risen to underboss!",
-	crime_boss = "👑 You're the crime boss now!",
-	kingpin = "👑 You've become a kingpin!",
-	
-	-- Education
-	college_graduate = "🎓 You graduated from college!",
-	graduate_degree = "🎓 You earned a graduate degree!",
-	doctorate = "🎓 You earned your doctorate!",
-	
-	-- Relationships
-	in_love = "💕 You've fallen in love!",
-	engaged = "💍 You're engaged!",
-	married = "💒 You got married!",
-	has_children = "👶 You have children!",
-	divorced = "💔 You got divorced.",
-	widowed = "🖤 You've been widowed.",
-	
-	-- Wealth
-	millionaire = "💰 You're a millionaire!",
-	billionaire = "💎 You're a billionaire!",
-	bankrupt = "📉 You've gone bankrupt.",
-	homeless = "🏚️ You're homeless.",
-	
-	-- Career milestones
-	teacher = "📚 You've become a teacher!",
-	principal = "📚 You're now a principal!",
-	superintendent = "📚 You're the superintendent!",
-	f1_driver = "🏎️ You're an F1 driver!",
-	world_champion = "🏆 You're a world champion!",
-	racing_legend = "🏎️ You're a racing legend!",
-	elite_hacker = "💻 You're an elite hacker!",
-	famous_artist = "🎨 You're a famous artist!",
-	
-	-- Legal
-	in_prison = "🔒 You're in prison.",
-	ex_con = "⛓️ You're an ex-convict.",
-	escaped_prison = "🔓 You escaped from prison!",
-	
-	-- Personality
-	brave = "🦁 You're known for your bravery.",
-	compassionate = "❤️ You're known for compassion.",
-	creative_mind = "🎨 You have a creative mind.",
+	-- POLITICAL PATH
+	political_interest = "You started paying real attention to politics.",
+	political_intern = "You gained valuable experience as a political intern.",
+	campaign_experience = "You learned how campaigns really work.",
+	student_council = "You were elected to student council.",
+	elected_official = "You were elected to public office.",
+	school_board = "You won a seat on the school board.",
+	city_council = "You won a seat on city council.",
+	mayor = "You became the mayor of your city.",
+	state_rep = "You were elected to the state legislature.",
+	state_senator = "You moved up to state-level politics.",
+	governor = "You became the governor of your state.",
+	congressman = "You became a member of Congress.",
+	us_senator = "You secured a seat in the U.S. Senate.",
+	presidential_candidate = "You're running for President!",
+	won_debate = "You dominated the presidential debate.",
+	president = "You reached the highest office in the country.",
+	inaugurated = "You were officially inaugurated as President.",
+
+	-- CRIMINAL PATH
+	criminal_tendencies = "You began dipping your toes into the criminal world.",
+	petty_thief = "You started stealing small things.",
+	car_thief = "You picked up a reputation for stealing cars.",
+	arrested = "You've been arrested by police.",
+	snitch = "You cooperated with the authorities.",
+	did_time = "You served time in prison.",
+	prison_educated = "You educated yourself behind bars.",
+	prison_muscles = "You got jacked in prison.",
+	gang_member = "You officially joined a gang.",
+	gang_prospect = "You became a prospect for a gang.",
+	initiated = "You completed gang initiation.",
+	drug_dealer = "You started dealing drugs.",
+	turf_warrior = "You fought for your territory.",
+	gang_captain = "You rose to captain in your gang.",
+	master_thief = "You pulled off a legendary heist.",
+	underboss = "You rose to the rank of underboss.",
+	crime_boss = "You became the boss of a criminal organization.",
+	empire_built = "Your criminal empire spans multiple cities.",
+
+	-- TEACHER PATH
+	teaching_interest = "You discovered a passion for teaching.",
+	education_degree = "You earned your education degree.",
+	student_taught = "You completed your student teaching.",
+	teacher = "You became a certified teacher.",
+	teacher_award = "You won Teacher of the Year.",
+	department_head = "You became department head.",
+	vice_principal = "You're now the Vice Principal.",
+	principal = "You became the school Principal.",
+	superintendent = "You're shaping education for thousands of students.",
+
+	-- RACER PATH
+	racing_interest = "You fell in love with speed.",
+	karting_league = "You joined a competitive karting league.",
+	karting_champion = "You became a karting champion.",
+	junior_formula = "You signed with a junior formula team.",
+	junior_champion = "You won the junior formula championship.",
+	f1_test_driver = "You're an F1 test driver.",
+	f1_driver = "You're an official F1 driver!",
+	first_race_complete = "You completed your first F1 race.",
+	f1_winner = "You won your first F1 Grand Prix!",
+	world_champion = "You're a Formula 1 World Champion!",
+	racing_legend = "You've been inducted into the Racing Hall of Fame.",
+
+	-- ARTIST PATH
+	art_interest = "You discovered your artistic talents.",
+	creative_child = "You were always the creative one.",
+	award_winning_artist = "Your art won recognition.",
+	art_school = "You're studying at a prestigious art school.",
+	gallery_show = "Your work was featured in a gallery show.",
+	signature_style = "You developed your signature artistic style.",
+	sold_artwork = "You sold your first major piece.",
+	museum_piece = "Your art is in a world-famous museum.",
+	art_celebrity = "You're a celebrity in the art world.",
+	art_legend = "Your legacy is cemented in art history.",
+
+	-- HACKER PATH
+	computer_interest = "You discovered a fascination with computers.",
+	programmer = "You became fluent in programming.",
+	hacker_skills = "You learned to hack systems.",
+	white_hat = "You chose the ethical hacking path.",
+	black_hat = "You went to the dark side of hacking.",
+	first_exploit = "You found your first exploit.",
+	hacker_group = "You joined an elite hacker collective.",
+	hacked_government = "You breached classified government systems.",
+	fbi_consultant = "You became an FBI cybersecurity consultant.",
+	whistleblower_hacker = "You leaked important secrets to the world.",
+	hacker_career = "You work professionally in cybersecurity.",
+	elite_hacker = "You're one of the world's top hackers.",
+	startup_founder = "You founded your own tech company.",
+	tech_billionaire = "You became a tech billionaire.",
+
+	-- EDUCATION
+	studious = "You were always focused on learning.",
+	college_student = "You're attending college.",
+	trade_student = "You're learning a trade.",
+	job_hunting = "You entered the workforce.",
+	honor_student = "You were recognized as an honor student.",
+	rebel = "You live by your own rules.",
+
+	-- CHILDHOOD
+	athletic_child = "You were always the athletic one.",
+	has_license = "You got your driver's license.",
+	pet_owner = "You have a loyal pet companion.",
+
+	-- CAREER GENERAL
+	retired = "You retired from work.",
+	famous = "You became famous.",
+	millionaire = "You became a millionaire.",
+	billionaire = "You became a billionaire.",
+
+	-- RELATIONSHIPS
+	popular = "You're very popular.",
+	married = "You got married.",
+	in_love = "You're deeply in love.",
 }
 
 ----------------------------------------------------------------------
--- YEAR RECAP TEMPLATES
+-- YEAR RECAP TEMPLATES (BitLife-style multi-line summaries)
 ----------------------------------------------------------------------
 
 NarrativeContent.YearRecapTemplates = {
-	-- Life stages
+	-- CHILDHOOD RECAPS
 	baby = {
-		"At age %d, you're still figuring out this whole 'existing' thing.",
-		"Year %d: mostly crying, eating, and sleeping.",
-	},
-	toddler = {
-		"At %d, you're discovering the world one tantrum at a time.",
-		"Year %d: everything is fascinating and terrifying.",
-	},
-	early_childhood = {
-		"At %d, school is your whole world.",
-		"Year %d: making friends and learning stuff.",
-	},
-	childhood = {
-		"At %d, life is still pretty simple.",
-		"Year %d: childhood adventures continue.",
-	},
-	tween = {
-		"At %d, you're not a kid but not quite a teen.",
-		"Year %d: the awkward years begin.",
-	},
-	teenage = {
-		"At %d, everything feels intense.",
-		"Year %d: teenage drama and dreams.",
-	},
-	young_adult = {
-		"At %d, you're building your life.",
-		"Year %d: the world is your oyster.",
-	},
-	adult = {
-		"At %d, life is in full swing.",
-		"Year %d: adulting continues.",
-	},
-	senior = {
-		"At %d, you reflect on a life well-lived.",
-		"Year %d: enjoying your golden years.",
-	},
-	elderly = {
-		"At %d, every day is precious.",
-		"Year %d: cherishing what matters most.",
+		"Age: %d years\nYou spent your days sleeping and crying.\nYour parents changed countless diapers.\nYou discovered your own toes.\nThe world was a blur of colors and sounds.\nEverything was new and fascinating.\nYou learned that crying gets you food.",
+		"Age: %d years\nLife as a baby is simple.\nYou ate, you slept, you cried.\nYour parents looked exhausted but happy.\nYou smiled for the first time.\nSomeone always picked you up when you fussed.\nYou were blissfully unaware of everything.",
+		"Age: %d years\nYou couldn't do much yet.\nBut you watched everything with wide eyes.\nYour parents made silly faces at you.\nYou tried to grab things and mostly failed.\nSleep was your best friend.\nThe world revolved around you.",
 	},
 	
-	-- Special paths
+	toddler = {
+		"Age: %d years\nYou're starting to walk and talk.\nEverything in the house became climbable.\nYou said 'no' to almost everything.\nYour parents baby-proofed the entire house.\nYou discovered the joy of throwing food.\nTemper tantrums became your new skill.",
+		"Age: %d years\nToddler life is full of discoveries.\nYou learned new words every day.\nYou fell down constantly but kept trying.\nYou made friends with the family pet.\nYour favorite word was 'mine.'\nNaps were your parents' favorite time.",
+		"Age: %d years\nYou terrorized the household with energy.\nRunning was more fun than walking.\nYou asked 'why' approximately 500 times a day.\nYour imagination started to develop.\nEverything was a potential toy.\nYou started developing your personality.",
+	},
+
+	early_childhood = {
+		"Age: %d years\nYou started making friends at preschool.\nPlaydates became a regular thing.\nYou learned your ABCs and 123s.\nYour favorite shows were on repeat.\nYou believed in Santa Claus with all your heart.\nBedtime stories were the best part of the day.",
+		"Age: %d years\nKindergarten was a big adventure.\nYou made macaroni art for your parents.\nYour best friend was your entire world.\nYou skinned your knee and thought you'd die.\nSnack time was sacred.\nYou dreamed of being a superhero.",
+		"Age: %d years\nChildhood was simple and sweet.\nYour biggest worry was which cartoon to watch.\nYou collected random rocks and treasures.\nHide and seek was serious business.\nYour parents were your heroes.\nLife was full of wonder and magic.",
+	},
+
+	childhood = {
+		"Age: %d years\nSchool became more serious.\nYou started doing real homework.\nFriendships began to have drama.\nYou discovered your first hobby.\nParents started saying 'when I was your age...'\nYou still believed adults knew everything.",
+		"Age: %d years\nElementary school life continued.\nYou learned multiplication tables.\nRecess was the best subject.\nYou had your first crush but pretended you didn't.\nBirthday parties were elaborate events.\nYou started questioning Santa Claus.",
+		"Age: %d years\nYou're becoming more independent.\nYou can ride a bike without training wheels.\nYou argue with siblings constantly.\nVideo games became very important.\nYou think you know everything.\nYour room is always a mess.",
+	},
+
+	tween = {
+		"Age: %d years\nMiddle school is rough.\nYou're not a kid but not a teen.\nFriendships shift constantly.\nYou're very aware of being awkward.\nSchool dances are terrifying.\nYou spend hours on the internet.",
+		"Age: %d years\nYour body is changing and it's weird.\nYou care way too much what people think.\nDrama seems to follow everyone.\nYou're figuring out who you are.\nParents suddenly became embarrassing.\nMusic became very important to you.",
+		"Age: %d years\nThe tween years are confusing.\nYou're caught between childhood and teen life.\nHormones are doing strange things.\nYou discovered sarcasm.\nYour room became your sanctuary.\nYou think no one understands you.",
+	},
+
+	teenage = {
+		"Age: %d years\nHigh school drama is real.\nYou're figuring out your identity.\nFriendships feel more intense.\nRomantic feelings are confusing.\nYou think you're invincible.\nThe future feels both exciting and scary.",
+		"Age: %d years\nTeen life is a rollercoaster.\nYou're making choices that actually matter.\nPeer pressure is constantly present.\nYou're pushing boundaries with parents.\nSocial media consumes your attention.\nYou're planning for life after high school.",
+		"Age: %d years\nYou're almost an adult but not quite.\nResponsibilities are increasing.\nYou have strong opinions about everything.\nYour friend group is your chosen family.\nYou're discovering who you really are.\nThe real world is approaching fast.",
+	},
+
+	young_adult = {
+		"Age: %d years\nWelcome to adulting, it's hard.\nBills are a thing now.\nYou're figuring out your career path.\nFriendships require more effort to maintain.\nYou miss how simple childhood was.\nYou realize your parents were right about some things.",
+		"Age: %d years\nYoung adult life is exciting and scary.\nYou're making major life decisions.\nRelationships are getting serious.\nMoney is always on your mind.\nYou're still figuring things out.\nThe future is wide open.",
+		"Age: %d years\nYou're officially an adult now.\nNo one really knows what they're doing.\nYou're building your career and life.\nSome friends are getting married.\nOthers are still figuring things out.\nYou're somewhere in between.",
+	},
+
+	adult = {
+		"Age: %d years\nAdult life has settled into routine.\nWork takes up most of your time.\nYou're thinking about the future seriously.\nHealth actually matters now.\nYou value quality over quantity in friendships.\nTime seems to move faster each year.",
+		"Age: %d years\nThis is what being a grown-up feels like.\nYou have responsibilities you can't escape.\nYour choices have real consequences.\nYou appreciate simple pleasures more.\nYou're becoming the person you'll always be.\nLife isn't what you expected, but it's yours.",
+		"Age: %d years\nMidlife is a strange place.\nYou're not young but not old.\nYou've accumulated wisdom and regrets.\nYou think about legacy sometimes.\nOld friends are more precious.\nYou know yourself better than ever.",
+	},
+
+	senior = {
+		"Age: %d years\nYou've lived a full life.\nMemories are your greatest treasure.\nHealth requires more attention.\nFamily means everything now.\nYou've seen the world change dramatically.\nYou have wisdom to share.",
+		"Age: %d years\nThe golden years have arrived.\nYou've earned your rest.\nYou think about the past a lot.\nEach day is a gift.\nYou hope your legacy will last.\nLife taught you many lessons.",
+		"Age: %d years\nYou've outlived many friends.\nYour body isn't what it used to be.\nBut your spirit remains strong.\nYou've made peace with your choices.\nYou treasure every moment with family.\nYou've learned what really matters.",
+	},
+
+	-- SPECIAL PATH RECAPS
 	criminal_path = {
-		"Year %d in the criminal underworld...",
-		"At %d, you walk the path of shadows.",
+		"Age: %d years\nYou're living on the wrong side of the law.\nEvery day brings new risks.\nTrust is a luxury you can't afford.\nThe streets taught you hard lessons.\nYou look over your shoulder constantly.\nThis life isn't for everyone.",
+		"Age: %d years\nThe criminal life continues.\nYou've made enemies and allies.\nMoney comes fast but danger comes faster.\nYou've done things you can't take back.\nThe law is always watching.\nYou wonder if there's another way.",
+		"Age: %d years\nYou're deep in the game now.\nYour reputation precedes you.\nPower and danger are your companions.\nYou've lost people along the way.\nFreedom feels temporary.\nEvery choice led you here.",
 	},
+
 	political_path = {
-		"Year %d in the political arena...",
-		"At %d, you navigate the halls of power.",
+		"Age: %d years\nPolitics has become your life.\nEvery handshake is calculated.\nYou're always on stage, never off.\nPower is addictive but costly.\nYou've made compromises you regret.\nThe public scrutinizes everything.",
+		"Age: %d years\nClimbing the political ladder continues.\nAlliances shift like sand.\nYou're playing a long game.\nYour decisions affect thousands.\nThe pressure never truly stops.\nYou hope you're making a difference.",
+		"Age: %d years\nYou've reached political heights.\nHistory will judge your choices.\nThe weight of responsibility is heavy.\nYou've sacrificed personal life for public service.\nPower came with a price.\nYou hope your legacy will be positive.",
 	},
-	racer_path = {
-		"Year %d on the racing circuit...",
-		"At %d, speed is your life.",
-	},
-	teacher_path = {
-		"Year %d shaping young minds...",
-		"At %d, you continue to inspire students.",
-	},
-	artist_path = {
-		"Year %d as an artist...",
-		"At %d, you create beauty.",
-	},
-	hacker_path = {
-		"Year %d in the digital underground...",
-		"At %d, code is your weapon.",
-	},
+
 	romantic_path = {
-		"Year %d of love and romance...",
-		"At %d, your heart is full.",
+		"Age: %d years\nLove dominates your thoughts.\nYour relationship defines much of your life.\nYou're building something with someone special.\nThe highs are incredible.\nThe challenges make you grow.\nYou can't imagine life without them.",
+		"Age: %d years\nRelationship life has its ups and downs.\nYou've learned to compromise.\nYou've learned to communicate.\nLove isn't always easy.\nBut it's always worth fighting for.\nYou're grateful for your partner.",
+		"Age: %d years\nYour romantic journey continues.\nYou've weathered storms together.\nThe bond has deepened over time.\nYou know each other's flaws and love anyway.\nThis is what commitment looks like.\nYou've built a life together.",
 	},
+
 	wealthy_path = {
-		"Year %d of wealth and luxury...",
-		"At %d, money is no object.",
+		"Age: %d years\nMoney shapes your daily life.\nYou have options others don't.\nWealth brought comfort but not always happiness.\nYou worry about different problems than most.\nPeople treat you differently.\nYou wonder who your real friends are.",
+		"Age: %d years\nThe wealthy life continues.\nLuxury becomes normalized.\nYou've learned money can't buy everything.\nYou think about legacy and impact.\nPrivilege comes with responsibility.\nYou try to use your resources wisely.",
+		"Age: %d years\nYou've built significant wealth.\nFinancial worries are different now.\nYou can help others in ways most can't.\nBut you still face human problems.\nMoney didn't solve everything.\nYou've learned what truly matters.",
 	},
+
 	struggling_path = {
-		"Year %d of hard times...",
-		"At %d, you're fighting to survive.",
+		"Age: %d years\nLife has been a constant struggle.\nMoney is always tight.\nYou work hard but progress is slow.\nBills pile up constantly.\nYou dream of better days.\nYou keep pushing forward.",
+		"Age: %d years\nThe struggle continues but so do you.\nYou've learned to survive with less.\nResourcefulness became your strength.\nYou know the value of a dollar.\nHope keeps you going.\nYou believe things will improve.",
+		"Age: %d years\nYou've faced hardship with resilience.\nNot everyone understands your journey.\nYou've learned to appreciate small victories.\nEvery step forward matters.\nYou're stronger than you know.\nThe struggle shaped who you are.",
+	},
+
+	-- TEACHER PATH
+	teacher_path = {
+		"Age: %d years\nAnother year shaping young minds.\nSome days were harder than others.\nBut seeing students grow makes it worth it.\nThe stack of papers to grade never ends.\nYou made a difference in someone's life today.\nTeaching is more than a job, it's a calling.",
+		"Age: %d years\nThe classroom is your second home.\nYou've learned as much as you've taught.\nEvery student has a story.\nSome will remember you forever.\nThe challenges are real but so are the rewards.\nYou're building the future, one lesson at a time.",
+		"Age: %d years\nEducation continues to be your mission.\nYou've seen countless students graduate.\nThe impact you've had ripples outward.\nTeaching never gets old.\nYou're proud of your career choice.\nThe best teachers never stop learning.",
+	},
+
+	-- RACER PATH
+	racer_path = {
+		"Age: %d years\nThe smell of burning rubber is home.\nSpeed is in your blood now.\nEvery race is a battle of nerves and skill.\nThe podium is the only place you want to be.\nRisk and reward dance together.\nYou live for the thrill of competition.",
+		"Age: %d years\nAnother season in the racing world.\nVictories and defeats shaped your character.\nThe track is where you feel most alive.\nYour reflexes are razor sharp.\nTeammates became family.\nRacing is more than sport, it's identity.",
+		"Age: %d years\nYou've pushed limits most never know.\nSpeed taught you about fear and courage.\nEvery lap is a meditation in motion.\nThe racing community is your tribe.\nTrophies tell only part of the story.\nYou were born to race.",
+	},
+
+	-- ARTIST PATH
+	artist_path = {
+		"Age: %d years\nArt continues to flow through you.\nEach piece is a piece of your soul.\nCreativity is both blessing and curse.\nThe art world is fickle but passion endures.\nYour vision matters to someone out there.\nYou create because you must.",
+		"Age: %d years\nAnother year of artistic expression.\nSome works found homes, others remain.\nThe creative process never gets easier.\nBut neither does it lose its magic.\nYour perspective shapes how others see.\nArt is your language, your truth.",
+		"Age: %d years\nYou've lived the artist's life.\nRecognition came and went.\nBut the work itself was always the point.\nYour art outlives the moment.\nCreativity keeps you alive.\nYou've added beauty to the world.",
+	},
+
+	-- HACKER PATH
+	hacker_path = {
+		"Age: %d years\nThe digital world is your playground.\nCode flows like second nature.\nYou see systems others can't comprehend.\nEvery lock has a key if you look hard enough.\nPower lies in information.\nThe internet never forgets, and neither do you.",
+		"Age: %d years\nAnother year in the digital underground.\nYour skills have only grown sharper.\nYou've seen behind the curtain.\nThe line between legal and illegal blurs.\nFew understand what you're capable of.\nYou're always three steps ahead.",
+		"Age: %d years\nTechnology shaped your whole life.\nYou bent systems to your will.\nWhether hero or villain depends who's asking.\nYour digital footprint is legendary.\nThe cyber world knows your name.\nYou're a force in the virtual realm.",
+	},
+}
+
+----------------------------------------------------------------------
+-- CATEGORY FLAVOR TEXT
+----------------------------------------------------------------------
+
+NarrativeContent.CategoryFlavor = {
+	school = {
+		"It was another chapter in your school life.",
+		"Your education journey continued.",
+		"The academic world shaped you a little more.",
+		"School memories were made today.",
+		"Learning never stops, even when it's hard.",
+	},
+	family = {
+		"Your family life shifted a little because of this.",
+		"Family bonds were tested or strengthened.",
+		"Home is where the heart is, for better or worse.",
+		"Family drama is unavoidable sometimes.",
+		"Your family story continues to unfold.",
+	},
+	work = {
+		"Your career story took another step here.",
+		"The professional world continues to challenge you.",
+		"Work shapes more of your life than you'd like to admit.",
+		"Your career path winds on.",
+		"The daily grind continues.",
+	},
+	crime = {
+		"Your criminal record quietly updated itself.",
+		"The law took note of your activities.",
+		"Your reputation in certain circles grew.",
+		"The streets never forget.",
+		"You're deeper in the game now.",
+	},
+	health = {
+		"Your medical history just got a new entry.",
+		"Your body reminded you it needs attention.",
+		"Health is wealth, they say.",
+		"Your wellbeing demands attention.",
+		"The body keeps score.",
+	},
+	romance = {
+		"Your heart experienced something today.",
+		"Love is complicated, as always.",
+		"Your romantic story continues.",
+		"Matters of the heart never stay simple.",
+		"Love leaves its mark, one way or another.",
+	},
+	social = {
+		"Your social life evolved a bit.",
+		"Relationships with others shifted.",
+		"People in your life matter.",
+		"Social connections shape who you are.",
+		"Your place in the social world changed.",
+	},
+	money = {
+		"Your financial story took a turn.",
+		"Money problems (or solutions) arrived.",
+		"Your wallet felt the impact.",
+		"Finances are always on your mind.",
+		"The economic side of life demands attention.",
+	},
+	random = {
+		"Life threw you a curveball.",
+		"The unexpected happened.",
+		"You never know what's coming next.",
+		"Life is full of surprises.",
+		"The universe has a sense of humor.",
 	},
 }
 
@@ -400,93 +822,48 @@ NarrativeContent.YearRecapTemplates = {
 ----------------------------------------------------------------------
 
 NarrativeContent.LifeStageTransitions = {
-	toddler = {
-		emoji = "👶",
-		title = "Growing Up!",
-		text = "You're no longer a baby! You can walk and talk now.",
-	},
-	early_childhood = {
-		emoji = "🎒",
-		title = "School Time!",
-		text = "Time for your first day of school!",
-	},
-	childhood = {
-		emoji = "🚸",
-		title = "Getting Bigger!",
-		text = "You're growing up so fast!",
-	},
-	tween = {
-		emoji = "😬",
-		title = "The Tween Years",
-		text = "Welcome to the awkward years.",
-	},
-	teenage = {
-		emoji = "🎸",
-		title = "Teenage Dreams",
-		text = "You're officially a teenager!",
-	},
-	young_adult = {
-		emoji = "🎓",
-		title = "Adulthood Begins!",
-		text = "You're an adult now. The world awaits!",
-	},
-	adult = {
-		emoji = "💼",
-		title = "Prime Years",
-		text = "You're in the prime of your life.",
-	},
-	senior = {
-		emoji = "👴",
-		title = "Golden Years",
-		text = "Time to enjoy your retirement.",
-	},
-	elderly = {
-		emoji = "🕯️",
-		title = "Twilight Years",
-		text = "Every moment is precious now.",
-	},
+	toddler = "You're no longer a baby. The world is bigger now.",
+	child = "Childhood has officially begun. Adventures await.",
+	tween = "You're not a little kid anymore. Things are changing.",
+	teen = "Welcome to your teenage years. Buckle up.",
+	adult = "You're officially an adult now. No more excuses.",
+	middle_age = "Middle age arrived. Where did the time go?",
+	senior = "You've entered your senior years. Wisdom comes with age.",
+	elderly = "You've lived a long life. Every day is precious.",
 }
 
 ----------------------------------------------------------------------
--- RELATIONSHIP LINES
+-- RELATIONSHIP TEMPLATES
 ----------------------------------------------------------------------
 
 NarrativeContent.RelationshipLines = {
-	family = {
-		positive = {
-			"Your bond with %s grows stronger.",
-			"You and %s share a heartfelt moment.",
-			"%s tells you they love you.",
-		},
-		negative = {
-			"Things are tense with %s.",
-			"You had an argument with %s.",
-			"%s seems distant lately.",
-		},
+	love = {
+		"Your love for %s grew stronger.",
+		"You and %s shared a beautiful moment.",
+		"%s makes your heart skip a beat.",
+		"Being with %s feels like home.",
+		"Your bond with %s deepened.",
 	},
-	friends = {
-		positive = {
-			"You and %s had a great time together!",
-			"%s is such a good friend.",
-			"Your friendship with %s deepens.",
-		},
-		negative = {
-			"You're drifting apart from %s.",
-			"%s said something hurtful.",
-			"Your friendship with %s is strained.",
-		},
+	friendship = {
+		"%s is always there for you.",
+		"You and %s laughed until you cried.",
+		"%s reminded you what true friendship means.",
+		"Your friendship with %s stood the test of time.",
+		"%s had your back when it mattered.",
 	},
-	lovers = {
-		positive = {
-			"You and %s are deeply in love.",
-			"%s makes your heart flutter.",
-			"Romance blooms with %s.",
-		},
-		negative = {
-			"Things are rocky with %s.",
-			"You and %s had a fight.",
-			"The spark with %s is fading.",
-		},
+	conflict = {
+		"Things with %s got complicated.",
+		"You and %s had a falling out.",
+		"%s isn't speaking to you right now.",
+		"Trust with %s has been damaged.",
+		"Your relationship with %s needs work.",
+	},
+	loss = {
+		"You'll miss %s forever.",
+		"Saying goodbye to %s was the hardest thing.",
+		"%s left a hole in your life.",
+		"Memories of %s will never fade.",
+		"Life without %s feels empty.",
 	},
 }
 

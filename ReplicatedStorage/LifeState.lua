@@ -47,7 +47,7 @@ function LifeState.new(player)
 		Looks = 70,
 		Smarts = 70,
 	}
-
+	
 	-- For backwards compatibility, expose stats at top level too
 	self.Happiness = 80
 	self.Health = 80
@@ -56,7 +56,7 @@ function LifeState.new(player)
 
 	-- Story Flags (for branching narrative)
 	self.Flags = {}
-
+	
 	-- Relationships (BitLife-style organized by category)
 	self.Relationships = {
 		family = {},      -- parents, siblings, children, spouse
@@ -66,7 +66,7 @@ function LifeState.new(player)
 		classmates = {},  -- school/university classmates
 		enemies = {},     -- people who hate you
 	}
-
+	
 	-- Career & Job System
 	self.Career = {
 		path = nil,         -- "teacher", "president", "racer", "artist", "hacker", "criminal", etc.
@@ -77,7 +77,7 @@ function LifeState.new(player)
 		performance = 50,   -- Job performance rating 0-100
 		promotions = 0,     -- Number of promotions received
 	}
-
+	
 	-- Legacy job fields (for backwards compatibility)
 	self.Job = nil
 	self.JobTitle = nil
@@ -94,7 +94,7 @@ function LifeState.new(player)
 		graduated = false,
 		degrees = {},       -- List of earned degrees
 	}
-
+	
 	-- Legacy field
 	self.EducationLevel = nil
 
@@ -251,27 +251,27 @@ end
 
 function LifeState:GetNetWorth()
 	local total = self.Money or 0
-
+	
 	-- Add house equity
 	for _, house in ipairs(self.Assets.houses or {}) do
 		total = total + (house.equity or house.value or 0)
 	end
-
+	
 	-- Add car values
 	for _, car in ipairs(self.Assets.cars or {}) do
 		total = total + (car.value or 0)
 	end
-
+	
 	-- Add business values
 	for _, biz in ipairs(self.Assets.businesses or {}) do
 		total = total + (biz.value or 0)
 	end
-
+	
 	-- Add investments
 	for _, inv in ipairs(self.Assets.investments or {}) do
 		total = total + (inv.value or 0)
 	end
-
+	
 	return total
 end
 
@@ -283,24 +283,24 @@ function LifeState:AddRelationship(category, person)
 	if not self.Relationships[category] then
 		self.Relationships[category] = {}
 	end
-
+	
 	-- Generate ID if not present
 	if not person.id then
 		person.id = category .. "_" .. #self.Relationships[category] + 1 .. "_" .. tick()
 	end
-
+	
 	-- Set defaults
 	person.relationship = person.relationship or 50
 	person.met = person.met or self.Age
 	person.alive = person.alive ~= false
-
+	
 	table.insert(self.Relationships[category], person)
 	return person
 end
 
 function LifeState:GetRelationship(category, personId)
 	if not self.Relationships[category] then return nil end
-
+	
 	for _, person in ipairs(self.Relationships[category]) do
 		if person.id == personId then
 			return person
@@ -348,7 +348,7 @@ function LifeState:SetCareer(path, title, employer, salary)
 	self.Career.jobTitle = title
 	self.Career.employer = employer
 	self.Career.salary = salary or 0
-
+	
 	-- Backwards compatibility
 	self.Job = employer
 	self.JobTitle = title
@@ -376,12 +376,12 @@ end
 
 function LifeState:GetAnnualIncome()
 	local income = self.Career.salary or self.JobSalary or 0
-
+	
 	-- Add business profits
 	for _, biz in ipairs(self.Assets.businesses or {}) do
 		income = income + (biz.profitPerYear or 0)
 	end
-
+	
 	return income
 end
 
@@ -424,17 +424,17 @@ function LifeState:AddAsset(assetType, asset)
 	if not self.Assets[assetType] then
 		self.Assets[assetType] = {}
 	end
-
+	
 	asset.id = asset.id or assetType .. "_" .. #self.Assets[assetType] + 1 .. "_" .. tick()
 	asset.purchaseYear = asset.purchaseYear or self.Year
-
+	
 	table.insert(self.Assets[assetType], asset)
 	return asset
 end
 
 function LifeState:RemoveAsset(assetType, assetId)
 	if not self.Assets[assetType] then return false end
-
+	
 	for i, asset in ipairs(self.Assets[assetType]) do
 		if asset.id == assetId then
 			table.remove(self.Assets[assetType], i)
@@ -474,7 +474,7 @@ end
 function LifeState:ServeTime(years)
 	years = years or 1
 	self.JailTime = math.max(0, (self.JailTime or 0) - years)
-
+	
 	if self.JailTime <= 0 then
 		self.InJail = false
 		self.JailTime = 0
@@ -499,7 +499,7 @@ function LifeState:GetStoryProgress(path)
 		elseif self.Flags.political_experience then return 15
 		elseif self.Flags.political_interest then return 5
 		else return 0 end
-
+		
 	elseif path == "criminal" then
 		if self.Flags.kingpin then return 100
 		elseif self.Flags.crime_boss then return 90
@@ -510,7 +510,7 @@ function LifeState:GetStoryProgress(path)
 		elseif self.Flags.car_thief then return 20
 		elseif self.Flags.criminal_tendencies then return 10
 		else return 0 end
-
+		
 	elseif path == "teacher" then
 		if self.Flags.superintendent then return 100
 		elseif self.Flags.principal then return 75
@@ -518,7 +518,7 @@ function LifeState:GetStoryProgress(path)
 		elseif self.Flags.teacher then return 30
 		elseif self.Flags.teaching_interest then return 10
 		else return 0 end
-
+		
 	elseif path == "racer" then
 		if self.Flags.racing_legend then return 100
 		elseif self.Flags.world_champion then return 85
@@ -527,7 +527,7 @@ function LifeState:GetStoryProgress(path)
 		elseif self.Flags.karting_champion then return 20
 		elseif self.Flags.racing_interest then return 5
 		else return 0 end
-
+		
 	elseif path == "artist" then
 		if self.Flags.art_celebrity then return 100
 		elseif self.Flags.museum_piece then return 80
@@ -535,7 +535,7 @@ function LifeState:GetStoryProgress(path)
 		elseif self.Flags.art_school then return 30
 		elseif self.Flags.art_interest then return 10
 		else return 0 end
-
+		
 	elseif path == "hacker" then
 		if self.Flags.elite_hacker then return 100
 		elseif self.Flags.hacker_group then return 70
@@ -544,7 +544,7 @@ function LifeState:GetStoryProgress(path)
 		elseif self.Flags.computer_interest then return 10
 		else return 0 end
 	end
-
+	
 	return 0
 end
 
@@ -558,7 +558,7 @@ function LifeState:GetStoryTitle(path)
 		elseif self.Flags.political_experience then return "Political Intern"
 		elseif self.Flags.political_interest then return "Interested"
 		else return "Citizen" end
-
+		
 	elseif path == "criminal" then
 		if self.Flags.kingpin then return "Kingpin"
 		elseif self.Flags.crime_boss then return "Crime Boss"
@@ -569,14 +569,14 @@ function LifeState:GetStoryTitle(path)
 		elseif self.Flags.car_thief then return "Car Thief"
 		elseif self.Flags.criminal_tendencies then return "Petty Criminal"
 		else return "Law-Abiding" end
-
+		
 	elseif path == "teacher" then
 		if self.Flags.superintendent then return "Superintendent"
 		elseif self.Flags.principal then return "Principal"
 		elseif self.Flags.department_head then return "Department Head"
 		elseif self.Flags.teacher then return "Teacher"
 		else return "Student" end
-
+		
 	elseif path == "racer" then
 		if self.Flags.racing_legend then return "Racing Legend"
 		elseif self.Flags.world_champion then return "World Champion"
@@ -584,14 +584,14 @@ function LifeState:GetStoryTitle(path)
 		elseif self.Flags.junior_formula then return "Junior Driver"
 		elseif self.Flags.karting_champion then return "Karting Champ"
 		else return "Aspiring Racer" end
-
+		
 	elseif path == "artist" then
 		if self.Flags.art_celebrity then return "Art Celebrity"
 		elseif self.Flags.museum_piece then return "Famous Artist"
 		elseif self.Flags.gallery_show then return "Exhibited Artist"
 		elseif self.Flags.art_school then return "Art Student"
 		else return "Aspiring Artist" end
-
+		
 	elseif path == "hacker" then
 		if self.Flags.elite_hacker then return "Elite Hacker"
 		elseif self.Flags.hacker_group then return "Hacker Collective"
@@ -599,7 +599,7 @@ function LifeState:GetStoryTitle(path)
 		elseif self.Flags.black_hat then return "Black Hat"
 		else return "Script Kiddie" end
 	end
-
+	
 	return "Unknown"
 end
 
@@ -608,7 +608,7 @@ function LifeState:GetActiveCareerPath()
 	local paths = {"political", "criminal", "teacher", "racer", "artist", "hacker"}
 	local highestProgress = 0
 	local activePath = nil
-
+	
 	for _, path in ipairs(paths) do
 		local progress = self:GetStoryProgress(path)
 		if progress > highestProgress then
@@ -616,7 +616,7 @@ function LifeState:GetActiveCareerPath()
 			activePath = path
 		end
 	end
-
+	
 	return activePath, highestProgress
 end
 
