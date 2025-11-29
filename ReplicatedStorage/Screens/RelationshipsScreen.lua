@@ -1,185 +1,67 @@
 -- RelationshipsScreen.lua
--- Premium AAA-quality Relationships screen with beautiful modals
+-- Premium BitLife-style Relationships screen
+-- Triple AAA polished UI for family, friends, and romantic connections
 
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local UI = require(ReplicatedStorage:WaitForChild("UIComponents"))
+local C = UI.Colors
+local F = UI.Fonts
+
 local RelationshipsScreen = {}
 RelationshipsScreen.__index = RelationshipsScreen
 
+-- Remotes
 local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
-local InteractPerson = remotesFolder and remotesFolder:WaitForChild("InteractPerson", 15)
-local GiveMoney = remotesFolder and remotesFolder:WaitForChild("GiveMoney", 15)
+local DoInteraction = remotesFolder and remotesFolder:WaitForChild("DoInteraction", 15)
 
-print("[RelationshipsScreen] Remotes loaded:", InteractPerson and "✓" or "✗")
-
--- Premium Color Palette
-local C = {
-	Pink = Color3.fromRGB(236, 72, 153),
-	PinkDark = Color3.fromRGB(219, 39, 119),
-	PinkPale = Color3.fromRGB(252, 231, 243),
-	PinkLight = Color3.fromRGB(251, 207, 232),
-
-	Blue = Color3.fromRGB(37, 99, 235),
-	BlueDark = Color3.fromRGB(29, 78, 216),
-	BluePale = Color3.fromRGB(219, 234, 254),
-	BlueLight = Color3.fromRGB(147, 197, 253),
-
-	Orange = Color3.fromRGB(249, 115, 22),
-	OrangeDark = Color3.fromRGB(234, 88, 12),
-	OrangePale = Color3.fromRGB(255, 237, 213),
-
-	Green = Color3.fromRGB(34, 197, 94),
-	GreenDark = Color3.fromRGB(22, 163, 74),
-	GreenPale = Color3.fromRGB(220, 252, 231),
-
-	Yellow = Color3.fromRGB(234, 179, 8),
-
-	Red = Color3.fromRGB(239, 68, 68),
-	RedDark = Color3.fromRGB(220, 38, 38),
-	RedPale = Color3.fromRGB(254, 226, 226),
-
-	Purple = Color3.fromRGB(147, 51, 234),
-	PurplePale = Color3.fromRGB(243, 232, 255),
-
-	White = Color3.fromRGB(255, 255, 255),
-	OffWhite = Color3.fromRGB(250, 250, 252),
-
-	Gray50 = Color3.fromRGB(249, 250, 251),
-	Gray100 = Color3.fromRGB(243, 244, 246),
-	Gray200 = Color3.fromRGB(229, 231, 235),
-	Gray300 = Color3.fromRGB(209, 213, 219),
-	Gray400 = Color3.fromRGB(156, 163, 175),
-	Gray500 = Color3.fromRGB(107, 114, 128),
-	Gray600 = Color3.fromRGB(75, 85, 99),
-	Gray700 = Color3.fromRGB(55, 65, 81),
-	Gray800 = Color3.fromRGB(31, 41, 55),
-	Gray900 = Color3.fromRGB(17, 24, 39),
-
-	Black = Color3.fromRGB(0, 0, 0),
-	Bg = Color3.fromRGB(248, 250, 252),
-}
-
-local F = {
-	Title = Enum.Font.GothamBold,
-	Body = Enum.Font.Gotham,
-	Medium = Enum.Font.GothamMedium,
-	Button = Enum.Font.GothamBold,
-}
-
--- Sample Data (you can replace with real data later)
-local FamilyMembers = {
-	{ id = "father", name = "Robert Russell",   rel = "Father", emoji = "👨", age = 52, status = 85 },
-	{ id = "mother", name = "Margaret Russell", rel = "Mother", emoji = "👩", age = 48, status = 92 },
-	{ id = "sister", name = "Sarah Russell",    rel = "Sister", emoji = "👧", age = 14, status = 70 },
-}
-
-local Friends = {
-	{ id = "friend1", name = "Bradley Allen",   rel = "Best Friend",  emoji = "🧑", age = 18, status = 95 },
-	{ id = "friend2", name = "Jessica Martinez",rel = "Close Friend", emoji = "👩", age = 17, status = 78 },
-}
-
-local Enemies = {
-	{ id = "enemy1", name = "Derek Thompson",   rel = "Nemesis", emoji = "😠", age = 19, status = 15, reason = "Bullied you in school" },
-}
-
+-- Relationship Actions
 local ActionDefs = {
-	Compliment   = { text = "Compliment",  emoji = "🤗", minAge = 3, cost = 0,  desc = "Say something nice" },
-	Insult       = { text = "Insult",      emoji = "🤬", minAge = 5, cost = 0,  desc = "Say something mean" },
-	Gift         = { text = "Give Gift",   emoji = "🎁", minAge = 5, cost = 50, desc = "Give a $50 gift" },
-	SpendTime    = { text = "Spend Time",  emoji = "🕐", minAge = 2, cost = 0,  desc = "Hang out together" },
-	Argue        = { text = "Argue",       emoji = "😤", minAge = 5, cost = 0,  desc = "Start an argument" },
-	Apologize    = { text = "Apologize",   emoji = "🙏", minAge = 4, cost = 0,  desc = "Say sorry" },
-	AskMoney     = { text = "Ask for $",   emoji = "💰", minAge = 5, cost = 0,  desc = "Ask for money" },
-	Conversation = { text = "Chat",        emoji = "💬", minAge = 3, cost = 0,  desc = "Have a conversation" },
+	-- Family actions
+	family_hug = { name = "Hug", emoji = "🤗", effect = "+Relationship" },
+	family_talk = { name = "Talk", emoji = "💬", effect = "+Relationship" },
+	family_gift = { name = "Give Gift", emoji = "🎁", effect = "+Relationship", cost = 100 },
+	family_argue = { name = "Argue", emoji = "😤", effect = "-Relationship" },
+	family_money = { name = "Ask for Money", emoji = "💰", effect = "+Money maybe" },
+	family_vacation = { name = "Vacation Together", emoji = "✈️", effect = "+Relationship", cost = 2000 },
+	family_apologize = { name = "Apologize", emoji = "🙏", effect = "+Relationship" },
+	
+	-- Romance actions
+	romance_date = { name = "Go on Date", emoji = "💕", effect = "+Relationship", cost = 100 },
+	romance_gift = { name = "Give Gift", emoji = "🎁", effect = "+Relationship", cost = 200 },
+	romance_kiss = { name = "Kiss", emoji = "💋", effect = "+Relationship" },
+	romance_propose = { name = "Propose", emoji = "💍", effect = "Marriage", cost = 5000 },
+	romance_breakup = { name = "Break Up", emoji = "💔", effect = "End Relationship" },
+	romance_marry = { name = "Get Married", emoji = "👰", effect = "Marriage", cost = 10000 },
+	romance_flirt = { name = "Flirt", emoji = "😘", effect = "+Relationship" },
+	romance_compliment = { name = "Compliment", emoji = "😊", effect = "+Relationship" },
+	
+	-- Friend actions
+	friend_hangout = { name = "Hang Out", emoji = "🎉", effect = "+Relationship" },
+	friend_gift = { name = "Give Gift", emoji = "🎁", effect = "+Relationship", cost = 50 },
+	friend_betray = { name = "Betray", emoji = "🗡️", effect = "-Relationship" },
+	friend_support = { name = "Support", emoji = "🤝", effect = "+Relationship" },
+	friend_ghost = { name = "Ghost", emoji = "👻", effect = "End Friendship" },
+	friend_party = { name = "Party Together", emoji = "🎊", effect = "+Relationship" },
+	
+	-- Enemy actions
+	enemy_insult = { name = "Insult", emoji = "😤", effect = "-Relationship" },
+	enemy_fight = { name = "Fight", emoji = "👊", effect = "Physical!" },
+	enemy_forgive = { name = "Forgive", emoji = "🕊️", effect = "Peace" },
+	enemy_prank = { name = "Prank", emoji = "🃏", effect = "-Relationship" },
+	enemy_ignore = { name = "Ignore", emoji = "🙈", effect = "Nothing" },
 }
-
--- Helpers
-local function corner(p, r)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, r)
-	c.Parent = p
-	return c
-end
-
-local function pill(p)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0.5, 0)
-	c.Parent = p
-	return c
-end
-
-local function stroke(p, t, tr, col)
-	local s = Instance.new("UIStroke")
-	s.Thickness = t
-	s.Transparency = tr or 0
-	s.Color = col or C.White
-	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	s.Parent = p
-	return s
-end
-
-local function pad(p, l, r, t, b)
-	local pd = Instance.new("UIPadding")
-	pd.PaddingLeft   = UDim.new(0, l or 0)
-	pd.PaddingRight  = UDim.new(0, r or 0)
-	pd.PaddingTop    = UDim.new(0, t or 0)
-	pd.PaddingBottom = UDim.new(0, b or 0)
-	pd.Parent = p
-	return pd
-end
-
-local function tween(o, info, props)
-	local t = TweenService:Create(o, info, props)
-	t:Play()
-	return t
-end
-
-local function statusColor(s)
-	if s >= 80 then
-		return C.Green
-	elseif s >= 60 then
-		return C.Blue
-	elseif s >= 40 then
-		return C.Yellow
-	elseif s >= 20 then
-		return C.Orange
-	else
-		return C.Red
-	end
-end
-
-local function statusText(s)
-	if s >= 90 then
-		return "Excellent"
-	elseif s >= 70 then
-		return "Good"
-	elseif s >= 50 then
-		return "Okay"
-	elseif s >= 30 then
-		return "Poor"
-	else
-		return "Terrible"
-	end
-end
-
----------------------------------------------------------------------
--- Constructor
----------------------------------------------------------------------
 
 function RelationshipsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
 	local self = setmetatable({}, RelationshipsScreen)
-
 	self.screenGui = screenGui
 	self.playerState = playerState or {}
 	self.showBlur = showBlurFunc
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
-
+	self.currentTab = "family"
 	self:createUI()
-	self:createInteractionModal()
-	self:createResultModal()
-
 	return self
 end
 
@@ -194,14 +76,19 @@ function RelationshipsScreen:getAge()
 end
 
 function RelationshipsScreen:getMoney()
-	return self.playerState and self.playerState.Money or 0
+	local state = self.playerState
+	if not state then return 0 end
+	return state.Money or (state.Stats and state.Stats.Money) or 0
 end
 
----------------------------------------------------------------------
--- Main UI
----------------------------------------------------------------------
+function RelationshipsScreen:getRelationships()
+	local state = self.playerState
+	if not state then return {} end
+	return state.Relationships or {}
+end
 
 function RelationshipsScreen:createUI()
+	-- Main overlay
 	self.overlay = Instance.new("Frame")
 	self.overlay.Name = "RelationshipsOverlay"
 	self.overlay.Size = UDim2.fromScale(1, 1)
@@ -209,845 +96,883 @@ function RelationshipsScreen:createUI()
 	self.overlay.Visible = false
 	self.overlay.ZIndex = 80
 	self.overlay.Parent = self.screenGui
-
-	-- Header, offset down so Roblox core UI doesn't cover it
-	local header = Instance.new("Frame")
-	header.Name = "Header"
-	header.Size = UDim2.new(1, -16, 0, 60)
-	header.Position = UDim2.new(0, 8, 0, 44)
-	header.BackgroundColor3 = C.Pink
-	header.ZIndex = 85
-	header.Parent = self.overlay
-	corner(header, 18)
-
-	local hGrad = Instance.new("UIGradient")
-	hGrad.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, C.Pink),
-		ColorSequenceKeypoint.new(1, C.PinkDark),
+	
+	-- Premium header
+	local headerData = UI.createScreenHeader(self.overlay, {
+		title = "💕 Relationships",
+		color = C.Pink,
+		colorDark = C.PinkDark,
+		zIndex = 85
 	})
-	hGrad.Rotation = 90
-	hGrad.Parent = header
-
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, -120, 1, 0)
-	title.Position = UDim2.new(0, 20, 0, 0)
-	title.BackgroundTransparency = 1
-	title.Font = F.Title
-	title.TextSize = 20
-	title.TextColor3 = C.White
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.Text = "❤️ Relationships"
-	title.ZIndex = 86
-	title.Parent = header
-
-	-- Close button (real visible X)
-	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 40, 0, 40)
-	closeBtn.AnchorPoint = Vector2.new(1, 0.5)
-	closeBtn.Position = UDim2.new(1, -10, 0.5, 0)
-	closeBtn.BackgroundColor3 = C.White
-	closeBtn.BackgroundTransparency = 0.1
-	closeBtn.Font = F.Title
-	closeBtn.TextSize = 20
-	closeBtn.TextColor3 = C.PinkDark
-	closeBtn.Text = "X"
-	closeBtn.AutoButtonColor = false
-	closeBtn.ZIndex = 86
-	closeBtn.Parent = header
-	corner(closeBtn, 20)
-	stroke(closeBtn, 1, 0.85, C.PinkDark)
-
-	closeBtn.MouseButton1Click:Connect(function()
-		self:hide()
+	headerData.closeButton.MouseButton1Click:Connect(function() self:hide() end)
+	headerData.closeButton.MouseEnter:Connect(function()
+		UI.tween(headerData.closeButton, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
 	end)
-
-	closeBtn.MouseEnter:Connect(function()
-		tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
+	headerData.closeButton.MouseLeave:Connect(function()
+		UI.tween(headerData.closeButton, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
 	end)
-
-	closeBtn.MouseLeave:Connect(function()
-		tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
-	end)
-
-	-- Scroll area, placed under header with margin
-	local contentTopOffset = 44 + 60 + 8 -- header offset + height + spacing
-	local contentBottomPadding = 12
-
-	local content = Instance.new("ScrollingFrame")
-	content.Name = "Content"
-	content.Size = UDim2.new(1, -16, 1, - (contentTopOffset + contentBottomPadding))
-	content.Position = UDim2.new(0, 8, 0, contentTopOffset)
-	content.BackgroundTransparency = 1
-	content.CanvasSize = UDim2.new(0, 0, 0, 0)
-	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	content.ScrollBarThickness = 4
-	content.ScrollBarImageColor3 = C.Gray300
-	content.ZIndex = 81
-	content.Parent = self.overlay
-
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 14)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = content
-
-	self:createSection(content, "Family", C.Pink, C.PinkPale, C.PinkLight, FamilyMembers, 1)
-	self:createSection(content, "Friends", C.Blue, C.BluePale, C.BlueLight, Friends, 2)
-	self:createSection(content, "Enemies", C.Orange, C.OrangePale, Color3.fromRGB(254, 215, 170), Enemies, 3)
+	
+	-- Info bar
+	self.infoBar = UI.createInfoBar(self.overlay, { topOffset = 116, zIndex = 84 })
+	
+	self.ageChip = UI.createInfoChip(self.infoBar, {
+		name = "AgeChip", icon = "👤", text = "Age 0",
+		bgColor = C.BluePale, textColor = C.BlueDark, order = 1, width = 80
+	})
+	self.moneyChip = UI.createInfoChip(self.infoBar, {
+		name = "MoneyChip", icon = "💵", text = "$0",
+		bgColor = C.GreenPale, textColor = C.GreenDark, order = 2, width = 85
+	})
+	self.relationChip = UI.createInfoChip(self.infoBar, {
+		name = "RelationChip", icon = "❤️", text = "0",
+		bgColor = C.PinkPale, textColor = C.PinkDark, order = 3, width = 65
+	})
+	
+	-- Tab bar
+	self.tabBar = UI.createTabBar(self.overlay, { topOffset = 176, zIndex = 84 })
+	
+	local tabs = {
+		{ id = "family", text = "👨‍👩‍👧 Family", color = C.Cyan },
+		{ id = "romance", text = "💕 Romance", color = C.Pink },
+		{ id = "friends", text = "👥 Friends", color = C.Purple },
+		{ id = "enemies", text = "👿 Enemies", color = C.Red },
+	}
+	
+	self.tabBtns = {}
+	for i, tab in ipairs(tabs) do
+		local btn = UI.createTabButton(self.tabBar, {
+			id = tab.id, text = tab.text, color = tab.color,
+			active = i == 1, order = i, width = 0.23, zIndex = 84
+		})
+		self.tabBtns[tab.id] = { btn = btn, color = tab.color }
+		btn.MouseButton1Click:Connect(function() self:switchTab(tab.id) end)
+	end
+	
+	-- Scroll area
+	self.contentScroll = UI.createScrollArea(self.overlay, { topOffset = 240, zIndex = 81 })
+	
+	-- Modals
+	self:createInteractionModal()
+	self:createResultModal()
+	
+	-- Initial populate
+	self:populateFamily()
 end
 
-function RelationshipsScreen:createSection(parent, name, accentColor, bgColor, hoverColor, people, order)
-	local section = Instance.new("Frame")
-	section.Name = name .. "Section"
-	section.Size = UDim2.new(1, 0, 0, 0)
-	section.AutomaticSize = Enum.AutomaticSize.Y
-	section.BackgroundColor3 = C.White
-	section.LayoutOrder = order
-	section.ZIndex = 82
-	section.Parent = parent
-	corner(section, 18)
-	stroke(section, 1, 0.92, C.Gray200)
-	pad(section, 16, 16, 16, 16)
-
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 12)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = section
-
-	-- Header row
-	local headerRow = Instance.new("Frame")
-	headerRow.Size = UDim2.new(1, 0, 0, 36)
-	headerRow.BackgroundTransparency = 1
-	headerRow.LayoutOrder = 0
-	headerRow.ZIndex = 83
-	headerRow.Parent = section
-
-	local badge = Instance.new("Frame")
-	badge.Size = UDim2.new(0, 95, 0, 32)
-	badge.BackgroundColor3 = accentColor
-	badge.ZIndex = 84
-	badge.Parent = headerRow
-	pill(badge)
-
-	local badgeLbl = Instance.new("TextLabel")
-	badgeLbl.Size = UDim2.fromScale(1, 1)
-	badgeLbl.BackgroundTransparency = 1
-	badgeLbl.Font = F.Button
-	badgeLbl.TextSize = 14
-	badgeLbl.TextColor3 = C.White
-	badgeLbl.Text = name
-	badgeLbl.ZIndex = 85
-	badgeLbl.Parent = badge
-
+function RelationshipsScreen:updateInfoBar()
+	self.ageChip.text.Text = "Age " .. self:getAge()
+	self.moneyChip.text.Text = UI.formatMoney(self:getMoney())
+	
+	local rels = self:getRelationships()
 	local count = 0
-	if people then
-		count = #people
-	end
+	for _ in pairs(rels) do count = count + 1 end
+	self.relationChip.text.Text = count
+end
 
-	local countLbl = Instance.new("TextLabel")
-	countLbl.Size = UDim2.new(0, 150, 1, 0)
-	countLbl.Position = UDim2.new(0, 105, 0, 0)
-	countLbl.BackgroundTransparency = 1
-	countLbl.Font = F.Medium
-	countLbl.TextSize = 13
-	countLbl.TextColor3 = C.Gray400
-	countLbl.TextXAlignment = Enum.TextXAlignment.Left
-	if count > 0 then
-		countLbl.Text = tostring(count) .. " people"
+function RelationshipsScreen:switchTab(tabId)
+	self.currentTab = tabId
+	
+	for id, data in pairs(self.tabBtns) do
+		local isActive = id == tabId
+		UI.tween(data.btn, TweenInfo.new(0.15), {
+			BackgroundColor3 = isActive and data.color or C.White,
+			TextColor3 = isActive and C.White or C.Gray600
+		})
+	end
+	
+	for _, child in ipairs(self.contentScroll:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+	
+	if tabId == "family" then self:populateFamily()
+	elseif tabId == "romance" then self:populateRomance()
+	elseif tabId == "friends" then self:populateFriends()
+	elseif tabId == "enemies" then self:populateEnemies() end
+end
+
+function RelationshipsScreen:getRelByType(relType)
+	local rels = self:getRelationships()
+	local filtered = {}
+	
+	-- Mock some relationships if none exist (for UI demo)
+	if not rels or next(rels) == nil then
+		if relType == "family" then
+			filtered = {
+				{ id = "mother", name = "Your Mother", type = "family", relationship = 85, age = self:getAge() + 25, emoji = "👩" },
+				{ id = "father", name = "Your Father", type = "family", relationship = 80, age = self:getAge() + 27, emoji = "👨" },
+			}
+		elseif relType == "romance" and self:getAge() >= 16 then
+			filtered = {
+				{ id = "partner1", name = "Potential Partner", type = "romance", relationship = 0, age = self:getAge(), emoji = "💕", status = "Single" },
+			}
+		end
+		return filtered
+	end
+	
+	for id, rel in pairs(rels) do
+		if rel.type == relType then
+			table.insert(filtered, { id = id, name = rel.name, type = rel.type, relationship = rel.relationship or 50, age = rel.age or 0, emoji = rel.emoji or "👤", status = rel.status })
+		end
+	end
+	
+	return filtered
+end
+
+function RelationshipsScreen:populateFamily()
+	self:updateInfoBar()
+	
+	local family = self:getRelByType("family")
+	
+	if #family == 0 then
+		local emptyCard = self:createEmptyCard("No family members", "👨‍👩‍👧 Start a family to see them here", C.Cyan)
+		emptyCard.Parent = self.contentScroll
 	else
-		countLbl.Text = "No " .. string.lower(name) .. " yet"
+		local section = UI.createSectionCard(self.contentScroll, {
+			name = "FamilySection",
+			title = "Family Members",
+			subtitle = #family .. " people",
+			accentColor = C.Cyan,
+			badgeWidth = 85,
+			order = 1,
+			zIndex = 82
+		})
+		
+		for i, person in ipairs(family) do
+			self:createPersonCard(section, person, i, C.Cyan, C.CyanPale, "family")
+		end
 	end
-	countLbl.ZIndex = 84
-	countLbl.Parent = headerRow
+end
 
-	people = people or {}
-
-	if count == 0 then
-		-- Small hint text instead of giant blank
-		local emptyLbl = Instance.new("TextLabel")
-		emptyLbl.Size = UDim2.new(1, 0, 0, 32)
-		emptyLbl.BackgroundTransparency = 1
-		emptyLbl.Font = F.Body
-		emptyLbl.TextSize = 13
-		emptyLbl.TextColor3 = C.Gray400
-		emptyLbl.TextXAlignment = Enum.TextXAlignment.Left
-		emptyLbl.Text = "• You don't have any " .. string.lower(name) .. " here yet."
-		emptyLbl.LayoutOrder = 1
-		emptyLbl.ZIndex = 83
-		emptyLbl.Parent = section
+function RelationshipsScreen:populateRomance()
+	self:updateInfoBar()
+	
+	local age = self:getAge()
+	
+	if age < 16 then
+		local emptyCard = self:createEmptyCard("Too Young for Romance", "💕 Come back when you're 16!", C.Pink)
+		emptyCard.Parent = self.contentScroll
 		return
 	end
-
-	-- Person cards
-	for i, person in ipairs(people) do
-		local card = Instance.new("TextButton")
-		card.Name = person.id .. "_Card"
-		card.Size = UDim2.new(1, 0, 0, 76)
-		card.BackgroundColor3 = bgColor
-		card.Font = F.Body
-		card.Text = ""
-		card.AutoButtonColor = false
-		card.LayoutOrder = i
-		card.ZIndex = 83
-		card.Parent = section
-		corner(card, 16)
-
-		-- Avatar circle
-		local avatar = Instance.new("Frame")
-		avatar.Size = UDim2.new(0, 52, 0, 52)
-		avatar.Position = UDim2.new(0, 12, 0.5, -26)
-		avatar.BackgroundColor3 = C.White
-		avatar.ZIndex = 84
-		avatar.Parent = card
-		corner(avatar, 26)
-		stroke(avatar, 2, 0.5, accentColor)
-
-		local emojiLbl = Instance.new("TextLabel")
-		emojiLbl.Size = UDim2.fromScale(1, 1)
-		emojiLbl.BackgroundTransparency = 1
-		emojiLbl.Font = F.Body
-		emojiLbl.TextSize = 28
-		emojiLbl.Text = person.emoji or "👤"
-		emojiLbl.ZIndex = 85
-		emojiLbl.Parent = avatar
-
-		-- Name & relation
-		local nameLbl = Instance.new("TextLabel")
-		nameLbl.Size = UDim2.new(0.5, 0, 0, 22)
-		nameLbl.Position = UDim2.new(0, 74, 0, 12)
-		nameLbl.BackgroundTransparency = 1
-		nameLbl.Font = F.Title
-		nameLbl.TextSize = 16
-		nameLbl.TextColor3 = C.Gray900
-		nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-		nameLbl.Text = person.name or "Unknown"
-		nameLbl.ZIndex = 84
-		nameLbl.Parent = card
-
-		local relLbl = Instance.new("TextLabel")
-		relLbl.Size = UDim2.new(0.5, 0, 0, 16)
-		relLbl.Position = UDim2.new(0, 74, 0, 34)
-		relLbl.BackgroundTransparency = 1
-		relLbl.Font = F.Body
-		relLbl.TextSize = 12
-		relLbl.TextColor3 = C.Gray500
-		relLbl.TextXAlignment = Enum.TextXAlignment.Left
-		relLbl.Text = (person.rel or "Relation") .. " • Age " .. tostring(person.age or "?")
-		relLbl.ZIndex = 84
-		relLbl.Parent = card
-
-		-- Status indicator
-		local statusFrame = Instance.new("Frame")
-		statusFrame.Size = UDim2.new(0, 110, 0, 22)
-		statusFrame.Position = UDim2.new(0, 74, 0, 52)
-		statusFrame.BackgroundColor3 = statusColor(person.status or 50)
-		statusFrame.BackgroundTransparency = 0.85
-		statusFrame.ZIndex = 84
-		statusFrame.Parent = card
-		pill(statusFrame)
-
-		local statusLbl = Instance.new("TextLabel")
-		statusLbl.Size = UDim2.fromScale(1, 1)
-		statusLbl.BackgroundTransparency = 1
-		statusLbl.Font = F.Medium
-		statusLbl.TextSize = 11
-		statusLbl.TextColor3 = statusColor(person.status or 50)
-		statusLbl.Text = statusText(person.status or 50) .. " " .. tostring(person.status or 50) .. "%"
-		statusLbl.ZIndex = 85
-		statusLbl.Parent = statusFrame
-
-		-- Interact button
-		local interactBtn = Instance.new("TextButton")
-		interactBtn.Size = UDim2.new(0, 90, 0, 40)
-		interactBtn.AnchorPoint = Vector2.new(1, 0.5)
-		interactBtn.Position = UDim2.new(1, -12, 0.5, 0)
-		interactBtn.BackgroundColor3 = accentColor
-		interactBtn.Font = F.Button
-		interactBtn.TextSize = 13
-		interactBtn.TextColor3 = C.White
-		interactBtn.Text = "Interact"
-		interactBtn.AutoButtonColor = false
-		interactBtn.ZIndex = 84
-		interactBtn.Parent = card
-		pill(interactBtn)
-
-		interactBtn.MouseEnter:Connect(function()
-			tween(interactBtn, TweenInfo.new(0.12), { BackgroundColor3 = accentColor:Lerp(C.White, 0.12) })
-		end)
-
-		interactBtn.MouseLeave:Connect(function()
-			tween(interactBtn, TweenInfo.new(0.12), { BackgroundColor3 = accentColor })
-		end)
-
-		interactBtn.MouseButton1Click:Connect(function()
-			self:showInteractionModal(person, name, accentColor, bgColor)
-		end)
-
-		card.MouseEnter:Connect(function()
-			tween(card, TweenInfo.new(0.12), { BackgroundColor3 = hoverColor })
-		end)
-
-		card.MouseLeave:Connect(function()
-			tween(card, TweenInfo.new(0.12), { BackgroundColor3 = bgColor })
-		end)
+	
+	local romances = self:getRelByType("romance")
+	
+	-- Add "Meet Someone" option
+	local meetCard = self:createMeetCard()
+	meetCard.Parent = self.contentScroll
+	meetCard.LayoutOrder = 0
+	
+	if #romances > 0 then
+		local section = UI.createSectionCard(self.contentScroll, {
+			name = "RomanceSection",
+			title = "Romantic Partners",
+			subtitle = #romances .. " connections",
+			accentColor = C.Pink,
+			badgeWidth = 105,
+			order = 1,
+			zIndex = 82
+		})
+		
+		for i, person in ipairs(romances) do
+			self:createPersonCard(section, person, i, C.Pink, C.PinkPale, "romance")
+		end
 	end
 end
 
----------------------------------------------------------------------
--- Interaction Modal
----------------------------------------------------------------------
+function RelationshipsScreen:populateFriends()
+	self:updateInfoBar()
+	
+	local friends = self:getRelByType("friend")
+	
+	-- Add "Make Friend" option
+	local makeCard = self:createMakeFriendCard()
+	makeCard.Parent = self.contentScroll
+	makeCard.LayoutOrder = 0
+	
+	if #friends > 0 then
+		local section = UI.createSectionCard(self.contentScroll, {
+			name = "FriendsSection",
+			title = "Friends",
+			subtitle = #friends .. " buddies",
+			accentColor = C.Purple,
+			badgeWidth = 80,
+			order = 1,
+			zIndex = 82
+		})
+		
+		for i, person in ipairs(friends) do
+			self:createPersonCard(section, person, i, C.Purple, C.PurplePale, "friend")
+		end
+	else
+		local emptyCard = self:createEmptyCard("No Friends Yet", "👥 Make some friends to see them here", C.Purple)
+		emptyCard.LayoutOrder = 1
+		emptyCard.Parent = self.contentScroll
+	end
+end
+
+function RelationshipsScreen:populateEnemies()
+	self:updateInfoBar()
+	
+	local enemies = self:getRelByType("enemy")
+	
+	if #enemies == 0 then
+		local emptyCard = self:createEmptyCard("No Enemies", "😊 Everyone likes you... for now", C.Green)
+		emptyCard.Parent = self.contentScroll
+	else
+		local section = UI.createSectionCard(self.contentScroll, {
+			name = "EnemiesSection",
+			title = "Enemies",
+			subtitle = #enemies .. " rivals",
+			accentColor = C.Red,
+			badgeWidth = 75,
+			order = 1,
+			zIndex = 82
+		})
+		
+		for i, person in ipairs(enemies) do
+			self:createPersonCard(section, person, i, C.Red, C.RedPale, "enemy")
+		end
+	end
+end
+
+function RelationshipsScreen:createEmptyCard(title, subtitle, color)
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, 0, 0, 100)
+	card.BackgroundColor3 = C.White
+	card.ZIndex = 82
+	UI.corner(card, 18)
+	UI.stroke(card, 1, 0.8, color)
+	
+	local icon = Instance.new("TextLabel")
+	icon.Size = UDim2.new(0, 60, 0, 60)
+	icon.Position = UDim2.new(0, 20, 0.5, -30)
+	icon.BackgroundTransparency = 1
+	icon.Font = F.Body
+	icon.TextSize = 40
+	icon.Text = self.currentTab == "family" and "👨‍👩‍👧" or self.currentTab == "romance" and "💕" or self.currentTab == "friends" and "👥" or "😊"
+	icon.ZIndex = 83
+	icon.Parent = card
+	
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(0.6, 0, 0, 26)
+	titleLabel.Position = UDim2.new(0, 90, 0, 22)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 17
+	titleLabel.TextColor3 = C.Gray800
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = title
+	titleLabel.ZIndex = 83
+	titleLabel.Parent = card
+	
+	local subLabel = Instance.new("TextLabel")
+	subLabel.Size = UDim2.new(0.7, 0, 0, 22)
+	subLabel.Position = UDim2.new(0, 90, 0, 50)
+	subLabel.BackgroundTransparency = 1
+	subLabel.Font = F.Body
+	subLabel.TextSize = 13
+	subLabel.TextColor3 = C.Gray500
+	subLabel.TextXAlignment = Enum.TextXAlignment.Left
+	subLabel.Text = subtitle
+	subLabel.ZIndex = 83
+	subLabel.Parent = card
+	
+	return card
+end
+
+function RelationshipsScreen:createMeetCard()
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, 0, 0, 75)
+	card.BackgroundColor3 = C.PinkPale
+	card.ZIndex = 82
+	UI.corner(card, 18)
+	UI.stroke(card, 1, 0.7, C.Pink)
+	
+	local icon = Instance.new("TextLabel")
+	icon.Size = UDim2.new(0, 50, 0, 50)
+	icon.Position = UDim2.new(0, 14, 0.5, -25)
+	icon.BackgroundTransparency = 1
+	icon.Font = F.Body
+	icon.TextSize = 32
+	icon.Text = "💑"
+	icon.ZIndex = 83
+	icon.Parent = card
+	
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(0.5, 0, 0, 26)
+	titleLabel.Position = UDim2.new(0, 74, 0.5, -13)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 16
+	titleLabel.TextColor3 = C.PinkDark
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = "Meet Someone New"
+	titleLabel.ZIndex = 83
+	titleLabel.Parent = card
+	
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 80, 0, 40)
+	btn.AnchorPoint = Vector2.new(1, 0.5)
+	btn.Position = UDim2.new(1, -14, 0.5, 0)
+	btn.BackgroundColor3 = C.Pink
+	btn.Font = F.Button
+	btn.TextSize = 14
+	btn.TextColor3 = C.White
+	btn.Text = "Find"
+	btn.AutoButtonColor = false
+	btn.ZIndex = 83
+	btn.Parent = card
+	UI.corner(btn, 12)
+	
+	btn.MouseEnter:Connect(function()
+		UI.tween(btn, TweenInfo.new(0.12), { BackgroundColor3 = C.PinkDark })
+	end)
+	btn.MouseLeave:Connect(function()
+		UI.tween(btn, TweenInfo.new(0.12), { BackgroundColor3 = C.Pink })
+	end)
+	btn.MouseButton1Click:Connect(function()
+		self:doInteraction("meet_someone", "romance")
+	end)
+	
+	return card
+end
+
+function RelationshipsScreen:createMakeFriendCard()
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, 0, 0, 75)
+	card.BackgroundColor3 = C.PurplePale
+	card.ZIndex = 82
+	UI.corner(card, 18)
+	UI.stroke(card, 1, 0.7, C.Purple)
+	
+	local icon = Instance.new("TextLabel")
+	icon.Size = UDim2.new(0, 50, 0, 50)
+	icon.Position = UDim2.new(0, 14, 0.5, -25)
+	icon.BackgroundTransparency = 1
+	icon.Font = F.Body
+	icon.TextSize = 32
+	icon.Text = "🤝"
+	icon.ZIndex = 83
+	icon.Parent = card
+	
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(0.5, 0, 0, 26)
+	titleLabel.Position = UDim2.new(0, 74, 0.5, -13)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 16
+	titleLabel.TextColor3 = C.PurpleDark
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = "Make a New Friend"
+	titleLabel.ZIndex = 83
+	titleLabel.Parent = card
+	
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 80, 0, 40)
+	btn.AnchorPoint = Vector2.new(1, 0.5)
+	btn.Position = UDim2.new(1, -14, 0.5, 0)
+	btn.BackgroundColor3 = C.Purple
+	btn.Font = F.Button
+	btn.TextSize = 14
+	btn.TextColor3 = C.White
+	btn.Text = "Meet"
+	btn.AutoButtonColor = false
+	btn.ZIndex = 83
+	btn.Parent = card
+	UI.corner(btn, 12)
+	
+	btn.MouseEnter:Connect(function()
+		UI.tween(btn, TweenInfo.new(0.12), { BackgroundColor3 = C.PurpleDark })
+	end)
+	btn.MouseLeave:Connect(function()
+		UI.tween(btn, TweenInfo.new(0.12), { BackgroundColor3 = C.Purple })
+	end)
+	btn.MouseButton1Click:Connect(function()
+		self:doInteraction("make_friend", "friend")
+	end)
+	
+	return card
+end
+
+function RelationshipsScreen:createPersonCard(parent, person, order, accentColor, paleColor, relType)
+	local card = Instance.new("Frame")
+	card.Name = person.id
+	card.Size = UDim2.new(1, 0, 0, 105)
+	card.BackgroundColor3 = C.White
+	card.LayoutOrder = order
+	card.ZIndex = 83
+	card.Parent = parent
+	UI.corner(card, 18)
+	UI.stroke(card, 1, 0.88, C.Gray200)
+	UI.createShadow(card, 2, 6, C.Black, 0.95)
+	
+	-- Avatar
+	local avatarFrame = Instance.new("Frame")
+	avatarFrame.Size = UDim2.new(0, 64, 0, 64)
+	avatarFrame.Position = UDim2.new(0, 16, 0.5, -32)
+	avatarFrame.BackgroundColor3 = paleColor
+	avatarFrame.ZIndex = 84
+	avatarFrame.Parent = card
+	UI.corner(avatarFrame, 16)
+	UI.gradient(avatarFrame, paleColor, paleColor:Lerp(C.White, 0.35), 135)
+	
+	local avatarLabel = Instance.new("TextLabel")
+	avatarLabel.Size = UDim2.fromScale(1, 1)
+	avatarLabel.BackgroundTransparency = 1
+	avatarLabel.Font = F.Body
+	avatarLabel.TextSize = 36
+	avatarLabel.Text = person.emoji or "👤"
+	avatarLabel.ZIndex = 85
+	avatarLabel.Parent = avatarFrame
+	
+	-- Name
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(0.45, 0, 0, 24)
+	nameLabel.Position = UDim2.new(0, 94, 0, 14)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Font = F.Title
+	nameLabel.TextSize = 16
+	nameLabel.TextColor3 = C.Gray900
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Text = person.name
+	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	nameLabel.ZIndex = 84
+	nameLabel.Parent = card
+	
+	-- Relationship bar
+	local relPct = math.clamp((person.relationship or 50) / 100, 0, 1)
+	local relColor = relPct >= 0.7 and C.Green or relPct >= 0.4 and C.Amber or C.Red
+	
+	local relBarBg = Instance.new("Frame")
+	relBarBg.Size = UDim2.new(0.35, 0, 0, 10)
+	relBarBg.Position = UDim2.new(0, 94, 0, 42)
+	relBarBg.BackgroundColor3 = C.Gray200
+	relBarBg.ZIndex = 84
+	relBarBg.Parent = card
+	UI.pill(relBarBg)
+	
+	local relBarFill = Instance.new("Frame")
+	relBarFill.Size = UDim2.new(relPct, 0, 1, 0)
+	relBarFill.BackgroundColor3 = relColor
+	relBarFill.ZIndex = 85
+	relBarFill.Parent = relBarBg
+	UI.pill(relBarFill)
+	
+	-- Percentage
+	local relLabel = Instance.new("TextLabel")
+	relLabel.Size = UDim2.new(0, 50, 0, 18)
+	relLabel.Position = UDim2.new(0, 94 + (parent.AbsoluteSize.X * 0.35) + 8, 0, 38)
+	relLabel.BackgroundTransparency = 1
+	relLabel.Font = F.Medium
+	relLabel.TextSize = 12
+	relLabel.TextColor3 = relColor
+	relLabel.TextXAlignment = Enum.TextXAlignment.Left
+	relLabel.Text = math.floor(person.relationship or 50) .. "%"
+	relLabel.ZIndex = 84
+	relLabel.Parent = card
+	
+	-- Status badge
+	local status = person.status or (relType == "romance" and "Dating" or relType == "family" and "Family" or "Friend")
+	local statusBadge = Instance.new("Frame")
+	statusBadge.Size = UDim2.new(0, 75, 0, 24)
+	statusBadge.Position = UDim2.new(0, 94, 0, 60)
+	statusBadge.BackgroundColor3 = paleColor
+	statusBadge.ZIndex = 84
+	statusBadge.Parent = card
+	UI.pill(statusBadge)
+	
+	local statusLabel = Instance.new("TextLabel")
+	statusLabel.Size = UDim2.fromScale(1, 1)
+	statusLabel.BackgroundTransparency = 1
+	statusLabel.Font = F.Medium
+	statusLabel.TextSize = 11
+	statusLabel.TextColor3 = accentColor:Lerp(C.Black, 0.3)
+	statusLabel.Text = status
+	statusLabel.ZIndex = 85
+	statusLabel.Parent = statusBadge
+	
+	-- Interact button
+	local interactBtn = Instance.new("TextButton")
+	interactBtn.Size = UDim2.new(0, 80, 0, 46)
+	interactBtn.AnchorPoint = Vector2.new(1, 0.5)
+	interactBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	interactBtn.BackgroundColor3 = accentColor
+	interactBtn.Font = F.Button
+	interactBtn.TextSize = 14
+	interactBtn.TextColor3 = C.White
+	interactBtn.Text = "Interact"
+	interactBtn.AutoButtonColor = false
+	interactBtn.ZIndex = 84
+	interactBtn.Parent = card
+	UI.corner(interactBtn, 14)
+	
+	interactBtn.MouseEnter:Connect(function()
+		UI.tween(interactBtn, TweenInfo.new(0.12), { 
+			Size = UDim2.new(0, 86, 0, 50),
+			BackgroundColor3 = accentColor:Lerp(C.Black, 0.15)
+		})
+		UI.tween(card, TweenInfo.new(0.12), { BackgroundColor3 = paleColor:Lerp(C.White, 0.6) })
+	end)
+	interactBtn.MouseLeave:Connect(function()
+		UI.tween(interactBtn, TweenInfo.new(0.12), { 
+			Size = UDim2.new(0, 80, 0, 46),
+			BackgroundColor3 = accentColor
+		})
+		UI.tween(card, TweenInfo.new(0.12), { BackgroundColor3 = C.White })
+	end)
+	interactBtn.MouseButton1Click:Connect(function()
+		self:showInteractionModal(person, relType, accentColor, paleColor)
+	end)
+end
 
 function RelationshipsScreen:createInteractionModal()
-	self.interactionOverlay = Instance.new("Frame")
-	self.interactionOverlay.Size = UDim2.fromScale(1, 1)
-	self.interactionOverlay.BackgroundColor3 = C.Black
-	self.interactionOverlay.BackgroundTransparency = 0.4
-	self.interactionOverlay.Visible = false
-	self.interactionOverlay.ZIndex = 90
-	self.interactionOverlay.Parent = self.screenGui
-
-	-- Click outside to close
+	self.interactOverlay = Instance.new("Frame")
+	self.interactOverlay.Size = UDim2.fromScale(1, 1)
+	self.interactOverlay.BackgroundColor3 = C.Black
+	self.interactOverlay.BackgroundTransparency = 0.4
+	self.interactOverlay.Visible = false
+	self.interactOverlay.ZIndex = 94
+	self.interactOverlay.Parent = self.screenGui
+	
+	-- Close on background tap
 	local closeArea = Instance.new("TextButton")
 	closeArea.Size = UDim2.fromScale(1, 1)
 	closeArea.BackgroundTransparency = 1
 	closeArea.Text = ""
-	closeArea.ZIndex = 90
-	closeArea.Parent = self.interactionOverlay
+	closeArea.ZIndex = 94
+	closeArea.Parent = self.interactOverlay
 	closeArea.MouseButton1Click:Connect(function()
 		self:hideInteractionModal()
 	end)
-
-	-- Modal card
-	self.interactionCard = Instance.new("Frame")
-	self.interactionCard.Size = UDim2.new(0.92, 0, 0, 0)
-	self.interactionCard.AutomaticSize = Enum.AutomaticSize.Y
-	self.interactionCard.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.interactionCard.Position = UDim2.fromScale(0.5, 0.5)
-	self.interactionCard.BackgroundColor3 = C.White
-	self.interactionCard.ZIndex = 92
-	self.interactionCard.Parent = self.interactionOverlay
-	corner(self.interactionCard, 24)
-
-	-- Top accent bar
-	self.modalAccent = Instance.new("Frame")
-	self.modalAccent.Size = UDim2.new(1, 0, 0, 6)
-	self.modalAccent.BackgroundColor3 = C.Pink
-	self.modalAccent.ZIndex = 93
-	self.modalAccent.Parent = self.interactionCard
-	corner(self.modalAccent, 24)
-
-	local accentFix = Instance.new("Frame")
-	accentFix.Size = UDim2.new(1, 0, 0, 4)
-	accentFix.Position = UDim2.new(0, 0, 0, 4)
-	accentFix.BackgroundColor3 = C.Pink
-	accentFix.ZIndex = 93
-	accentFix.Parent = self.modalAccent
-	self.accentFix = accentFix
-
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 0)
-	layout.Parent = self.interactionCard
-
-	-- Person header
-	self.modalHeader = Instance.new("Frame")
-	self.modalHeader.Size = UDim2.new(1, 0, 0, 100)
-	self.modalHeader.BackgroundTransparency = 1
-	self.modalHeader.LayoutOrder = 1
-	self.modalHeader.ZIndex = 93
-	self.modalHeader.Parent = self.interactionCard
-
-	-- Close button for modal (clean X)
-	local modalClose = Instance.new("TextButton")
-	modalClose.Size = UDim2.new(0, 34, 0, 34)
-	modalClose.AnchorPoint = Vector2.new(1, 0)
-	modalClose.Position = UDim2.new(1, -12, 0, 16)
-	modalClose.BackgroundColor3 = C.Gray100
-	modalClose.Font = F.Title
-	modalClose.TextSize = 18
-	modalClose.TextColor3 = C.Gray500
-	modalClose.Text = "X"
-	modalClose.AutoButtonColor = false
-	modalClose.ZIndex = 95
-	modalClose.Parent = self.modalHeader
-	corner(modalClose, 17)
-
-	modalClose.MouseButton1Click:Connect(function()
+	
+	-- Card
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(0.92, 0, 0, 480)
+	card.AnchorPoint = Vector2.new(0.5, 0.5)
+	card.Position = UDim2.fromScale(0.5, 0.5)
+	card.BackgroundColor3 = C.White
+	card.ZIndex = 95
+	card.Parent = self.interactOverlay
+	UI.corner(card, 24)
+	UI.createShadow(card, 6, 20, C.Black, 0.85)
+	self.interactCard = card
+	
+	-- Header
+	self.interactHeader = Instance.new("Frame")
+	self.interactHeader.Size = UDim2.new(1, 0, 0, 90)
+	self.interactHeader.BackgroundColor3 = C.Pink
+	self.interactHeader.ZIndex = 96
+	self.interactHeader.Parent = card
+	UI.corner(self.interactHeader, 24)
+	
+	-- Bottom cover (square off bottom of header)
+	local headerCover = Instance.new("Frame")
+	headerCover.Size = UDim2.new(1, 0, 0, 30)
+	headerCover.Position = UDim2.new(0, 0, 1, -30)
+	headerCover.BackgroundColor3 = C.Pink
+	headerCover.BorderSizePixel = 0
+	headerCover.ZIndex = 96
+	headerCover.Parent = self.interactHeader
+	
+	-- Avatar in header
+	self.interactAvatar = Instance.new("Frame")
+	self.interactAvatar.Size = UDim2.new(0, 60, 0, 60)
+	self.interactAvatar.Position = UDim2.new(0, 18, 0.5, -30)
+	self.interactAvatar.BackgroundColor3 = C.White
+	self.interactAvatar.ZIndex = 97
+	self.interactAvatar.Parent = self.interactHeader
+	UI.corner(self.interactAvatar, 14)
+	
+	self.interactAvatarEmoji = Instance.new("TextLabel")
+	self.interactAvatarEmoji.Size = UDim2.fromScale(1, 1)
+	self.interactAvatarEmoji.BackgroundTransparency = 1
+	self.interactAvatarEmoji.Font = F.Body
+	self.interactAvatarEmoji.TextSize = 32
+	self.interactAvatarEmoji.Text = "👤"
+	self.interactAvatarEmoji.ZIndex = 98
+	self.interactAvatarEmoji.Parent = self.interactAvatar
+	
+	-- Name in header
+	self.interactName = Instance.new("TextLabel")
+	self.interactName.Size = UDim2.new(0.55, 0, 0, 28)
+	self.interactName.Position = UDim2.new(0, 90, 0, 20)
+	self.interactName.BackgroundTransparency = 1
+	self.interactName.Font = F.Title
+	self.interactName.TextSize = 20
+	self.interactName.TextColor3 = C.White
+	self.interactName.TextXAlignment = Enum.TextXAlignment.Left
+	self.interactName.Text = "Name"
+	self.interactName.ZIndex = 97
+	self.interactName.Parent = self.interactHeader
+	
+	-- Status in header
+	self.interactStatus = Instance.new("TextLabel")
+	self.interactStatus.Size = UDim2.new(0.5, 0, 0, 22)
+	self.interactStatus.Position = UDim2.new(0, 90, 0, 50)
+	self.interactStatus.BackgroundTransparency = 1
+	self.interactStatus.Font = F.Body
+	self.interactStatus.TextSize = 14
+	self.interactStatus.TextColor3 = Color3.new(1, 1, 1)
+	self.interactStatus.TextTransparency = 0.2
+	self.interactStatus.TextXAlignment = Enum.TextXAlignment.Left
+	self.interactStatus.Text = "Status"
+	self.interactStatus.ZIndex = 97
+	self.interactStatus.Parent = self.interactHeader
+	
+	-- Close button
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 36, 0, 36)
+	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.Position = UDim2.new(1, -14, 0, 14)
+	closeBtn.BackgroundColor3 = C.White
+	closeBtn.BackgroundTransparency = 0.1
+	closeBtn.Font = F.Title
+	closeBtn.TextSize = 20
+	closeBtn.TextColor3 = C.Pink
+	closeBtn.Text = "✕"
+	closeBtn.AutoButtonColor = false
+	closeBtn.ZIndex = 98
+	closeBtn.Parent = self.interactHeader
+	UI.corner(closeBtn, 10)
+	closeBtn.MouseButton1Click:Connect(function()
 		self:hideInteractionModal()
 	end)
-
-	modalClose.MouseEnter:Connect(function()
-		tween(modalClose, TweenInfo.new(0.1), { BackgroundColor3 = C.Gray200 })
-	end)
-
-	modalClose.MouseLeave:Connect(function()
-		tween(modalClose, TweenInfo.new(0.1), { BackgroundColor3 = C.Gray100 })
-	end)
-
-	self.modalAvatar = Instance.new("Frame")
-	self.modalAvatar.Size = UDim2.new(0, 64, 0, 64)
-	self.modalAvatar.Position = UDim2.new(0.5, -32, 0, 20)
-	self.modalAvatar.BackgroundColor3 = C.PinkPale
-	self.modalAvatar.ZIndex = 94
-	self.modalAvatar.Parent = self.modalHeader
-	corner(self.modalAvatar, 32)
-
-	self.modalAvatarStroke = stroke(self.modalAvatar, 3, 0.3, C.Pink)
-
-	self.modalEmoji = Instance.new("TextLabel")
-	self.modalEmoji.Size = UDim2.fromScale(1, 1)
-	self.modalEmoji.BackgroundTransparency = 1
-	self.modalEmoji.Font = F.Body
-	self.modalEmoji.TextSize = 34
-	self.modalEmoji.Text = "👤"
-	self.modalEmoji.ZIndex = 95
-	self.modalEmoji.Parent = self.modalAvatar
-
-	-- Name + relation
-	self.modalInfoContainer = Instance.new("Frame")
-	self.modalInfoContainer.Size = UDim2.new(1, 0, 0, 50)
-	self.modalInfoContainer.BackgroundTransparency = 1
-	self.modalInfoContainer.LayoutOrder = 2
-	self.modalInfoContainer.ZIndex = 93
-	self.modalInfoContainer.Parent = self.interactionCard
-
-	self.modalName = Instance.new("TextLabel")
-	self.modalName.Size = UDim2.new(1, 0, 0, 26)
-	self.modalName.BackgroundTransparency = 1
-	self.modalName.Font = F.Title
-	self.modalName.TextSize = 20
-	self.modalName.TextColor3 = C.Gray900
-	self.modalName.Text = "Person Name"
-	self.modalName.ZIndex = 94
-	self.modalName.Parent = self.modalInfoContainer
-
-	self.modalRel = Instance.new("TextLabel")
-	self.modalRel.Size = UDim2.new(1, 0, 0, 20)
-	self.modalRel.Position = UDim2.new(0, 0, 0, 26)
-	self.modalRel.BackgroundTransparency = 1
-	self.modalRel.Font = F.Body
-	self.modalRel.TextSize = 13
-	self.modalRel.TextColor3 = C.Gray500
-	self.modalRel.Text = "Relationship • Age"
-	self.modalRel.ZIndex = 94
-	self.modalRel.Parent = self.modalInfoContainer
-
-	-- Divider
-	local divider = Instance.new("Frame")
-	divider.Size = UDim2.new(1, -40, 0, 1)
-	divider.Position = UDim2.new(0, 20, 0, 0)
-	divider.BackgroundColor3 = C.Gray200
-	divider.LayoutOrder = 3
-	divider.ZIndex = 93
-	divider.Parent = self.interactionCard
-
-	-- Actions grid
-	self.actionsContainer = Instance.new("Frame")
-	self.actionsContainer.Size = UDim2.new(1, 0, 0, 0)
-	self.actionsContainer.AutomaticSize = Enum.AutomaticSize.Y
-	self.actionsContainer.BackgroundTransparency = 1
-	self.actionsContainer.LayoutOrder = 4
-	self.actionsContainer.ZIndex = 93
-	self.actionsContainer.Parent = self.interactionCard
-
-	pad(self.actionsContainer, 16, 16, 16, 20)
-
-	self.actionsGrid = Instance.new("Frame")
-	self.actionsGrid.Size = UDim2.new(1, 0, 0, 0)
-	self.actionsGrid.AutomaticSize = Enum.AutomaticSize.Y
-	self.actionsGrid.BackgroundTransparency = 1
-	self.actionsGrid.ZIndex = 94
-	self.actionsGrid.Parent = self.actionsContainer
-
-	local gridLayout = Instance.new("UIGridLayout")
-	gridLayout.CellSize = UDim2.new(0.48, 0, 0, 72)
-	gridLayout.CellPadding = UDim2.new(0.04, 0, 0, 10)
-	gridLayout.FillDirection = Enum.FillDirection.Horizontal
-	gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	gridLayout.Parent = self.actionsGrid
-
-	self.actionButtons = {}
+	
+	-- Actions scroll
+	self.actionsScroll = Instance.new("ScrollingFrame")
+	self.actionsScroll.Size = UDim2.new(1, -28, 1, -105)
+	self.actionsScroll.Position = UDim2.new(0, 14, 0, 100)
+	self.actionsScroll.BackgroundTransparency = 1
+	self.actionsScroll.ScrollBarThickness = 4
+	self.actionsScroll.ScrollBarImageColor3 = C.Gray400
+	self.actionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	self.actionsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	self.actionsScroll.ZIndex = 96
+	self.actionsScroll.Parent = card
+	
+	local actionsLayout = Instance.new("UIListLayout")
+	actionsLayout.Padding = UDim.new(0, 10)
+	actionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	actionsLayout.Parent = self.actionsScroll
+	
+	local actionsPad = Instance.new("UIPadding")
+	actionsPad.PaddingBottom = UDim.new(0, 16)
+	actionsPad.Parent = self.actionsScroll
+	
+	self.currentInteractPerson = nil
+	self.currentInteractType = nil
 end
 
----------------------------------------------------------------------
--- Result Modal (BitLife-style card with colored shell)
----------------------------------------------------------------------
-
-function RelationshipsScreen:createResultModal()
-	self.resultOverlay = Instance.new("Frame")
-	self.resultOverlay.Size = UDim2.fromScale(1, 1)
-	self.resultOverlay.BackgroundColor3 = C.Black
-	self.resultOverlay.BackgroundTransparency = 0.5
-	self.resultOverlay.Visible = false
-	self.resultOverlay.ZIndex = 96
-	self.resultOverlay.Parent = self.screenGui
-
-	-- Click outside to close
-	local resultCloseArea = Instance.new("TextButton")
-	resultCloseArea.Size = UDim2.fromScale(1, 1)
-	resultCloseArea.BackgroundTransparency = 1
-	resultCloseArea.Text = ""
-	resultCloseArea.ZIndex = 96
-	resultCloseArea.Parent = self.resultOverlay
-	resultCloseArea.MouseButton1Click:Connect(function()
-		self:hideResultModal()
-	end)
-
-	-- Outer colored shell (changes based on success/fail)
-	self.resultShell = Instance.new("Frame")
-	self.resultShell.Size = UDim2.new(0.88, 0, 0, 0)
-	self.resultShell.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultShell.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.resultShell.Position = UDim2.fromScale(0.5, 0.5)
-	self.resultShell.BackgroundColor3 = C.Green
-	self.resultShell.ZIndex = 97
-	self.resultShell.Parent = self.resultOverlay
-	corner(self.resultShell, 24)
-
-	self.resultShellStroke = stroke(self.resultShell, 3, 0, C.GreenDark)
-
-	-- Shell padding
-	pad(self.resultShell, 4, 4, 4, 4)
-
-	-- Inner white card
-	self.resultCard = Instance.new("Frame")
-	self.resultCard.Size = UDim2.new(1, 0, 0, 0)
-	self.resultCard.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultCard.BackgroundColor3 = C.White
-	self.resultCard.ZIndex = 98
-	self.resultCard.Parent = self.resultShell
-	corner(self.resultCard, 20)
-
-	-- Content container
-	local resultContent = Instance.new("Frame")
-	resultContent.Size = UDim2.new(1, 0, 0, 0)
-	resultContent.AutomaticSize = Enum.AutomaticSize.Y
-	resultContent.BackgroundTransparency = 1
-	resultContent.ZIndex = 99
-	resultContent.Parent = self.resultCard
-
-	pad(resultContent, 24, 24, 28, 24)
-
-	local layout = Instance.new("UIListLayout")
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 14)
-	layout.Parent = resultContent
-
-	-- Emoji circle
-	self.resultEmojiFrame = Instance.new("Frame")
-	self.resultEmojiFrame.Size = UDim2.new(0, 72, 0, 72)
-	self.resultEmojiFrame.BackgroundColor3 = C.GreenPale
-	self.resultEmojiFrame.LayoutOrder = 1
-	self.resultEmojiFrame.ZIndex = 100
-	self.resultEmojiFrame.Parent = resultContent
-	corner(self.resultEmojiFrame, 36)
-
-	self.resultEmoji = Instance.new("TextLabel")
-	self.resultEmoji.Size = UDim2.fromScale(1, 1)
-	self.resultEmoji.BackgroundTransparency = 1
-	self.resultEmoji.Font = F.Body
-	self.resultEmoji.TextSize = 38
-	self.resultEmoji.Text = "😊"
-	self.resultEmoji.ZIndex = 101
-	self.resultEmoji.Parent = self.resultEmojiFrame
-
-	-- Title
-	self.resultTitle = Instance.new("TextLabel")
-	self.resultTitle.Size = UDim2.new(1, 0, 0, 28)
-	self.resultTitle.BackgroundTransparency = 1
-	self.resultTitle.Font = F.Title
-	self.resultTitle.TextSize = 22
-	self.resultTitle.TextColor3 = C.Gray900
-	self.resultTitle.Text = "It went well!"
-	self.resultTitle.LayoutOrder = 2
-	self.resultTitle.ZIndex = 100
-	self.resultTitle.Parent = resultContent
-
-	-- Message
-	self.resultMsg = Instance.new("TextLabel")
-	self.resultMsg.Size = UDim2.new(1, 0, 0, 0)
-	self.resultMsg.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultMsg.BackgroundTransparency = 1
-	self.resultMsg.Font = F.Body
-	self.resultMsg.TextSize = 15
-	self.resultMsg.TextColor3 = C.Gray600
-	self.resultMsg.TextWrapped = true
-	self.resultMsg.LineHeight = 1.4
-	self.resultMsg.Text = "Your relationship has improved."
-	self.resultMsg.LayoutOrder = 3
-	self.resultMsg.ZIndex = 100
-	self.resultMsg.Parent = resultContent
-
-	-- Spacer
-	local spacer = Instance.new("Frame")
-	spacer.Size = UDim2.new(1, 0, 0, 6)
-	spacer.BackgroundTransparency = 1
-	spacer.LayoutOrder = 4
-	spacer.Parent = resultContent
-
-	-- Continue button
-	self.resultOkBtn = Instance.new("TextButton")
-	self.resultOkBtn.Size = UDim2.new(1, 0, 0, 50)
-	self.resultOkBtn.BackgroundColor3 = C.Green
-	self.resultOkBtn.Font = F.Button
-	self.resultOkBtn.TextSize = 16
-	self.resultOkBtn.TextColor3 = C.White
-	self.resultOkBtn.Text = "Continue"
-	self.resultOkBtn.AutoButtonColor = false
-	self.resultOkBtn.LayoutOrder = 5
-	self.resultOkBtn.ZIndex = 100
-	self.resultOkBtn.Parent = resultContent
-	corner(self.resultOkBtn, 12)
-
-	self.resultOkBtn.MouseButton1Click:Connect(function()
-		self:hideResultModal()
-	end)
-
-	self.resultOkBtn.MouseEnter:Connect(function()
-		tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.GreenDark })
-	end)
-
-	self.resultOkBtn.MouseLeave:Connect(function()
-		tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Green })
-	end)
-end
-
----------------------------------------------------------------------
--- Interaction behaviour
----------------------------------------------------------------------
-
-function RelationshipsScreen:showInteractionModal(person, category, accentColor, bgColor)
-	self.currentPerson = person
-	self.currentCategory = category
-	self.currentAccent = accentColor
-
-	self.modalAccent.BackgroundColor3 = accentColor
-	self.accentFix.BackgroundColor3 = accentColor
-	self.modalAvatar.BackgroundColor3 = bgColor
-	self.modalAvatarStroke.Color = accentColor
-
-	self.modalEmoji.Text = person.emoji or "👤"
-	self.modalName.Text = person.name or "Unknown"
-	self.modalRel.Text = (person.rel or "Relationship") ..
-		" • Age " .. tostring(person.age or "?") ..
-		" • " .. statusText(person.status or 50) .. " " .. tostring(person.status or 50) .. "%"
-
-	-- Clear old buttons
-	for _, btn in ipairs(self.actionButtons) do
-		btn:Destroy()
+function RelationshipsScreen:showInteractionModal(person, relType, accentColor, paleColor)
+	self.currentInteractPerson = person
+	self.currentInteractType = relType
+	
+	-- Update header
+	self.interactHeader.BackgroundColor3 = accentColor
+	self.interactHeader:FindFirstChild("Frame", true).BackgroundColor3 = accentColor -- header cover
+	self.interactAvatar.BackgroundColor3 = paleColor
+	self.interactAvatarEmoji.Text = person.emoji or "👤"
+	self.interactName.Text = person.name
+	self.interactStatus.Text = (person.status or "Relationship") .. " • " .. math.floor(person.relationship or 50) .. "% ❤️"
+	
+	-- Clear old actions
+	for _, child in ipairs(self.actionsScroll:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
 	end
-	self.actionButtons = {}
-
-	local age = self:getAge()
-	local money = self:getMoney()
-
-	local actions
-
-	if category == "Enemies" then
-		actions = { "Insult", "Argue", "Apologize", "Conversation" }
-	elseif category == "Family" then
-		actions = { "Conversation", "Compliment", "SpendTime", "Gift", "AskMoney", "Apologize" }
-	elseif category == "Friends" then
-		actions = { "Conversation", "Compliment", "SpendTime", "Gift", "Argue" }
-	else
-		actions = { "Conversation", "Compliment", "SpendTime", "Apologize" }
+	
+	-- Add actions based on relationship type
+	local actions = {}
+	if relType == "family" then
+		actions = { "family_hug", "family_talk", "family_gift", "family_argue", "family_money", "family_vacation", "family_apologize" }
+	elseif relType == "romance" then
+		actions = { "romance_date", "romance_gift", "romance_kiss", "romance_flirt", "romance_compliment", "romance_propose", "romance_breakup" }
+	elseif relType == "friend" then
+		actions = { "friend_hangout", "friend_gift", "friend_support", "friend_party", "friend_betray", "friend_ghost" }
+	elseif relType == "enemy" then
+		actions = { "enemy_insult", "enemy_fight", "enemy_prank", "enemy_ignore", "enemy_forgive" }
 	end
-
-	for i, actionKey in ipairs(actions) do
-		local def = ActionDefs[actionKey]
-		if def then
-			local canDo = age >= def.minAge and (def.cost == 0 or money >= def.cost)
-
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, 0, 1, 0)
-			btn.BackgroundColor3 = canDo and C.White or C.Gray100
-			btn.Font = F.Button
-			btn.Text = ""
-			btn.AutoButtonColor = false
-			btn.LayoutOrder = i
-			btn.ZIndex = 95
-			btn.Parent = self.actionsGrid
-			corner(btn, 14)
-			stroke(btn, 1, canDo and 0.85 or 0.95, canDo and accentColor or C.Gray300)
-
-			local emojiLbl = Instance.new("TextLabel")
-			emojiLbl.Size = UDim2.new(1, 0, 0, 28)
-			emojiLbl.Position = UDim2.new(0, 0, 0, 10)
-			emojiLbl.BackgroundTransparency = 1
-			emojiLbl.Font = F.Body
-			emojiLbl.TextSize = 24
-			emojiLbl.Text = def.emoji
-			emojiLbl.ZIndex = 96
-			emojiLbl.Parent = btn
-
-			local textLbl = Instance.new("TextLabel")
-			textLbl.Size = UDim2.new(1, 0, 0, 18)
-			textLbl.Position = UDim2.new(0, 0, 0, 38)
-			textLbl.BackgroundTransparency = 1
-			textLbl.Font = F.Button
-			textLbl.TextSize = 12
-			textLbl.TextColor3 = canDo and C.Gray800 or C.Gray400
-			textLbl.Text = def.text
-			textLbl.ZIndex = 96
-			textLbl.Parent = btn
-
-			if not canDo then
-				local reqLbl = Instance.new("TextLabel")
-				reqLbl.Size = UDim2.new(1, 0, 0, 14)
-				reqLbl.Position = UDim2.new(0, 0, 0, 54)
-				reqLbl.BackgroundTransparency = 1
-				reqLbl.Font = F.Body
-				reqLbl.TextSize = 10
-				reqLbl.TextColor3 = C.Red
-				if age < def.minAge then
-					reqLbl.Text = "Age " .. def.minAge .. "+"
-				else
-					reqLbl.Text = "Need $" .. def.cost
-				end
-				reqLbl.ZIndex = 96
-				reqLbl.Parent = btn
-			end
-
-			if canDo then
-				btn.MouseEnter:Connect(function()
-					tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = bgColor })
-				end)
-
-				btn.MouseLeave:Connect(function()
-					tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.White })
-				end)
-
-				btn.MouseButton1Click:Connect(function()
-					self:performAction(actionKey)
-				end)
-			end
-
-			table.insert(self.actionButtons, btn)
+	
+	for i, actionId in ipairs(actions) do
+		local action = ActionDefs[actionId]
+		if action then
+			self:createActionButton(actionId, action, i, accentColor, paleColor)
 		end
 	end
-
-	self.interactionOverlay.Visible = true
-	self.interactionCard.Position = UDim2.new(0.5, 0, 0.5, 50)
-	self.interactionCard.BackgroundTransparency = 1
-
-	tween(self.interactionCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	
+	-- Show modal
+	self.interactOverlay.Visible = true
+	self.interactCard.Position = UDim2.new(0.5, 0, 0.5, 50)
+	self.interactCard.BackgroundTransparency = 1
+	
+	UI.tween(self.interactCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.fromScale(0.5, 0.5),
-		BackgroundTransparency = 0,
+		BackgroundTransparency = 0
 	})
 end
 
 function RelationshipsScreen:hideInteractionModal()
-	local t = tween(self.interactionCard, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Position = UDim2.new(0.5, 0, 0.5, 50),
-		BackgroundTransparency = 1,
+	UI.tween(self.interactCard, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(0.5, 0, 0.5, 30),
+		BackgroundTransparency = 1
 	})
-	t.Completed:Connect(function()
-		self.interactionOverlay.Visible = false
+	task.delay(0.2, function()
+		self.interactOverlay.Visible = false
 	end)
 end
 
-function RelationshipsScreen:performAction(actionKey)
-	self:hideInteractionModal()
+function RelationshipsScreen:createActionButton(actionId, action, order, accentColor, paleColor)
+	local money = self:getMoney()
+	local cost = action.cost or 0
+	local canAfford = money >= cost
+	
+	local card = Instance.new("Frame")
+	card.Name = actionId
+	card.Size = UDim2.new(1, 0, 0, 65)
+	card.BackgroundColor3 = canAfford and C.White or C.Gray100
+	card.LayoutOrder = order
+	card.ZIndex = 97
+	card.Parent = self.actionsScroll
+	UI.corner(card, 14)
+	UI.stroke(card, 1, 0.88, C.Gray200)
+	
+	-- Emoji
+	local emojiLabel = Instance.new("TextLabel")
+	emojiLabel.Size = UDim2.new(0, 50, 0, 50)
+	emojiLabel.Position = UDim2.new(0, 10, 0.5, -25)
+	emojiLabel.BackgroundTransparency = 1
+	emojiLabel.Font = F.Body
+	emojiLabel.TextSize = 28
+	emojiLabel.Text = action.emoji
+	emojiLabel.ZIndex = 98
+	emojiLabel.Parent = card
+	
+	-- Name
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(0.45, 0, 0, 22)
+	nameLabel.Position = UDim2.new(0, 64, 0, 10)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Font = F.Title
+	nameLabel.TextSize = 15
+	nameLabel.TextColor3 = canAfford and C.Gray900 or C.Gray500
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Text = action.name
+	nameLabel.ZIndex = 98
+	nameLabel.Parent = card
+	
+	-- Effect badge
+	local effectText = action.effect .. (cost > 0 and " • $" .. cost or "")
+	local effectBadge = Instance.new("Frame")
+	effectBadge.Size = UDim2.new(0, math.clamp(#effectText * 7 + 20, 80, 160), 0, 24)
+	effectBadge.Position = UDim2.new(0, 64, 0, 34)
+	effectBadge.BackgroundColor3 = cost > 0 and C.AmberPale or paleColor
+	effectBadge.ZIndex = 98
+	effectBadge.Parent = card
+	UI.pill(effectBadge)
+	
+	local effectLabel = Instance.new("TextLabel")
+	effectLabel.Size = UDim2.fromScale(1, 1)
+	effectLabel.BackgroundTransparency = 1
+	effectLabel.Font = F.Medium
+	effectLabel.TextSize = 11
+	effectLabel.TextColor3 = cost > 0 and C.AmberDark or accentColor:Lerp(C.Black, 0.3)
+	effectLabel.Text = effectText
+	effectLabel.ZIndex = 99
+	effectLabel.Parent = effectBadge
+	
+	-- Button
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 60, 0, 40)
+	btn.AnchorPoint = Vector2.new(1, 0.5)
+	btn.Position = UDim2.new(1, -10, 0.5, 0)
+	btn.BackgroundColor3 = canAfford and accentColor or C.Gray300
+	btn.Font = F.Button
+	btn.TextSize = 13
+	btn.TextColor3 = canAfford and C.White or C.Gray500
+	btn.Text = canAfford and "Do" or "No $"
+	btn.AutoButtonColor = false
+	btn.ZIndex = 98
+	btn.Parent = card
+	UI.corner(btn, 10)
+	
+	if canAfford then
+		btn.MouseEnter:Connect(function()
+			UI.tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = accentColor:Lerp(C.Black, 0.15) })
+			UI.tween(card, TweenInfo.new(0.1), { BackgroundColor3 = paleColor:Lerp(C.White, 0.6) })
+		end)
+		btn.MouseLeave:Connect(function()
+			UI.tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = accentColor })
+			UI.tween(card, TweenInfo.new(0.1), { BackgroundColor3 = C.White })
+		end)
+		btn.MouseButton1Click:Connect(function()
+			self:hideInteractionModal()
+			task.delay(0.3, function()
+				self:doInteraction(actionId, self.currentInteractType, self.currentInteractPerson)
+			end)
+		end)
+	end
+end
 
-	local def = ActionDefs[actionKey]
-	if not def then
+function RelationshipsScreen:createResultModal()
+	self.resultModal = UI.createModalCard(self.screenGui, {
+		name = "RelationshipsResult",
+		accentColor = C.Green,
+		accentDark = C.GreenDark,
+		accentPale = C.GreenPale,
+		zIndex = 98
+	})
+	
+	self.resultModal.closeArea.MouseButton1Click:Connect(function()
+		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+	end)
+	self.resultModal.okButton.MouseButton1Click:Connect(function()
+		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+	end)
+end
+
+function RelationshipsScreen:doInteraction(actionId, relType, person)
+	if not DoInteraction then
+		self:showResult(false, "Server not available", "❌")
 		return
 	end
-
-	local result
-
-	if actionKey == "Gift" and GiveMoney then
-		result = GiveMoney:InvokeServer(self.currentPerson.id, 50)
-	elseif InteractPerson then
-		result = InteractPerson:InvokeServer(self.currentPerson.id, actionKey)
+	
+	local personId = person and person.id or nil
+	local result = DoInteraction:InvokeServer(actionId, relType, personId)
+	
+	if result then
+		self:showResult(result.success, result.message, result.success and "💕" or "😔")
+	else
+		self:showResult(false, "Server error", "❌")
 	end
-
-	task.delay(0.25, function()
-		local success = result and result.success or false
-		
-		-- Set shell color based on success
-		local shellColor = success and C.Green or C.Red
-		local shellStrokeColor = success and C.GreenDark or C.RedDark
-		
-		self.resultShell.BackgroundColor3 = shellColor
-		self.resultShellStroke.Color = shellStrokeColor
-		
-		if result then
-			self.resultEmoji.Text = success and "😊" or "😔"
-			self.resultEmojiFrame.BackgroundColor3 = success and C.GreenPale or C.RedPale
-			self.resultTitle.Text = success and "It went well!" or "That didn't go well..."
-			self.resultTitle.TextColor3 = success and C.GreenDark or C.RedDark
-			self.resultMsg.Text = result.message or "Something happened."
-			self.resultOkBtn.BackgroundColor3 = success and C.Green or C.Red
-		else
-			self.resultShell.BackgroundColor3 = C.Gray500
-			self.resultShellStroke.Color = C.Gray600
-			self.resultEmoji.Text = "❓"
-			self.resultEmojiFrame.BackgroundColor3 = C.Gray100
-			self.resultTitle.Text = "No response"
-			self.resultTitle.TextColor3 = C.Gray700
-			self.resultMsg.Text = "The server didn't respond. Try again."
-			self.resultOkBtn.BackgroundColor3 = C.Gray500
-		end
-
-		self.resultOverlay.Visible = true
-		self.resultShell.Position = UDim2.new(0.5, 0, 0.5, 40)
-		self.resultShell.BackgroundTransparency = 1
-		self.resultCard.BackgroundTransparency = 1
-
-		tween(self.resultShell, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Position = UDim2.fromScale(0.5, 0.5),
-			BackgroundTransparency = 0,
-		})
-		tween(self.resultCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			BackgroundTransparency = 0,
-		})
-	end)
 end
 
-function RelationshipsScreen:hideResultModal()
-	local t = tween(self.resultShell, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Position = UDim2.new(0.5, 0, 0.5, 40),
-		BackgroundTransparency = 1,
-	})
-	tween(self.resultCard, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
-	t.Completed:Connect(function()
-		self.resultOverlay.Visible = false
-	end)
+function RelationshipsScreen:showResult(success, message, emoji)
+	local shellColor = success and C.Green or C.Red
+	local shellStroke = success and C.GreenDark or C.RedDark
+	local pale = success and C.GreenPale or C.RedPale
+	
+	self.resultModal.shell.BackgroundColor3 = shellColor
+	self.resultModal.shellStroke.Color = shellStroke
+	self.resultModal.emojiFrame.BackgroundColor3 = pale
+	self.resultModal.emojiLabel.Text = emoji or (success and "💕" or "😔")
+	self.resultModal.titleLabel.Text = success and "Success!" or "Uh oh..."
+	self.resultModal.titleLabel.TextColor3 = success and C.GreenDark or C.RedDark
+	self.resultModal.messageLabel.Text = message or ""
+	self.resultModal.okButton.BackgroundColor3 = shellColor
+	
+	UI.showModal(self.resultModal)
 end
-
----------------------------------------------------------------------
--- Show / hide
----------------------------------------------------------------------
 
 function RelationshipsScreen:show()
-	self.overlay.Visible = true
-	self.overlay.Position = UDim2.new(1, 0, 0, 0)
-
-	if self.showBlur then
-		self.showBlur()
-	end
-
-	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Position = UDim2.fromScale(0, 0),
-	})
-
+	self:updateInfoBar()
+	self:switchTab(self.currentTab)
+	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
 end
 
 function RelationshipsScreen:hide()
-	local t = tween(self.overlay, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-		Position = UDim2.new(1, 0, 0, 0),
-	})
-	t.Completed:Connect(function()
-		self.overlay.Visible = false
-		self.interactionOverlay.Visible = false
-		self.resultOverlay.Visible = false
+	UI.slideOutScreen(self.overlay, "right", function()
+		self.resultModal.overlay.Visible = false
+		self.interactOverlay.Visible = false
 	end)
-
-	if self.hideBlur then
-		self.hideBlur()
-	end
-
 	self.isVisible = false
 end
 

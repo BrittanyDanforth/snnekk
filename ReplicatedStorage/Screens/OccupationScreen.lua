@@ -1,60 +1,24 @@
 -- OccupationScreen.lua
--- Premium AAA-quality Occupation & Education screen
+-- Premium BitLife-style Career & Education screen
+-- Triple AAA polished UI with beautiful card animations
 
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local UI = require(ReplicatedStorage:WaitForChild("UIComponents"))
+local C = UI.Colors
+local F = UI.Fonts
+
 local OccupationScreen = {}
 OccupationScreen.__index = OccupationScreen
 
+-- Remotes
 local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
 local ApplyForJob = remotesFolder and remotesFolder:WaitForChild("ApplyForJob", 15)
 local EnrollEducation = remotesFolder and remotesFolder:WaitForChild("EnrollEducation", 15)
 local QuitJob = remotesFolder and remotesFolder:WaitForChild("QuitJob", 15)
-local DoWork = remotesFolder and remotesFolder:WaitForChild("DoWork", 15)
-local DoFreelance = remotesFolder and remotesFolder:WaitForChild("DoFreelance", 15)
 
-print("[OccupationScreen] Remotes loaded:", ApplyForJob and "✓" or "✗", EnrollEducation and "✓" or "✗")
-
--- Premium Colors
-local C = {
-	Navy = Color3.fromRGB(30, 58, 138),
-	NavyDark = Color3.fromRGB(23, 37, 84),
-	NavyPale = Color3.fromRGB(224, 231, 255),
-	NavyLight = Color3.fromRGB(199, 210, 254),
-	Blue = Color3.fromRGB(37, 99, 235),
-	BlueDark = Color3.fromRGB(29, 78, 216),
-	BluePale = Color3.fromRGB(219, 234, 254),
-	Green = Color3.fromRGB(34, 197, 94),
-	GreenDark = Color3.fromRGB(22, 163, 74),
-	GreenPale = Color3.fromRGB(220, 252, 231),
-	Purple = Color3.fromRGB(147, 51, 234),
-	PurpleDark = Color3.fromRGB(124, 58, 237),
-	PurplePale = Color3.fromRGB(243, 232, 255),
-	Amber = Color3.fromRGB(245, 158, 11),
-	AmberDark = Color3.fromRGB(217, 119, 6),
-	AmberPale = Color3.fromRGB(254, 243, 199),
-	Red = Color3.fromRGB(239, 68, 68),
-	RedDark = Color3.fromRGB(220, 38, 38),
-	RedPale = Color3.fromRGB(254, 226, 226),
-	White = Color3.fromRGB(255, 255, 255),
-	Gray50 = Color3.fromRGB(249, 250, 251),
-	Gray100 = Color3.fromRGB(243, 244, 246),
-	Gray200 = Color3.fromRGB(229, 231, 235),
-	Gray300 = Color3.fromRGB(209, 213, 219),
-	Gray400 = Color3.fromRGB(156, 163, 175),
-	Gray500 = Color3.fromRGB(107, 114, 128),
-	Gray600 = Color3.fromRGB(75, 85, 99),
-	Gray700 = Color3.fromRGB(55, 65, 81),
-	Gray800 = Color3.fromRGB(31, 41, 55),
-	Gray900 = Color3.fromRGB(17, 24, 39),
-	Black = Color3.fromRGB(0, 0, 0),
-	Bg = Color3.fromRGB(248, 250, 252),
-}
-
-local F = { Title = Enum.Font.GothamBold, Body = Enum.Font.Gotham, Medium = Enum.Font.GothamMedium, Button = Enum.Font.GothamBold }
-
--- Job Data (IDs must match LifeRemoteHandlers)
+-- Job Data (synchronized with server)
 local Jobs = {
 	{ id = "fastfood", name = "Fast Food Worker", emoji = "🍔", salary = 22000, minAge = 14, requirement = nil },
 	{ id = "retail", name = "Retail Associate", emoji = "🛒", salary = 26000, minAge = 16, requirement = nil },
@@ -69,8 +33,7 @@ local Jobs = {
 	{ id = "lawyer", name = "Lawyer", emoji = "⚖️", salary = 180000, minAge = 28, requirement = "Law School" },
 }
 
--- Education Options (IDs must match LifeRemoteHandlers)
--- NOTE: Elementary/Middle/High school are AUTOMATIC - only college+ needs enrollment
+-- Education (only manual enrollment options)
 local Education = {
 	{ id = "community", name = "Community College", emoji = "🏫", cost = 15000, minAge = 18, maxAge = 99, duration = "2 years", requirement = "High School" },
 	{ id = "bachelor", name = "Bachelor's Degree", emoji = "🎓", cost = 80000, minAge = 18, maxAge = 99, duration = "4 years", requirement = "High School" },
@@ -80,42 +43,25 @@ local Education = {
 	{ id = "phd", name = "PhD Program", emoji = "🎓", cost = 100000, minAge = 24, maxAge = 99, duration = "5 years", requirement = "Master's" },
 }
 
--- Helpers
-local function corner(p, r) local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, r); c.Parent = p; return c end
-local function pill(p) local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0.5, 0); c.Parent = p; return c end
-local function stroke(p, t, tr, col) local s = Instance.new("UIStroke"); s.Thickness = t; s.Transparency = tr or 0; s.Color = col or C.White; s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; s.Parent = p; return s end
-local function pad(p, l, r, t, b) local pd = Instance.new("UIPadding"); pd.PaddingLeft = UDim.new(0, l or 0); pd.PaddingRight = UDim.new(0, r or 0); pd.PaddingTop = UDim.new(0, t or 0); pd.PaddingBottom = UDim.new(0, b or 0); pd.Parent = p; return pd end
-local function tween(o, i, p) local t = TweenService:Create(o, i, p); t:Play(); return t end
-
-local function formatMoney(n)
-	if n >= 1000000 then return "$" .. string.format("%.1f", n/1000000) .. "M"
-	elseif n >= 1000 then return "$" .. string.format("%.0f", n/1000) .. "K"
-	else return "$" .. n end
-end
-
 function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
 	local self = setmetatable({}, OccupationScreen)
 	self.screenGui = screenGui
-	self.playerState = playerState
+	self.playerState = playerState or {}
 	self.showBlur = showBlurFunc
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentTab = "jobs"
 	self:createUI()
-	self:createResultModal()
 	return self
 end
 
 function OccupationScreen:updateState(newState)
-	if newState then
-		self.playerState = newState
-	end
+	if newState then self.playerState = newState end
 end
 
 function OccupationScreen:getAge()
 	local state = self.playerState
 	if not state then return 0 end
-	-- Check both direct Age and nested Stats.Age
 	return state.Age or (state.Stats and state.Stats.Age) or 0
 end
 
@@ -128,7 +74,6 @@ end
 function OccupationScreen:getEducation()
 	local state = self.playerState
 	if not state then return "None" end
-	-- Check Education directly, in Career, or in Flags
 	if state.Education then
 		if type(state.Education) == "table" then
 			return state.Education.level or state.Education.schoolLevel or "None"
@@ -136,12 +81,9 @@ function OccupationScreen:getEducation()
 		return state.Education
 	end
 	if state.Career and state.Career.education then return state.Career.education end
-	-- Check flags for education level
 	local flags = state.Flags or {}
 	if flags.college_graduate or flags.has_degree then return "College" end
 	if flags.high_school_graduate then return "High School" end
-	if flags.in_high_school then return "High School" end
-	if flags.in_middle_school then return "Middle School" end
 	return "None"
 end
 
@@ -154,6 +96,7 @@ function OccupationScreen:getCurrentJob()
 end
 
 function OccupationScreen:createUI()
+	-- Main overlay
 	self.overlay = Instance.new("Frame")
 	self.overlay.Name = "OccupationOverlay"
 	self.overlay.Size = UDim2.fromScale(1, 1)
@@ -162,177 +105,105 @@ function OccupationScreen:createUI()
 	self.overlay.ZIndex = 80
 	self.overlay.Parent = self.screenGui
 	
-	-- Header (offset down for Roblox UI)
-	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, -16, 0, 60)
-	header.Position = UDim2.new(0, 8, 0, 44)
-	header.BackgroundColor3 = C.Navy
-	header.ZIndex = 85
-	header.Parent = self.overlay
-	corner(header, 18)
+	-- Premium header
+	local headerData = UI.createScreenHeader(self.overlay, {
+		title = "💼 Career & Education",
+		color = C.Navy,
+		colorDark = C.NavyDark,
+		zIndex = 85
+	})
+	self.header = headerData.header
+	headerData.closeButton.MouseButton1Click:Connect(function() self:hide() end)
 	
-	local hGrad = Instance.new("UIGradient")
-	hGrad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C.Navy), ColorSequenceKeypoint.new(1, C.NavyDark) })
-	hGrad.Rotation = 90
-	hGrad.Parent = header
+	-- Hover effects for close button
+	headerData.closeButton.MouseEnter:Connect(function()
+		UI.tween(headerData.closeButton, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
+	end)
+	headerData.closeButton.MouseLeave:Connect(function()
+		UI.tween(headerData.closeButton, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
+	end)
 	
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, -100, 1, 0)
-	title.Position = UDim2.new(0, 20, 0, 0)
-	title.BackgroundTransparency = 1
-	title.Font = F.Title
-	title.TextSize = 20
-	title.TextColor3 = C.White
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.Text = "💼 Career & Education"
-	title.ZIndex = 86
-	title.Parent = header
+	-- Info bar
+	self.infoBar = UI.createInfoBar(self.overlay, { topOffset = 116, zIndex = 84 })
 	
-	-- Close button (clean X)
-	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 40, 0, 40)
-	closeBtn.AnchorPoint = Vector2.new(1, 0.5)
-	closeBtn.Position = UDim2.new(1, -10, 0.5, 0)
-	closeBtn.BackgroundColor3 = C.White
-	closeBtn.BackgroundTransparency = 0.1
-	closeBtn.Font = F.Title
-	closeBtn.TextSize = 18
-	closeBtn.TextColor3 = C.NavyDark
-	closeBtn.Text = "X"
-	closeBtn.AutoButtonColor = false
-	closeBtn.ZIndex = 86
-	closeBtn.Parent = header
-	corner(closeBtn, 20)
-	
-	closeBtn.MouseButton1Click:Connect(function() self:hide() end)
-	closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0 }) end)
-	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.1 }) end)
-	
-	-- Info bar (adjusted for header offset)
-	local contentTopOffset = 44 + 60 + 8 -- header offset + height + spacing
-	
-	self.infoBar = Instance.new("Frame")
-	self.infoBar.Size = UDim2.new(1, -20, 0, 48)
-	self.infoBar.Position = UDim2.new(0, 10, 0, contentTopOffset)
-	self.infoBar.BackgroundColor3 = C.White
-	self.infoBar.ZIndex = 84
-	self.infoBar.Parent = self.overlay
-	corner(self.infoBar, 14)
-	stroke(self.infoBar, 1, 0.92, C.Gray200)
-	
-	local infoLayout = Instance.new("UIListLayout")
-	infoLayout.FillDirection = Enum.FillDirection.Horizontal
-	infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	infoLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	infoLayout.Padding = UDim.new(0, 10)
-	infoLayout.Parent = self.infoBar
-	
-	self.ageChip = self:createInfoChip(self.infoBar, "👤", "Age 0", C.BluePale, C.Blue, 1)
-	self.moneyChip = self:createInfoChip(self.infoBar, "💵", "$0", C.GreenPale, C.GreenDark, 2)
-	self.eduChip = self:createInfoChip(self.infoBar, "🎓", "None", C.PurplePale, C.PurpleDark, 3)
+	self.ageChip = UI.createInfoChip(self.infoBar, {
+		name = "AgeChip", icon = "👤", text = "Age 0",
+		bgColor = C.BluePale, textColor = C.BlueDark, order = 1, width = 88
+	})
+	self.moneyChip = UI.createInfoChip(self.infoBar, {
+		name = "MoneyChip", icon = "💵", text = "$0",
+		bgColor = C.GreenPale, textColor = C.GreenDark, order = 2, width = 95
+	})
+	self.eduChip = UI.createInfoChip(self.infoBar, {
+		name = "EduChip", icon = "🎓", text = "None",
+		bgColor = C.PurplePale, textColor = C.PurpleDark, order = 3, width = 95
+	})
 	
 	-- Tab bar
-	local tabBar = Instance.new("Frame")
-	tabBar.Size = UDim2.new(1, -20, 0, 50)
-	tabBar.Position = UDim2.new(0, 10, 0, contentTopOffset + 56)
-	tabBar.BackgroundColor3 = C.Gray100
-	tabBar.ZIndex = 84
-	tabBar.Parent = self.overlay
-	corner(tabBar, 14)
-	
-	pad(tabBar, 5, 5, 5, 5)
-	
-	local tabLayout = Instance.new("UIListLayout")
-	tabLayout.FillDirection = Enum.FillDirection.Horizontal
-	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	tabLayout.Padding = UDim.new(0, 6)
-	tabLayout.Parent = tabBar
-	
+	self.tabBar = UI.createTabBar(self.overlay, { topOffset = 176, zIndex = 84 })
 	self.tabBtns = {}
-	local tabs = { { id = "jobs", text = "💼 Jobs", color = C.Navy }, { id = "education", text = "🎓 Education", color = C.Purple } }
+	
+	local tabs = {
+		{ id = "jobs", text = "💼 Jobs", color = C.Navy },
+		{ id = "education", text = "🎓 Education", color = C.Purple }
+	}
 	
 	for i, tab in ipairs(tabs) do
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0.47, 0, 1, 0)
-		btn.BackgroundColor3 = i == 1 and tab.color or C.White
-		btn.Font = F.Button
-		btn.TextSize = 14
-		btn.TextColor3 = i == 1 and C.White or C.Gray600
-		btn.Text = tab.text
-		btn.AutoButtonColor = false
-		btn.LayoutOrder = i
-		btn.ZIndex = 85
-		btn.Parent = tabBar
-		corner(btn, 10)
-		
+		local btn = UI.createTabButton(self.tabBar, {
+			id = tab.id, text = tab.text, color = tab.color,
+			active = i == 1, order = i, width = 0.47, zIndex = 84
+		})
 		self.tabBtns[tab.id] = { btn = btn, color = tab.color }
 		btn.MouseButton1Click:Connect(function() self:switchTab(tab.id) end)
 	end
 	
-	-- Content
-	local scrollTop = contentTopOffset + 56 + 58 -- info bar + tab bar + spacing
-	self.contentScroll = Instance.new("ScrollingFrame")
-	self.contentScroll.Size = UDim2.new(1, -20, 1, -(scrollTop + 12))
-	self.contentScroll.Position = UDim2.new(0, 10, 0, scrollTop)
-	self.contentScroll.BackgroundTransparency = 1
-	self.contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	self.contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	self.contentScroll.ScrollBarThickness = 4
-	self.contentScroll.ScrollBarImageColor3 = C.Gray300
-	self.contentScroll.ZIndex = 81
-	self.contentScroll.Parent = self.overlay
+	-- Scroll area
+	self.contentScroll = UI.createScrollArea(self.overlay, { topOffset = 240, zIndex = 81 })
 	
-	self.contentLayout = Instance.new("UIListLayout")
-	self.contentLayout.Padding = UDim.new(0, 12)
-	self.contentLayout.Parent = self.contentScroll
+	-- Result modal
+	self:createResultModal()
 	
+	-- Initial populate
 	self:populateJobs()
 end
 
-function OccupationScreen:createInfoChip(parent, icon, text, bgColor, textColor, order)
-	local chip = Instance.new("Frame")
-	chip.Size = UDim2.new(0, 90, 0, 36)
-	chip.BackgroundColor3 = bgColor
-	chip.LayoutOrder = order
-	chip.ZIndex = 85
-	chip.Parent = parent
-	corner(chip, 10)
+function OccupationScreen:createResultModal()
+	self.resultModal = UI.createModalCard(self.screenGui, {
+		name = "OccupationResult",
+		accentColor = C.Green,
+		accentDark = C.GreenDark,
+		accentPale = C.GreenPale,
+		emoji = "🎉",
+		title = "Success!",
+		buttonText = "Continue",
+		zIndex = 96
+	})
 	
-	local iconLbl = Instance.new("TextLabel")
-	iconLbl.Size = UDim2.new(0, 22, 1, 0)
-	iconLbl.Position = UDim2.new(0, 6, 0, 0)
-	iconLbl.BackgroundTransparency = 1
-	iconLbl.Font = F.Body
-	iconLbl.TextSize = 14
-	iconLbl.Text = icon
-	iconLbl.ZIndex = 86
-	iconLbl.Parent = chip
+	-- Close handlers
+	self.resultModal.closeArea.MouseButton1Click:Connect(function()
+		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+	end)
+	self.resultModal.okButton.MouseButton1Click:Connect(function()
+		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+	end)
 	
-	local textLbl = Instance.new("TextLabel")
-	textLbl.Name = "Text"
-	textLbl.Size = UDim2.new(1, -30, 1, 0)
-	textLbl.Position = UDim2.new(0, 26, 0, 0)
-	textLbl.BackgroundTransparency = 1
-	textLbl.Font = F.Button
-	textLbl.TextSize = 11
-	textLbl.TextColor3 = textColor
-	textLbl.TextXAlignment = Enum.TextXAlignment.Left
-	textLbl.Text = text
-	textLbl.ZIndex = 86
-	textLbl.Parent = chip
-	
-	return chip
+	-- Button hover
+	self.resultModal.okButton.MouseEnter:Connect(function()
+		UI.tween(self.resultModal.okButton, TweenInfo.new(0.1), {
+			BackgroundColor3 = self.resultModal.shell.BackgroundColor3:Lerp(C.Black, 0.15)
+		})
+	end)
+	self.resultModal.okButton.MouseLeave:Connect(function()
+		UI.tween(self.resultModal.okButton, TweenInfo.new(0.1), {
+			BackgroundColor3 = self.resultModal.shell.BackgroundColor3
+		})
+	end)
 end
 
 function OccupationScreen:updateInfoBar()
-	local ageText = self.ageChip:FindFirstChild("Text")
-	local moneyText = self.moneyChip:FindFirstChild("Text")
-	local eduText = self.eduChip:FindFirstChild("Text")
-	
-	if ageText then ageText.Text = "Age " .. self:getAge() end
-	if moneyText then moneyText.Text = formatMoney(self:getMoney()) end
-	if eduText then eduText.Text = self:getEducation() or "None" end
+	self.ageChip.text.Text = "Age " .. self:getAge()
+	self.moneyChip.text.Text = UI.formatMoney(self:getMoney())
+	self.eduChip.text.Text = self:getEducation() or "None"
 end
 
 function OccupationScreen:switchTab(tabId)
@@ -340,154 +211,302 @@ function OccupationScreen:switchTab(tabId)
 	
 	for id, data in pairs(self.tabBtns) do
 		local isActive = id == tabId
-		tween(data.btn, TweenInfo.new(0.15), {
+		UI.tween(data.btn, TweenInfo.new(0.15), {
 			BackgroundColor3 = isActive and data.color or C.White,
 			TextColor3 = isActive and C.White or C.Gray600
 		})
 	end
 	
+	-- Clear and repopulate
 	for _, child in ipairs(self.contentScroll:GetChildren()) do
 		if child:IsA("Frame") then child:Destroy() end
 	end
 	
-	if tabId == "jobs" then self:populateJobs() else self:populateEducation() end
+	if tabId == "jobs" then
+		self:populateJobs()
+	else
+		self:populateEducation()
+	end
 end
 
-function OccupationScreen:createJobCard(parent, job, order)
+function OccupationScreen:populateJobs()
+	self:updateInfoBar()
+	
 	local age = self:getAge()
 	local edu = self:getEducation()
 	local currentJob = self:getCurrentJob()
 	
-	local meetsAge = age >= job.minAge
-	local meetsEdu = not job.requirement or edu == job.requirement or (edu == "College" and job.requirement == "High School")
-	local canApply = meetsAge and meetsEdu and currentJob ~= job.id
-	local hasJob = currentJob == job.id
-	
-	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, 0, 0, 94)
-	card.BackgroundColor3 = C.White
-	card.LayoutOrder = order
-	card.ZIndex = 82
-	card.Parent = parent
-	corner(card, 16)
-	stroke(card, 1, hasJob and 0.5 or 0.92, hasJob and C.Green or C.Gray200)
-	
-	-- Icon
-	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 58, 0, 58)
-	iconFrame.Position = UDim2.new(0, 14, 0.5, -29)
-	iconFrame.BackgroundColor3 = hasJob and C.GreenPale or C.NavyPale
-	iconFrame.ZIndex = 83
-	iconFrame.Parent = card
-	corner(iconFrame, 16)
-	
-	local iconLbl = Instance.new("TextLabel")
-	iconLbl.Size = UDim2.fromScale(1, 1)
-	iconLbl.BackgroundTransparency = 1
-	iconLbl.Font = F.Body
-	iconLbl.TextSize = 30
-	iconLbl.Text = job.emoji
-	iconLbl.ZIndex = 84
-	iconLbl.Parent = iconFrame
-	
-	-- Current job badge
-	if hasJob then
-		local currentBadge = Instance.new("Frame")
-		currentBadge.Size = UDim2.new(0, 70, 0, 20)
-		currentBadge.Position = UDim2.new(0, 82, 0, 8)
-		currentBadge.BackgroundColor3 = C.Green
-		currentBadge.ZIndex = 84
-		currentBadge.Parent = card
-		pill(currentBadge)
+	-- Current Job Section (if has job)
+	if currentJob then
+		local currentSection = UI.createSectionCard(self.contentScroll, {
+			name = "CurrentJob",
+			title = "Current Job",
+			subtitle = "Your career",
+			accentColor = C.Green,
+			badgeWidth = 110,
+			order = 0,
+			zIndex = 82
+		})
 		
-		local badgeLbl = Instance.new("TextLabel")
-		badgeLbl.Size = UDim2.fromScale(1, 1)
-		badgeLbl.BackgroundTransparency = 1
-		badgeLbl.Font = F.Button
-		badgeLbl.TextSize = 10
-		badgeLbl.TextColor3 = C.White
-		badgeLbl.Text = "CURRENT"
-		badgeLbl.ZIndex = 85
-		badgeLbl.Parent = currentBadge
+		for _, job in ipairs(Jobs) do
+			if job.id == currentJob or job.name == currentJob then
+				self:createJobCard(currentSection, job, 1, true)
+				break
+			end
+		end
 	end
 	
-	-- Name
-	local nameLbl = Instance.new("TextLabel")
-	nameLbl.Size = UDim2.new(0.5, 0, 0, 22)
-	nameLbl.Position = UDim2.new(0, 82, 0, hasJob and 30 or 12)
-	nameLbl.BackgroundTransparency = 1
-	nameLbl.Font = F.Title
-	nameLbl.TextSize = 15
-	nameLbl.TextColor3 = C.Gray900
-	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-	nameLbl.Text = job.name
-	nameLbl.ZIndex = 83
-	nameLbl.Parent = card
+	-- Available Jobs Section
+	local jobsSection = UI.createSectionCard(self.contentScroll, {
+		name = "AvailableJobs",
+		title = "Job Listings",
+		subtitle = #Jobs .. " positions",
+		accentColor = C.Navy,
+		badgeWidth = 105,
+		order = 1,
+		zIndex = 82
+	})
+	
+	for i, job in ipairs(Jobs) do
+		if job.id ~= currentJob and job.name ~= currentJob then
+			self:createJobCard(jobsSection, job, i + 1, false)
+		end
+	end
+end
+
+function OccupationScreen:createJobCard(parent, job, order, isCurrent)
+	local age = self:getAge()
+	local edu = self:getEducation()
+	
+	local meetsAge = age >= job.minAge
+	local meetsEdu = not job.requirement or edu == job.requirement or 
+		(edu == "College" and job.requirement == "High School") or
+		(edu == "Bachelor's" and job.requirement == "High School") or
+		(edu == "Master's" and (job.requirement == "High School" or job.requirement == "Bachelor's"))
+	local canApply = meetsAge and meetsEdu and not isCurrent
+	
+	local card = Instance.new("Frame")
+	card.Name = job.id
+	card.Size = UDim2.new(1, 0, 0, 100)
+	card.BackgroundColor3 = C.White
+	card.LayoutOrder = order
+	card.ZIndex = 83
+	card.Parent = parent
+	UI.corner(card, 16)
+	UI.stroke(card, isCurrent and 2 or 1, isCurrent and 0.3 or 0.88, isCurrent and C.Green or C.Gray200)
+	
+	-- Gradient overlay for current job
+	if isCurrent then
+		local glow = Instance.new("Frame")
+		glow.Size = UDim2.fromScale(1, 1)
+		glow.BackgroundColor3 = C.GreenPale
+		glow.BackgroundTransparency = 0.7
+		glow.ZIndex = 83
+		glow.Parent = card
+		UI.corner(glow, 16)
+	end
+	
+	-- Icon frame with gradient
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 60, 0, 60)
+	iconFrame.Position = UDim2.new(0, 16, 0.5, -30)
+	iconFrame.BackgroundColor3 = isCurrent and C.GreenPale or C.NavyPale
+	iconFrame.ZIndex = 84
+	iconFrame.Parent = card
+	UI.corner(iconFrame, 16)
+	
+	if not isCurrent then
+		UI.gradient(iconFrame, C.NavyPale, Color3.fromRGB(199, 210, 254), 135)
+	end
+	
+	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Size = UDim2.fromScale(1, 1)
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 32
+	iconLabel.Text = job.emoji
+	iconLabel.ZIndex = 85
+	iconLabel.Parent = iconFrame
+	
+	-- Current badge
+	if isCurrent then
+		local badge = Instance.new("Frame")
+		badge.Size = UDim2.new(0, 95, 0, 24)
+		badge.Position = UDim2.new(0, 90, 0, 10)
+		badge.BackgroundColor3 = C.Green
+		badge.ZIndex = 85
+		badge.Parent = card
+		UI.pill(badge)
+		
+		local badgeLabel = Instance.new("TextLabel")
+		badgeLabel.Size = UDim2.fromScale(1, 1)
+		badgeLabel.BackgroundTransparency = 1
+		badgeLabel.Font = F.Button
+		badgeLabel.TextSize = 11
+		badgeLabel.TextColor3 = C.White
+		badgeLabel.Text = "✓ EMPLOYED"
+		badgeLabel.ZIndex = 86
+		badgeLabel.Parent = badge
+	end
+	
+	-- Title
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(0.5, 0, 0, 24)
+	titleLabel.Position = UDim2.new(0, 90, 0, isCurrent and 36 or 14)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 16
+	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = job.name
+	titleLabel.ZIndex = 84
+	titleLabel.Parent = card
 	
 	-- Salary badge
 	local salaryBadge = Instance.new("Frame")
-	salaryBadge.Size = UDim2.new(0, 80, 0, 24)
-	salaryBadge.Position = UDim2.new(0, 82, 0, hasJob and 54 or 36)
+	salaryBadge.Size = UDim2.new(0, 90, 0, 26)
+	salaryBadge.Position = UDim2.new(0, 90, 0, isCurrent and 62 or 42)
 	salaryBadge.BackgroundColor3 = C.GreenPale
-	salaryBadge.ZIndex = 83
+	salaryBadge.ZIndex = 84
 	salaryBadge.Parent = card
-	pill(salaryBadge)
+	UI.pill(salaryBadge)
 	
-	local salaryLbl = Instance.new("TextLabel")
-	salaryLbl.Size = UDim2.fromScale(1, 1)
-	salaryLbl.BackgroundTransparency = 1
-	salaryLbl.Font = F.Medium
-	salaryLbl.TextSize = 11
-	salaryLbl.TextColor3 = C.GreenDark
-	salaryLbl.Text = formatMoney(job.salary) .. "/year"
-	salaryLbl.ZIndex = 84
-	salaryLbl.Parent = salaryBadge
+	local salaryLabel = Instance.new("TextLabel")
+	salaryLabel.Size = UDim2.fromScale(1, 1)
+	salaryLabel.BackgroundTransparency = 1
+	salaryLabel.Font = F.Medium
+	salaryLabel.TextSize = 12
+	salaryLabel.TextColor3 = C.GreenDark
+	salaryLabel.Text = "💵 " .. UI.formatMoney(job.salary) .. "/yr"
+	salaryLabel.ZIndex = 85
+	salaryLabel.Parent = salaryBadge
 	
-	-- Requirements
-	if not hasJob then
+	-- Requirements (if not current)
+	if not isCurrent then
 		local reqText = "Age " .. job.minAge .. "+"
 		if job.requirement then reqText = reqText .. " • " .. job.requirement end
 		
-		local reqLbl = Instance.new("TextLabel")
-		reqLbl.Size = UDim2.new(0.5, 0, 0, 18)
-		reqLbl.Position = UDim2.new(0, 82, 0, 62)
-		reqLbl.BackgroundTransparency = 1
-		reqLbl.Font = F.Body
-		reqLbl.TextSize = 11
-		reqLbl.TextColor3 = canApply and C.Gray500 or C.Red
-		reqLbl.TextXAlignment = Enum.TextXAlignment.Left
-		reqLbl.Text = reqText
-		reqLbl.ZIndex = 83
-		reqLbl.Parent = card
+		local reqLabel = Instance.new("TextLabel")
+		reqLabel.Size = UDim2.new(0.45, 0, 0, 18)
+		reqLabel.Position = UDim2.new(0, 90, 0, 70)
+		reqLabel.BackgroundTransparency = 1
+		reqLabel.Font = F.Body
+		reqLabel.TextSize = 11
+		reqLabel.TextColor3 = canApply and C.Gray500 or C.Red
+		reqLabel.TextXAlignment = Enum.TextXAlignment.Left
+		reqLabel.Text = reqText
+		reqLabel.ZIndex = 84
+		reqLabel.Parent = card
 	end
 	
-	-- Apply button
-	if not hasJob then
-		local applyBtn = Instance.new("TextButton")
-		applyBtn.Size = UDim2.new(0, 72, 0, 42)
-		applyBtn.AnchorPoint = Vector2.new(1, 0.5)
-		applyBtn.Position = UDim2.new(1, -14, 0.5, 0)
-		applyBtn.BackgroundColor3 = canApply and C.Navy or C.Gray300
-		applyBtn.Font = F.Button
-		applyBtn.TextSize = 13
-		applyBtn.TextColor3 = canApply and C.White or C.Gray500
-		applyBtn.Text = canApply and "Apply" or (not meetsAge and "Age " .. job.minAge .. "+" or "Need Edu")
-		applyBtn.AutoButtonColor = false
-		applyBtn.ZIndex = 83
-		applyBtn.Parent = card
-		pill(applyBtn)
-		
-		if canApply then
-			applyBtn.MouseEnter:Connect(function() 
-				tween(applyBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 78, 0, 46) })
-			end)
-			applyBtn.MouseLeave:Connect(function() 
-				tween(applyBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 72, 0, 42) })
-			end)
-			applyBtn.MouseButton1Click:Connect(function()
-				self:applyJob(job)
-			end)
-		end
+	-- Action button
+	local actionBtn = Instance.new("TextButton")
+	actionBtn.Size = UDim2.new(0, isCurrent and 80 or 78, 0, 46)
+	actionBtn.AnchorPoint = Vector2.new(1, 0.5)
+	actionBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	actionBtn.BackgroundColor3 = isCurrent and C.Red or (canApply and C.Navy or C.Gray300)
+	actionBtn.Font = F.Button
+	actionBtn.TextSize = 14
+	actionBtn.TextColor3 = (isCurrent or canApply) and C.White or C.Gray500
+	actionBtn.AutoButtonColor = false
+	actionBtn.ZIndex = 84
+	actionBtn.Parent = card
+	UI.corner(actionBtn, 14)
+	
+	if isCurrent then
+		actionBtn.Text = "Quit"
+		actionBtn.MouseButton1Click:Connect(function()
+			self:quitJob()
+		end)
+	elseif canApply then
+		actionBtn.Text = "Apply"
+		actionBtn.MouseEnter:Connect(function()
+			UI.tween(actionBtn, TweenInfo.new(0.12), { 
+				Size = UDim2.new(0, 84, 0, 50),
+				BackgroundColor3 = C.NavyDark
+			})
+		end)
+		actionBtn.MouseLeave:Connect(function()
+			UI.tween(actionBtn, TweenInfo.new(0.12), { 
+				Size = UDim2.new(0, 78, 0, 46),
+				BackgroundColor3 = C.Navy
+			})
+		end)
+		actionBtn.MouseButton1Click:Connect(function()
+			self:applyJob(job)
+		end)
+	else
+		actionBtn.Text = not meetsAge and "Age " .. job.minAge or "Need Edu"
+	end
+	
+	-- Card hover effect (if not current)
+	if not isCurrent then
+		card.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				UI.tween(card, TweenInfo.new(0.15), { BackgroundColor3 = C.Gray50 })
+			end
+		end)
+		card.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				UI.tween(card, TweenInfo.new(0.15), { BackgroundColor3 = C.White })
+			end
+		end)
+	end
+end
+
+function OccupationScreen:populateEducation()
+	self:updateInfoBar()
+	
+	local age = self:getAge()
+	local money = self:getMoney()
+	local currentEdu = self:getEducation()
+	
+	-- Auto education info
+	local infoCard = Instance.new("Frame")
+	infoCard.Size = UDim2.new(1, 0, 0, 70)
+	infoCard.BackgroundColor3 = C.BluePale
+	infoCard.LayoutOrder = 0
+	infoCard.ZIndex = 82
+	infoCard.Parent = self.contentScroll
+	UI.corner(infoCard, 16)
+	UI.stroke(infoCard, 1, 0.8, C.BlueLight)
+	
+	local infoIcon = Instance.new("TextLabel")
+	infoIcon.Size = UDim2.new(0, 50, 0, 50)
+	infoIcon.Position = UDim2.new(0, 12, 0.5, -25)
+	infoIcon.BackgroundTransparency = 1
+	infoIcon.Font = F.Body
+	infoIcon.TextSize = 28
+	infoIcon.Text = "📚"
+	infoIcon.ZIndex = 83
+	infoIcon.Parent = infoCard
+	
+	local infoText = Instance.new("TextLabel")
+	infoText.Size = UDim2.new(1, -80, 1, -16)
+	infoText.Position = UDim2.new(0, 65, 0, 8)
+	infoText.BackgroundTransparency = 1
+	infoText.Font = F.Body
+	infoText.TextSize = 13
+	infoText.TextColor3 = C.BlueDark
+	infoText.TextXAlignment = Enum.TextXAlignment.Left
+	infoText.TextWrapped = true
+	infoText.Text = "Elementary, Middle, and High School are automatic! Enroll below for higher education."
+	infoText.ZIndex = 83
+	infoText.Parent = infoCard
+	
+	-- Education Section
+	local eduSection = UI.createSectionCard(self.contentScroll, {
+		name = "HigherEducation",
+		title = "Higher Education",
+		subtitle = #Education .. " programs",
+		accentColor = C.Purple,
+		badgeWidth = 130,
+		order = 1,
+		zIndex = 82
+	})
+	
+	for i, edu in ipairs(Education) do
+		self:createEducationCard(eduSection, edu, i)
 	end
 end
 
@@ -498,197 +517,171 @@ function OccupationScreen:createEducationCard(parent, edu, order)
 	
 	local meetsAge = age >= edu.minAge and age <= (edu.maxAge or 100)
 	local canAfford = money >= (edu.cost or 0)
-	local meetsPrereq = not edu.prereq or currentEdu == edu.prereq
-	local alreadyHas = currentEdu == edu.name
-	local canEnroll = meetsAge and canAfford and meetsPrereq and not alreadyHas
+	local meetsReq = not edu.requirement or currentEdu == edu.requirement or
+		(currentEdu == "Bachelor's" and edu.requirement == "High School") or
+		(currentEdu == "Master's" and (edu.requirement == "High School" or edu.requirement == "Bachelor's")) or
+		(currentEdu == "PhD" and (edu.requirement == "High School" or edu.requirement == "Bachelor's" or edu.requirement == "Master's"))
+	local alreadyHas = currentEdu == edu.name:gsub("'s", ""):gsub(" Degree", ""):gsub(" Program", "")
+	local canEnroll = meetsAge and canAfford and meetsReq and not alreadyHas
 	
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, 0, 0, 100)
+	card.Name = edu.id
+	card.Size = UDim2.new(1, 0, 0, 105)
 	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
-	card.ZIndex = 82
+	card.ZIndex = 83
 	card.Parent = parent
-	corner(card, 16)
-	stroke(card, 1, alreadyHas and 0.5 or 0.92, alreadyHas and C.Purple or C.Gray200)
+	UI.corner(card, 16)
+	UI.stroke(card, alreadyHas and 2 or 1, alreadyHas and 0.3 or 0.88, alreadyHas and C.Purple or C.Gray200)
 	
 	-- Icon
 	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 58, 0, 58)
-	iconFrame.Position = UDim2.new(0, 14, 0.5, -29)
+	iconFrame.Size = UDim2.new(0, 60, 0, 60)
+	iconFrame.Position = UDim2.new(0, 16, 0.5, -30)
 	iconFrame.BackgroundColor3 = alreadyHas and C.PurplePale or C.NavyPale
-	iconFrame.ZIndex = 83
+	iconFrame.ZIndex = 84
 	iconFrame.Parent = card
-	corner(iconFrame, 16)
+	UI.corner(iconFrame, 16)
 	
-	local iconLbl = Instance.new("TextLabel")
-	iconLbl.Size = UDim2.fromScale(1, 1)
-	iconLbl.BackgroundTransparency = 1
-	iconLbl.Font = F.Body
-	iconLbl.TextSize = 30
-	iconLbl.Text = edu.emoji
-	iconLbl.ZIndex = 84
-	iconLbl.Parent = iconFrame
+	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Size = UDim2.fromScale(1, 1)
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 32
+	iconLabel.Text = edu.emoji
+	iconLabel.ZIndex = 85
+	iconLabel.Parent = iconFrame
 	
 	-- Completed badge
 	if alreadyHas then
-		local doneBadge = Instance.new("Frame")
-		doneBadge.Size = UDim2.new(0, 80, 0, 20)
-		doneBadge.Position = UDim2.new(0, 82, 0, 8)
-		doneBadge.BackgroundColor3 = C.Purple
-		doneBadge.ZIndex = 84
-		doneBadge.Parent = card
-		pill(doneBadge)
+		local badge = Instance.new("Frame")
+		badge.Size = UDim2.new(0, 105, 0, 24)
+		badge.Position = UDim2.new(0, 90, 0, 10)
+		badge.BackgroundColor3 = C.Purple
+		badge.ZIndex = 85
+		badge.Parent = card
+		UI.pill(badge)
 		
-		local badgeLbl = Instance.new("TextLabel")
-		badgeLbl.Size = UDim2.fromScale(1, 1)
-		badgeLbl.BackgroundTransparency = 1
-		badgeLbl.Font = F.Button
-		badgeLbl.TextSize = 10
-		badgeLbl.TextColor3 = C.White
-		badgeLbl.Text = "✓ COMPLETED"
-		badgeLbl.ZIndex = 85
-		badgeLbl.Parent = doneBadge
+		local badgeLabel = Instance.new("TextLabel")
+		badgeLabel.Size = UDim2.fromScale(1, 1)
+		badgeLabel.BackgroundTransparency = 1
+		badgeLabel.Font = F.Button
+		badgeLabel.TextSize = 11
+		badgeLabel.TextColor3 = C.White
+		badgeLabel.Text = "✓ COMPLETED"
+		badgeLabel.ZIndex = 86
+		badgeLabel.Parent = badge
 	end
 	
-	-- Name
-	local nameLbl = Instance.new("TextLabel")
-	nameLbl.Size = UDim2.new(0.5, 0, 0, 22)
-	nameLbl.Position = UDim2.new(0, 82, 0, alreadyHas and 30 or 10)
-	nameLbl.BackgroundTransparency = 1
-	nameLbl.Font = F.Title
-	nameLbl.TextSize = 15
-	nameLbl.TextColor3 = C.Gray900
-	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-	nameLbl.Text = edu.name
-	nameLbl.ZIndex = 83
-	nameLbl.Parent = card
+	-- Title
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(0.5, 0, 0, 24)
+	titleLabel.Position = UDim2.new(0, 90, 0, alreadyHas and 36 or 12)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 16
+	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = edu.name
+	titleLabel.ZIndex = 84
+	titleLabel.Parent = card
 	
-	-- Duration & cost badges row
-	local badgeY = alreadyHas and 54 or 34
+	-- Badges row
+	local badgeY = alreadyHas and 64 or 40
 	
-	local durationBadge = Instance.new("Frame")
-	durationBadge.Size = UDim2.new(0, 65, 0, 22)
-	durationBadge.Position = UDim2.new(0, 82, 0, badgeY)
-	durationBadge.BackgroundColor3 = C.BluePale
-	durationBadge.ZIndex = 83
-	durationBadge.Parent = card
-	pill(durationBadge)
+	-- Duration badge
+	local durBadge = Instance.new("Frame")
+	durBadge.Size = UDim2.new(0, 70, 0, 24)
+	durBadge.Position = UDim2.new(0, 90, 0, badgeY)
+	durBadge.BackgroundColor3 = C.BluePale
+	durBadge.ZIndex = 84
+	durBadge.Parent = card
+	UI.pill(durBadge)
 	
-	local durLbl = Instance.new("TextLabel")
-	durLbl.Size = UDim2.fromScale(1, 1)
-	durLbl.BackgroundTransparency = 1
-	durLbl.Font = F.Medium
-	durLbl.TextSize = 10
-	durLbl.TextColor3 = C.BlueDark
-	durLbl.Text = edu.duration
-	durLbl.ZIndex = 84
-	durLbl.Parent = durationBadge
+	local durLabel = Instance.new("TextLabel")
+	durLabel.Size = UDim2.fromScale(1, 1)
+	durLabel.BackgroundTransparency = 1
+	durLabel.Font = F.Medium
+	durLabel.TextSize = 11
+	durLabel.TextColor3 = C.BlueDark
+	durLabel.Text = "⏱️ " .. edu.duration
+	durLabel.ZIndex = 85
+	durLabel.Parent = durBadge
 	
+	-- Cost badge
 	if edu.cost > 0 then
 		local costBadge = Instance.new("Frame")
-		costBadge.Size = UDim2.new(0, 70, 0, 22)
-		costBadge.Position = UDim2.new(0, 152, 0, badgeY)
+		costBadge.Size = UDim2.new(0, 80, 0, 24)
+		costBadge.Position = UDim2.new(0, 165, 0, badgeY)
 		costBadge.BackgroundColor3 = canAfford and C.AmberPale or C.RedPale
-		costBadge.ZIndex = 83
+		costBadge.ZIndex = 84
 		costBadge.Parent = card
-		pill(costBadge)
+		UI.pill(costBadge)
 		
-		local costLbl = Instance.new("TextLabel")
-		costLbl.Size = UDim2.fromScale(1, 1)
-		costLbl.BackgroundTransparency = 1
-		costLbl.Font = F.Medium
-		costLbl.TextSize = 10
-		costLbl.TextColor3 = canAfford and C.AmberDark or C.RedDark
-		costLbl.Text = formatMoney(edu.cost)
-		costLbl.ZIndex = 84
-		costLbl.Parent = costBadge
+		local costLabel = Instance.new("TextLabel")
+		costLabel.Size = UDim2.fromScale(1, 1)
+		costLabel.BackgroundTransparency = 1
+		costLabel.Font = F.Medium
+		costLabel.TextSize = 11
+		costLabel.TextColor3 = canAfford and C.AmberDark or C.RedDark
+		costLabel.Text = "💵 " .. UI.formatMoney(edu.cost)
+		costLabel.ZIndex = 85
+		costLabel.Parent = costBadge
 	end
 	
-	-- Requirements (if not already enrolled)
+	-- Requirements
 	if not alreadyHas then
-		local reqParts = {}
-		table.insert(reqParts, "Age " .. edu.minAge .. "-" .. edu.maxAge)
-		if edu.prereq then table.insert(reqParts, edu.prereq) end
+		local reqText = "Age " .. edu.minAge .. "-" .. edu.maxAge
+		if edu.requirement then reqText = reqText .. " • Req: " .. edu.requirement end
 		
-		local reqLbl = Instance.new("TextLabel")
-		reqLbl.Size = UDim2.new(0.5, 0, 0, 18)
-		reqLbl.Position = UDim2.new(0, 82, 0, 60)
-		reqLbl.BackgroundTransparency = 1
-		reqLbl.Font = F.Body
-		reqLbl.TextSize = 11
-		reqLbl.TextColor3 = canEnroll and C.Gray500 or C.Red
-		reqLbl.TextXAlignment = Enum.TextXAlignment.Left
-		reqLbl.Text = table.concat(reqParts, " • ")
-		reqLbl.ZIndex = 83
-		reqLbl.Parent = card
+		local reqLabel = Instance.new("TextLabel")
+		reqLabel.Size = UDim2.new(0.5, 0, 0, 18)
+		reqLabel.Position = UDim2.new(0, 90, 0, badgeY + 28)
+		reqLabel.BackgroundTransparency = 1
+		reqLabel.Font = F.Body
+		reqLabel.TextSize = 11
+		reqLabel.TextColor3 = canEnroll and C.Gray500 or C.Red
+		reqLabel.TextXAlignment = Enum.TextXAlignment.Left
+		reqLabel.Text = reqText
+		reqLabel.ZIndex = 84
+		reqLabel.Parent = card
 	end
 	
 	-- Enroll button
 	if not alreadyHas then
 		local enrollBtn = Instance.new("TextButton")
-		enrollBtn.Size = UDim2.new(0, 72, 0, 42)
+		enrollBtn.Size = UDim2.new(0, 78, 0, 46)
 		enrollBtn.AnchorPoint = Vector2.new(1, 0.5)
 		enrollBtn.Position = UDim2.new(1, -14, 0.5, 0)
 		enrollBtn.BackgroundColor3 = canEnroll and C.Purple or C.Gray300
 		enrollBtn.Font = F.Button
-		enrollBtn.TextSize = 13
+		enrollBtn.TextSize = 14
 		enrollBtn.TextColor3 = canEnroll and C.White or C.Gray500
-		
-		local btnText = "Enroll"
-		if not meetsAge then btnText = "Age " .. edu.minAge .. "+"
-		elseif not canAfford then btnText = "Need $"
-		elseif not meetsPrereq then btnText = edu.prereq end
-		enrollBtn.Text = canEnroll and "Enroll" or btnText
 		enrollBtn.AutoButtonColor = false
-		enrollBtn.ZIndex = 83
+		enrollBtn.ZIndex = 84
 		enrollBtn.Parent = card
-		pill(enrollBtn)
+		UI.corner(enrollBtn, 14)
 		
 		if canEnroll then
-			enrollBtn.MouseEnter:Connect(function() 
-				tween(enrollBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 78, 0, 46) })
+			enrollBtn.Text = "Enroll"
+			enrollBtn.MouseEnter:Connect(function()
+				UI.tween(enrollBtn, TweenInfo.new(0.12), { 
+					Size = UDim2.new(0, 84, 0, 50),
+					BackgroundColor3 = C.PurpleDark
+				})
 			end)
-			enrollBtn.MouseLeave:Connect(function() 
-				tween(enrollBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 72, 0, 42) })
+			enrollBtn.MouseLeave:Connect(function()
+				UI.tween(enrollBtn, TweenInfo.new(0.12), { 
+					Size = UDim2.new(0, 78, 0, 46),
+					BackgroundColor3 = C.Purple
+				})
 			end)
 			enrollBtn.MouseButton1Click:Connect(function()
 				self:enrollEducation(edu)
 			end)
+		else
+			enrollBtn.Text = not meetsAge and "Age" or (not canAfford and "Need $" or "Need " .. (edu.requirement or ""))
 		end
-	end
-end
-
-function OccupationScreen:populateJobs()
-	self:updateInfoBar()
-	
-	-- Debug: print state info when populating jobs
-	local age = self:getAge()
-	local edu = self:getEducation()
-	print("[OccupationScreen] PopulateJobs - Player Age:", age, "Education:", edu)
-	if self.playerState then
-		print("[OccupationScreen] playerState.Age:", self.playerState.Age)
-		print("[OccupationScreen] playerState keys:", table.concat(
-			(function()
-				local keys = {}
-				for k, v in pairs(self.playerState) do
-					table.insert(keys, tostring(k) .. "=" .. tostring(type(v) == "table" and "table" or v))
-				end
-				return keys
-			end)(), ", "
-		))
-	else
-		print("[OccupationScreen] playerState is nil!")
-	end
-	
-	for i, job in ipairs(Jobs) do
-		self:createJobCard(self.contentScroll, job, i)
-	end
-end
-
-function OccupationScreen:populateEducation()
-	self:updateInfoBar()
-	for i, edu in ipairs(Education) do
-		self:createEducationCard(self.contentScroll, edu, i)
 	end
 end
 
@@ -701,6 +694,20 @@ function OccupationScreen:applyJob(job)
 	local result = ApplyForJob:InvokeServer(job.id)
 	if result then
 		self:showResult(result.success, result.message, result.success and "🎉" or "😔")
+	else
+		self:showResult(false, "Server error", "❌")
+	end
+end
+
+function OccupationScreen:quitJob()
+	if not QuitJob then
+		self:showResult(false, "Server not available", "❌")
+		return
+	end
+	
+	local result = QuitJob:InvokeServer()
+	if result then
+		self:showResult(result.success, result.message, result.success and "👋" or "😔")
 	else
 		self:showResult(false, "Server error", "❌")
 	end
@@ -720,195 +727,33 @@ function OccupationScreen:enrollEducation(edu)
 	end
 end
 
-function OccupationScreen:createResultModal()
-	self.resultOverlay = Instance.new("Frame")
-	self.resultOverlay.Size = UDim2.fromScale(1, 1)
-	self.resultOverlay.BackgroundColor3 = C.Black
-	self.resultOverlay.BackgroundTransparency = 0.5
-	self.resultOverlay.Visible = false
-	self.resultOverlay.ZIndex = 96
-	self.resultOverlay.Parent = self.screenGui
-	
-	-- Click outside to close
-	local resultCloseArea = Instance.new("TextButton")
-	resultCloseArea.Size = UDim2.fromScale(1, 1)
-	resultCloseArea.BackgroundTransparency = 1
-	resultCloseArea.Text = ""
-	resultCloseArea.ZIndex = 96
-	resultCloseArea.Parent = self.resultOverlay
-	resultCloseArea.MouseButton1Click:Connect(function()
-		self:hideResultModal()
-	end)
-	
-	-- Outer colored shell (BitLife-style)
-	self.resultShell = Instance.new("Frame")
-	self.resultShell.Size = UDim2.new(0.88, 0, 0, 0)
-	self.resultShell.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultShell.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.resultShell.Position = UDim2.fromScale(0.5, 0.5)
-	self.resultShell.BackgroundColor3 = C.Navy
-	self.resultShell.ZIndex = 97
-	self.resultShell.Parent = self.resultOverlay
-	corner(self.resultShell, 24)
-	
-	self.resultShellStroke = stroke(self.resultShell, 3, 0, C.NavyDark)
-	pad(self.resultShell, 4, 4, 4, 4)
-	
-	-- Inner white card
-	self.resultCard = Instance.new("Frame")
-	self.resultCard.Size = UDim2.new(1, 0, 0, 0)
-	self.resultCard.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultCard.BackgroundColor3 = C.White
-	self.resultCard.ZIndex = 98
-	self.resultCard.Parent = self.resultShell
-	corner(self.resultCard, 20)
-	
-	local content = Instance.new("Frame")
-	content.Size = UDim2.new(1, 0, 0, 0)
-	content.AutomaticSize = Enum.AutomaticSize.Y
-	content.BackgroundTransparency = 1
-	content.ZIndex = 99
-	content.Parent = self.resultCard
-	
-	pad(content, 24, 24, 28, 24)
-	
-	local layout = Instance.new("UIListLayout")
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 14)
-	layout.Parent = content
-	
-	self.resultEmojiFrame = Instance.new("Frame")
-	self.resultEmojiFrame.Size = UDim2.new(0, 72, 0, 72)
-	self.resultEmojiFrame.BackgroundColor3 = C.GreenPale
-	self.resultEmojiFrame.LayoutOrder = 1
-	self.resultEmojiFrame.ZIndex = 100
-	self.resultEmojiFrame.Parent = content
-	corner(self.resultEmojiFrame, 36)
-	
-	self.resultEmoji = Instance.new("TextLabel")
-	self.resultEmoji.Size = UDim2.fromScale(1, 1)
-	self.resultEmoji.BackgroundTransparency = 1
-	self.resultEmoji.Font = F.Body
-	self.resultEmoji.TextSize = 38
-	self.resultEmoji.Text = "🎉"
-	self.resultEmoji.ZIndex = 101
-	self.resultEmoji.Parent = self.resultEmojiFrame
-	
-	self.resultTitle = Instance.new("TextLabel")
-	self.resultTitle.Size = UDim2.new(1, 0, 0, 28)
-	self.resultTitle.BackgroundTransparency = 1
-	self.resultTitle.Font = F.Title
-	self.resultTitle.TextSize = 22
-	self.resultTitle.TextColor3 = C.Gray900
-	self.resultTitle.Text = "Success!"
-	self.resultTitle.LayoutOrder = 2
-	self.resultTitle.ZIndex = 100
-	self.resultTitle.Parent = content
-	
-	self.resultMsg = Instance.new("TextLabel")
-	self.resultMsg.Size = UDim2.new(1, 0, 0, 0)
-	self.resultMsg.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultMsg.BackgroundTransparency = 1
-	self.resultMsg.Font = F.Body
-	self.resultMsg.TextSize = 15
-	self.resultMsg.TextColor3 = C.Gray600
-	self.resultMsg.TextWrapped = true
-	self.resultMsg.LineHeight = 1.4
-	self.resultMsg.Text = ""
-	self.resultMsg.LayoutOrder = 3
-	self.resultMsg.ZIndex = 100
-	self.resultMsg.Parent = content
-	
-	local spacer = Instance.new("Frame")
-	spacer.Size = UDim2.new(1, 0, 0, 6)
-	spacer.BackgroundTransparency = 1
-	spacer.LayoutOrder = 4
-	spacer.Parent = content
-	
-	self.resultOkBtn = Instance.new("TextButton")
-	self.resultOkBtn.Size = UDim2.new(1, 0, 0, 50)
-	self.resultOkBtn.BackgroundColor3 = C.Navy
-	self.resultOkBtn.Font = F.Button
-	self.resultOkBtn.TextSize = 16
-	self.resultOkBtn.TextColor3 = C.White
-	self.resultOkBtn.Text = "Continue"
-	self.resultOkBtn.AutoButtonColor = false
-	self.resultOkBtn.LayoutOrder = 5
-	self.resultOkBtn.ZIndex = 100
-	self.resultOkBtn.Parent = content
-	corner(self.resultOkBtn, 12)
-	
-	self.resultOkBtn.MouseButton1Click:Connect(function() self:hideResultModal() end)
-	self.resultOkBtn.MouseEnter:Connect(function() tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.NavyDark }) end)
-	self.resultOkBtn.MouseLeave:Connect(function() tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Navy }) end)
-end
-
 function OccupationScreen:showResult(success, message, emoji)
-	-- Set shell color based on success
 	local shellColor = success and C.Green or C.Red
-	local shellStrokeColor = success and C.GreenDark or C.RedDark
+	local shellStroke = success and C.GreenDark or C.RedDark
+	local pale = success and C.GreenPale or C.RedPale
 	
-	self.resultShell.BackgroundColor3 = shellColor
-	self.resultShellStroke.Color = shellStrokeColor
+	self.resultModal.shell.BackgroundColor3 = shellColor
+	self.resultModal.shellStroke.Color = shellStroke
+	self.resultModal.emojiFrame.BackgroundColor3 = pale
+	self.resultModal.emojiLabel.Text = emoji or (success and "🎉" or "😔")
+	self.resultModal.titleLabel.Text = success and "Success!" or "Uh oh..."
+	self.resultModal.titleLabel.TextColor3 = success and C.GreenDark or C.RedDark
+	self.resultModal.messageLabel.Text = message or ""
+	self.resultModal.okButton.BackgroundColor3 = shellColor
 	
-	self.resultEmoji.Text = emoji or (success and "🎉" or "😔")
-	self.resultEmojiFrame.BackgroundColor3 = success and C.GreenPale or C.RedPale
-	self.resultTitle.Text = success and "Success!" or "Uh oh..."
-	self.resultTitle.TextColor3 = success and C.GreenDark or C.RedDark
-	self.resultMsg.Text = message or ""
-	self.resultOkBtn.BackgroundColor3 = success and C.Green or C.Red
-	
-	self.resultOverlay.Visible = true
-	self.resultShell.Position = UDim2.new(0.5, 0, 0.5, 40)
-	self.resultShell.BackgroundTransparency = 1
-	self.resultCard.BackgroundTransparency = 1
-	
-	tween(self.resultShell, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.fromScale(0.5, 0.5),
-		BackgroundTransparency = 0
-	})
-	tween(self.resultCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0
-	})
-end
-
-function OccupationScreen:hideResultModal()
-	local t = tween(self.resultShell, TweenInfo.new(0.2), {
-		Position = UDim2.new(0.5, 0, 0.5, 40),
-		BackgroundTransparency = 1
-	})
-	tween(self.resultCard, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
-	t.Completed:Connect(function()
-		self.resultOverlay.Visible = false
-		self:switchTab(self.currentTab)
-	end)
+	UI.showModal(self.resultModal)
 end
 
 function OccupationScreen:show()
-	self.overlay.Visible = true
-	self.overlay.Position = UDim2.new(1, 0, 0, 0)
-	
-	-- Debug: print current state info
-	local age = self:getAge()
-	local edu = self:getEducation()
-	print("[OccupationScreen] Opening - Age:", age, "Education:", edu)
-	
 	self:updateInfoBar()
-	self:switchTab(self.currentTab) -- This forces repopulate
-	
-	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { 
-		Position = UDim2.fromScale(0, 0) 
-	})
+	self:switchTab(self.currentTab)
+	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
 end
 
 function OccupationScreen:hide()
-	local t = tween(self.overlay, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { 
-		Position = UDim2.new(1, 0, 0, 0) 
-	})
-	t.Completed:Connect(function()
-		self.overlay.Visible = false
-		self.resultOverlay.Visible = false
+	UI.slideOutScreen(self.overlay, "right", function()
+		self.resultModal.overlay.Visible = false
 	end)
 	self.isVisible = false
 end
