@@ -31,6 +31,23 @@ local CommitCrime     = remotesFolder:WaitForChild("CommitCrime")
 local GetActivities   = remotesFolder:WaitForChild("GetActivities")
 local DoActivity      = remotesFolder:WaitForChild("DoActivity")
 
+-- Education remotes
+local GetEducation    = remotesFolder:WaitForChild("GetEducation")
+local EnrollEducation = remotesFolder:WaitForChild("EnrollEducation")
+local DropOut         = remotesFolder:WaitForChild("DropOut")
+
+-- Assets remotes
+local GetAssets       = remotesFolder:WaitForChild("GetAssets")
+local BuyAsset        = remotesFolder:WaitForChild("BuyAsset")
+local SellAsset       = remotesFolder:WaitForChild("SellAsset")
+
+-- Prison remotes
+local GetPrisonActions = remotesFolder:WaitForChild("GetPrisonActions")
+local DoPrisonAction   = remotesFolder:WaitForChild("DoPrisonAction")
+
+-- Relationships remote
+local GetRelationships = remotesFolder:WaitForChild("GetRelationships")
+
 ----------------------------------------------------------------
 -- STATE
 ----------------------------------------------------------------
@@ -516,8 +533,9 @@ navLayout.Parent = navBar
 local navItems = {
 	{ icon = "💼", text = "Jobs", action = "jobs" },
 	{ icon = "🎯", text = "Activities", action = "activities" },
+	{ icon = "📚", text = "School", action = "education" },
+	{ icon = "🏠", text = "Assets", action = "assets" },
 	{ icon = "😈", text = "Crime", action = "crime" },
-	{ icon = "📊", text = "Stats", action = "stats" },
 }
 
 local navButtons = {}
@@ -526,7 +544,7 @@ for _, info in ipairs(navItems) do
 	local btn = Instance.new("TextButton")
 	btn.BackgroundTransparency = 1
 	btn.AutoButtonColor = false
-	btn.Size = UDim2.new(0, 75, 0, 56)
+	btn.Size = UDim2.new(0, 60, 0, 56)
 	btn.Parent = navBar
 
 	createUIListLayout(btn, Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center, 2)
@@ -614,6 +632,86 @@ ageHint.TextColor3 = Colors.TextSecondary
 ageHint.Text = "👆 Press to grow older one year!"
 ageHint.Visible = false
 ageHint.Parent = bottom
+
+----------------------------------------------------------------
+-- NOTIFICATION/TOAST SYSTEM
+----------------------------------------------------------------
+
+local notificationQueue = {}
+local isShowingNotification = false
+
+local function showNotification(message, notifType)
+	-- notifType: "success", "error", "info"
+	local color = Colors.Primary
+	local emoji = "💬"
+	
+	if notifType == "success" then
+		color = Colors.Success
+		emoji = "✅"
+	elseif notifType == "error" then
+		color = Colors.Danger
+		emoji = "❌"
+	elseif notifType == "warning" then
+		color = Colors.Warning
+		emoji = "⚠️"
+	end
+	
+	local toast = Instance.new("Frame")
+	toast.Name = "Toast"
+	toast.AnchorPoint = Vector2.new(0.5, 0)
+	toast.Position = UDim2.new(0.5, 0, 0, -80)
+	toast.Size = UDim2.new(0, 350, 0, 60)
+	toast.BackgroundColor3 = color
+	toast.ZIndex = 100
+	toast.Parent = screenGui
+	createUICorner(toast, 14)
+	createShadow(toast)
+	
+	local toastGrad = Instance.new("UIGradient")
+	toastGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 220, 220)),
+	})
+	toastGrad.Rotation = 90
+	toastGrad.Parent = toast
+	
+	createUIPadding(toast, 16, 16, 0, 0)
+	
+	local emojiLabel = Instance.new("TextLabel")
+	emojiLabel.BackgroundTransparency = 1
+	emojiLabel.Size = UDim2.new(0, 30, 1, 0)
+	emojiLabel.Font = BODY_FONT
+	emojiLabel.TextSize = 24
+	emojiLabel.Text = emoji
+	emojiLabel.TextColor3 = Colors.TextWhite
+	emojiLabel.ZIndex = 101
+	emojiLabel.Parent = toast
+	
+	local msgLabel = Instance.new("TextLabel")
+	msgLabel.BackgroundTransparency = 1
+	msgLabel.Size = UDim2.new(1, -40, 1, 0)
+	msgLabel.Position = UDim2.new(0, 36, 0, 0)
+	msgLabel.Font = CHIP_FONT
+	msgLabel.TextSize = 14
+	msgLabel.TextWrapped = true
+	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+	msgLabel.TextColor3 = Colors.TextWhite
+	msgLabel.Text = message
+	msgLabel.ZIndex = 101
+	msgLabel.Parent = toast
+	
+	-- Animate in
+	local showTween = tween(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 20)
+	})
+	
+	task.delay(3, function()
+		tween(toast, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -80)
+		}).Completed:Wait()
+		toast:Destroy()
+	end)
+end
 
 ----------------------------------------------------------------
 -- MODAL SYSTEM
@@ -966,15 +1064,23 @@ local function createJobCard(job)
 		applyBtn.MouseButton1Click:Connect(function()
 			applyBtn.Text = "..."
 			applyBtn.Active = false
-			local result = ApplyForJob:InvokeServer(job.id)
-			if result then
+			local success, result = pcall(function()
+				return ApplyForJob:InvokeServer(job.id)
+			end)
+			if success and result then
 				if result.success then
 					applyBtn.Text = "✓"
 					applyBtn.BackgroundColor3 = Colors.Success
+					showNotification(result.message or "You got the job!", "success")
 				else
 					applyBtn.Text = "Apply"
 					applyBtn.Active = true
+					showNotification(result.message or "Application failed.", "error")
 				end
+			elseif not success then
+				applyBtn.Text = "Apply"
+				applyBtn.Active = true
+				showNotification("Connection error. Please try again.", "error")
 			end
 			task.wait(1)
 			refreshJobsUI()
@@ -1154,20 +1260,29 @@ local function createCrimeCard(crime)
 		commitBtn.MouseButton1Click:Connect(function()
 			commitBtn.Text = "..."
 			commitBtn.Active = false
-			local result = CommitCrime:InvokeServer(crime.id)
-			if result then
-				if result.success then
+			local success, result = pcall(function()
+				return CommitCrime:InvokeServer(crime.id)
+			end)
+			if success and result then
+				if result.success and not result.caught then
 					commitBtn.Text = "💰"
 					commitBtn.BackgroundColor3 = Colors.Success
+					showNotification(result.message or "Crime successful!", "success")
 				else
 					if result.caught then
 						commitBtn.Text = "🚔"
 						commitBtn.BackgroundColor3 = Colors.Danger
+						showNotification(result.message or "You got caught!", "error")
 					else
 						commitBtn.Text = "Commit"
 						commitBtn.Active = true
+						showNotification(result.message or "Something went wrong.", "error")
 					end
 				end
+			elseif not success then
+				commitBtn.Text = "Commit"
+				commitBtn.Active = true
+				showNotification("Connection error. Please try again.", "error")
 			end
 			task.wait(1.5)
 			refreshCrimeUI()
@@ -1177,6 +1292,25 @@ local function createCrimeCard(crime)
 	return card
 end
 
+local viewPrisonBtn = Instance.new("TextButton")
+viewPrisonBtn.BackgroundColor3 = Color3.fromRGB(127, 29, 29)
+viewPrisonBtn.Size = UDim2.new(1, 0, 0, 44)
+viewPrisonBtn.Position = UDim2.new(0, 0, 0, 44)
+viewPrisonBtn.Font = CHIP_FONT
+viewPrisonBtn.TextSize = 14
+viewPrisonBtn.TextColor3 = Colors.TextWhite
+viewPrisonBtn.Text = "⛓️ View Prison Actions"
+viewPrisonBtn.Visible = false
+viewPrisonBtn.ZIndex = 53
+viewPrisonBtn.Parent = crimeContent
+createUICorner(viewPrisonBtn, 10)
+
+viewPrisonBtn.MouseButton1Click:Connect(function()
+	crimeOverlay.Visible = false
+	refreshPrisonUI()
+	prisonOverlay.Visible = true
+end)
+
 function refreshCrimeUI()
 	for _, child in ipairs(crimeScroll:GetChildren()) do
 		if child:IsA("Frame") then
@@ -1185,9 +1319,15 @@ function refreshCrimeUI()
 	end
 
 	if currentState and currentState.InJail then
-		crimeWarning.Text = "🔒 You're in prison! " .. (currentState.JailYearsLeft or 0) .. " years remaining. Age up to serve your sentence."
+		crimeWarning.Text = "🔒 You're in prison! " .. (currentState.JailYearsLeft or 0) .. " years remaining."
+		viewPrisonBtn.Visible = true
+		crimeScroll.Position = UDim2.new(0, 0, 0, 96)
+		crimeScroll.Size = UDim2.new(1, 0, 1, -100)
 	else
 		crimeWarning.Text = "⚠️ Crime doesn't pay... or does it? Get caught and you'll go to prison!"
+		viewPrisonBtn.Visible = false
+		crimeScroll.Position = UDim2.new(0, 0, 0, 48)
+		crimeScroll.Size = UDim2.new(1, 0, 1, -52)
 	end
 
 	local crimes = GetCrimes:InvokeServer()
@@ -1302,15 +1442,23 @@ local function createActivityCard(activity)
 		doBtn.MouseButton1Click:Connect(function()
 			doBtn.Text = "..."
 			doBtn.Active = false
-			local result = DoActivity:InvokeServer(activity.id)
-			if result then
+			local success, result = pcall(function()
+				return DoActivity:InvokeServer(activity.id)
+			end)
+			if success and result then
 				if result.success then
 					doBtn.Text = "✓"
 					doBtn.BackgroundColor3 = Colors.Success
+					showNotification(result.message or "Activity completed!", "success")
 				else
 					doBtn.Text = "Do"
 					doBtn.Active = true
+					showNotification(result.message or "Couldn't do activity.", "error")
 				end
+			elseif not success then
+				doBtn.Text = "Do"
+				doBtn.Active = true
+				showNotification("Connection error. Please try again.", "error")
 			end
 			task.wait(1)
 			refreshActivitiesUI()
@@ -1489,10 +1637,695 @@ function refreshStatsUI()
 	infoText.Text = table.concat(lines, "\n")
 end
 
-navButtons["stats"].btn.MouseButton1Click:Connect(function()
-	refreshStatsUI()
-	statsOverlay.Visible = true
+----------------------------------------------------------------
+-- EDUCATION MODAL
+----------------------------------------------------------------
+
+local educationOverlay, educationCard, educationContent = createModal("EducationOverlay", Color3.fromRGB(16, 185, 129), "📚", "Education")
+
+local currentSchoolFrame = Instance.new("Frame")
+currentSchoolFrame.BackgroundColor3 = Color3.fromRGB(240, 253, 244)
+currentSchoolFrame.Size = UDim2.new(1, 0, 0, 70)
+currentSchoolFrame.ZIndex = 52
+currentSchoolFrame.Parent = educationContent
+createUICorner(currentSchoolFrame, 14)
+createUIStroke(currentSchoolFrame, 1, 0.8, Color3.fromRGB(187, 247, 208))
+
+createUIPadding(currentSchoolFrame, 14, 14, 0, 0)
+
+local currentSchoolTitle = Instance.new("TextLabel")
+currentSchoolTitle.BackgroundTransparency = 1
+currentSchoolTitle.Size = UDim2.new(0.7, 0, 0, 20)
+currentSchoolTitle.Position = UDim2.new(0, 0, 0, 12)
+currentSchoolTitle.Font = TITLE_FONT
+currentSchoolTitle.TextSize = 14
+currentSchoolTitle.TextXAlignment = Enum.TextXAlignment.Left
+currentSchoolTitle.TextColor3 = Colors.TextPrimary
+currentSchoolTitle.Text = "📖 Not enrolled"
+currentSchoolTitle.ZIndex = 53
+currentSchoolTitle.Parent = currentSchoolFrame
+
+local currentSchoolInfo = Instance.new("TextLabel")
+currentSchoolInfo.BackgroundTransparency = 1
+currentSchoolInfo.Size = UDim2.new(0.7, 0, 0, 18)
+currentSchoolInfo.Position = UDim2.new(0, 0, 0, 34)
+currentSchoolInfo.Font = BODY_FONT
+currentSchoolInfo.TextSize = 13
+currentSchoolInfo.TextXAlignment = Enum.TextXAlignment.Left
+currentSchoolInfo.TextColor3 = Colors.TextSecondary
+currentSchoolInfo.Text = "Enroll in a school below"
+currentSchoolInfo.ZIndex = 53
+currentSchoolInfo.Parent = currentSchoolFrame
+
+local dropOutBtn = Instance.new("TextButton")
+dropOutBtn.BackgroundColor3 = Colors.Danger
+dropOutBtn.Size = UDim2.new(0, 80, 0, 36)
+dropOutBtn.Position = UDim2.new(1, -80, 0.5, 0)
+dropOutBtn.AnchorPoint = Vector2.new(0, 0.5)
+dropOutBtn.Font = CHIP_FONT
+dropOutBtn.TextSize = 13
+dropOutBtn.TextColor3 = Colors.TextWhite
+dropOutBtn.Text = "Drop Out"
+dropOutBtn.Visible = false
+dropOutBtn.ZIndex = 53
+dropOutBtn.Parent = currentSchoolFrame
+createUICorner(dropOutBtn, 10)
+
+dropOutBtn.MouseButton1Click:Connect(function()
+	DropOut:FireServer()
+	showNotification("You dropped out of school.", "warning")
+	task.wait(0.2)
+	refreshEducationUI()
 end)
+
+local educationScroll = Instance.new("ScrollingFrame")
+educationScroll.BackgroundTransparency = 1
+educationScroll.Size = UDim2.new(1, 0, 1, -90)
+educationScroll.Position = UDim2.new(0, 0, 0, 82)
+educationScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+educationScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+educationScroll.ScrollBarThickness = 4
+educationScroll.ZIndex = 52
+educationScroll.Parent = educationContent
+
+createUIListLayout(educationScroll, Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top, 10)
+
+local function createEducationCard(edu)
+	local card = Instance.new("Frame")
+	card.BackgroundColor3 = Colors.BgCard
+	card.Size = UDim2.new(1, 0, 0, 100)
+	card.ZIndex = 53
+	card.Parent = educationScroll
+	createUICorner(card, 14)
+	createUIStroke(card, 1, 0.85, Colors.Border)
+
+	createUIPadding(card, 14, 14, 12, 12)
+
+	local emoji = Instance.new("TextLabel")
+	emoji.BackgroundTransparency = 1
+	emoji.Size = UDim2.new(0, 40, 0, 40)
+	emoji.Font = BODY_FONT
+	emoji.TextSize = 28
+	emoji.Text = edu.emoji
+	emoji.ZIndex = 54
+	emoji.Parent = card
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(0.6, 0, 0, 20)
+	title.Position = UDim2.new(0, 48, 0, 0)
+	title.Font = TITLE_FONT
+	title.TextSize = 15
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = Colors.TextPrimary
+	title.Text = edu.name
+	title.ZIndex = 54
+	title.Parent = card
+
+	local typeLabel = Instance.new("TextLabel")
+	typeLabel.BackgroundTransparency = 1
+	typeLabel.Size = UDim2.new(0.6, 0, 0, 16)
+	typeLabel.Position = UDim2.new(0, 48, 0, 20)
+	typeLabel.Font = BODY_FONT
+	typeLabel.TextSize = 12
+	typeLabel.TextXAlignment = Enum.TextXAlignment.Left
+	typeLabel.TextColor3 = Colors.TextSecondary
+	typeLabel.Text = edu.type .. " • " .. edu.yearsRequired .. " years"
+	typeLabel.ZIndex = 54
+	typeLabel.Parent = card
+
+	local cost = Instance.new("TextLabel")
+	cost.BackgroundTransparency = 1
+	cost.Size = UDim2.new(0.5, 0, 0, 16)
+	cost.Position = UDim2.new(0, 48, 0, 38)
+	cost.Font = CHIP_FONT
+	cost.TextSize = 13
+	cost.TextXAlignment = Enum.TextXAlignment.Left
+	cost.TextColor3 = edu.cost > 0 and Colors.Danger or Colors.Success
+	cost.Text = edu.cost > 0 and formatMoney(edu.cost) or "Free"
+	cost.ZIndex = 54
+	cost.Parent = card
+
+	local enrollBtn = Instance.new("TextButton")
+	enrollBtn.BackgroundColor3 = edu.canEnroll and Color3.fromRGB(16, 185, 129) or Color3.fromRGB(203, 213, 225)
+	enrollBtn.Size = UDim2.new(0, 90, 0, 38)
+	enrollBtn.Position = UDim2.new(1, -90, 0, 0)
+	enrollBtn.Font = CHIP_FONT
+	enrollBtn.TextSize = 14
+	enrollBtn.TextColor3 = Colors.TextWhite
+	enrollBtn.Text = edu.canEnroll and "Enroll" or "Locked"
+	enrollBtn.Active = edu.canEnroll
+	enrollBtn.ZIndex = 54
+	enrollBtn.Parent = card
+	createUICorner(enrollBtn, 10)
+
+	if edu.canEnroll then
+		enrollBtn.MouseButton1Click:Connect(function()
+			enrollBtn.Text = "..."
+			enrollBtn.Active = false
+			local success, result = pcall(function()
+				return EnrollEducation:InvokeServer(edu.id)
+			end)
+			if success and result then
+				if result.success then
+					enrollBtn.Text = "✓"
+					enrollBtn.BackgroundColor3 = Colors.Success
+					showNotification(result.message or "Enrolled successfully!", "success")
+				else
+					enrollBtn.Text = "Enroll"
+					enrollBtn.Active = true
+					showNotification(result.message or "Couldn't enroll.", "error")
+				end
+			end
+			task.wait(1)
+			refreshEducationUI()
+		end)
+	end
+
+	-- Requirements
+	local reqText = "Smarts " .. edu.smartsRequired .. "%"
+	if edu.completionTitle then
+		reqText = reqText .. " • " .. edu.completionTitle
+	end
+
+	local req = Instance.new("TextLabel")
+	req.BackgroundTransparency = 1
+	req.Size = UDim2.new(1, -100, 0, 14)
+	req.Position = UDim2.new(0, 0, 1, -14)
+	req.Font = BODY_FONT
+	req.TextSize = 11
+	req.TextXAlignment = Enum.TextXAlignment.Left
+	req.TextColor3 = Colors.TextMuted
+	req.Text = reqText
+	req.ZIndex = 54
+	req.Parent = card
+
+	return card
+end
+
+function refreshEducationUI()
+	for _, child in ipairs(educationScroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	-- Update current school display
+	if currentState and currentState.CurrentSchool then
+		currentSchoolTitle.Text = "📖 " .. currentState.CurrentSchool.name
+		currentSchoolInfo.Text = "Year " .. (currentState.CurrentSchool.yearsCompleted or 0) .. " of " .. (currentState.CurrentSchool.yearsRequired or 4)
+		currentSchoolFrame.BackgroundColor3 = Color3.fromRGB(240, 253, 244)
+		dropOutBtn.Visible = true
+	else
+		local eduLevel = currentState and currentState.EducationLevel or "None"
+		currentSchoolTitle.Text = "📖 " .. (eduLevel == "None" and "Not enrolled" or eduLevel .. " graduate")
+		currentSchoolInfo.Text = "Enroll in a school below"
+		currentSchoolFrame.BackgroundColor3 = Color3.fromRGB(248, 250, 252)
+		dropOutBtn.Visible = false
+	end
+
+	local education = GetEducation:InvokeServer()
+	if education then
+		for _, edu in ipairs(education) do
+			createEducationCard(edu)
+		end
+	end
+end
+
+navButtons["education"].btn.MouseButton1Click:Connect(function()
+	refreshEducationUI()
+	educationOverlay.Visible = true
+end)
+
+----------------------------------------------------------------
+-- ASSETS MODAL
+----------------------------------------------------------------
+
+local assetsOverlay, assetsCard, assetsContent = createModal("AssetsOverlay", Color3.fromRGB(249, 115, 22), "🏠", "Assets")
+
+local netWorthFrame = Instance.new("Frame")
+netWorthFrame.BackgroundColor3 = Color3.fromRGB(255, 247, 237)
+netWorthFrame.Size = UDim2.new(1, 0, 0, 60)
+netWorthFrame.ZIndex = 52
+netWorthFrame.Parent = assetsContent
+createUICorner(netWorthFrame, 14)
+createUIStroke(netWorthFrame, 1, 0.8, Color3.fromRGB(254, 215, 170))
+
+createUIPadding(netWorthFrame, 14, 14, 0, 0)
+
+local netWorthLabel = Instance.new("TextLabel")
+netWorthLabel.BackgroundTransparency = 1
+netWorthLabel.Size = UDim2.new(0.5, 0, 1, 0)
+netWorthLabel.Font = BODY_FONT
+netWorthLabel.TextSize = 13
+netWorthLabel.TextXAlignment = Enum.TextXAlignment.Left
+netWorthLabel.TextColor3 = Colors.TextSecondary
+netWorthLabel.Text = "💰 Net Worth"
+netWorthLabel.ZIndex = 53
+netWorthLabel.Parent = netWorthFrame
+
+local netWorthValue = Instance.new("TextLabel")
+netWorthValue.BackgroundTransparency = 1
+netWorthValue.Size = UDim2.new(0.5, 0, 1, 0)
+netWorthValue.Position = UDim2.new(0.5, 0, 0, 0)
+netWorthValue.Font = TITLE_FONT
+netWorthValue.TextSize = 20
+netWorthValue.TextXAlignment = Enum.TextXAlignment.Right
+netWorthValue.TextColor3 = Colors.Success
+netWorthValue.Text = "$0"
+netWorthValue.ZIndex = 53
+netWorthValue.Parent = netWorthFrame
+
+local assetsScroll = Instance.new("ScrollingFrame")
+assetsScroll.BackgroundTransparency = 1
+assetsScroll.Size = UDim2.new(1, 0, 1, -72)
+assetsScroll.Position = UDim2.new(0, 0, 0, 68)
+assetsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+assetsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+assetsScroll.ScrollBarThickness = 4
+assetsScroll.ZIndex = 52
+assetsScroll.Parent = assetsContent
+
+createUIListLayout(assetsScroll, Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top, 10)
+
+local function createAssetCard(asset, assetType, canBuy)
+	local card = Instance.new("Frame")
+	card.BackgroundColor3 = Colors.BgCard
+	card.Size = UDim2.new(1, 0, 0, 80)
+	card.ZIndex = 53
+	card.Parent = assetsScroll
+	createUICorner(card, 14)
+	createUIStroke(card, 1, 0.85, Colors.Border)
+
+	createUIPadding(card, 14, 14, 10, 10)
+
+	local emoji = Instance.new("TextLabel")
+	emoji.BackgroundTransparency = 1
+	emoji.Size = UDim2.new(0, 36, 0, 36)
+	emoji.Font = BODY_FONT
+	emoji.TextSize = 26
+	emoji.Text = asset.emoji
+	emoji.ZIndex = 54
+	emoji.Parent = card
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(0.55, 0, 0, 20)
+	title.Position = UDim2.new(0, 44, 0, 0)
+	title.Font = TITLE_FONT
+	title.TextSize = 15
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = Colors.TextPrimary
+	title.Text = asset.name
+	title.ZIndex = 54
+	title.Parent = card
+
+	local price = Instance.new("TextLabel")
+	price.BackgroundTransparency = 1
+	price.Size = UDim2.new(0.5, 0, 0, 16)
+	price.Position = UDim2.new(0, 44, 0, 22)
+	price.Font = CHIP_FONT
+	price.TextSize = 13
+	price.TextXAlignment = Enum.TextXAlignment.Left
+	price.TextColor3 = Colors.Warning
+	price.Text = formatMoney(asset.price)
+	price.ZIndex = 54
+	price.Parent = card
+
+	local ageReq = Instance.new("TextLabel")
+	ageReq.BackgroundTransparency = 1
+	ageReq.Size = UDim2.new(1, 0, 0, 14)
+	ageReq.Position = UDim2.new(0, 0, 1, -14)
+	ageReq.Font = BODY_FONT
+	ageReq.TextSize = 11
+	ageReq.TextXAlignment = Enum.TextXAlignment.Left
+	ageReq.TextColor3 = Colors.TextMuted
+	ageReq.Text = "Age " .. asset.minAge .. "+"
+	ageReq.ZIndex = 54
+	ageReq.Parent = card
+
+	local buyBtn = Instance.new("TextButton")
+	buyBtn.BackgroundColor3 = canBuy and Colors.Orange or Color3.fromRGB(203, 213, 225)
+	buyBtn.Size = UDim2.new(0, 70, 0, 36)
+	buyBtn.Position = UDim2.new(1, -70, 0, 0)
+	buyBtn.Font = CHIP_FONT
+	buyBtn.TextSize = 13
+	buyBtn.TextColor3 = Colors.TextWhite
+	buyBtn.Text = canBuy and "Buy" or "Locked"
+	buyBtn.Active = canBuy
+	buyBtn.ZIndex = 54
+	buyBtn.Parent = card
+	createUICorner(buyBtn, 10)
+
+	if canBuy then
+		buyBtn.MouseButton1Click:Connect(function()
+			buyBtn.Text = "..."
+			buyBtn.Active = false
+			local success, result = pcall(function()
+				return BuyAsset:InvokeServer(assetType, asset.id)
+			end)
+			if success and result then
+				if result.success then
+					buyBtn.Text = "✓"
+					buyBtn.BackgroundColor3 = Colors.Success
+					showNotification(result.message or "Purchase successful!", "success")
+				else
+					buyBtn.Text = "Buy"
+					buyBtn.Active = true
+					showNotification(result.message or "Couldn't purchase.", "error")
+				end
+			end
+			task.wait(1)
+			refreshAssetsUI()
+		end)
+	end
+
+	return card
+end
+
+local function createOwnedAssetCard(asset, assetType, index)
+	local card = Instance.new("Frame")
+	card.BackgroundColor3 = Color3.fromRGB(240, 253, 244)
+	card.Size = UDim2.new(1, 0, 0, 70)
+	card.ZIndex = 53
+	card.Parent = assetsScroll
+	createUICorner(card, 14)
+	createUIStroke(card, 1, 0.85, Color3.fromRGB(187, 247, 208))
+
+	createUIPadding(card, 14, 14, 10, 10)
+
+	local emoji = Instance.new("TextLabel")
+	emoji.BackgroundTransparency = 1
+	emoji.Size = UDim2.new(0, 36, 0, 36)
+	emoji.Font = BODY_FONT
+	emoji.TextSize = 26
+	emoji.Text = asset.emoji
+	emoji.ZIndex = 54
+	emoji.Parent = card
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(0.55, 0, 0, 20)
+	title.Position = UDim2.new(0, 44, 0, 0)
+	title.Font = TITLE_FONT
+	title.TextSize = 14
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = Colors.TextPrimary
+	title.Text = "✅ " .. asset.name
+	title.ZIndex = 54
+	title.Parent = card
+
+	local value = Instance.new("TextLabel")
+	value.BackgroundTransparency = 1
+	value.Size = UDim2.new(0.5, 0, 0, 16)
+	value.Position = UDim2.new(0, 44, 0, 22)
+	value.Font = BODY_FONT
+	value.TextSize = 12
+	value.TextXAlignment = Enum.TextXAlignment.Left
+	value.TextColor3 = Colors.Success
+	value.Text = "Value: " .. formatMoney(asset.value or 0)
+	value.ZIndex = 54
+	value.Parent = card
+
+	local sellBtn = Instance.new("TextButton")
+	sellBtn.BackgroundColor3 = Colors.Danger
+	sellBtn.Size = UDim2.new(0, 60, 0, 32)
+	sellBtn.Position = UDim2.new(1, -60, 0.5, 0)
+	sellBtn.AnchorPoint = Vector2.new(0, 0.5)
+	sellBtn.Font = CHIP_FONT
+	sellBtn.TextSize = 12
+	sellBtn.TextColor3 = Colors.TextWhite
+	sellBtn.Text = "Sell"
+	sellBtn.ZIndex = 54
+	sellBtn.Parent = card
+	createUICorner(sellBtn, 8)
+
+	sellBtn.MouseButton1Click:Connect(function()
+		sellBtn.Text = "..."
+		sellBtn.Active = false
+		local success, result = pcall(function()
+			return SellAsset:InvokeServer(assetType, index)
+		end)
+		if success and result then
+			if result.success then
+				showNotification(result.message or "Sold!", "success")
+			else
+				showNotification(result.message or "Couldn't sell.", "error")
+			end
+		end
+		task.wait(0.5)
+		refreshAssetsUI()
+	end)
+
+	return card
+end
+
+function refreshAssetsUI()
+	for _, child in ipairs(assetsScroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	-- Update net worth
+	local netWorth = currentState and (currentState.NetWorth or currentState.Money or 0) or 0
+	netWorthValue.Text = formatMoney(netWorth)
+	netWorthValue.TextColor3 = netWorth >= 0 and Colors.Success or Colors.Danger
+
+	local assets = GetAssets:InvokeServer()
+	if assets then
+		-- Show owned assets first
+		if assets.owned then
+			if assets.owned.vehicles and #assets.owned.vehicles > 0 then
+				-- Section header
+				local vehicleHeader = Instance.new("TextLabel")
+				vehicleHeader.BackgroundTransparency = 1
+				vehicleHeader.Size = UDim2.new(1, 0, 0, 24)
+				vehicleHeader.Font = TITLE_FONT
+				vehicleHeader.TextSize = 14
+				vehicleHeader.TextXAlignment = Enum.TextXAlignment.Left
+				vehicleHeader.TextColor3 = Colors.TextSecondary
+				vehicleHeader.Text = "🚗 Your Vehicles"
+				vehicleHeader.ZIndex = 53
+				vehicleHeader.Parent = assetsScroll
+
+				for i, v in ipairs(assets.owned.vehicles) do
+					createOwnedAssetCard(v, "vehicle", i)
+				end
+			end
+
+			if assets.owned.properties and #assets.owned.properties > 0 then
+				local propHeader = Instance.new("TextLabel")
+				propHeader.BackgroundTransparency = 1
+				propHeader.Size = UDim2.new(1, 0, 0, 24)
+				propHeader.Font = TITLE_FONT
+				propHeader.TextSize = 14
+				propHeader.TextXAlignment = Enum.TextXAlignment.Left
+				propHeader.TextColor3 = Colors.TextSecondary
+				propHeader.Text = "🏠 Your Properties"
+				propHeader.ZIndex = 53
+				propHeader.Parent = assetsScroll
+
+				for i, p in ipairs(assets.owned.properties) do
+					createOwnedAssetCard(p, "property", i)
+				end
+			end
+		end
+
+		-- Show available vehicles
+		if assets.vehicles and #assets.vehicles > 0 then
+			local shopHeader = Instance.new("TextLabel")
+			shopHeader.BackgroundTransparency = 1
+			shopHeader.Size = UDim2.new(1, 0, 0, 24)
+			shopHeader.Font = TITLE_FONT
+			shopHeader.TextSize = 14
+			shopHeader.TextXAlignment = Enum.TextXAlignment.Left
+			shopHeader.TextColor3 = Colors.TextSecondary
+			shopHeader.Text = "🚗 Vehicles for Sale"
+			shopHeader.ZIndex = 53
+			shopHeader.Parent = assetsScroll
+
+			for _, v in ipairs(assets.vehicles) do
+				createAssetCard(v, "vehicle", v.canBuy)
+			end
+		end
+
+		-- Show available properties
+		if assets.properties and #assets.properties > 0 then
+			local propShopHeader = Instance.new("TextLabel")
+			propShopHeader.BackgroundTransparency = 1
+			propShopHeader.Size = UDim2.new(1, 0, 0, 24)
+			propShopHeader.Font = TITLE_FONT
+			propShopHeader.TextSize = 14
+			propShopHeader.TextXAlignment = Enum.TextXAlignment.Left
+			propShopHeader.TextColor3 = Colors.TextSecondary
+			propShopHeader.Text = "🏠 Properties for Sale"
+			propShopHeader.ZIndex = 53
+			propShopHeader.Parent = assetsScroll
+
+			for _, p in ipairs(assets.properties) do
+				createAssetCard(p, "property", p.canBuy)
+			end
+		end
+	end
+end
+
+navButtons["assets"].btn.MouseButton1Click:Connect(function()
+	refreshAssetsUI()
+	assetsOverlay.Visible = true
+end)
+
+----------------------------------------------------------------
+-- PRISON MODAL (shows when in jail)
+----------------------------------------------------------------
+
+local prisonOverlay, prisonCard, prisonContent = createModal("PrisonOverlay", Color3.fromRGB(127, 29, 29), "⛓️", "Prison")
+
+local prisonInfoFrame = Instance.new("Frame")
+prisonInfoFrame.BackgroundColor3 = Color3.fromRGB(254, 242, 242)
+prisonInfoFrame.Size = UDim2.new(1, 0, 0, 60)
+prisonInfoFrame.ZIndex = 52
+prisonInfoFrame.Parent = prisonContent
+createUICorner(prisonInfoFrame, 14)
+createUIStroke(prisonInfoFrame, 1, 0.8, Color3.fromRGB(254, 202, 202))
+
+createUIPadding(prisonInfoFrame, 14, 14, 0, 0)
+
+local prisonTimeLabel = Instance.new("TextLabel")
+prisonTimeLabel.BackgroundTransparency = 1
+prisonTimeLabel.Size = UDim2.new(1, 0, 1, 0)
+prisonTimeLabel.Font = TITLE_FONT
+prisonTimeLabel.TextSize = 16
+prisonTimeLabel.TextColor3 = Colors.Danger
+prisonTimeLabel.Text = "🔒 0 years remaining"
+prisonTimeLabel.ZIndex = 53
+prisonTimeLabel.Parent = prisonInfoFrame
+
+local prisonScroll = Instance.new("ScrollingFrame")
+prisonScroll.BackgroundTransparency = 1
+prisonScroll.Size = UDim2.new(1, 0, 1, -72)
+prisonScroll.Position = UDim2.new(0, 0, 0, 68)
+prisonScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+prisonScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+prisonScroll.ScrollBarThickness = 4
+prisonScroll.ZIndex = 52
+prisonScroll.Parent = prisonContent
+
+createUIListLayout(prisonScroll, Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top, 10)
+
+local function createPrisonActionCard(action)
+	local card = Instance.new("Frame")
+	card.BackgroundColor3 = Colors.BgCard
+	card.Size = UDim2.new(1, 0, 0, 80)
+	card.ZIndex = 53
+	card.Parent = prisonScroll
+	createUICorner(card, 14)
+	createUIStroke(card, 1, 0.85, action.risky and Color3.fromRGB(254, 202, 202) or Colors.Border)
+
+	createUIPadding(card, 14, 14, 10, 10)
+
+	local emoji = Instance.new("TextLabel")
+	emoji.BackgroundTransparency = 1
+	emoji.Size = UDim2.new(0, 36, 0, 36)
+	emoji.Font = BODY_FONT
+	emoji.TextSize = 26
+	emoji.Text = action.emoji
+	emoji.ZIndex = 54
+	emoji.Parent = card
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(0.55, 0, 0, 20)
+	title.Position = UDim2.new(0, 44, 0, 0)
+	title.Font = TITLE_FONT
+	title.TextSize = 15
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = action.risky and Colors.Danger or Colors.TextPrimary
+	title.Text = action.name
+	title.ZIndex = 54
+	title.Parent = card
+
+	local desc = Instance.new("TextLabel")
+	desc.BackgroundTransparency = 1
+	desc.Size = UDim2.new(0.7, 0, 0, 16)
+	desc.Position = UDim2.new(0, 44, 0, 22)
+	desc.Font = BODY_FONT
+	desc.TextSize = 12
+	desc.TextXAlignment = Enum.TextXAlignment.Left
+	desc.TextColor3 = Colors.TextSecondary
+	desc.Text = action.description
+	desc.ZIndex = 54
+	desc.Parent = card
+
+	if action.risky then
+		local warning = Instance.new("TextLabel")
+		warning.BackgroundTransparency = 1
+		warning.Size = UDim2.new(1, 0, 0, 14)
+		warning.Position = UDim2.new(0, 0, 1, -14)
+		warning.Font = BODY_FONT
+		warning.TextSize = 11
+		warning.TextXAlignment = Enum.TextXAlignment.Left
+		warning.TextColor3 = Colors.Danger
+		warning.Text = "⚠️ Risky action!"
+		warning.ZIndex = 54
+		warning.Parent = card
+	end
+
+	local doBtn = Instance.new("TextButton")
+	doBtn.BackgroundColor3 = action.risky and Colors.Danger or Colors.Primary
+	doBtn.Size = UDim2.new(0, 60, 0, 32)
+	doBtn.Position = UDim2.new(1, -60, 0, 0)
+	doBtn.Font = CHIP_FONT
+	doBtn.TextSize = 12
+	doBtn.TextColor3 = Colors.TextWhite
+	doBtn.Text = "Do"
+	doBtn.ZIndex = 54
+	doBtn.Parent = card
+	createUICorner(doBtn, 8)
+
+	doBtn.MouseButton1Click:Connect(function()
+		doBtn.Text = "..."
+		doBtn.Active = false
+		local success, result = pcall(function()
+			return DoPrisonAction:InvokeServer(action.id)
+		end)
+		if success and result then
+			showNotification(result.message or "Action completed.", result.success and "info" or "error")
+		end
+		task.wait(0.5)
+		refreshPrisonUI()
+	end)
+
+	return card
+end
+
+function refreshPrisonUI()
+	for _, child in ipairs(prisonScroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	-- Update time remaining
+	local yearsLeft = currentState and currentState.JailYearsLeft or 0
+	prisonTimeLabel.Text = "🔒 " .. yearsLeft .. " year" .. (yearsLeft == 1 and "" or "s") .. " remaining"
+
+	local actions = GetPrisonActions:InvokeServer()
+	if actions then
+		for _, action in ipairs(actions) do
+			createPrisonActionCard(action)
+		end
+	end
+end
+
+-- Function to show prison modal when jailed
+local function checkPrisonStatus()
+	if currentState and currentState.InJail then
+		-- Show prison button in nav or auto-open
+		refreshPrisonUI()
+		prisonOverlay.Visible = true
+	end
+end
 
 ----------------------------------------------------------------
 -- INTRO OVERLAYS
@@ -1791,11 +2624,22 @@ local function updateFromState()
 	end
 end
 
+local wasInJail = false
+
 SyncState.OnClientEvent:Connect(function(state, lastFeedText)
+	local previouslyInJail = wasInJail
 	currentState = state
+	wasInJail = currentState and currentState.InJail or false
+	
 	updateFromState()
 	if lastFeedText then
 		addFeedEntry(lastFeedText)
+	end
+	
+	-- Auto-show prison modal when newly jailed
+	if wasInJail and not previouslyInJail then
+		refreshPrisonUI()
+		prisonOverlay.Visible = true
 	end
 end)
 
