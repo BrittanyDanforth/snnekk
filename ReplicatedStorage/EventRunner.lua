@@ -162,15 +162,23 @@ local function getYearRecap(state)
 	local age = state.Age or 0
 	local lifeStage = getLifeStage(age)
 	
-	-- Prioritize special paths over life stage
+	-- Prioritize special career paths over life stage
 	local bucket
-	if flags.crime_boss or flags.underboss or flags.gang_member or flags.criminal_tendencies then
+	if flags.crime_boss or flags.underboss or flags.gang_member or flags.gang_captain then
 		bucket = "criminal_path"
-	elseif flags.president or flags.us_senator or flags.congressman or flags.state_senator or flags.elected_official or flags.political_interest then
+	elseif flags.president or flags.us_senator or flags.congressman or flags.governor or flags.mayor then
 		bucket = "political_path"
+	elseif flags.f1_driver or flags.world_champion or flags.racing_legend or flags.junior_formula then
+		bucket = "racer_path"
+	elseif flags.teacher or flags.principal or flags.superintendent then
+		bucket = "teacher_path"
+	elseif flags.art_celebrity or flags.museum_piece or flags.gallery_show or flags.art_school then
+		bucket = "artist_path"
+	elseif flags.elite_hacker or flags.hacker_career or flags.hacker_group or flags.black_hat then
+		bucket = "hacker_path"
 	elseif flags.married or flags.engaged or flags.in_love then
 		bucket = "romantic_path"
-	elseif flags.millionaire or flags.billionaire then
+	elseif flags.millionaire or flags.billionaire or flags.tech_billionaire then
 		bucket = "wealthy_path"
 	elseif flags.bankrupt or flags.homeless or flags.unemployed then
 		bucket = "struggling_path"

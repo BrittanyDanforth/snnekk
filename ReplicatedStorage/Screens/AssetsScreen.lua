@@ -87,9 +87,10 @@ local function pad(p, l, r, t, b) local pd = Instance.new("UIPadding"); pd.Paddi
 local function tween(o, i, p) local t = TweenService:Create(o, i, p); t:Play(); return t end
 
 local function formatMoney(n)
+	if not n then return "$0" end
 	if n >= 1000000 then return "$" .. string.format("%.1f", n/1000000) .. "M"
 	elseif n >= 1000 then return "$" .. string.format("%.0f", n/1000) .. "K"
-	else return "$" .. n end
+	else return "$" .. tostring(math.floor(n)) end
 end
 
 function AssetsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)

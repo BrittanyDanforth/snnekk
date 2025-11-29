@@ -1,6 +1,6 @@
 # BloxLife - BitLife Clone for Roblox
 
-A comprehensive BitLife-style life simulation game with **3,300+ lines** of narrative content, deep story paths, minigames, and premium UI.
+A comprehensive BitLife-style life simulation game with **4,700+ lines** of narrative content, 6 deep story paths, 4 minigames, and premium UI.
 
 ## 🎮 Features
 
@@ -13,140 +13,212 @@ A comprehensive BitLife-style life simulation game with **3,300+ lines** of narr
 - **Activities**: Mind & body, social, entertainment, and crime
 - **Assets**: Property, vehicles, and shop items
 
-## 📚 MASSIVE Content System (NEW!)
+## 📚 MASSIVE Content System
 
-### NarrativeContent.lua (1,200+ lines)
+### EventLibrary.lua (3,000+ lines, 150+ Unique Events)
+
+#### 6 Deep Career Paths
+
+| Path | Events | Requirements | Final Goal |
+|------|--------|--------------|------------|
+| **🏛️ President** | 18 milestone events | Political interest + clean record | President of the USA |
+| **🔫 Criminal** | 20 milestone events | Criminal tendencies | Crime Boss / Kingpin |
+| **👨‍🏫 Teacher** | 15 milestone events | Teaching interest | Superintendent |
+| **🏎️ Racer** | 18 milestone events | Racing interest | F1 World Champion / Legend |
+| **🎨 Artist** | 15 milestone events | Art interest | Art Legend / Museum |
+| **💻 Hacker** | 18 milestone events | Computer interest | Elite Hacker / Tech Billionaire |
+
+#### Life Stage Events
+| Stage | Age Range | Event Types |
+|-------|-----------|-------------|
+| Baby/Toddler | 0-4 | Birth, first words, first steps, preschool |
+| Childhood | 5-12 | School start, bullying, talent discovery |
+| Teen | 13-18 | High school, driving, prom, graduation |
+| Young Adult | 18-35 | College, first job, apartment, dating |
+| Adult | 35-60 | Business, family, midlife, career peak |
+| Senior | 60+ | Retirement, legacy, reflection |
+
+#### Universal Life Events (50+ events)
+- Romance: first crush, dating, proposal, wedding, breakup
+- Family: divorce, sibling rivalry, pet adoption, baby born
+- Health: illness, broken bone, addiction, recovery
+- Social: talent show, charity, travel, celebrity encounter
+- Money: lottery, investment, scam, windfall, lawsuit
+
+### NarrativeContent.lua (900+ lines)
 Rich BitLife-style text variations for immersive storytelling:
 
-#### Stat Narratives (640+ variations)
-- **Happiness**: 80 variations (up/down × small/medium/big/huge × 20 each)
+#### Stat Narratives (320+ variations)
+- **Happiness**: 80 variations (up/down × magnitude)
 - **Health**: 80 variations
 - **Smarts**: 80 variations  
 - **Looks**: 80 variations
 
-#### Money Narratives (60+ variations)
-- **Gains**: small/medium/large with 20+ templates each
-- **Losses**: small/medium/large with 20+ templates each
+#### Flag Descriptions (120+ life flags)
+All career paths, life events, and achievements have unique descriptions.
 
-#### Flag Descriptions (100+ life flags)
-- Political path (interest → intern → official → senator → president)
-- Criminal path (tendencies → thief → gang member → underboss → boss)
-- Education (GED, degrees, PhD, trade certification)
-- Career (employed, CEO, retired, famous)
-- Relationships (dating, engaged, married, divorced)
-- Health & Lifestyle (athlete, addict, recovering, disabled)
-- Military (enlisted, veteran, combat, PTSD)
+#### Year Recap Templates
+- 9 life stage recaps (baby → elderly)
+- 9 special path recaps (criminal, political, teacher, racer, artist, hacker, romantic, wealthy, struggling)
 
-#### Year Recap Templates (BitLife-style summaries)
-- Baby recaps (ages 0-1)
-- Toddler recaps (ages 2-4)
-- Early childhood (ages 5-9)
-- Childhood (ages 10-12)
-- Tween (ages 13-15)
-- Teenage (ages 16-19)
-- Young adult (ages 20-35)
-- Adult (ages 36-60)
-- Senior (ages 61+)
-- **Special path recaps**: Criminal, Political, Romantic, Wealthy, Struggling
-
-### EventLibrary.lua (1,300+ lines, 100+ Events)
-
-#### Life Stage Events
-| Stage | Age Range | Event Count |
-|-------|-----------|-------------|
-| Baby | 0-2 | 6 events |
-| Early Childhood | 3-5 | 7 events |
-| Childhood | 6-12 | 15 events |
-| Teen | 13-19 | 18 events |
-| Young Adult | 19-29 | 15 events |
-| Adult | 30-60 | 12 events |
-| Senior | 60+ | 5 events |
-| Random | Any age | 15+ events |
-
-#### Story Arc Events
-| Path | Events | Final Goal |
-|------|--------|------------|
-| **Political** | 8 milestone events | President of the USA |
-| **Criminal** | 10 milestone events | Crime Boss / Kingpin |
-| **Celebrity** | 5 events | A-List Celebrity |
-| **Business** | 5 events | Billionaire CEO |
+### EventRunner.lua (800+ lines)
+The event engine that prevents repetition and builds rich narratives:
+- **Smart Flag Checking**: Events check `requires` functions before firing
+- **One-Time Events**: Major milestones only happen once
+- **Cooldowns**: Repeatable events have minimum year gaps
+- **Dynamic Data**: Names, companies, cities generated per event
+- **Narrative Builder**: Composes clean prose from stat changes
 
 ## 🌟 Deep Story Paths
 
-### Presidential Career Path 🏛️
-Rise from ordinary citizen to the most powerful position in the country!
+### 🏛️ Presidential Career Path
+Rise from ordinary citizen to the most powerful position!
+
+**Progression (18 events):**
+1. Political Interest → Learn about government
+2. Political Intern → Work in an office
+3. Campaign Volunteer → Learn campaigns
+4. School Board → First election win
+5. City Council → Local decisions
+6. Mayor → Lead your city
+7. State Representative → State capitol
+8. State Senator → Upper chamber
+9. Governor → Executive experience
+10. Congressman → Washington DC
+11. US Senator → National stage
+12. Presidential Primary → Enter the race
+13. Presidential Debate → Face opponents (minigame!)
+14. Presidential Election → Win the vote
+15. Inauguration → Take the oath
+16. Presidential Crisis → Handle emergencies
+17. Executive Order → Use your power
+18. Cabinet/Summit events → Lead the nation
+
+### 🔫 Criminal Empire Path
+Build your criminal organization from scratch!
+
+**Progression (20 events):**
+1. Temptation → Resist or give in
+2. Shoplifting → Start small
+3. Getting Bolder → Bigger targets
+4. Car Theft → Grand theft auto (minigame!)
+5. First Arrest → Get caught
+6. Prison Time → Do your time
+7. Gang Recruitment → Get noticed
+8. Gang Initiation → Prove yourself
+9. Drug Dealing → Move product
+10. Turf War → Fight for territory (minigame!)
+11. Gang Captain → Lead soldiers
+12. Heist Opportunity → Big score (minigame!)
+13. Underboss → Second in command
+14. Power Grab → Take over
+15. Criminal Empire → Build your organization
+16. FBI Investigation → Evade the feds
+17. Money Laundering → Clean the cash
+18. Empire Expansion → Grow your reach
+
+### 👨‍🏫 Teacher Path
+Shape young minds and rise through education!
 
 **Progression:**
-1. **Citizen** → Develop political interest
-2. **Political Volunteer** → Work on campaigns
-3. **City Council** → Win your first local election
-4. **Mayor** → Lead your city
-5. **State Senator** → Pass state legislation
-6. **Congressman** → Go to Washington DC
-7. **U.S. Senator** → National stage politics
-8. **President** → Lead the nation!
+1. Teaching Interest → Discover passion
+2. Education Degree → Study teaching
+3. Student Teaching → Practice in classroom
+4. First Teaching Job → Become a teacher
+5. Difficult Student → Handle challenges
+6. Inspiring Moment → Change lives
+7. Teacher of the Year → Win awards
+8. Department Head → Lead teachers
+9. Vice Principal → Administration
+10. Principal → Run a school
+11. Superintendent → Lead the district
 
-**Special Actions (as President):**
-- Sign executive orders
-- Address the nation
-- Veto bills
-- Grant pardons
-
-### Criminal Empire Path 🔫
-Build your criminal organization from petty thief to crime boss!
+### 🏎️ Racer Path
+From go-karts to Formula 1 glory!
 
 **Progression:**
-1. **Law-Abiding** → Resist temptation or...
-2. **Petty Criminal** → Shoplifting, small crimes
-3. **Car Thief** → Joyriding, chop shops
-4. **Gang Prospect** → Prove yourself
-5. **Gang Member** → Join an organization
-6. **Gang Captain** → Lead operations
-7. **Underboss** → Second in command
-8. **Crime Boss** → Run the whole operation!
+1. Racing Interest → Fall in love with speed
+2. Karting League → Competitive racing
+3. Karting Championship → Win titles (minigame!)
+4. Junior Formula → Professional team
+5. Junior Championship → More wins
+6. F1 Test Driver → Join F1 team
+7. F1 Race Driver → Official seat
+8. First F1 Race → Debut (minigame!)
+9. First F1 Win → Victory!
+10. F1 Championship → World Champion
+11. Racing Legend → Hall of Fame
 
-**Special Actions (as Crime Boss):**
-- Collect debts
-- Launder money
-- Order hits
-- Bribe officials
-- Hold meetings
+### 🎨 Artist Path
+Express yourself and become a legend!
 
-### Celebrity Path ⭐
-- Become an influencer
-- Pursue acting, music, or writing
-- Land brand deals
-- Achieve A-list status
+**Progression:**
+1. Art Interest → Discover talent
+2. Art Competition → Win recognition
+3. Art School → Study professionally
+4. First Gallery Show → Public debut
+5. Signature Style → Find your voice
+6. First Major Sale → Sell artwork
+7. Art Controversy → Handle critics
+8. Museum Acquisition → Enter collections
+9. Art Celebrity → Public recognition
+10. Career Retrospective → Cement legacy
 
-### Business Path 💼
-- Start your own company
-- Become CEO
-- Make millions/billions
-- Go public with IPO
+### 💻 Hacker Path
+Master the digital world!
+
+**Progression:**
+1. Computer Interest → Fascination begins
+2. Learn Programming → Study code
+3. First Hack → School systems
+4. First Exploit → Find vulnerabilities
+5. White/Black Hat Choice → Ethical decision
+6. Join Hacker Group → Find community
+7. Corporate Hack → Business targets
+8. Government Target → High stakes
+9. FBI Investigation → Evade capture
+10. Bug Bounty / Dark Web → Career choices
+11. Elite Hacker Status → Recognition
+12. Startup Founder → Build company
+13. Tech Billionaire → Ultimate success
 
 ## 🎮 Minigames
 
-### Presidential Debate 🎤
-Answer political questions correctly to win debates!
+### 🎤 Presidential Debate
+Answer 5 political questions correctly to win the debate against your opponent!
+- Score points for correct answers
+- Timer adds pressure
+- Beat opponent's score to win
 
-### Safe Cracking 🔓
-Crack the 4-digit code to complete heists!
+### 🔓 Safe Cracking (Heist)
+Crack the 4-digit code in 6 attempts!
+- Green = correct digit in correct position
+- Yellow = correct digit, wrong position
+- Gray = digit not in code
+- Wordle-style gameplay
 
-### Getaway 🚗
-Memory sequence game - escape from the cops!
+### 🚗 Getaway
+Escape the cops by following the sequence!
+- Watch the highlighted buttons
+- Tap them in order quickly
+- Cops close in if you make mistakes
+- Fill your progress bar to escape
 
-### Quick Time Events ⚡
-Precision timing challenges for skill checks!
+### ⚡ Quick Time Event
+Hit the button when the marker is in the green zone!
+- Difficulty affects zone size
+- Test your reflexes
+- Used for various skill checks
 
 ## 📁 Project Structure
 
 ```
 /ReplicatedStorage/
-├── NarrativeContent.lua   # 1,200+ lines of text variations (NEW!)
-├── EventLibrary.lua       # 1,300+ lines, 100+ events (EXPANDED!)
-├── EventRunner.lua        # 800+ lines, event engine + narrative builder
+├── EventLibrary.lua       # 3,000+ lines, 150+ events
+├── NarrativeContent.lua   # 900+ lines of text variations
+├── EventRunner.lua        # 800+ lines, event engine
 ├── LifeState.lua          # Player state management
-├── Minigames.lua          # All minigame implementations
+├── Minigames.lua          # 1,200+ lines, 4 minigames
 └── Screens/
     ├── OccupationScreen.lua
     ├── AssetsScreen.lua
@@ -155,41 +227,59 @@ Precision timing challenges for skill checks!
     └── StoryPathsScreen.lua
 
 /ServerScriptService/
-├── LifeManager.server.lua       # Core game loop, events
-└── LifeRemoteHandlers.server.lua # Extended actions handler
+├── LifeManager.server.lua       # Core game loop
+└── LifeRemoteHandlers.server.lua # Actions handler
 
 /StarterPlayerScripts/
-└── LifeClient.client.lua        # Main UI, minigames integration
+└── LifeClient.client.lua        # Main UI (1,500+ lines)
 ```
 
-**Total Content: 3,379 lines of Lua across the event system!**
+**Total: 4,700+ lines of content across the event system!**
 
-## 🔌 Remote Events & Functions
+## 🔧 Event System (No Repetition!)
 
-### LifeRemotes Folder
+### Event Properties
+```lua
+{
+    id = "unique_id",
+    minAge = 18, maxAge = 65,  -- Age range
+    weight = 10,               -- Selection probability
+    oneTime = true,            -- Fire only once
+    cooldown = 5,              -- Years between repeats
+    milestone = true,          -- Guaranteed if eligible
+    category = "school",       -- For narrative
+    
+    requires = function(state)
+        -- SMART FLAG CHECKING prevents wrong events
+        local f = state.Flags or {}
+        return f.has_job and not f.already_promoted
+    end,
+    
+    choices = {
+        {
+            text = "Choice text",
+            effects = { Happiness = 10, Money = -100 },
+            resultText = "What happens",
+            setFlag = "new_flag",        -- Set one flag
+            setFlags = {"a", "b"},       -- Set multiple
+            clearFlag = "old_flag",      -- Remove flag
+            minigame = "debate",         -- Trigger minigame
+        }
+    }
+}
+```
 
-#### Remote Events
-| Name | Direction | Description |
-|------|-----------|-------------|
-| `RequestAgeUp` | Client → Server | Request to age up one year |
-| `PresentEvent` | Server → Client | Send event data for display |
-| `SubmitChoice` | Client → Server | Submit event choice (eventId, choiceIndex) |
-| `SyncState` | Server → Client | Sync player state |
-| `SetLifeInfo` | Client → Server | Set name and gender |
-| `MinigameResult` | Client → Server | Send minigame outcome |
+### Why Events Don't Repeat
+1. **`oneTime = true`**: Major life events (graduation, first job, wedding) only fire once
+2. **`cooldown = N`**: Years must pass before event can repeat
+3. **`requires` function**: Checks flags to ensure event makes sense
+4. **History tracking**: `EventHistory.seenEvents` tracks all fired events
+5. **Smart flag checking**: Career events check you don't already have that career
 
-#### Remote Functions
-| Name | Description |
-|------|-------------|
-| `GetStoryPaths` | Get player's story path progress |
-| `GetSpecialActions` | Get available special actions |
-| `DoSpecialAction` | Execute a special action |
-| `ApplyForJob` | Apply for a job |
-| `EnrollEducation` | Enroll in education |
-| `BuyAsset` | Purchase an asset |
-| `DoActivity` | Perform an activity |
-| `DoCrime` | Commit a crime |
-| `RelationshipAction` | Interact with relationship |
+Example: Job offer won't appear if:
+- `oneTime = true` and you already saw it
+- `requires` function returns false because you already have a job
+- Your age is outside the min/max range
 
 ## 🎨 UI Features
 
@@ -197,22 +287,17 @@ Precision timing challenges for skill checks!
 - **Header**: Positioned to avoid Roblox logo overlap
 - **Avatar**: Dynamic emoji based on age
 - **Money Display**: Formatted with icons
-- **Stats Row**: Split LEFT/RIGHT layout avoiding Age button
-- **Nav Bar**: Split LEFT/RIGHT layout with centered Age button
+- **Stats Row**: Split LEFT/RIGHT avoiding center Age button
+- **Nav Bar**: Split LEFT/RIGHT with centered Age button
 - **Event Modals**: Animated slide-in with rich narrative text
 
-### Navigation (Split Layout)
-**LEFT side:**
-- Work (💼) - Jobs & Education
-- Assets (🏠) - Property, Vehicles, Casino
-
-**CENTER:**
-- Age Button (+) - Big circular button
-
-**RIGHT side:**
-- People (❤️) - Relationships
-- Fun (🎭) - Activities
-- Story (⭐) - Life path progress
+### Navigation Layout
+```
+LEFT                 CENTER               RIGHT
+┌────────────────┐   ┌─────────┐   ┌────────────────┐
+│ Work   Assets  │   │  AGE+   │   │ People Fun Story│
+└────────────────┘   └─────────┘   └────────────────┘
+```
 
 ## 🚀 Getting Started
 
@@ -220,84 +305,6 @@ Precision timing challenges for skill checks!
 2. The `LifeRemotes` folder will be auto-created on first run
 3. Play and enjoy your BitLife experience!
 
-## 📝 Event System
-
-### Event Properties
-```lua
-{
-    id = "unique_id",
-    minAge = 18,           -- Minimum age to fire
-    maxAge = 65,           -- Maximum age to fire
-    weight = 10,           -- Selection weight
-    oneTime = false,       -- Only fire once ever
-    cooldown = 5,          -- Years between firings
-    milestone = true,      -- Guaranteed to fire if eligible
-    category = "school",   -- For category flavor text
-    
-    emoji = "🎉",
-    title = "Event Title",
-    text = "Event description with %dynamicData% placeholders",
-    
-    getDynamicData = function(state)
-        return { name = "Random Name" }
-    end,
-    
-    requires = function(state)
-        return state.Flags.some_flag == true
-    end,
-    
-    choices = {
-        {
-            text = "Choice text",
-            effects = { Happiness = 10, Money = -100 },
-            result = "Result text (feeds into narrative builder)",
-            setFlag = "some_flag",
-            setFlags = {"flag1", "flag2"},  -- Set multiple flags
-            clearFlag = "old_flag",
-            minigame = "debate",  -- Triggers minigame
-            getDynamicMoney = function(data) return data.amount end,
-        }
-    }
-}
-```
-
-### Narrative Builder
-The `EventRunner.buildNarrativeText()` function creates rich BitLife-style output:
-
-1. **Explicit result text** from the choice
-2. **Money narrative** (dynamic text based on gain/loss magnitude)
-3. **Stat narratives** (happiness, health, smarts, looks changes)
-4. **Flag descriptions** (story path milestones)
-5. **Category flavor** (school, family, work, crime, etc.)
-
-Example output:
-```
-You got the job at TechCorp!
-You scored a solid payout of $2K. Your money climbed to $5K.
-Your happiness noticeably improved (+10%, now 65%).
-You started paying real attention to politics.
-Your career story took another step here.
-```
-
-### Flags System
-100+ flags track story progression:
-- `political_interest` → Unlocks political events
-- `gang_member` → Unlocks gang events
-- `president` → Unlocks presidential actions
-- `crime_boss` → Unlocks crime boss actions
-- `married` → Unlocks family events
-- And 95+ more!
-
-## 🎯 Future Enhancements
-
-- [ ] Save/Load game progress
-- [ ] More minigames (stock trading, sports)
-- [ ] More celebrity path events
-- [ ] Military career path
-- [ ] More relationship dynamics
-- [ ] Achievements system
-- [ ] Leaderboards
-
-## 📄 License
+## 📝 License
 
 MIT License - Feel free to use and modify!
