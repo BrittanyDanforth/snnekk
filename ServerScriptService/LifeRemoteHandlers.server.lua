@@ -29,6 +29,16 @@ end
 -- Helper to get remotes safely
 local function getRemote(name, isFunction)
 	local remote = remotesFolder:FindFirstChild(name)
+	
+	-- Check if existing remote is wrong type
+	if remote then
+		local isCorrectType = (isFunction and remote:IsA("RemoteFunction")) or (not isFunction and remote:IsA("RemoteEvent"))
+		if not isCorrectType then
+			remote:Destroy()
+			remote = nil
+		end
+	end
+	
 	if not remote then
 		if isFunction then
 			remote = Instance.new("RemoteFunction")
@@ -37,7 +47,7 @@ local function getRemote(name, isFunction)
 		end
 		remote.Name = name
 		remote.Parent = remotesFolder
-		print("[LifeRemoteHandlers] Created missing remote:", name)
+		print("[LifeRemoteHandlers] Created remote:", name, isFunction and "(Function)" or "(Event)")
 	end
 	return remote
 end

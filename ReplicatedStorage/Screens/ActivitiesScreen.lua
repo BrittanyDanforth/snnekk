@@ -192,11 +192,11 @@ function ActivitiesScreen:createUI()
 	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.1 }) end)
 	
 	-- Info bar (adjusted for header offset)
-	local contentTopOffset = 44 + 60 + 8 -- header offset + height + spacing
+	self.contentTopOffset = 44 + 60 + 8 -- header offset + height + spacing
 	
 	self.infoBar = Instance.new("Frame")
 	self.infoBar.Size = UDim2.new(1, -20, 0, 48)
-	self.infoBar.Position = UDim2.new(0, 10, 0, contentTopOffset)
+	self.infoBar.Position = UDim2.new(0, 10, 0, self.contentTopOffset)
 	self.infoBar.BackgroundColor3 = C.White
 	self.infoBar.ZIndex = 84
 	self.infoBar.Parent = self.overlay
@@ -217,7 +217,7 @@ function ActivitiesScreen:createUI()
 	-- Tab bar
 	local tabBar = Instance.new("Frame")
 	tabBar.Size = UDim2.new(1, -20, 0, 46)
-	tabBar.Position = UDim2.new(0, 10, 0, contentTopOffset + 56)
+	tabBar.Position = UDim2.new(0, 10, 0, self.contentTopOffset + 56)
 	tabBar.BackgroundColor3 = C.Gray100
 	tabBar.ZIndex = 84
 	tabBar.Parent = self.overlay
@@ -297,7 +297,7 @@ function ActivitiesScreen:createContentScroll()
 	if self.contentScroll then return end
 	
 	-- Content
-	local scrollTop = contentTopOffset + 56 + 54 -- info bar + tab bar + spacing
+	local scrollTop = self.contentTopOffset + 56 + 54 -- info bar + tab bar + spacing
 	self.contentScroll = Instance.new("ScrollingFrame")
 	self.contentScroll.Size = UDim2.new(1, -20, 1, -(scrollTop + 12))
 	self.contentScroll.Position = UDim2.new(0, 10, 0, scrollTop)
