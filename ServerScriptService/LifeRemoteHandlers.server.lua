@@ -52,7 +52,11 @@ local function getRemote(name, isFunction)
 	return remote
 end
 
+-- Load LifeStageSystem for capability checks
+local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
+
 -- Get all remotes
+local GetCapabilities = getRemote("GetCapabilities", true)
 local ApplyForJob = getRemote("ApplyForJob", true)
 local QuitJob = getRemote("QuitJob", false)
 local DoWork = getRemote("DoWork", true)
@@ -127,6 +131,46 @@ local function syncStateToClient(player)
 	if _G.PushPlayerState then
 		_G.PushPlayerState(player, nil)
 	end
+end
+
+----------------------------------------------------------------
+-- CAPABILITY CHECK (Server-side validation for what player can do)
+----------------------------------------------------------------
+
+GetCapabilities.OnServerInvoke = function(player)
+	local lifeState = getLifeManagerState(player)
+	local extState = getExtendedState(player)
+	
+	if not lifeState then
+		return { error = "State not found" }
+	end
+	
+	-- Build a combined state for the LifeStageSystem
+	local combinedState = {
+		Age = lifeState.Age or 0,
+		Money = lifeState.Money or 0,
+		Stats = lifeState.Stats or {},
+		Flags = lifeState.Flags or {},
+		InJail = extState.InJail or false,
+	}
+	
+	-- Get capabilities from LifeStageSystem
+	local caps = LifeStageSystem.getCapabilities(combinedState)
+	local stage = LifeStageSystem.getStage(combinedState.Age)
+	
+	return {
+		success = true,
+		stage = {
+			id = stage.id,
+			name = stage.name,
+			emoji = stage.emoji,
+			description = stage.description,
+		},
+		capabilities = caps,
+		age = combinedState.Age,
+		inJail = extState.InJail,
+		jailYearsLeft = extState.JailYearsLeft or 0,
+	}
 end
 
 ----------------------------------------------------------------

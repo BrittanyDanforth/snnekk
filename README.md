@@ -7,11 +7,46 @@ A comprehensive BitLife-style life simulation game built for Roblox with polishe
 ### Core Systems
 
 - **Complete Life Simulation** - Birth to death with age-based events
+- **Life Stage System** - 10 distinct life stages (Infant → Elder) with stage-specific events
 - **6 Deep Career Paths** - President, Criminal, Teacher, Racer, Artist, Hacker
-- **Dynamic Events** - 300+ unique events with branching choices
+- **Dynamic Events** - 200+ unique events with branching choices
 - **BitLife-Style UI** - Premium cards, modals, and animations
-- **Server-Side Validation** - All actions validated on server
+- **Server-Side Validation** - All actions validated on server via LifeStageSystem
 - **Minigames** - Debate, Heist, Getaway, QTE, Prison Escape, Mash
+- **Death System** - Age and health-based death probability
+
+## 🧬 Life Stage System
+
+The game uses a comprehensive `LifeStageSystem` that controls what's available at each age:
+
+| Stage | Age | School | Work | Date | Crime | Drink |
+|-------|-----|--------|------|------|-------|-------|
+| 👶 Infant | 0-2 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| 💒 Toddler | 3-4 | Daycare | ❌ | ❌ | ❌ | ❌ |
+| 🧒 Child | 5-11 | Elementary | ❌ | ❌ | ❌ | ❌ |
+| 🧑 Tween | 12-13 | Middle | ❌ | ❌ | Minor | ❌ |
+| 🧑‍🎤 Teen | 14-17 | High | Part-time | ✅ | ✅ | ❌ |
+| 🧑‍💼 Young Adult | 18-25 | College | ✅ | ✅ | ✅ | 21+ |
+| 🧑‍💻 Adult | 26-45 | ❌ | ✅ | ✅ | ✅ | ✅ |
+| 🧔 Middle Age | 46-60 | ❌ | ✅ | ✅ | ✅ | ✅ |
+| 🧓 Senior | 61-75 | ❌ | Optional | ✅ | ✅ | ✅ |
+| 👴 Elder | 76+ | ❌ | ❌ | ✅ | ❌ | ✅ |
+
+### Stage Transitions
+When you transition between life stages, you get a special milestone event:
+- "Off to School!" (Age 5)
+- "High School!" (Age 14)
+- "You're an Adult!" (Age 18)
+- "Retirement!" (Age 61)
+
+### Event Validation
+Every event is validated server-side before being shown:
+- Age range check
+- Category availability for current stage
+- One-time/cooldown checks
+- Custom requirements (flags, stats, etc.)
+- Prison status checks
+- Career path requirements
 
 ### Career Paths
 

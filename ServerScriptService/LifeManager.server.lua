@@ -223,8 +223,10 @@ local function ageUp(player)
 		return
 	end
 
+	local oldAge = state.Age
 	state.Age = state.Age + 1
 	state.Year = state.Year + 1
+	local newAge = state.Age
 
 	local ageText
 	if state.Age == 1 then
@@ -247,13 +249,84 @@ local function ageUp(player)
 
 	-- Initialize event history if needed
 	EventRunner.initHistory(state)
+	
+	-- Get current stage info for client
+	local stageInfo = EventRunner.getStageSummary(state)
 
 	-- ALWAYS sync state first so client has updated Age
 	pushState(player, state, ageText)
 	
-	-- Decide if a life event should fire
+	-- Check for life stage transition FIRST (these take priority)
+	local transitionEvent = EventRunner.checkStageTransition(oldAge, newAge)
+	if transitionEvent then
+		-- Stage transition is a special milestone - show it
+		local payload = {
+			id = transitionEvent.id,
+			emoji = transitionEvent.emoji,
+			title = transitionEvent.title,
+			text = transitionEvent.text,
+			category = "milestone",
+			isStageTransition = true,
+			fromStage = transitionEvent.fromStage and transitionEvent.fromStage.name or nil,
+			toStage = transitionEvent.toStage and transitionEvent.toStage.name or nil,
+			choices = {
+				{ index = 1, text = "🎉 Continue", effects = {}, result = "Life goes on!" }
+			}
+		}
+		
+		-- Store for choice resolution
+		pendingEvents[player] = {
+			eventDef = transitionEvent,
+			dynamicData = {},
+			choiceIndex = nil,
+			isStageTransition = true,
+		}
+		
+		state:AddFeed(transitionEvent.title .. " - " .. transitionEvent.text)
+		PresentEvent:FireClient(player, payload, nil)
+		return -- Don't pick another event this year
+	end
+	
+	-- Check for death (elder years)
+	local deathCheck = EventRunner.checkDeath(state)
+	if deathCheck.died then
+		-- Handle death
+		local deathPayload = {
+			id = "death",
+			emoji = "💀",
+			title = "Rest In Peace",
+			text = string.format("You died at age %d from %s.", deathCheck.age, deathCheck.cause),
+			category = "death",
+			isDeath = true,
+			choices = {
+				{ index = 1, text = "👼 Accept fate", effects = {}, result = "Your life has ended." }
+			}
+		}
+		
+		pendingEvents[player] = {
+			eventDef = { id = "death", category = "death" },
+			dynamicData = {},
+			choiceIndex = nil,
+			isDeath = true,
+			deathCause = deathCheck.cause,
+		}
+		
+		state:AddFeed("💀 You have passed away from " .. deathCheck.cause)
+		PresentEvent:FireClient(player, deathPayload, nil)
+		return
+	end
+	
+	-- Decide if a life event should fire (filtered by stage)
 	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
 	if eventDef then
+		-- Double-check event is valid for current stage
+		local validation = EventRunner.getEventValidation(state, eventDef)
+		if not validation.valid then
+			-- Event somehow passed initial filter but failed validation
+			-- Just skip this year
+			return
+		end
+		
 		-- Build client payload with dynamic data
 		local payload, dynamicData = EventRunner.buildClientPayload(eventDef, state)
 		

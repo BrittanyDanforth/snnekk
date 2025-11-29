@@ -1,14 +1,16 @@
 -- EventRunner.lua
 -- Ultra-polished life event engine + narrative builder
 -- Uses NarrativeContent module for BitLife-style rich text generation
+-- Integrates with LifeStageSystem for proper age-based event validation
 
 local EventRunner = {}
 
 ----------------------------------------------------------------------
--- LOAD NARRATIVE CONTENT
+-- LOAD MODULES
 ----------------------------------------------------------------------
 
 local NarrativeContent = require(script.Parent:WaitForChild("NarrativeContent"))
+local LifeStageSystem = require(script.Parent:WaitForChild("LifeStageSystem"))
 
 local StatNarrative = NarrativeContent.StatNarrative
 local MoneyNarrative = NarrativeContent.MoneyNarrative
@@ -294,33 +296,14 @@ function EventRunner.initHistory(state)
 end
 
 function EventRunner.canEventFire(state, eventDef)
-	local history = state.EventHistory or {}
-	local age = state.Age or 0
-	
-	if eventDef.minAge and age < eventDef.minAge then return false end
-	if eventDef.maxAge and age > eventDef.maxAge then return false end
-	
-	if eventDef.oneTime then
-		if history.seenEvents and history.seenEvents[eventDef.id] then
-			return false
-		end
-	end
-	
-	if eventDef.cooldown and history.lastOccurrence then
-		local lastAge = history.lastOccurrence[eventDef.id]
-		if lastAge and (age - lastAge) < eventDef.cooldown then
-			return false
-		end
-	end
-	
-	if eventDef.requires then
-		local ok, canFire = pcall(eventDef.requires, state)
-		if not ok or not canFire then
-			return false
-		end
-	end
-	
-	return true
+	-- Use the comprehensive LifeStageSystem validation
+	local validation = LifeStageSystem.validateEvent(eventDef, state)
+	return validation.valid
+end
+
+-- Get validation details (for debugging)
+function EventRunner.getEventValidation(state, eventDef)
+	return LifeStageSystem.validateEvent(eventDef, state)
 end
 
 function EventRunner.getMilestoneEvent(state, events)
@@ -369,6 +352,55 @@ function EventRunner.pickEvent(state, events)
 		return milestone
 	end
 	return EventRunner.pickRandomEvent(state, events)
+end
+
+-- Check for life stage transition and return transition event if applicable
+function EventRunner.checkStageTransition(oldAge, newAge)
+	return LifeStageSystem.getTransitionEvent(oldAge, newAge)
+end
+
+-- Get current life stage info
+function EventRunner.getCurrentStage(state)
+	return LifeStageSystem.getStage(state.Age or 0)
+end
+
+-- Get player capabilities at current stage
+function EventRunner.getCapabilities(state)
+	return LifeStageSystem.getCapabilities(state)
+end
+
+-- Check if player should die this year
+function EventRunner.checkDeath(state)
+	return LifeStageSystem.checkDeath(state)
+end
+
+-- Get stage summary for UI
+function EventRunner.getStageSummary(state)
+	return LifeStageSystem.getStageSummary(state)
+end
+
+-- Validate if an action is allowed
+function EventRunner.canDoAction(actionType, state)
+	local caps = LifeStageSystem.getCapabilities(state)
+	
+	if actionType == "work" then return caps.canWork end
+	if actionType == "work_fulltime" then return caps.canWorkFullTime end
+	if actionType == "date" then return caps.canDate end
+	if actionType == "marry" then return caps.canMarry end
+	if actionType == "drive" then return caps.canDrive end
+	if actionType == "crime" then return caps.canCrime end
+	if actionType == "drink" then return caps.canDrink end
+	if actionType == "vote" then return caps.canVote end
+	if actionType == "gamble" then return caps.canGamble end
+	if actionType == "college" then return caps.canEnrollCollege end
+	if actionType == "retire" then return caps.canRetire end
+	
+	return true -- Unknown action, allow
+end
+
+-- Filter events by current stage (for UI display)
+function EventRunner.getAvailableEventsForStage(events, state)
+	return LifeStageSystem.filterValidEvents(events, state)
 end
 
 function EventRunner.markEventOccurred(state, eventDef)
