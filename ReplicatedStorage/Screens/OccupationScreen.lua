@@ -17,27 +17,251 @@ local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
 local ApplyForJob = remotesFolder and remotesFolder:WaitForChild("ApplyForJob", 15)
 local QuitJob = remotesFolder and remotesFolder:WaitForChild("QuitJob", 15)
 local EnrollEducation = remotesFolder and remotesFolder:WaitForChild("EnrollEducation", 15)
+local DoWork = remotesFolder and remotesFolder:WaitForChild("DoWork", 15)
+local RequestPromotion = remotesFolder and remotesFolder:WaitForChild("RequestPromotion", 15)
+local RequestRaise = remotesFolder and remotesFolder:WaitForChild("RequestRaise", 15)
+local GetCareerInfo = remotesFolder and remotesFolder:WaitForChild("GetCareerInfo", 15)
+
+-- Job Categories for filtering
+local JobCategories = {
+	{ id = "all", name = "All Jobs", emoji = "📋" },
+	{ id = "entry", name = "Entry Level", emoji = "🎒" },
+	{ id = "service", name = "Service", emoji = "🍽️" },
+	{ id = "trades", name = "Trades", emoji = "🔧" },
+	{ id = "office", name = "Office", emoji = "🏢" },
+	{ id = "tech", name = "Technology", emoji = "💻" },
+	{ id = "medical", name = "Medical", emoji = "🏥" },
+	{ id = "law", name = "Legal", emoji = "⚖️" },
+	{ id = "finance", name = "Finance", emoji = "💰" },
+	{ id = "creative", name = "Creative", emoji = "🎨" },
+	{ id = "government", name = "Government", emoji = "🏛️" },
+	{ id = "education", name = "Education", emoji = "📚" },
+	{ id = "science", name = "Science", emoji = "🔬" },
+	{ id = "sports", name = "Sports", emoji = "🏆" },
+	{ id = "military", name = "Military", emoji = "🎖️" },
+	{ id = "criminal", name = "Criminal", emoji = "💊" },
+}
 
 -- Job Data - Must match server's JobListings IDs exactly!
+-- MASSIVE EXPANDED LIST (75+ careers)
 local Jobs = {
-	-- Entry Level (No Requirements)
-	{ id = "fastfood", name = "Fast Food Worker", company = "Burger Palace", emoji = "🍔", salary = 22000, minAge = 14, requirement = nil },
-	{ id = "retail", name = "Retail Associate", company = "MegaMart", emoji = "🛒", salary = 26000, minAge = 16, requirement = nil },
-	{ id = "janitor", name = "Janitor", company = "CleanCo Services", emoji = "🧹", salary = 28000, minAge = 18, requirement = nil },
+	-- ════════════════════════════════════════════════════════════════
+	-- ENTRY LEVEL / PART-TIME (No Education - Teen Jobs)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "fastfood", name = "Fast Food Worker", company = "Burger Palace", emoji = "🍔", salary = 22000, minAge = 14, requirement = nil, category = "entry" },
+	{ id = "retail", name = "Retail Associate", company = "MegaMart", emoji = "🛒", salary = 26000, minAge = 16, requirement = nil, category = "entry" },
+	{ id = "cashier", name = "Cashier", company = "QuickMart", emoji = "💵", salary = 24000, minAge = 15, requirement = nil, category = "entry" },
+	{ id = "bagger", name = "Grocery Bagger", company = "Fresh Foods", emoji = "🛍️", salary = 18000, minAge = 14, requirement = nil, category = "entry" },
+	{ id = "movie_usher", name = "Movie Usher", company = "CineMax", emoji = "🎬", salary = 20000, minAge = 14, requirement = nil, category = "entry" },
+	{ id = "lifeguard", name = "Lifeguard", company = "City Pool", emoji = "🏊", salary = 28000, minAge = 16, requirement = nil, category = "entry" },
+	{ id = "camp_counselor", name = "Camp Counselor", company = "Summer Camp", emoji = "🏕️", salary = 22000, minAge = 16, requirement = nil, category = "entry" },
+	{ id = "newspaper_delivery", name = "Newspaper Delivery", company = "Daily News", emoji = "📰", salary = 15000, minAge = 12, requirement = nil, category = "entry" },
 	
-	-- Office Jobs (High School)
-	{ id = "receptionist", name = "Receptionist", company = "Corporate Office", emoji = "📞", salary = 32000, minAge = 18, requirement = "high_school" },
-	{ id = "office", name = "Office Assistant", company = "Business Solutions", emoji = "📋", salary = 35000, minAge = 18, requirement = "high_school" },
+	-- ════════════════════════════════════════════════════════════════
+	-- SERVICE INDUSTRY
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "waiter", name = "Waiter/Waitress", company = "The Grand Restaurant", emoji = "🍽️", salary = 32000, minAge = 16, requirement = nil, category = "service" },
+	{ id = "bartender", name = "Bartender", company = "The Tipsy Owl", emoji = "🍸", salary = 38000, minAge = 21, requirement = nil, category = "service" },
+	{ id = "barista", name = "Barista", company = "Bean Scene", emoji = "☕", salary = 28000, minAge = 16, requirement = nil, category = "service" },
+	{ id = "hotel_front_desk", name = "Hotel Receptionist", company = "Grand Hotel", emoji = "🏨", salary = 32000, minAge = 18, requirement = "high_school", category = "service" },
+	{ id = "flight_attendant", name = "Flight Attendant", company = "SkyWays Airlines", emoji = "✈️", salary = 55000, minAge = 21, requirement = "high_school", category = "service" },
+	{ id = "tour_guide", name = "Tour Guide", company = "City Tours", emoji = "🗺️", salary = 35000, minAge = 18, requirement = "high_school", category = "service" },
+	{ id = "casino_dealer", name = "Casino Dealer", company = "Lucky Star Casino", emoji = "🎰", salary = 45000, minAge = 21, requirement = "high_school", category = "service" },
+	{ id = "cruise_staff", name = "Cruise Ship Staff", company = "Ocean Voyages", emoji = "🚢", salary = 42000, minAge = 18, requirement = "high_school", category = "service" },
+	{ id = "personal_trainer", name = "Personal Trainer", company = "FitLife Gym", emoji = "💪", salary = 48000, minAge = 18, requirement = "high_school", category = "service" },
 	
-	-- Professional (Bachelor's)
-	{ id = "accountant_jr", name = "Junior Accountant", company = "Financial Services", emoji = "📊", salary = 48000, minAge = 22, requirement = "bachelor" },
-	{ id = "marketing", name = "Marketing Associate", company = "AdVenture Agency", emoji = "📈", salary = 52000, minAge = 22, requirement = "bachelor" },
-	{ id = "developer", name = "Software Developer", company = "TechStart Inc", emoji = "💻", salary = 85000, minAge = 22, requirement = "bachelor" },
-	{ id = "senior_dev", name = "Senior Developer", company = "BigTech Corp", emoji = "🖥️", salary = 140000, minAge = 26, requirement = "bachelor" },
+	-- ════════════════════════════════════════════════════════════════
+	-- TRADES & SKILLED LABOR
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "janitor", name = "Janitor", company = "CleanCo Services", emoji = "🧹", salary = 28000, minAge = 18, requirement = nil, category = "trades" },
+	{ id = "construction", name = "Construction Worker", company = "BuildRight Co", emoji = "👷", salary = 42000, minAge = 18, requirement = nil, category = "trades" },
+	{ id = "electrician_apprentice", name = "Electrician Apprentice", company = "Spark Electric", emoji = "⚡", salary = 35000, minAge = 18, requirement = "high_school", category = "trades" },
+	{ id = "electrician", name = "Electrician", company = "PowerPro Electric", emoji = "⚡", salary = 62000, minAge = 22, requirement = "high_school", category = "trades" },
+	{ id = "plumber_apprentice", name = "Plumber Apprentice", company = "DrainMaster", emoji = "🔧", salary = 32000, minAge = 18, requirement = "high_school", category = "trades" },
+	{ id = "plumber", name = "Licensed Plumber", company = "FlowRight Plumbing", emoji = "🔧", salary = 58000, minAge = 22, requirement = "high_school", category = "trades" },
+	{ id = "mechanic", name = "Auto Mechanic", company = "QuickFix Auto", emoji = "🔩", salary = 45000, minAge = 18, requirement = "high_school", category = "trades" },
+	{ id = "hvac_tech", name = "HVAC Technician", company = "CoolAir Systems", emoji = "❄️", salary = 52000, minAge = 20, requirement = "high_school", category = "trades" },
+	{ id = "welder", name = "Welder", company = "Steel Works Inc", emoji = "🔥", salary = 48000, minAge = 18, requirement = "high_school", category = "trades" },
+	{ id = "carpenter", name = "Carpenter", company = "WoodCraft Co", emoji = "🪚", salary = 46000, minAge = 18, requirement = "high_school", category = "trades" },
+	{ id = "truck_driver", name = "Truck Driver", company = "FastFreight Logistics", emoji = "🚛", salary = 55000, minAge = 21, requirement = "high_school", category = "trades" },
+	{ id = "foreman", name = "Construction Foreman", company = "BuildRight Co", emoji = "🏗️", salary = 72000, minAge = 28, requirement = "high_school", category = "trades" },
 	
-	-- Advanced Degrees
-	{ id = "doctor", name = "Doctor", company = "City Hospital", emoji = "🩺", salary = 250000, minAge = 30, requirement = "medical" },
-	{ id = "lawyer", name = "Lawyer", company = "Smith & Associates", emoji = "⚖️", salary = 180000, minAge = 28, requirement = "law" },
+	-- ════════════════════════════════════════════════════════════════
+	-- OFFICE & BUSINESS
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "receptionist", name = "Receptionist", company = "Corporate Office", emoji = "📞", salary = 32000, minAge = 18, requirement = "high_school", category = "office" },
+	{ id = "office_assistant", name = "Office Assistant", company = "Business Solutions", emoji = "📋", salary = 35000, minAge = 18, requirement = "high_school", category = "office" },
+	{ id = "data_entry", name = "Data Entry Clerk", company = "DataCorp", emoji = "⌨️", salary = 34000, minAge = 18, requirement = "high_school", category = "office" },
+	{ id = "administrative_assistant", name = "Administrative Assistant", company = "Executive Office", emoji = "📁", salary = 42000, minAge = 20, requirement = "high_school", category = "office" },
+	{ id = "hr_coordinator", name = "HR Coordinator", company = "PeopleFirst HR", emoji = "👥", salary = 48000, minAge = 22, requirement = "bachelor", category = "office" },
+	{ id = "hr_manager", name = "HR Manager", company = "PeopleFirst HR", emoji = "👥", salary = 78000, minAge = 28, requirement = "bachelor", category = "office" },
+	{ id = "recruiter", name = "Corporate Recruiter", company = "TalentFind Inc", emoji = "🔍", salary = 58000, minAge = 24, requirement = "bachelor", category = "office" },
+	{ id = "office_manager", name = "Office Manager", company = "CorpWorld Inc", emoji = "🏢", salary = 62000, minAge = 26, requirement = "bachelor", category = "office" },
+	{ id = "executive_assistant", name = "Executive Assistant", company = "CEO Office", emoji = "👔", salary = 72000, minAge = 26, requirement = "bachelor", category = "office" },
+	{ id = "project_manager", name = "Project Manager", company = "ManageAll Corp", emoji = "📊", salary = 85000, minAge = 28, requirement = "bachelor", category = "office" },
+	{ id = "operations_director", name = "Operations Director", company = "Global Corp", emoji = "🎯", salary = 145000, minAge = 35, requirement = "master", category = "office" },
+	{ id = "coo", name = "Chief Operating Officer", company = "Fortune 500", emoji = "🏆", salary = 350000, minAge = 42, requirement = "master", category = "office" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- TECHNOLOGY
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "it_support", name = "IT Support Technician", company = "TechHelp Inc", emoji = "🖥️", salary = 45000, minAge = 18, requirement = "high_school", category = "tech" },
+	{ id = "junior_developer", name = "Junior Developer", company = "CodeStart Inc", emoji = "💻", salary = 65000, minAge = 21, requirement = "bachelor", category = "tech" },
+	{ id = "developer", name = "Software Developer", company = "TechStart Inc", emoji = "💻", salary = 95000, minAge = 23, requirement = "bachelor", category = "tech" },
+	{ id = "senior_developer", name = "Senior Developer", company = "BigTech Corp", emoji = "💻", salary = 145000, minAge = 27, requirement = "bachelor", category = "tech" },
+	{ id = "tech_lead", name = "Tech Lead", company = "BigTech Corp", emoji = "👨‍💻", salary = 175000, minAge = 30, requirement = "bachelor", category = "tech" },
+	{ id = "software_architect", name = "Software Architect", company = "MegaTech Inc", emoji = "🏗️", salary = 195000, minAge = 32, requirement = "master", category = "tech" },
+	{ id = "web_developer", name = "Web Developer", company = "WebWorks Studio", emoji = "🌐", salary = 78000, minAge = 22, requirement = "bachelor", category = "tech" },
+	{ id = "mobile_developer", name = "Mobile App Developer", company = "AppFactory", emoji = "📱", salary = 92000, minAge = 23, requirement = "bachelor", category = "tech" },
+	{ id = "data_analyst", name = "Data Analyst", company = "DataDriven Co", emoji = "📈", salary = 72000, minAge = 22, requirement = "bachelor", category = "tech" },
+	{ id = "data_scientist", name = "Data Scientist", company = "AI Innovations", emoji = "🧠", salary = 135000, minAge = 26, requirement = "master", category = "tech" },
+	{ id = "ml_engineer", name = "Machine Learning Engineer", company = "AI Labs", emoji = "🤖", salary = 165000, minAge = 28, requirement = "master", category = "tech" },
+	{ id = "cybersecurity_analyst", name = "Cybersecurity Analyst", company = "SecureNet", emoji = "🔐", salary = 95000, minAge = 24, requirement = "bachelor", category = "tech" },
+	{ id = "security_engineer", name = "Security Engineer", company = "CyberShield", emoji = "🛡️", salary = 140000, minAge = 28, requirement = "bachelor", category = "tech" },
+	{ id = "devops_engineer", name = "DevOps Engineer", company = "CloudOps Inc", emoji = "☁️", salary = 125000, minAge = 26, requirement = "bachelor", category = "tech" },
+	{ id = "cto", name = "Chief Technology Officer", company = "Tech Giant", emoji = "🚀", salary = 380000, minAge = 38, requirement = "master", category = "tech" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- MEDICAL / HEALTHCARE
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "hospital_orderly", name = "Hospital Orderly", company = "City Hospital", emoji = "🏥", salary = 28000, minAge = 18, requirement = nil, category = "medical" },
+	{ id = "medical_assistant", name = "Medical Assistant", company = "Family Clinic", emoji = "💉", salary = 36000, minAge = 18, requirement = "high_school", category = "medical" },
+	{ id = "emt", name = "EMT / Paramedic", company = "City Ambulance", emoji = "🚑", salary = 42000, minAge = 18, requirement = "high_school", category = "medical" },
+	{ id = "nurse_lpn", name = "Licensed Practical Nurse", company = "Regional Hospital", emoji = "👩‍⚕️", salary = 52000, minAge = 20, requirement = "community", category = "medical" },
+	{ id = "nurse_rn", name = "Registered Nurse", company = "City Hospital", emoji = "👩‍⚕️", salary = 78000, minAge = 22, requirement = "bachelor", category = "medical" },
+	{ id = "nurse_practitioner", name = "Nurse Practitioner", company = "Medical Center", emoji = "👩‍⚕️", salary = 118000, minAge = 28, requirement = "master", category = "medical" },
+	{ id = "physical_therapist", name = "Physical Therapist", company = "RehabCare Center", emoji = "🦿", salary = 92000, minAge = 26, requirement = "master", category = "medical" },
+	{ id = "pharmacist", name = "Pharmacist", company = "MediPharm", emoji = "💊", salary = 128000, minAge = 28, requirement = "phd", category = "medical" },
+	{ id = "dentist", name = "Dentist", company = "Bright Smiles Dental", emoji = "🦷", salary = 175000, minAge = 28, requirement = "medical", category = "medical" },
+	{ id = "doctor_resident", name = "Medical Resident", company = "Teaching Hospital", emoji = "🩺", salary = 65000, minAge = 26, requirement = "medical", category = "medical" },
+	{ id = "doctor", name = "Doctor", company = "City Hospital", emoji = "🩺", salary = 250000, minAge = 30, requirement = "medical", category = "medical" },
+	{ id = "surgeon", name = "Surgeon", company = "Medical Center", emoji = "🔪", salary = 420000, minAge = 34, requirement = "medical", category = "medical" },
+	{ id = "chief_of_medicine", name = "Chief of Medicine", company = "University Hospital", emoji = "👨‍⚕️", salary = 550000, minAge = 45, requirement = "medical", category = "medical" },
+	{ id = "psychiatrist", name = "Psychiatrist", company = "Mental Health Center", emoji = "🧠", salary = 280000, minAge = 32, requirement = "medical", category = "medical" },
+	{ id = "veterinarian", name = "Veterinarian", company = "Pet Care Clinic", emoji = "🐾", salary = 105000, minAge = 28, requirement = "medical", category = "medical" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- LEGAL
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "paralegal", name = "Paralegal", company = "Legal Associates", emoji = "📜", salary = 52000, minAge = 22, requirement = "bachelor", category = "law" },
+	{ id = "legal_assistant", name = "Legal Assistant", company = "Smith & Partners", emoji = "📝", salary = 42000, minAge = 18, requirement = "high_school", category = "law" },
+	{ id = "associate_lawyer", name = "Associate Attorney", company = "Law Firm LLP", emoji = "⚖️", salary = 95000, minAge = 26, requirement = "law", category = "law" },
+	{ id = "lawyer", name = "Attorney", company = "Smith & Associates", emoji = "⚖️", salary = 145000, minAge = 28, requirement = "law", category = "law" },
+	{ id = "senior_partner", name = "Senior Partner", company = "Elite Law Firm", emoji = "⚖️", salary = 350000, minAge = 38, requirement = "law", category = "law" },
+	{ id = "prosecutor", name = "Prosecutor", company = "District Attorney", emoji = "🏛️", salary = 95000, minAge = 28, requirement = "law", category = "law" },
+	{ id = "public_defender", name = "Public Defender", company = "Public Defender's Office", emoji = "🏛️", salary = 72000, minAge = 26, requirement = "law", category = "law" },
+	{ id = "judge", name = "Judge", company = "Superior Court", emoji = "👨‍⚖️", salary = 195000, minAge = 45, requirement = "law", category = "law" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- FINANCE
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "bank_teller", name = "Bank Teller", company = "First National Bank", emoji = "🏦", salary = 34000, minAge = 18, requirement = "high_school", category = "finance" },
+	{ id = "loan_officer", name = "Loan Officer", company = "City Bank", emoji = "💰", salary = 58000, minAge = 22, requirement = "bachelor", category = "finance" },
+	{ id = "accountant_jr", name = "Junior Accountant", company = "Financial Services", emoji = "📊", salary = 52000, minAge = 22, requirement = "bachelor", category = "finance" },
+	{ id = "accountant", name = "Senior Accountant", company = "Big4 Accounting", emoji = "📊", salary = 78000, minAge = 25, requirement = "bachelor", category = "finance" },
+	{ id = "cpa", name = "Certified Public Accountant", company = "CPA Partners", emoji = "📊", salary = 95000, minAge = 28, requirement = "bachelor", category = "finance" },
+	{ id = "financial_analyst", name = "Financial Analyst", company = "Investment Group", emoji = "📈", salary = 85000, minAge = 23, requirement = "bachelor", category = "finance" },
+	{ id = "investment_banker_jr", name = "Investment Banking Analyst", company = "Goldman & Partners", emoji = "💹", salary = 120000, minAge = 22, requirement = "bachelor", category = "finance" },
+	{ id = "investment_banker", name = "Investment Banker", company = "Wall Street Bank", emoji = "💹", salary = 225000, minAge = 28, requirement = "master", category = "finance" },
+	{ id = "hedge_fund_manager", name = "Hedge Fund Manager", company = "Elite Capital", emoji = "🏦", salary = 750000, minAge = 35, requirement = "master", category = "finance" },
+	{ id = "actuary", name = "Actuary", company = "Insurance Corp", emoji = "🧮", salary = 125000, minAge = 26, requirement = "bachelor", category = "finance" },
+	{ id = "cfo", name = "Chief Financial Officer", company = "Fortune 500", emoji = "💼", salary = 450000, minAge = 42, requirement = "master", category = "finance" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- CREATIVE / MEDIA / ENTERTAINMENT
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "graphic_designer_jr", name = "Junior Graphic Designer", company = "Design Studio", emoji = "🎨", salary = 42000, minAge = 21, requirement = "bachelor", category = "creative" },
+	{ id = "graphic_designer", name = "Graphic Designer", company = "Creative Agency", emoji = "🎨", salary = 62000, minAge = 24, requirement = "bachelor", category = "creative" },
+	{ id = "art_director", name = "Art Director", company = "Top Agency", emoji = "🎨", salary = 115000, minAge = 30, requirement = "bachelor", category = "creative" },
+	{ id = "photographer", name = "Photographer", company = "Photo Studio", emoji = "📷", salary = 48000, minAge = 18, requirement = nil, category = "creative" },
+	{ id = "videographer", name = "Videographer", company = "Video Productions", emoji = "🎥", salary = 55000, minAge = 21, requirement = "bachelor", category = "creative" },
+	{ id = "journalist_jr", name = "Junior Journalist", company = "City News", emoji = "📰", salary = 38000, minAge = 22, requirement = "bachelor", category = "creative" },
+	{ id = "journalist", name = "Journalist", company = "National Times", emoji = "📰", salary = 62000, minAge = 26, requirement = "bachelor", category = "creative" },
+	{ id = "editor", name = "Editor", company = "Publishing House", emoji = "✍️", salary = 72000, minAge = 28, requirement = "bachelor", category = "creative" },
+	{ id = "social_media_manager", name = "Social Media Manager", company = "Digital Agency", emoji = "📱", salary = 55000, minAge = 22, requirement = "bachelor", category = "creative" },
+	{ id = "marketing_associate", name = "Marketing Associate", company = "AdVenture Agency", emoji = "📈", salary = 52000, minAge = 22, requirement = "bachelor", category = "creative" },
+	{ id = "marketing_manager", name = "Marketing Manager", company = "Brand Corp", emoji = "📈", salary = 95000, minAge = 28, requirement = "bachelor", category = "creative" },
+	{ id = "cmo", name = "Chief Marketing Officer", company = "Fortune 500", emoji = "📢", salary = 320000, minAge = 40, requirement = "master", category = "creative" },
+	{ id = "actor_extra", name = "Background Actor", company = "Hollywood Studios", emoji = "🎭", salary = 25000, minAge = 18, requirement = nil, category = "creative" },
+	{ id = "actor", name = "Actor", company = "Talent Agency", emoji = "🎭", salary = 85000, minAge = 21, requirement = nil, category = "creative" },
+	{ id = "movie_star", name = "Movie Star", company = "Major Studios", emoji = "⭐", salary = 2500000, minAge = 25, requirement = nil, category = "creative" },
+	{ id = "musician_local", name = "Local Musician", company = "Self-Employed", emoji = "🎸", salary = 28000, minAge = 16, requirement = nil, category = "creative" },
+	{ id = "musician_signed", name = "Signed Musician", company = "Record Label", emoji = "🎸", salary = 95000, minAge = 20, requirement = nil, category = "creative" },
+	{ id = "pop_star", name = "Pop Star", company = "Global Records", emoji = "🎤", salary = 5000000, minAge = 22, requirement = nil, category = "creative" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- GOVERNMENT / PUBLIC SERVICE
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "postal_worker", name = "Postal Worker", company = "US Postal Service", emoji = "📮", salary = 45000, minAge = 18, requirement = "high_school", category = "government" },
+	{ id = "dmv_clerk", name = "DMV Clerk", company = "Dept of Motor Vehicles", emoji = "🚗", salary = 38000, minAge = 18, requirement = "high_school", category = "government" },
+	{ id = "social_worker", name = "Social Worker", company = "Family Services", emoji = "🤝", salary = 52000, minAge = 22, requirement = "bachelor", category = "government" },
+	{ id = "probation_officer", name = "Probation Officer", company = "Corrections Dept", emoji = "🔒", salary = 55000, minAge = 22, requirement = "bachelor", category = "government" },
+	{ id = "police_officer", name = "Police Officer", company = "City Police Dept", emoji = "👮", salary = 62000, minAge = 21, requirement = "high_school", category = "government" },
+	{ id = "detective", name = "Detective", company = "City Police Dept", emoji = "🔍", salary = 85000, minAge = 28, requirement = "bachelor", category = "government" },
+	{ id = "police_chief", name = "Police Chief", company = "City Police Dept", emoji = "👮‍♂️", salary = 145000, minAge = 40, requirement = "bachelor", category = "government" },
+	{ id = "firefighter", name = "Firefighter", company = "Fire Department", emoji = "🚒", salary = 58000, minAge = 18, requirement = "high_school", category = "government" },
+	{ id = "fire_captain", name = "Fire Captain", company = "Fire Department", emoji = "🚒", salary = 95000, minAge = 32, requirement = "high_school", category = "government" },
+	{ id = "city_council", name = "City Council Member", company = "City Government", emoji = "🏛️", salary = 72000, minAge = 25, requirement = "bachelor", category = "government" },
+	{ id = "mayor", name = "Mayor", company = "City Hall", emoji = "🏛️", salary = 185000, minAge = 35, requirement = "bachelor", category = "government" },
+	{ id = "fbi_agent", name = "FBI Agent", company = "Federal Bureau of Investigation", emoji = "🕵️", salary = 95000, minAge = 25, requirement = "bachelor", category = "government" },
+	{ id = "cia_agent", name = "CIA Agent", company = "Central Intelligence Agency", emoji = "🕵️‍♂️", salary = 105000, minAge = 26, requirement = "bachelor", category = "government" },
+	{ id = "diplomat", name = "Diplomat", company = "State Department", emoji = "🌍", salary = 125000, minAge = 30, requirement = "master", category = "government" },
+	{ id = "senator", name = "Senator", company = "US Senate", emoji = "🏛️", salary = 174000, minAge = 35, requirement = "bachelor", category = "government" },
+	{ id = "president", name = "President", company = "United States", emoji = "🇺🇸", salary = 400000, minAge = 35, requirement = "bachelor", category = "government" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- EDUCATION
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "teaching_assistant", name = "Teaching Assistant", company = "Local School", emoji = "📚", salary = 28000, minAge = 18, requirement = "high_school", category = "education" },
+	{ id = "substitute_teacher", name = "Substitute Teacher", company = "School District", emoji = "📚", salary = 32000, minAge = 21, requirement = "bachelor", category = "education" },
+	{ id = "teacher", name = "Teacher", company = "Public School", emoji = "👨‍🏫", salary = 52000, minAge = 22, requirement = "bachelor", category = "education" },
+	{ id = "department_head", name = "Department Head", company = "High School", emoji = "👨‍🏫", salary = 72000, minAge = 32, requirement = "master", category = "education" },
+	{ id = "principal", name = "School Principal", company = "Local School District", emoji = "🏫", salary = 105000, minAge = 38, requirement = "master", category = "education" },
+	{ id = "superintendent", name = "School Superintendent", company = "School District", emoji = "🏫", salary = 185000, minAge = 45, requirement = "phd", category = "education" },
+	{ id = "professor_assistant", name = "Assistant Professor", company = "State University", emoji = "🎓", salary = 72000, minAge = 28, requirement = "phd", category = "education" },
+	{ id = "professor", name = "Professor", company = "University", emoji = "🎓", salary = 115000, minAge = 35, requirement = "phd", category = "education" },
+	{ id = "dean", name = "Dean", company = "University", emoji = "🎓", salary = 225000, minAge = 45, requirement = "phd", category = "education" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- SCIENCE / RESEARCH
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "lab_technician", name = "Lab Technician", company = "Research Lab", emoji = "🔬", salary = 42000, minAge = 22, requirement = "bachelor", category = "science" },
+	{ id = "research_assistant", name = "Research Assistant", company = "University Lab", emoji = "🔬", salary = 48000, minAge = 22, requirement = "bachelor", category = "science" },
+	{ id = "scientist", name = "Scientist", company = "Research Institute", emoji = "🧪", salary = 85000, minAge = 26, requirement = "master", category = "science" },
+	{ id = "senior_scientist", name = "Senior Scientist", company = "BioTech Corp", emoji = "🧪", salary = 125000, minAge = 32, requirement = "phd", category = "science" },
+	{ id = "research_director", name = "Research Director", company = "Innovation Labs", emoji = "🔬", salary = 195000, minAge = 40, requirement = "phd", category = "science" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- SPORTS / ATHLETICS
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "gym_instructor", name = "Gym Instructor", company = "Fitness Center", emoji = "🏋️", salary = 35000, minAge = 18, requirement = nil, category = "sports" },
+	{ id = "minor_league", name = "Minor League Player", company = "Farm Team", emoji = "⚾", salary = 45000, minAge = 18, requirement = nil, category = "sports" },
+	{ id = "professional_athlete", name = "Professional Athlete", company = "Sports Team", emoji = "🏆", salary = 850000, minAge = 21, requirement = nil, category = "sports" },
+	{ id = "star_athlete", name = "Star Athlete", company = "Champion Team", emoji = "⭐", salary = 15000000, minAge = 24, requirement = nil, category = "sports" },
+	{ id = "sports_coach", name = "Sports Coach", company = "High School", emoji = "📋", salary = 55000, minAge = 25, requirement = "bachelor", category = "sports" },
+	{ id = "head_coach", name = "Head Coach", company = "Pro Team", emoji = "📋", salary = 2500000, minAge = 40, requirement = "bachelor", category = "sports" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- MILITARY
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "enlisted", name = "Enlisted Soldier", company = "US Army", emoji = "🪖", salary = 35000, minAge = 18, requirement = "high_school", category = "military" },
+	{ id = "sergeant", name = "Sergeant", company = "US Army", emoji = "🪖", salary = 55000, minAge = 24, requirement = "high_school", category = "military" },
+	{ id = "officer", name = "Military Officer", company = "US Armed Forces", emoji = "🎖️", salary = 75000, minAge = 22, requirement = "bachelor", category = "military" },
+	{ id = "captain", name = "Captain", company = "US Armed Forces", emoji = "🎖️", salary = 95000, minAge = 28, requirement = "bachelor", category = "military" },
+	{ id = "colonel", name = "Colonel", company = "US Armed Forces", emoji = "🎖️", salary = 135000, minAge = 38, requirement = "master", category = "military" },
+	{ id = "general", name = "General", company = "Pentagon", emoji = "⭐", salary = 220000, minAge = 50, requirement = "master", category = "military" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- CRIMINAL CAREERS (Illegal - High Risk/Reward)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "drug_dealer_street", name = "Street Dealer", company = "The Streets", emoji = "💊", salary = 45000, minAge = 16, requirement = nil, category = "criminal", illegal = true },
+	{ id = "drug_dealer", name = "Drug Dealer", company = "The Organization", emoji = "💊", salary = 120000, minAge = 20, requirement = nil, category = "criminal", illegal = true },
+	{ id = "hitman", name = "Hitman", company = "Unknown", emoji = "🔫", salary = 200000, minAge = 25, requirement = nil, category = "criminal", illegal = true },
+	{ id = "gang_member", name = "Gang Member", company = "The Gang", emoji = "🔪", salary = 55000, minAge = 16, requirement = nil, category = "criminal", illegal = true },
+	{ id = "gang_lieutenant", name = "Gang Lieutenant", company = "The Gang", emoji = "🔪", salary = 150000, minAge = 22, requirement = nil, category = "criminal", illegal = true },
+	{ id = "crime_boss", name = "Crime Boss", company = "The Syndicate", emoji = "🎩", salary = 500000, minAge = 30, requirement = nil, category = "criminal", illegal = true },
+	{ id = "smuggler", name = "Smuggler", company = "Import/Export", emoji = "📦", salary = 95000, minAge = 21, requirement = nil, category = "criminal", illegal = true },
+	{ id = "fence", name = "Fence", company = "Underground Market", emoji = "💎", salary = 85000, minAge = 20, requirement = nil, category = "criminal", illegal = true },
 }
 
 -- Education Data - Must match server's EducationOptions IDs!
@@ -68,6 +292,8 @@ function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentTab = "jobs"
+	self.selectedCategory = "all" -- For job category filtering
+	self.careerInfo = nil -- Cached career info from server
 	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney(), "Job:", self:getCurrentJob() or "None")
 	self:createUI()
 	log("✅ OccupationScreen created successfully")
@@ -140,6 +366,66 @@ function OccupationScreen:isEnrolled()
 	local state = self.playerState
 	if not state then return false end
 	return state.Enrolled or (state.Career and state.Career.enrolled) or false
+end
+
+function OccupationScreen:fetchCareerInfo()
+	if not GetCareerInfo then
+		log("GetCareerInfo remote not available")
+		return nil
+	end
+	
+	local success, result = pcall(function()
+		return GetCareerInfo:InvokeServer()
+	end)
+	
+	if success and result and result.success then
+		self.careerInfo = result
+		log("Fetched career info - Performance:", result.performance, "PromotionProgress:", result.promotionProgress)
+		return result
+	end
+	return nil
+end
+
+function OccupationScreen:getCareerPerformance()
+	if self.careerInfo then
+		return self.careerInfo.performance or 75
+	end
+	return 75
+end
+
+function OccupationScreen:getPromotionProgress()
+	if self.careerInfo then
+		return self.careerInfo.promotionProgress or 0
+	end
+	return 0
+end
+
+function OccupationScreen:getCareerSkills()
+	if self.careerInfo then
+		return self.careerInfo.skills or {}
+	end
+	return {}
+end
+
+function OccupationScreen:getCareerHistory()
+	if self.careerInfo then
+		return self.careerInfo.careerHistory or {}
+	end
+	return {}
+end
+
+function OccupationScreen:getYearsAtJob()
+	if self.careerInfo then
+		return self.careerInfo.yearsAtJob or 0
+	end
+	return 0
+end
+
+function OccupationScreen:getRaises()
+	if self.careerInfo then
+		return self.careerInfo.raises or 0
+	end
+	return 0
 end
 
 function OccupationScreen:createUI()
@@ -267,11 +553,67 @@ function OccupationScreen:createUI()
 	self.jobsTab.MouseButton1Click:Connect(function() self:switchTab("jobs") end)
 	self.eduTab.MouseButton1Click:Connect(function() self:switchTab("education") end)
 	
-	-- Scroll area
+	-- Category filter bar (horizontal scroll)
+	self.categoryBar = Instance.new("ScrollingFrame")
+	self.categoryBar.Name = "CategoryBar"
+	self.categoryBar.Size = UDim2.new(1, -16, 0, 44)
+	self.categoryBar.Position = UDim2.new(0, 8, 0, 236)
+	self.categoryBar.BackgroundTransparency = 1
+	self.categoryBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+	self.categoryBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+	self.categoryBar.ScrollBarThickness = 0
+	self.categoryBar.ScrollingDirection = Enum.ScrollingDirection.X
+	self.categoryBar.ZIndex = 84
+	self.categoryBar.Parent = self.overlay
+	
+	local categoryLayout = Instance.new("UIListLayout")
+	categoryLayout.FillDirection = Enum.FillDirection.Horizontal
+	categoryLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	categoryLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	categoryLayout.Padding = UDim.new(0, 8)
+	categoryLayout.Parent = self.categoryBar
+	
+	-- Create category chips
+	self.categoryChips = {}
+	for i, category in ipairs(JobCategories) do
+		local chip = Instance.new("TextButton")
+		chip.Name = category.id
+		chip.Size = UDim2.new(0, 0, 0, 34)
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.BackgroundColor3 = i == 1 and C.Blue or C.Gray100
+		chip.Font = F.Medium
+		chip.TextSize = 12
+		chip.TextColor3 = i == 1 and C.White or C.Gray600
+		chip.Text = "  " .. category.emoji .. " " .. category.name .. "  "
+		chip.AutoButtonColor = false
+		chip.LayoutOrder = i
+		chip.ZIndex = 85
+		chip.Parent = self.categoryBar
+		UI.pill(chip)
+		
+		self.categoryChips[category.id] = chip
+		
+		chip.MouseButton1Click:Connect(function()
+			self:selectCategory(category.id)
+		end)
+		
+		chip.MouseEnter:Connect(function()
+			if self.selectedCategory ~= category.id then
+				UI.tween(chip, TweenInfo.new(0.1), { BackgroundColor3 = C.Gray200 })
+			end
+		end)
+		chip.MouseLeave:Connect(function()
+			if self.selectedCategory ~= category.id then
+				UI.tween(chip, TweenInfo.new(0.1), { BackgroundColor3 = C.Gray100 })
+			end
+		end)
+	end
+	
+	-- Scroll area (adjusted position for category bar)
 	self.contentScroll = Instance.new("ScrollingFrame")
 	self.contentScroll.Name = "ContentScroll"
-	self.contentScroll.Size = UDim2.new(1, -16, 1, -250)
-	self.contentScroll.Position = UDim2.new(0, 8, 0, 240)
+	self.contentScroll.Size = UDim2.new(1, -16, 1, -296)
+	self.contentScroll.Position = UDim2.new(0, 8, 0, 286)
 	self.contentScroll.BackgroundTransparency = 1
 	self.contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	self.contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -341,17 +683,50 @@ function OccupationScreen:switchTab(tabId)
 		log("Animating to Jobs tab")
 		UI.tween(self.jobsTab, TweenInfo.new(0.15), { BackgroundColor3 = C.Blue, TextColor3 = C.White })
 		UI.tween(self.eduTab, TweenInfo.new(0.15), { BackgroundColor3 = C.White, TextColor3 = C.Gray600 })
+		-- Show category bar and adjust content
+		self.categoryBar.Visible = true
+		self.contentScroll.Size = UDim2.new(1, -16, 1, -296)
+		self.contentScroll.Position = UDim2.new(0, 8, 0, 286)
 		self:populateJobs()
 	else
 		log("Animating to Education tab")
 		UI.tween(self.jobsTab, TweenInfo.new(0.15), { BackgroundColor3 = C.White, TextColor3 = C.Gray600 })
 		UI.tween(self.eduTab, TweenInfo.new(0.15), { BackgroundColor3 = C.Purple, TextColor3 = C.White })
+		-- Hide category bar and expand content
+		self.categoryBar.Visible = false
+		self.contentScroll.Size = UDim2.new(1, -16, 1, -250)
+		self.contentScroll.Position = UDim2.new(0, 8, 0, 240)
 		self:populateEducation()
+	end
+end
+
+function OccupationScreen:selectCategory(categoryId)
+	log("Selecting category:", categoryId)
+	
+	-- Update selected category
+	local previousCategory = self.selectedCategory
+	self.selectedCategory = categoryId
+	
+	-- Update chip colors
+	for id, chip in pairs(self.categoryChips) do
+		if id == categoryId then
+			UI.tween(chip, TweenInfo.new(0.15), { BackgroundColor3 = C.Blue, TextColor3 = C.White })
+		else
+			UI.tween(chip, TweenInfo.new(0.15), { BackgroundColor3 = C.Gray100, TextColor3 = C.Gray600 })
+		end
+	end
+	
+	-- Repopulate jobs with filter
+	if previousCategory ~= categoryId then
+		self:populateJobs()
 	end
 end
 
 function OccupationScreen:populateJobs()
 	self:updateInfoBar()
+	
+	-- Fetch career info from server (for performance, promotion progress, etc.)
+	self:fetchCareerInfo()
 	
 	-- Clear content
 	for _, child in ipairs(self.contentScroll:GetChildren()) do
@@ -362,8 +737,9 @@ function OccupationScreen:populateJobs()
 	local currentJob = self:getCurrentJob()
 	local eduLevel = self:getEducationLevel()
 	local inJail = self:isInJail()
+	local selectedCategory = self.selectedCategory or "all"
 	
-	log("Populating jobs - Age:", age, "CurrentJob:", currentJob, "EduLevel:", eduLevel, "InJail:", inJail)
+	log("Populating jobs - Age:", age, "CurrentJob:", currentJob, "EduLevel:", eduLevel, "InJail:", inJail, "Category:", selectedCategory)
 	
 	-- Prison warning (if in jail)
 	if inJail then
@@ -519,23 +895,53 @@ function OccupationScreen:populateJobs()
 	badgeLabel.ZIndex = 85
 	badgeLabel.Parent = badge
 	
-	-- Add jobs
+	-- Add jobs (filtered by category)
 	local order = 1
+	local jobsShown = 0
 	for _, job in ipairs(Jobs) do
 		if job.id ~= currentJob then
-			self:createJobCard(section, job, order, age, eduLevel)
-			order = order + 1
+			-- Apply category filter
+			local showJob = (selectedCategory == "all") or (job.category == selectedCategory)
+			
+			if showJob then
+				self:createJobCard(section, job, order, age, eduLevel)
+				order = order + 1
+				jobsShown = jobsShown + 1
+			end
 		end
+	end
+	
+	-- Show message if no jobs in category
+	if jobsShown == 0 then
+		local emptyLabel = Instance.new("TextLabel")
+		emptyLabel.Size = UDim2.new(1, 0, 0, 60)
+		emptyLabel.BackgroundTransparency = 1
+		emptyLabel.Font = F.Body
+		emptyLabel.TextSize = 14
+		emptyLabel.TextColor3 = C.Gray400
+		emptyLabel.Text = "No jobs available in this category for your qualifications."
+		emptyLabel.TextWrapped = true
+		emptyLabel.LayoutOrder = 1
+		emptyLabel.ZIndex = 84
+		emptyLabel.Parent = section
 	end
 end
 
 function OccupationScreen:createCurrentJobCard(parent, job)
 	log("Creating current job card for:", job.name)
 	
-	-- Main container card - BIGGER and more prominent
+	-- Get career data
+	local performance = self:getCareerPerformance()
+	local promotionProgress = self:getPromotionProgress()
+	local yearsAtJob = self:getYearsAtJob()
+	local raises = self:getRaises()
+	local serverJob = self:getCurrentJobData()
+	local hasPromotion = serverJob and serverJob.promotesTo
+	
+	-- Main container card - EXPANDED for career progression
 	local card = Instance.new("Frame")
 	card.Name = "CurrentJob"
-	card.Size = UDim2.new(1, 0, 0, 185)
+	card.Size = UDim2.new(1, 0, 0, 340)
 	card.BackgroundColor3 = C.White
 	card.LayoutOrder = 1
 	card.ZIndex = 83
@@ -548,90 +954,120 @@ function OccupationScreen:createCurrentJobCard(parent, job)
 	
 	-- Icon (bigger)
 	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 70, 0, 70)
-	iconFrame.Position = UDim2.new(0, 16, 0, 16)
+	iconFrame.Size = UDim2.new(0, 60, 0, 60)
+	iconFrame.Position = UDim2.new(0, 14, 0, 14)
 	iconFrame.BackgroundColor3 = C.GreenPale
 	iconFrame.ZIndex = 84
 	iconFrame.Parent = card
-	UI.corner(iconFrame, 16)
+	UI.corner(iconFrame, 14)
 	
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
 	iconLabel.Font = F.Body
-	iconLabel.TextSize = 38
+	iconLabel.TextSize = 32
 	iconLabel.Text = job.emoji
 	iconLabel.ZIndex = 85
 	iconLabel.Parent = iconFrame
 	
 	-- Job title
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(0.55, 0, 0, 28)
-	titleLabel.Position = UDim2.new(0, 100, 0, 14)
+	titleLabel.Size = UDim2.new(1, -90, 0, 24)
+	titleLabel.Position = UDim2.new(0, 86, 0, 12)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = F.Title
-	titleLabel.TextSize = 19
+	titleLabel.TextSize = 17
 	titleLabel.TextColor3 = C.Gray900
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	titleLabel.Text = job.name
 	titleLabel.ZIndex = 84
 	titleLabel.Parent = card
 	
 	-- Company name
 	local companyLabel = Instance.new("TextLabel")
-	companyLabel.Size = UDim2.new(0.5, 0, 0, 20)
-	companyLabel.Position = UDim2.new(0, 100, 0, 42)
+	companyLabel.Size = UDim2.new(0.5, 0, 0, 18)
+	companyLabel.Position = UDim2.new(0, 86, 0, 36)
 	companyLabel.BackgroundTransparency = 1
 	companyLabel.Font = F.Body
-	companyLabel.TextSize = 13
+	companyLabel.TextSize = 12
 	companyLabel.TextColor3 = C.Gray500
 	companyLabel.TextXAlignment = Enum.TextXAlignment.Left
 	companyLabel.Text = "at " .. (job.company or "Unknown Company")
 	companyLabel.ZIndex = 84
 	companyLabel.Parent = card
 	
-	-- Current job badge
+	-- Employed badge + Tenure
+	local statusRow = Instance.new("Frame")
+	statusRow.Size = UDim2.new(1, -90, 0, 24)
+	statusRow.Position = UDim2.new(0, 86, 0, 54)
+	statusRow.BackgroundTransparency = 1
+	statusRow.ZIndex = 84
+	statusRow.Parent = card
+	
+	local statusLayout = Instance.new("UIListLayout")
+	statusLayout.FillDirection = Enum.FillDirection.Horizontal
+	statusLayout.Padding = UDim.new(0, 8)
+	statusLayout.Parent = statusRow
+	
 	local currentBadge = Instance.new("Frame")
-	currentBadge.Size = UDim2.new(0, 105, 0, 28)
-	currentBadge.Position = UDim2.new(0, 100, 0, 64)
+	currentBadge.Size = UDim2.new(0, 90, 0, 24)
 	currentBadge.BackgroundColor3 = C.Green
-	currentBadge.ZIndex = 84
-	currentBadge.Parent = card
+	currentBadge.LayoutOrder = 1
+	currentBadge.ZIndex = 85
+	currentBadge.Parent = statusRow
 	UI.pill(currentBadge)
 	
 	local currentLabel = Instance.new("TextLabel")
 	currentLabel.Size = UDim2.fromScale(1, 1)
 	currentLabel.BackgroundTransparency = 1
 	currentLabel.Font = F.Button
-	currentLabel.TextSize = 12
+	currentLabel.TextSize = 11
 	currentLabel.TextColor3 = C.White
 	currentLabel.Text = "✓ Employed"
-	currentLabel.ZIndex = 85
+	currentLabel.ZIndex = 86
 	currentLabel.Parent = currentBadge
 	
+	local tenureBadge = Instance.new("Frame")
+	tenureBadge.Size = UDim2.new(0, 70, 0, 24)
+	tenureBadge.BackgroundColor3 = C.BluePale
+	tenureBadge.LayoutOrder = 2
+	tenureBadge.ZIndex = 85
+	tenureBadge.Parent = statusRow
+	UI.pill(tenureBadge)
+	
+	local tenureLabel = Instance.new("TextLabel")
+	tenureLabel.Size = UDim2.fromScale(1, 1)
+	tenureLabel.BackgroundTransparency = 1
+	tenureLabel.Font = F.Medium
+	tenureLabel.TextSize = 10
+	tenureLabel.TextColor3 = C.BlueDark
+	tenureLabel.Text = string.format("%.1f yrs", yearsAtJob)
+	tenureLabel.ZIndex = 86
+	tenureLabel.Parent = tenureBadge
+	
 	-- ═══════════════════════════════════════════════════════════
-	-- SALARY SECTION (horizontal badges)
+	-- SALARY ROW
 	-- ═══════════════════════════════════════════════════════════
 	
 	local salaryRow = Instance.new("Frame")
-	salaryRow.Size = UDim2.new(1, -32, 0, 36)
-	salaryRow.Position = UDim2.new(0, 16, 0, 96)
+	salaryRow.Size = UDim2.new(1, -28, 0, 36)
+	salaryRow.Position = UDim2.new(0, 14, 0, 85)
 	salaryRow.BackgroundColor3 = C.Gray50
 	salaryRow.ZIndex = 84
 	salaryRow.Parent = card
 	UI.corner(salaryRow, 10)
 	
-	local salaryLayout = Instance.new("UIListLayout")
-	salaryLayout.FillDirection = Enum.FillDirection.Horizontal
-	salaryLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-	salaryLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	salaryLayout.Padding = UDim.new(0, 12)
-	salaryLayout.Parent = salaryRow
-	UI.pad(salaryRow, 14, 14, 0, 0)
+	local salaryInnerLayout = Instance.new("UIListLayout")
+	salaryInnerLayout.FillDirection = Enum.FillDirection.Horizontal
+	salaryInnerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	salaryInnerLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	salaryInnerLayout.Padding = UDim.new(0, 10)
+	salaryInnerLayout.Parent = salaryRow
+	UI.pad(salaryRow, 10, 10, 0, 0)
 	
-	-- Salary badge
 	local salaryBadge = Instance.new("Frame")
-	salaryBadge.Size = UDim2.new(0, 115, 0, 28)
+	salaryBadge.Size = UDim2.new(0, 110, 0, 26)
 	salaryBadge.BackgroundColor3 = C.GreenPale
 	salaryBadge.LayoutOrder = 1
 	salaryBadge.ZIndex = 85
@@ -642,62 +1078,172 @@ function OccupationScreen:createCurrentJobCard(parent, job)
 	salaryLabel.Size = UDim2.fromScale(1, 1)
 	salaryLabel.BackgroundTransparency = 1
 	salaryLabel.Font = F.Title
-	salaryLabel.TextSize = 13
+	salaryLabel.TextSize = 12
 	salaryLabel.TextColor3 = C.GreenDark
 	salaryLabel.Text = "💵 " .. UI.formatMoney(job.salary) .. "/yr"
 	salaryLabel.ZIndex = 86
 	salaryLabel.Parent = salaryBadge
 	
-	-- Experience badge (if they have years at job)
-	local expBadge = Instance.new("Frame")
-	expBadge.Size = UDim2.new(0, 95, 0, 28)
-	expBadge.BackgroundColor3 = C.BluePale
-	expBadge.LayoutOrder = 2
-	expBadge.ZIndex = 85
-	expBadge.Parent = salaryRow
-	UI.pill(expBadge)
-	
-	local expLabel = Instance.new("TextLabel")
-	expLabel.Size = UDim2.fromScale(1, 1)
-	expLabel.BackgroundTransparency = 1
-	expLabel.Font = F.Medium
-	expLabel.TextSize = 12
-	expLabel.TextColor3 = C.BlueDark
-	expLabel.Text = "📈 Active"
-	expLabel.ZIndex = 86
-	expLabel.Parent = expBadge
+	if raises > 0 then
+		local raisesBadge = Instance.new("Frame")
+		raisesBadge.Size = UDim2.new(0, 80, 0, 26)
+		raisesBadge.BackgroundColor3 = C.AmberPale
+		raisesBadge.LayoutOrder = 2
+		raisesBadge.ZIndex = 85
+		raisesBadge.Parent = salaryRow
+		UI.pill(raisesBadge)
+		
+		local raisesLabel = Instance.new("TextLabel")
+		raisesLabel.Size = UDim2.fromScale(1, 1)
+		raisesLabel.BackgroundTransparency = 1
+		raisesLabel.Font = F.Medium
+		raisesLabel.TextSize = 11
+		raisesLabel.TextColor3 = C.AmberDark
+		raisesLabel.Text = "📈 +" .. raises .. " raises"
+		raisesLabel.ZIndex = 86
+		raisesLabel.Parent = raisesBadge
+	end
 	
 	-- ═══════════════════════════════════════════════════════════
-	-- BUTTONS ROW: View Job Info & Quit
+	-- CAREER PROGRESSION SECTION (Performance + Promotion Progress)
 	-- ═══════════════════════════════════════════════════════════
 	
-	local buttonRow = Instance.new("Frame")
-	buttonRow.Size = UDim2.new(1, -32, 0, 48)
-	buttonRow.Position = UDim2.new(0, 16, 0, 140)
-	buttonRow.BackgroundTransparency = 1
-	buttonRow.ZIndex = 84
-	buttonRow.Parent = card
+	local progressSection = Instance.new("Frame")
+	progressSection.Size = UDim2.new(1, -28, 0, 90)
+	progressSection.Position = UDim2.new(0, 14, 0, 128)
+	progressSection.BackgroundColor3 = C.Gray50
+	progressSection.ZIndex = 84
+	progressSection.Parent = card
+	UI.corner(progressSection, 12)
+	UI.pad(progressSection, 12, 12, 12, 12)
 	
-	local btnLayout = Instance.new("UIListLayout")
-	btnLayout.FillDirection = Enum.FillDirection.Horizontal
-	btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	btnLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	btnLayout.Padding = UDim.new(0, 12)
-	btnLayout.Parent = buttonRow
+	-- Performance meter
+	local perfLabel = Instance.new("TextLabel")
+	perfLabel.Size = UDim2.new(1, 0, 0, 16)
+	perfLabel.Position = UDim2.new(0, 12, 0, 10)
+	perfLabel.BackgroundTransparency = 1
+	perfLabel.Font = F.Medium
+	perfLabel.TextSize = 12
+	perfLabel.TextColor3 = C.Gray700
+	perfLabel.TextXAlignment = Enum.TextXAlignment.Left
+	perfLabel.Text = "⭐ Performance: " .. math.floor(performance) .. "%"
+	perfLabel.ZIndex = 85
+	perfLabel.Parent = progressSection
 	
-	-- View Job Info button (BitLife-style)
+	local perfBarBg = Instance.new("Frame")
+	perfBarBg.Size = UDim2.new(1, -24, 0, 10)
+	perfBarBg.Position = UDim2.new(0, 12, 0, 28)
+	perfBarBg.BackgroundColor3 = C.Gray200
+	perfBarBg.ZIndex = 85
+	perfBarBg.Parent = progressSection
+	UI.pill(perfBarBg)
+	
+	local perfBarFill = Instance.new("Frame")
+	local perfColor = performance >= 80 and C.Green or (performance >= 60 and C.Blue or (performance >= 40 and C.Amber or C.Red))
+	perfBarFill.Size = UDim2.new(math.clamp(performance / 100, 0, 1), 0, 1, 0)
+	perfBarFill.BackgroundColor3 = perfColor
+	perfBarFill.ZIndex = 86
+	perfBarFill.Parent = perfBarBg
+	UI.pill(perfBarFill)
+	
+	-- Promotion progress (only if promotion available)
+	if hasPromotion then
+		local promoLabel = Instance.new("TextLabel")
+		promoLabel.Size = UDim2.new(1, 0, 0, 16)
+		promoLabel.Position = UDim2.new(0, 12, 0, 48)
+		promoLabel.BackgroundTransparency = 1
+		promoLabel.Font = F.Medium
+		promoLabel.TextSize = 12
+		promoLabel.TextColor3 = C.Gray700
+		promoLabel.TextXAlignment = Enum.TextXAlignment.Left
+		promoLabel.Text = "🚀 Promotion Progress: " .. math.floor(promotionProgress) .. "% (80% needed)"
+		promoLabel.ZIndex = 85
+		promoLabel.Parent = progressSection
+		
+		local promoBarBg = Instance.new("Frame")
+		promoBarBg.Size = UDim2.new(1, -24, 0, 10)
+		promoBarBg.Position = UDim2.new(0, 12, 0, 66)
+		promoBarBg.BackgroundColor3 = C.Gray200
+		promoBarBg.ZIndex = 85
+		promoBarBg.Parent = progressSection
+		UI.pill(promoBarBg)
+		
+		local promoBarFill = Instance.new("Frame")
+		local promoColor = promotionProgress >= 80 and C.Green or C.Purple
+		promoBarFill.Size = UDim2.new(math.clamp(promotionProgress / 100, 0, 1), 0, 1, 0)
+		promoBarFill.BackgroundColor3 = promoColor
+		promoBarFill.ZIndex = 86
+		promoBarFill.Parent = promoBarBg
+		UI.pill(promoBarFill)
+	else
+		-- No promotion available message
+		local noPromoLabel = Instance.new("TextLabel")
+		noPromoLabel.Size = UDim2.new(1, -24, 0, 30)
+		noPromoLabel.Position = UDim2.new(0, 12, 0, 46)
+		noPromoLabel.BackgroundTransparency = 1
+		noPromoLabel.Font = F.Body
+		noPromoLabel.TextSize = 12
+		noPromoLabel.TextColor3 = C.Gray400
+		noPromoLabel.TextXAlignment = Enum.TextXAlignment.Left
+		noPromoLabel.Text = "🏆 You've reached the top of this career path!"
+		noPromoLabel.ZIndex = 85
+		noPromoLabel.Parent = progressSection
+	end
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- ACTION BUTTONS ROW 1: Work & Career Info
+	-- ═══════════════════════════════════════════════════════════
+	
+	local actionRow1 = Instance.new("Frame")
+	actionRow1.Size = UDim2.new(1, -28, 0, 40)
+	actionRow1.Position = UDim2.new(0, 14, 0, 225)
+	actionRow1.BackgroundTransparency = 1
+	actionRow1.ZIndex = 84
+	actionRow1.Parent = card
+	
+	local actionLayout1 = Instance.new("UIListLayout")
+	actionLayout1.FillDirection = Enum.FillDirection.Horizontal
+	actionLayout1.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	actionLayout1.Padding = UDim.new(0, 8)
+	actionLayout1.Parent = actionRow1
+	
+	-- Do Work button
+	local workBtn = Instance.new("TextButton")
+	workBtn.Size = UDim2.new(0.48, 0, 0, 38)
+	workBtn.BackgroundColor3 = C.Green
+	workBtn.Font = F.Button
+	workBtn.TextSize = 13
+	workBtn.TextColor3 = C.White
+	workBtn.Text = "💼 Work"
+	workBtn.AutoButtonColor = false
+	workBtn.LayoutOrder = 1
+	workBtn.ZIndex = 85
+	workBtn.Parent = actionRow1
+	UI.corner(workBtn, 10)
+	
+	workBtn.MouseEnter:Connect(function()
+		UI.tween(workBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.GreenDark })
+	end)
+	workBtn.MouseLeave:Connect(function()
+		UI.tween(workBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Green })
+	end)
+	workBtn.MouseButton1Click:Connect(function()
+		self:doWork()
+	end)
+	
+	-- Career Info button
 	local infoBtn = Instance.new("TextButton")
-	infoBtn.Size = UDim2.new(0.48, 0, 0, 44)
+	infoBtn.Size = UDim2.new(0.48, 0, 0, 38)
 	infoBtn.BackgroundColor3 = C.Blue
 	infoBtn.Font = F.Button
-	infoBtn.TextSize = 14
+	infoBtn.TextSize = 13
 	infoBtn.TextColor3 = C.White
-	infoBtn.Text = "📋 View Job Info"
+	infoBtn.Text = "📋 Career Info"
 	infoBtn.AutoButtonColor = false
-	infoBtn.LayoutOrder = 1
+	infoBtn.LayoutOrder = 2
 	infoBtn.ZIndex = 85
-	infoBtn.Parent = buttonRow
-	UI.corner(infoBtn, 12)
+	infoBtn.Parent = actionRow1
+	UI.corner(infoBtn, 10)
 	
 	infoBtn.MouseEnter:Connect(function()
 		UI.tween(infoBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.BlueDark })
@@ -706,23 +1252,93 @@ function OccupationScreen:createCurrentJobCard(parent, job)
 		UI.tween(infoBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Blue })
 	end)
 	infoBtn.MouseButton1Click:Connect(function()
-		log("View Job Info clicked for:", job.name)
-		self:showJobInfoModal(job)
+		self:showCareerInfoModal()
 	end)
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- ACTION BUTTONS ROW 2: Promotion, Raise, Quit
+	-- ═══════════════════════════════════════════════════════════
+	
+	local actionRow2 = Instance.new("Frame")
+	actionRow2.Size = UDim2.new(1, -28, 0, 40)
+	actionRow2.Position = UDim2.new(0, 14, 0, 270)
+	actionRow2.BackgroundTransparency = 1
+	actionRow2.ZIndex = 84
+	actionRow2.Parent = card
+	
+	local actionLayout2 = Instance.new("UIListLayout")
+	actionLayout2.FillDirection = Enum.FillDirection.Horizontal
+	actionLayout2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	actionLayout2.Padding = UDim.new(0, 6)
+	actionLayout2.Parent = actionRow2
+	
+	-- Request Promotion button (only if promotion available and progress >= 80)
+	local canRequestPromo = hasPromotion and promotionProgress >= 80
+	local promoBtn = Instance.new("TextButton")
+	promoBtn.Size = UDim2.new(0.32, 0, 0, 38)
+	promoBtn.BackgroundColor3 = canRequestPromo and C.Purple or C.Gray300
+	promoBtn.Font = F.Button
+	promoBtn.TextSize = 11
+	promoBtn.TextColor3 = canRequestPromo and C.White or C.Gray500
+	promoBtn.Text = "🚀 Promote"
+	promoBtn.AutoButtonColor = false
+	promoBtn.LayoutOrder = 1
+	promoBtn.ZIndex = 85
+	promoBtn.Parent = actionRow2
+	UI.corner(promoBtn, 10)
+	
+	if canRequestPromo then
+		promoBtn.MouseEnter:Connect(function()
+			UI.tween(promoBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.PurpleDark })
+		end)
+		promoBtn.MouseLeave:Connect(function()
+			UI.tween(promoBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Purple })
+		end)
+		promoBtn.MouseButton1Click:Connect(function()
+			self:requestPromotion()
+		end)
+	end
+	
+	-- Request Raise button (only if performance >= 60 and raises < 5)
+	local canRequestRaise = performance >= 60 and raises < 5
+	local raiseBtn = Instance.new("TextButton")
+	raiseBtn.Size = UDim2.new(0.32, 0, 0, 38)
+	raiseBtn.BackgroundColor3 = canRequestRaise and C.Amber or C.Gray300
+	raiseBtn.Font = F.Button
+	raiseBtn.TextSize = 11
+	raiseBtn.TextColor3 = canRequestRaise and C.White or C.Gray500
+	raiseBtn.Text = "💰 Raise"
+	raiseBtn.AutoButtonColor = false
+	raiseBtn.LayoutOrder = 2
+	raiseBtn.ZIndex = 85
+	raiseBtn.Parent = actionRow2
+	UI.corner(raiseBtn, 10)
+	
+	if canRequestRaise then
+		raiseBtn.MouseEnter:Connect(function()
+			UI.tween(raiseBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.AmberDark })
+		end)
+		raiseBtn.MouseLeave:Connect(function()
+			UI.tween(raiseBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Amber })
+		end)
+		raiseBtn.MouseButton1Click:Connect(function()
+			self:requestRaise()
+		end)
+	end
 	
 	-- Quit Job button
 	local quitBtn = Instance.new("TextButton")
-	quitBtn.Size = UDim2.new(0.48, 0, 0, 44)
+	quitBtn.Size = UDim2.new(0.32, 0, 0, 38)
 	quitBtn.BackgroundColor3 = C.Red
 	quitBtn.Font = F.Button
-	quitBtn.TextSize = 14
+	quitBtn.TextSize = 11
 	quitBtn.TextColor3 = C.White
-	quitBtn.Text = "🚪 Quit Job"
+	quitBtn.Text = "🚪 Quit"
 	quitBtn.AutoButtonColor = false
-	quitBtn.LayoutOrder = 2
+	quitBtn.LayoutOrder = 3
 	quitBtn.ZIndex = 85
-	quitBtn.Parent = buttonRow
-	UI.corner(quitBtn, 12)
+	quitBtn.Parent = actionRow2
+	UI.corner(quitBtn, 10)
 	
 	quitBtn.MouseEnter:Connect(function()
 		UI.tween(quitBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.RedDark })
@@ -731,7 +1347,6 @@ function OccupationScreen:createCurrentJobCard(parent, job)
 		UI.tween(quitBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Red })
 	end)
 	quitBtn.MouseButton1Click:Connect(function()
-		log("Quit Job clicked")
 		self:quitJob()
 	end)
 end
@@ -1526,6 +2141,444 @@ function OccupationScreen:quitJob()
 	end
 end
 
+function OccupationScreen:doWork()
+	log("=== DOING WORK ===")
+	
+	if not DoWork then
+		logWarn("DoWork remote not available!")
+		self:showResult(false, "Server not available.", "X")
+		return
+	end
+	
+	log("Invoking server DoWork...")
+	local result = DoWork:InvokeServer()
+	log("Server response:", result and "received" or "nil")
+	
+	if result then
+		log("Success:", result.success, "Message:", result.message)
+		if result.success then
+			local emoji = "💼"
+			if result.event then
+				emoji = result.event:find("positive") and "🎉" or (result.event:find("negative") and "😬" or "📋")
+			end
+			self:showResult(true, result.message, emoji)
+		else
+			-- Could be fired!
+			self:showResult(false, result.message, result.fired and "😱" or "❌")
+		end
+	else
+		logWarn("Server returned nil!")
+		self:showResult(false, "Server error.", "X")
+	end
+end
+
+function OccupationScreen:requestPromotion()
+	log("=== REQUESTING PROMOTION ===")
+	
+	if not RequestPromotion then
+		logWarn("RequestPromotion remote not available!")
+		self:showResult(false, "Server not available.", "X")
+		return
+	end
+	
+	log("Invoking server RequestPromotion...")
+	local result = RequestPromotion:InvokeServer()
+	log("Server response:", result and "received" or "nil")
+	
+	if result then
+		log("Success:", result.success, "Message:", result.message)
+		if result.success then
+			self:showResult(true, result.message, "🎉")
+		else
+			self:showResult(false, result.message, "📋")
+		end
+	else
+		logWarn("Server returned nil!")
+		self:showResult(false, "Server error.", "X")
+	end
+end
+
+function OccupationScreen:requestRaise()
+	log("=== REQUESTING RAISE ===")
+	
+	if not RequestRaise then
+		logWarn("RequestRaise remote not available!")
+		self:showResult(false, "Server not available.", "X")
+		return
+	end
+	
+	log("Invoking server RequestRaise...")
+	local result = RequestRaise:InvokeServer()
+	log("Server response:", result and "received" or "nil")
+	
+	if result then
+		log("Success:", result.success, "Message:", result.message)
+		if result.success then
+			self:showResult(true, result.message, "💰")
+		else
+			self:showResult(false, result.message, "📋")
+		end
+	else
+		logWarn("Server returned nil!")
+		self:showResult(false, "Server error.", "X")
+	end
+end
+
+function OccupationScreen:showCareerInfoModal()
+	log("=== SHOWING CAREER INFO MODAL ===")
+	
+	-- Create modal if doesn't exist
+	if not self.careerInfoModal then
+		self:createCareerInfoModal()
+	end
+	
+	-- Fetch latest career info
+	self:fetchCareerInfo()
+	
+	local skills = self:getCareerSkills()
+	local history = self:getCareerHistory()
+	local performance = self:getCareerPerformance()
+	local totalExp = self.careerInfo and self.careerInfo.totalExperience or 0
+	
+	-- Populate skills
+	self.careerInfoSkillsContainer:ClearAllChildren()
+	
+	local skillLayout = Instance.new("UIListLayout")
+	skillLayout.Padding = UDim.new(0, 6)
+	skillLayout.Parent = self.careerInfoSkillsContainer
+	
+	local skillOrder = {"Technical", "Creative", "Social", "Physical", "Analytical", "Leadership"}
+	local skillEmojis = {Technical = "💻", Creative = "🎨", Social = "🗣️", Physical = "💪", Analytical = "📊", Leadership = "👑"}
+	
+	for i, skillName in ipairs(skillOrder) do
+		local skillValue = skills[skillName] or 0
+		
+		local skillRow = Instance.new("Frame")
+		skillRow.Size = UDim2.new(1, 0, 0, 24)
+		skillRow.BackgroundTransparency = 1
+		skillRow.LayoutOrder = i
+		skillRow.ZIndex = 100
+		skillRow.Parent = self.careerInfoSkillsContainer
+		
+		local skillLabel = Instance.new("TextLabel")
+		skillLabel.Size = UDim2.new(0.45, 0, 1, 0)
+		skillLabel.BackgroundTransparency = 1
+		skillLabel.Font = F.Body
+		skillLabel.TextSize = 11
+		skillLabel.TextColor3 = C.Gray700
+		skillLabel.TextXAlignment = Enum.TextXAlignment.Left
+		skillLabel.Text = (skillEmojis[skillName] or "📈") .. " " .. skillName
+		skillLabel.ZIndex = 100
+		skillLabel.Parent = skillRow
+		
+		local skillBarBg = Instance.new("Frame")
+		skillBarBg.Size = UDim2.new(0.4, 0, 0, 8)
+		skillBarBg.Position = UDim2.new(0.45, 0, 0.5, -4)
+		skillBarBg.BackgroundColor3 = C.Gray200
+		skillBarBg.ZIndex = 100
+		skillBarBg.Parent = skillRow
+		UI.pill(skillBarBg)
+		
+		local skillBarFill = Instance.new("Frame")
+		skillBarFill.Size = UDim2.new(math.clamp(skillValue / 100, 0, 1), 0, 1, 0)
+		skillBarFill.BackgroundColor3 = C.Blue
+		skillBarFill.ZIndex = 101
+		skillBarFill.Parent = skillBarBg
+		UI.pill(skillBarFill)
+		
+		local skillValueLabel = Instance.new("TextLabel")
+		skillValueLabel.Size = UDim2.new(0.12, 0, 1, 0)
+		skillValueLabel.Position = UDim2.new(0.88, 0, 0, 0)
+		skillValueLabel.BackgroundTransparency = 1
+		skillValueLabel.Font = F.Medium
+		skillValueLabel.TextSize = 10
+		skillValueLabel.TextColor3 = C.Gray500
+		skillValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+		skillValueLabel.Text = tostring(math.floor(skillValue))
+		skillValueLabel.ZIndex = 100
+		skillValueLabel.Parent = skillRow
+	end
+	
+	-- Populate career history
+	self.careerInfoHistoryContainer:ClearAllChildren()
+	
+	local historyLayout = Instance.new("UIListLayout")
+	historyLayout.Padding = UDim.new(0, 8)
+	historyLayout.Parent = self.careerInfoHistoryContainer
+	
+	if #history == 0 then
+		local noHistory = Instance.new("TextLabel")
+		noHistory.Size = UDim2.new(1, 0, 0, 30)
+		noHistory.BackgroundTransparency = 1
+		noHistory.Font = F.Body
+		noHistory.TextSize = 12
+		noHistory.TextColor3 = C.Gray400
+		noHistory.Text = "No previous jobs"
+		noHistory.ZIndex = 100
+		noHistory.Parent = self.careerInfoHistoryContainer
+	else
+		for i, historyItem in ipairs(history) do
+			local historyCard = Instance.new("Frame")
+			historyCard.Size = UDim2.new(1, 0, 0, 50)
+			historyCard.BackgroundColor3 = C.Gray50
+			historyCard.LayoutOrder = #history - i + 1 -- Most recent first
+			historyCard.ZIndex = 99
+			historyCard.Parent = self.careerInfoHistoryContainer
+			UI.corner(historyCard, 8)
+			
+			local historyTitle = Instance.new("TextLabel")
+			historyTitle.Size = UDim2.new(0.7, 0, 0, 20)
+			historyTitle.Position = UDim2.new(0, 10, 0, 6)
+			historyTitle.BackgroundTransparency = 1
+			historyTitle.Font = F.Medium
+			historyTitle.TextSize = 12
+			historyTitle.TextColor3 = C.Gray800
+			historyTitle.TextXAlignment = Enum.TextXAlignment.Left
+			historyTitle.TextTruncate = Enum.TextTruncate.AtEnd
+			historyTitle.Text = historyItem.title or "Previous Job"
+			historyTitle.ZIndex = 100
+			historyTitle.Parent = historyCard
+			
+			local historyCompany = Instance.new("TextLabel")
+			historyCompany.Size = UDim2.new(0.7, 0, 0, 16)
+			historyCompany.Position = UDim2.new(0, 10, 0, 26)
+			historyCompany.BackgroundTransparency = 1
+			historyCompany.Font = F.Body
+			historyCompany.TextSize = 10
+			historyCompany.TextColor3 = C.Gray500
+			historyCompany.TextXAlignment = Enum.TextXAlignment.Left
+			historyCompany.Text = (historyItem.company or "Company") .. " • " .. string.format("%.1f yrs", historyItem.yearsWorked or 0)
+			historyCompany.ZIndex = 100
+			historyCompany.Parent = historyCard
+			
+			local reasonColors = {quit = C.Amber, fired = C.Red, promoted = C.Green}
+			local reasonEmojis = {quit = "🚪", fired = "❌", promoted = "🚀"}
+			local reason = historyItem.reason or "quit"
+			
+			local reasonBadge = Instance.new("Frame")
+			reasonBadge.Size = UDim2.new(0, 55, 0, 20)
+			reasonBadge.Position = UDim2.new(1, -65, 0.5, -10)
+			reasonBadge.BackgroundColor3 = reasonColors[reason] or C.Gray300
+			reasonBadge.ZIndex = 100
+			reasonBadge.Parent = historyCard
+			UI.pill(reasonBadge)
+			
+			local reasonLabel = Instance.new("TextLabel")
+			reasonLabel.Size = UDim2.fromScale(1, 1)
+			reasonLabel.BackgroundTransparency = 1
+			reasonLabel.Font = F.Medium
+			reasonLabel.TextSize = 9
+			reasonLabel.TextColor3 = C.White
+			reasonLabel.Text = (reasonEmojis[reason] or "•") .. " " .. (reason:gsub("^%l", string.upper))
+			reasonLabel.ZIndex = 101
+			reasonLabel.Parent = reasonBadge
+		end
+	end
+	
+	-- Update summary labels
+	self.careerInfoExpLabel.Text = "📊 Total Experience: " .. string.format("%.1f years", totalExp)
+	self.careerInfoPerfLabel.Text = "⭐ Current Performance: " .. math.floor(performance) .. "%"
+	
+	-- Show modal
+	self.careerInfoOverlay.Visible = true
+	self.careerInfoCard.Position = UDim2.new(0.5, 0, 0.5, 50)
+	self.careerInfoCard.BackgroundTransparency = 1
+	
+	UI.tween(self.careerInfoCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0
+	})
+end
+
+function OccupationScreen:createCareerInfoModal()
+	log("Creating career info modal...")
+	
+	self.careerInfoOverlay = Instance.new("Frame")
+	self.careerInfoOverlay.Size = UDim2.fromScale(1, 1)
+	self.careerInfoOverlay.BackgroundColor3 = C.Black
+	self.careerInfoOverlay.BackgroundTransparency = 0.4
+	self.careerInfoOverlay.Visible = false
+	self.careerInfoOverlay.ZIndex = 96
+	self.careerInfoOverlay.Parent = self.screenGui
+	
+	local closeArea = Instance.new("TextButton")
+	closeArea.Size = UDim2.fromScale(1, 1)
+	closeArea.BackgroundTransparency = 1
+	closeArea.Text = ""
+	closeArea.ZIndex = 96
+	closeArea.Parent = self.careerInfoOverlay
+	closeArea.MouseButton1Click:Connect(function()
+		self:hideCareerInfoModal()
+	end)
+	
+	-- Card (taller for skills and history)
+	self.careerInfoCard = Instance.new("Frame")
+	self.careerInfoCard.Size = UDim2.new(0.92, 0, 0, 520)
+	self.careerInfoCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.careerInfoCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.careerInfoCard.BackgroundColor3 = C.White
+	self.careerInfoCard.ZIndex = 97
+	self.careerInfoCard.Parent = self.careerInfoOverlay
+	UI.corner(self.careerInfoCard, 24)
+	
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 65)
+	header.BackgroundColor3 = C.Blue
+	header.ZIndex = 98
+	header.Parent = self.careerInfoCard
+	UI.corner(header, 24)
+	
+	local headerFix = Instance.new("Frame")
+	headerFix.Size = UDim2.new(1, 0, 0, 30)
+	headerFix.Position = UDim2.new(0, 0, 1, -20)
+	headerFix.BackgroundColor3 = C.Blue
+	headerFix.ZIndex = 98
+	headerFix.Parent = header
+	
+	local headerTitle = Instance.new("TextLabel")
+	headerTitle.Size = UDim2.new(1, 0, 1, 0)
+	headerTitle.BackgroundTransparency = 1
+	headerTitle.Font = F.Title
+	headerTitle.TextSize = 18
+	headerTitle.TextColor3 = C.White
+	headerTitle.Text = "📋 Career Information"
+	headerTitle.ZIndex = 99
+	headerTitle.Parent = header
+	
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 32, 0, 32)
+	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.Position = UDim2.new(1, -10, 0, 10)
+	closeBtn.BackgroundColor3 = C.White
+	closeBtn.BackgroundTransparency = 0.15
+	closeBtn.Font = F.Title
+	closeBtn.TextSize = 14
+	closeBtn.TextColor3 = C.BlueDark
+	closeBtn.Text = "✕"
+	closeBtn.AutoButtonColor = false
+	closeBtn.ZIndex = 100
+	closeBtn.Parent = header
+	UI.corner(closeBtn, 16)
+	closeBtn.MouseButton1Click:Connect(function()
+		self:hideCareerInfoModal()
+	end)
+	
+	-- Content scroll
+	local content = Instance.new("ScrollingFrame")
+	content.Size = UDim2.new(1, -20, 1, -80)
+	content.Position = UDim2.new(0, 10, 0, 70)
+	content.BackgroundTransparency = 1
+	content.CanvasSize = UDim2.new(0, 0, 0, 0)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.ScrollBarThickness = 3
+	content.ScrollBarImageColor3 = C.Gray300
+	content.ZIndex = 98
+	content.Parent = self.careerInfoCard
+	
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.Padding = UDim.new(0, 12)
+	contentLayout.Parent = content
+	
+	-- Summary section
+	local summarySection = Instance.new("Frame")
+	summarySection.Size = UDim2.new(1, 0, 0, 55)
+	summarySection.BackgroundColor3 = C.Gray50
+	summarySection.LayoutOrder = 1
+	summarySection.ZIndex = 99
+	summarySection.Parent = content
+	UI.corner(summarySection, 12)
+	UI.pad(summarySection, 12, 12, 10, 10)
+	
+	self.careerInfoExpLabel = Instance.new("TextLabel")
+	self.careerInfoExpLabel.Size = UDim2.new(1, 0, 0, 18)
+	self.careerInfoExpLabel.Position = UDim2.new(0, 12, 0, 8)
+	self.careerInfoExpLabel.BackgroundTransparency = 1
+	self.careerInfoExpLabel.Font = F.Medium
+	self.careerInfoExpLabel.TextSize = 12
+	self.careerInfoExpLabel.TextColor3 = C.Gray700
+	self.careerInfoExpLabel.TextXAlignment = Enum.TextXAlignment.Left
+	self.careerInfoExpLabel.Text = "📊 Total Experience: 0 years"
+	self.careerInfoExpLabel.ZIndex = 100
+	self.careerInfoExpLabel.Parent = summarySection
+	
+	self.careerInfoPerfLabel = Instance.new("TextLabel")
+	self.careerInfoPerfLabel.Size = UDim2.new(1, 0, 0, 18)
+	self.careerInfoPerfLabel.Position = UDim2.new(0, 12, 0, 28)
+	self.careerInfoPerfLabel.BackgroundTransparency = 1
+	self.careerInfoPerfLabel.Font = F.Medium
+	self.careerInfoPerfLabel.TextSize = 12
+	self.careerInfoPerfLabel.TextColor3 = C.Gray700
+	self.careerInfoPerfLabel.TextXAlignment = Enum.TextXAlignment.Left
+	self.careerInfoPerfLabel.Text = "⭐ Current Performance: 75%"
+	self.careerInfoPerfLabel.ZIndex = 100
+	self.careerInfoPerfLabel.Parent = summarySection
+	
+	-- Skills section
+	local skillsHeader = Instance.new("TextLabel")
+	skillsHeader.Size = UDim2.new(1, 0, 0, 24)
+	skillsHeader.BackgroundTransparency = 1
+	skillsHeader.Font = F.Title
+	skillsHeader.TextSize = 14
+	skillsHeader.TextColor3 = C.Gray800
+	skillsHeader.TextXAlignment = Enum.TextXAlignment.Left
+	skillsHeader.Text = "💼 Career Skills"
+	skillsHeader.LayoutOrder = 2
+	skillsHeader.ZIndex = 99
+	skillsHeader.Parent = content
+	
+	self.careerInfoSkillsContainer = Instance.new("Frame")
+	self.careerInfoSkillsContainer.Size = UDim2.new(1, 0, 0, 0)
+	self.careerInfoSkillsContainer.AutomaticSize = Enum.AutomaticSize.Y
+	self.careerInfoSkillsContainer.BackgroundColor3 = C.Gray50
+	self.careerInfoSkillsContainer.LayoutOrder = 3
+	self.careerInfoSkillsContainer.ZIndex = 99
+	self.careerInfoSkillsContainer.Parent = content
+	UI.corner(self.careerInfoSkillsContainer, 12)
+	UI.pad(self.careerInfoSkillsContainer, 12, 12, 10, 10)
+	
+	-- History section
+	local historyHeader = Instance.new("TextLabel")
+	historyHeader.Size = UDim2.new(1, 0, 0, 24)
+	historyHeader.BackgroundTransparency = 1
+	historyHeader.Font = F.Title
+	historyHeader.TextSize = 14
+	historyHeader.TextColor3 = C.Gray800
+	historyHeader.TextXAlignment = Enum.TextXAlignment.Left
+	historyHeader.Text = "📜 Career History"
+	historyHeader.LayoutOrder = 4
+	historyHeader.ZIndex = 99
+	historyHeader.Parent = content
+	
+	self.careerInfoHistoryContainer = Instance.new("Frame")
+	self.careerInfoHistoryContainer.Size = UDim2.new(1, 0, 0, 0)
+	self.careerInfoHistoryContainer.AutomaticSize = Enum.AutomaticSize.Y
+	self.careerInfoHistoryContainer.BackgroundColor3 = C.Gray50
+	self.careerInfoHistoryContainer.LayoutOrder = 5
+	self.careerInfoHistoryContainer.ZIndex = 99
+	self.careerInfoHistoryContainer.Parent = content
+	UI.corner(self.careerInfoHistoryContainer, 12)
+	UI.pad(self.careerInfoHistoryContainer, 12, 12, 10, 10)
+	
+	log("Career info modal created")
+end
+
+function OccupationScreen:hideCareerInfoModal()
+	if not self.careerInfoOverlay then return end
+	log("Hiding career info modal")
+	
+	UI.tween(self.careerInfoCard, TweenInfo.new(0.2), {
+		Position = UDim2.new(0.5, 0, 0.5, 50),
+		BackgroundTransparency = 1
+	})
+	
+	task.delay(0.2, function()
+		if self.careerInfoOverlay then
+			self.careerInfoOverlay.Visible = false
+		end
+	end)
+end
+
 function OccupationScreen:enrollEducation(eduId)
 	log("=== ENROLLING IN EDUCATION ===")
 	log("Education ID:", eduId)
@@ -1581,7 +2634,15 @@ function OccupationScreen:hide()
 	log("=== HIDING OccupationScreen ===")
 	UI.slideOutScreen(self.overlay, "right", function()
 		self.resultModal.overlay.Visible = false
-		log("✅ OccupationScreen hidden, modal cleaned up")
+		-- Also hide career info modal if open
+		if self.careerInfoOverlay then
+			self.careerInfoOverlay.Visible = false
+		end
+		-- Also hide job info modal if open
+		if self.jobInfoOverlay then
+			self.jobInfoOverlay.Visible = false
+		end
+		log("✅ OccupationScreen hidden, modals cleaned up")
 	end)
 	self.isVisible = false
 end
