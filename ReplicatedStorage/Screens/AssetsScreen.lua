@@ -281,7 +281,7 @@ function AssetsScreen:createGamblingModal()
 	closeBtn.Font = F.Title
 	closeBtn.TextSize = 18
 	closeBtn.TextColor3 = C.GoldDark
-	closeBtn.Text = "✕"
+	closeBtn.Text = "X"
 	closeBtn.AutoButtonColor = false
 	closeBtn.ZIndex = 100
 	closeBtn.Parent = header

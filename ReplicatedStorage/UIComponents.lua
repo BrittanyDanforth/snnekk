@@ -159,10 +159,10 @@ end
 ----------------------------------------------------------------
 
 function UIComponents.createShadow(parent, offset, blur, color, transparency)
+	-- Create shadow as sibling, not child, to avoid layout issues
 	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "Shadow"
-	shadow.Size = UDim2.new(1, blur * 2, 1, blur * 2)
-	shadow.Position = UDim2.new(0, -blur + (offset or 0), 0, -blur + (offset or 4))
+	shadow.Name = parent.Name .. "_Shadow"
+	shadow.Size = UDim2.new(0, parent.AbsoluteSize.X + blur * 2, 0, parent.AbsoluteSize.Y + blur * 2)
 	shadow.BackgroundTransparency = 1
 	shadow.Image = "rbxassetid://5554236805"
 	shadow.ImageColor3 = color or UIComponents.Colors.Black
@@ -170,7 +170,34 @@ function UIComponents.createShadow(parent, offset, blur, color, transparency)
 	shadow.ScaleType = Enum.ScaleType.Slice
 	shadow.SliceCenter = Rect.new(23, 23, 277, 277)
 	shadow.ZIndex = parent.ZIndex - 1
-	shadow.Parent = parent
+	
+	-- For elements inside layouts, we skip shadow to avoid layout disruption
+	-- Only add shadow to elements that have fixed positioning
+	if parent.Parent and parent.Parent:FindFirstChildOfClass("UIListLayout") then
+		-- Don't add shadow for layout children - it breaks positioning
+		shadow:Destroy()
+		return nil
+	end
+	
+	shadow.Parent = parent.Parent
+	
+	-- Position relative to parent
+	local function updateShadowPos()
+		if shadow and shadow.Parent then
+			shadow.Position = UDim2.new(
+				parent.Position.X.Scale, 
+				parent.Position.X.Offset - blur + (offset or 0),
+				parent.Position.Y.Scale,
+				parent.Position.Y.Offset - blur + (offset or 4)
+			)
+			shadow.Size = UDim2.new(0, parent.AbsoluteSize.X + blur * 2, 0, parent.AbsoluteSize.Y + blur * 2)
+		end
+	end
+	
+	updateShadowPos()
+	parent:GetPropertyChangedSignal("Position"):Connect(updateShadowPos)
+	parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateShadowPos)
+	
 	return shadow
 end
 
@@ -535,9 +562,9 @@ function UIComponents.createScreenHeader(parent, config)
 	closeBtn.BackgroundColor3 = C.White
 	closeBtn.BackgroundTransparency = 0.1
 	closeBtn.Font = F.Title
-	closeBtn.TextSize = 18
+	closeBtn.TextSize = 22
 	closeBtn.TextColor3 = config.colorDark or C.BlueDark
-	closeBtn.Text = "✕"
+	closeBtn.Text = "X"
 	closeBtn.AutoButtonColor = false
 	closeBtn.ZIndex = (config.zIndex or 85) + 1
 	closeBtn.Parent = header

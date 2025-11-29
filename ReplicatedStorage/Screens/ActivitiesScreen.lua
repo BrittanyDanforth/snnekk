@@ -20,54 +20,54 @@ local DoPrisonAction = remotesFolder and remotesFolder:WaitForChild("DoPrisonAct
 
 -- Activity Data
 local MindBody = {
-	{ id = "gym", name = "Hit the Gym", emoji = "🏋️", effect = "+Health +Looks", minAge = 12, cost = 0, hasMinigame = true },
-	{ id = "meditate", name = "Meditate", emoji = "🧘", effect = "+Happiness +Health", minAge = 10, cost = 0 },
-	{ id = "study", name = "Study Hard", emoji = "📚", effect = "+Smarts", minAge = 6, cost = 0, hasMinigame = true },
-	{ id = "spa", name = "Spa Day", emoji = "💆", effect = "+Looks +Happiness", minAge = 16, cost = 200 },
-	{ id = "walk", name = "Go for Walk", emoji = "🚶", effect = "+Health +Happiness", minAge = 5, cost = 0 },
-	{ id = "martial_arts", name = "Martial Arts", emoji = "🥋", effect = "+Health +Smarts", minAge = 8, cost = 100 },
-	{ id = "yoga", name = "Yoga Class", emoji = "🧘‍♀️", effect = "+Health +Looks", minAge = 14, cost = 50 },
-	{ id = "read", name = "Read a Book", emoji = "📖", effect = "+Smarts +Happiness", minAge = 6, cost = 0 },
+	{ id = "gym", name = "Hit the Gym", emoji = "Gym", effect = "+Health +Looks", minAge = 12, cost = 0, hasMinigame = true },
+	{ id = "meditate", name = "Meditate", emoji = "Zen", effect = "+Happiness +Health", minAge = 10, cost = 0 },
+	{ id = "study", name = "Study Hard", emoji = "Book", effect = "+Smarts", minAge = 6, cost = 0, hasMinigame = true },
+	{ id = "spa", name = "Spa Day", emoji = "Spa", effect = "+Looks +Happiness", minAge = 16, cost = 200 },
+	{ id = "walk", name = "Go for Walk", emoji = "Walk", effect = "+Health +Happiness", minAge = 5, cost = 0 },
+	{ id = "martial_arts", name = "Martial Arts", emoji = "Karate", effect = "+Health +Smarts", minAge = 8, cost = 100 },
+	{ id = "yoga", name = "Yoga Class", emoji = "Yoga", effect = "+Health +Looks", minAge = 14, cost = 50 },
+	{ id = "read", name = "Read a Book", emoji = "Read", effect = "+Smarts +Happiness", minAge = 6, cost = 0 },
 }
 
 local Social = {
-	{ id = "party", name = "Go to Party", emoji = "🎉", effect = "+Happiness", minAge = 16, cost = 0 },
-	{ id = "date", name = "Go on Date", emoji = "💕", effect = "+Happiness", minAge = 16, cost = 100 },
-	{ id = "club", name = "Night Club", emoji = "🕺", effect = "+Happiness -Health", minAge = 21, cost = 150 },
-	{ id = "hangout", name = "Hang with Friends", emoji = "👥", effect = "+Happiness", minAge = 5, cost = 0 },
-	{ id = "volunteer", name = "Volunteer", emoji = "🤝", effect = "+Happiness +Smarts", minAge = 12, cost = 0 },
-	{ id = "networking", name = "Networking Event", emoji = "🤵", effect = "+Smarts", minAge = 18, cost = 50 },
+	{ id = "party", name = "Go to Party", emoji = "Party", effect = "+Happiness", minAge = 16, cost = 0 },
+	{ id = "date", name = "Go on Date", emoji = "Date", effect = "+Happiness", minAge = 16, cost = 100 },
+	{ id = "club", name = "Night Club", emoji = "Club", effect = "+Happiness -Health", minAge = 21, cost = 150 },
+	{ id = "hangout", name = "Hang with Friends", emoji = "Friends", effect = "+Happiness", minAge = 5, cost = 0 },
+	{ id = "volunteer", name = "Volunteer", emoji = "Help", effect = "+Happiness +Smarts", minAge = 12, cost = 0 },
+	{ id = "networking", name = "Networking Event", emoji = "Network", effect = "+Smarts", minAge = 18, cost = 50 },
 }
 
 local Entertainment = {
-	{ id = "movie", name = "Watch Movie", emoji = "🎬", effect = "+Happiness", minAge = 5, cost = 20 },
-	{ id = "concert", name = "Go to Concert", emoji = "🎤", effect = "+Happiness", minAge = 12, cost = 100 },
-	{ id = "vacation", name = "Take Vacation", emoji = "✈️", effect = "+Happiness +Health", minAge = 10, cost = 2000 },
-	{ id = "gaming", name = "Play Games", emoji = "🎮", effect = "+Happiness", minAge = 5, cost = 0 },
-	{ id = "camping", name = "Go Camping", emoji = "🏕️", effect = "+Happiness +Health", minAge = 8, cost = 300 },
-	{ id = "museum", name = "Visit Museum", emoji = "🏛️", effect = "+Smarts", minAge = 6, cost = 25 },
-	{ id = "theme_park", name = "Theme Park", emoji = "🎢", effect = "+Happiness", minAge = 8, cost = 150 },
+	{ id = "movie", name = "Watch Movie", emoji = "Movie", effect = "+Happiness", minAge = 5, cost = 20 },
+	{ id = "concert", name = "Go to Concert", emoji = "Music", effect = "+Happiness", minAge = 12, cost = 100 },
+	{ id = "vacation", name = "Take Vacation", emoji = "Travel", effect = "+Happiness +Health", minAge = 10, cost = 2000 },
+	{ id = "gaming", name = "Play Games", emoji = "Game", effect = "+Happiness", minAge = 5, cost = 0 },
+	{ id = "camping", name = "Go Camping", emoji = "Camp", effect = "+Happiness +Health", minAge = 8, cost = 300 },
+	{ id = "museum", name = "Visit Museum", emoji = "Museum", effect = "+Smarts", minAge = 6, cost = 25 },
+	{ id = "theme_park", name = "Theme Park", emoji = "Ride", effect = "+Happiness", minAge = 8, cost = 150 },
 }
 
 local Crimes = {
-	{ id = "shoplift", name = "Shoplift", emoji = "🛒", risk = 30, reward = "$50-$200", minAge = 10 },
-	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", risk = 45, reward = "$100-$500", minAge = 12 },
-	{ id = "burglary", name = "Burglary", emoji = "🏠", risk = 60, reward = "$500-$5K", minAge = 16 },
-	{ id = "robbery", name = "Armed Robbery", emoji = "🔫", risk = 80, reward = "$5K-$50K", minAge = 18 },
-	{ id = "car_theft", name = "Grand Theft Auto", emoji = "🚗", risk = 65, reward = "$5K-$25K", minAge = 16 },
-	{ id = "drug_deal", name = "Drug Deal", emoji = "💊", risk = 55, reward = "$1K-$10K", minAge = 16 },
-	{ id = "bank_heist", name = "Bank Heist", emoji = "🏦", risk = 95, reward = "$50K-$500K", minAge = 21, hasMinigame = true },
+	{ id = "shoplift", name = "Shoplift", emoji = "Steal", risk = 30, reward = "$50-$200", minAge = 10 },
+	{ id = "pickpocket", name = "Pickpocket", emoji = "Wallet", risk = 45, reward = "$100-$500", minAge = 12 },
+	{ id = "burglary", name = "Burglary", emoji = "House", risk = 60, reward = "$500-$5K", minAge = 16 },
+	{ id = "robbery", name = "Armed Robbery", emoji = "Gun", risk = 80, reward = "$5K-$50K", minAge = 18 },
+	{ id = "car_theft", name = "Grand Theft Auto", emoji = "Car", risk = 65, reward = "$5K-$25K", minAge = 16 },
+	{ id = "drug_deal", name = "Drug Deal", emoji = "Pills", risk = 55, reward = "$1K-$10K", minAge = 16 },
+	{ id = "bank_heist", name = "Bank Heist", emoji = "Bank", risk = 95, reward = "$50K-$500K", minAge = 21, hasMinigame = true },
 }
 
 local PrisonActivities = {
-	{ id = "prison_escape", name = "Escape Prison", emoji = "🔐", effect = "Freedom!", minAge = 0, risk = 90, hasMinigame = true },
-	{ id = "prison_workout", name = "Yard Workout", emoji = "💪", effect = "+Health +Looks", minAge = 0 },
-	{ id = "prison_study", name = "Get GED", emoji = "📚", effect = "+Smarts", minAge = 0 },
-	{ id = "prison_gang", name = "Join Prison Gang", emoji = "⛓️", effect = "+Respect -Health", minAge = 0 },
-	{ id = "prison_riot", name = "Start Riot", emoji = "🔥", effect = "Dangerous!", minAge = 0, risk = 85 },
-	{ id = "prison_snitch", name = "Snitch", emoji = "🐀", effect = "-Sentence +Risk", minAge = 0 },
-	{ id = "prison_appeal", name = "Appeal Sentence", emoji = "⚖️", effect = "Legal Help", minAge = 0, cost = 5000 },
-	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "😇", effect = "-Sentence Time", minAge = 0 },
+	{ id = "prison_escape", name = "Escape Prison", emoji = "Key", effect = "Freedom!", minAge = 0, risk = 90, hasMinigame = true },
+	{ id = "prison_workout", name = "Yard Workout", emoji = "Strong", effect = "+Health +Looks", minAge = 0 },
+	{ id = "prison_study", name = "Get GED", emoji = "Study", effect = "+Smarts", minAge = 0 },
+	{ id = "prison_gang", name = "Join Prison Gang", emoji = "Gang", effect = "+Respect -Health", minAge = 0 },
+	{ id = "prison_riot", name = "Start Riot", emoji = "Fire", effect = "Dangerous!", minAge = 0, risk = 85 },
+	{ id = "prison_snitch", name = "Snitch", emoji = "Rat", effect = "-Sentence +Risk", minAge = 0 },
+	{ id = "prison_appeal", name = "Appeal Sentence", emoji = "Law", effect = "Legal Help", minAge = 0, cost = 5000 },
+	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "Good", effect = "-Sentence Time", minAge = 0 },
 }
 
 function ActivitiesScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
@@ -88,14 +88,14 @@ end
 
 function ActivitiesScreen:getAge()
 	local state = self.playerState
-	if not state then return 0 end
-	return state.Age or (state.Stats and state.Stats.Age) or 0
+	if not state then return 18 end
+	return state.Age or (state.Stats and state.Stats.Age) or 18
 end
 
 function ActivitiesScreen:getMoney()
 	local state = self.playerState
-	if not state then return 0 end
-	return state.Money or (state.Stats and state.Stats.Money) or 0
+	if not state then return 1000 end
+	return state.Money or (state.Stats and state.Stats.Money) or 1000
 end
 
 function ActivitiesScreen:isInJail()
@@ -116,7 +116,7 @@ function ActivitiesScreen:createUI()
 	
 	-- Premium header
 	local headerData = UI.createScreenHeader(self.overlay, {
-		title = "🎭 Activities",
+		title = "Activities",
 		color = C.Amber,
 		colorDark = C.AmberDark,
 		zIndex = 85
@@ -129,29 +129,92 @@ function ActivitiesScreen:createUI()
 		UI.tween(headerData.closeButton, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
 	end)
 	
-	-- Info bar
-	self.infoBar = UI.createInfoBar(self.overlay, { topOffset = 116, zIndex = 84 })
+	-- Info bar (simplified - no shadow)
+	self.infoBar = Instance.new("Frame")
+	self.infoBar.Name = "InfoBar"
+	self.infoBar.Size = UDim2.new(1, -16, 0, 52)
+	self.infoBar.Position = UDim2.new(0, 8, 0, 116)
+	self.infoBar.BackgroundColor3 = C.White
+	self.infoBar.ZIndex = 84
+	self.infoBar.Parent = self.overlay
+	UI.corner(self.infoBar, 14)
+	UI.stroke(self.infoBar, 1, 0.9, C.Gray200)
+	
+	local infoLayout = Instance.new("UIListLayout")
+	infoLayout.FillDirection = Enum.FillDirection.Horizontal
+	infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	infoLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	infoLayout.Padding = UDim.new(0, 10)
+	infoLayout.Parent = self.infoBar
 	
 	self.ageChip = UI.createInfoChip(self.infoBar, {
-		name = "AgeChip", icon = "👤", text = "Age 0",
-		bgColor = C.BluePale, textColor = C.BlueDark, order = 1, width = 88
+		name = "AgeChip", icon = "", text = "Age 18",
+		bgColor = C.BluePale, textColor = C.BlueDark, order = 1, width = 80
 	})
-	self.moneyChip = UI.createInfoChip(self.infoBar, {
-		name = "MoneyChip", icon = "💵", text = "$0",
-		bgColor = C.GreenPale, textColor = C.GreenDark, order = 2, width = 95
-	})
-	self.statusChip = UI.createInfoChip(self.infoBar, {
-		name = "StatusChip", icon = "✓", text = "Free",
-		bgColor = C.GreenPale, textColor = C.GreenDark, order = 3, width = 80
-	})
+	self.ageChip.icon.Text = ""
+	self.ageChip.text.Text = "Age 18"
+	self.ageChip.text.Position = UDim2.new(0, 8, 0, 0)
+	self.ageChip.text.Size = UDim2.new(1, -16, 1, 0)
+	self.ageChip.text.TextXAlignment = Enum.TextXAlignment.Center
 	
-	-- Tab bar (will be rebuilt based on jail status)
-	self.tabBar = UI.createTabBar(self.overlay, { topOffset = 176, zIndex = 84 })
+	self.moneyChip = UI.createInfoChip(self.infoBar, {
+		name = "MoneyChip", icon = "", text = "$1,000",
+		bgColor = C.GreenPale, textColor = C.GreenDark, order = 2, width = 90
+	})
+	self.moneyChip.icon.Text = ""
+	self.moneyChip.text.Text = "$1,000"
+	self.moneyChip.text.Position = UDim2.new(0, 8, 0, 0)
+	self.moneyChip.text.Size = UDim2.new(1, -16, 1, 0)
+	self.moneyChip.text.TextXAlignment = Enum.TextXAlignment.Center
+	
+	self.statusChip = UI.createInfoChip(self.infoBar, {
+		name = "StatusChip", icon = "", text = "Free",
+		bgColor = C.GreenPale, textColor = C.GreenDark, order = 3, width = 75
+	})
+	self.statusChip.icon.Text = ""
+	self.statusChip.text.Text = "Free"
+	self.statusChip.text.Position = UDim2.new(0, 8, 0, 0)
+	self.statusChip.text.Size = UDim2.new(1, -16, 1, 0)
+	self.statusChip.text.TextXAlignment = Enum.TextXAlignment.Center
+	
+	-- Tab bar
+	self.tabBar = Instance.new("Frame")
+	self.tabBar.Name = "TabBar"
+	self.tabBar.Size = UDim2.new(1, -16, 0, 52)
+	self.tabBar.Position = UDim2.new(0, 8, 0, 176)
+	self.tabBar.BackgroundColor3 = C.Gray100
+	self.tabBar.ZIndex = 84
+	self.tabBar.Parent = self.overlay
+	UI.corner(self.tabBar, 14)
+	UI.pad(self.tabBar, 5, 5, 5, 5)
+	
+	local tabLayout = Instance.new("UIListLayout")
+	tabLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	tabLayout.Padding = UDim.new(0, 6)
+	tabLayout.Parent = self.tabBar
+	
 	self.tabBtns = {}
 	self:rebuildTabs()
 	
 	-- Scroll area
-	self.contentScroll = UI.createScrollArea(self.overlay, { topOffset = 240, zIndex = 81 })
+	self.contentScroll = Instance.new("ScrollingFrame")
+	self.contentScroll.Name = "ContentScroll"
+	self.contentScroll.Size = UDim2.new(1, -16, 1, -250)
+	self.contentScroll.Position = UDim2.new(0, 8, 0, 240)
+	self.contentScroll.BackgroundTransparency = 1
+	self.contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	self.contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	self.contentScroll.ScrollBarThickness = 4
+	self.contentScroll.ScrollBarImageColor3 = C.Gray300
+	self.contentScroll.ZIndex = 81
+	self.contentScroll.Parent = self.overlay
+	
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.Padding = UDim.new(0, 12)
+	contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	contentLayout.Parent = self.contentScroll
 	
 	-- Modals
 	self:createResultModal()
@@ -162,7 +225,7 @@ function ActivitiesScreen:createUI()
 end
 
 function ActivitiesScreen:rebuildTabs()
-	-- Clear existing
+	-- Clear existing tabs
 	for _, child in ipairs(self.tabBar:GetChildren()) do
 		if child:IsA("TextButton") then child:Destroy() end
 	end
@@ -173,26 +236,36 @@ function ActivitiesScreen:rebuildTabs()
 	
 	if inJail then
 		tabs = {
-			{ id = "prison", text = "⛓️ Prison", color = C.Gray700 },
-			{ id = "mindbody", text = "💪 Exercise", color = C.Cyan },
+			{ id = "prison", text = "Prison", color = C.Gray700 },
+			{ id = "mindbody", text = "Exercise", color = C.Cyan },
 		}
 		self.currentTab = "prison"
 	else
 		tabs = {
-			{ id = "mindbody", text = "🧘 Mind", color = C.Cyan },
-			{ id = "social", text = "🎉 Social", color = C.Pink },
-			{ id = "fun", text = "🎬 Fun", color = C.Purple },
-			{ id = "crime", text = "💀 Crime", color = C.Red },
+			{ id = "mindbody", text = "Mind", color = C.Cyan },
+			{ id = "social", text = "Social", color = C.Pink },
+			{ id = "fun", text = "Fun", color = C.Purple },
+			{ id = "crime", text = "Crime", color = C.Red },
 		}
 	end
 	
-	local tabWidth = 1 / #tabs - 0.02
+	local tabWidth = 0.95 / #tabs
 	
 	for i, tab in ipairs(tabs) do
-		local btn = UI.createTabButton(self.tabBar, {
-			id = tab.id, text = tab.text, color = tab.color,
-			active = i == 1, order = i, width = tabWidth, zIndex = 84
-		})
+		local btn = Instance.new("TextButton")
+		btn.Name = tab.id
+		btn.Size = UDim2.new(tabWidth, 0, 1, 0)
+		btn.BackgroundColor3 = i == 1 and tab.color or C.White
+		btn.Font = F.Button
+		btn.TextSize = 14
+		btn.TextColor3 = i == 1 and C.White or C.Gray600
+		btn.Text = tab.text
+		btn.AutoButtonColor = false
+		btn.LayoutOrder = i
+		btn.ZIndex = 85
+		btn.Parent = self.tabBar
+		UI.corner(btn, 10)
+		
 		self.tabBtns[tab.id] = { btn = btn, color = tab.color }
 		btn.MouseButton1Click:Connect(function() self:switchTab(tab.id) end)
 	end
@@ -219,6 +292,7 @@ function ActivitiesScreen:switchTab(tabId)
 		})
 	end
 	
+	-- Clear content
 	for _, child in ipairs(self.contentScroll:GetChildren()) do
 		if child:IsA("Frame") then child:Destroy() end
 	end
@@ -233,15 +307,60 @@ end
 function ActivitiesScreen:populateMindBody()
 	self:updateInfoBar()
 	
-	local section = UI.createSectionCard(self.contentScroll, {
-		name = "MindBodySection",
-		title = "Mind & Body",
-		subtitle = #MindBody .. " activities",
-		accentColor = C.Cyan,
-		badgeWidth = 105,
-		order = 1,
-		zIndex = 82
-	})
+	-- Section card
+	local section = Instance.new("Frame")
+	section.Name = "MindBodySection"
+	section.Size = UDim2.new(1, 0, 0, 0)
+	section.AutomaticSize = Enum.AutomaticSize.Y
+	section.BackgroundColor3 = C.White
+	section.LayoutOrder = 1
+	section.ZIndex = 82
+	section.Parent = self.contentScroll
+	UI.corner(section, 18)
+	UI.stroke(section, 1, 0.88, C.Gray200)
+	UI.pad(section, 14, 14, 14, 16)
+	
+	local sectionLayout = Instance.new("UIListLayout")
+	sectionLayout.Padding = UDim.new(0, 10)
+	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sectionLayout.Parent = section
+	
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 36)
+	header.BackgroundTransparency = 1
+	header.LayoutOrder = 0
+	header.ZIndex = 83
+	header.Parent = section
+	
+	local badge = Instance.new("Frame")
+	badge.Size = UDim2.new(0, 120, 0, 32)
+	badge.BackgroundColor3 = C.Cyan
+	badge.ZIndex = 84
+	badge.Parent = header
+	UI.pill(badge)
+	
+	local badgeLabel = Instance.new("TextLabel")
+	badgeLabel.Size = UDim2.fromScale(1, 1)
+	badgeLabel.BackgroundTransparency = 1
+	badgeLabel.Font = F.Button
+	badgeLabel.TextSize = 14
+	badgeLabel.TextColor3 = C.White
+	badgeLabel.Text = "Mind & Body"
+	badgeLabel.ZIndex = 85
+	badgeLabel.Parent = badge
+	
+	local countLabel = Instance.new("TextLabel")
+	countLabel.Size = UDim2.new(0, 80, 1, 0)
+	countLabel.Position = UDim2.new(0, 130, 0, 0)
+	countLabel.BackgroundTransparency = 1
+	countLabel.Font = F.Medium
+	countLabel.TextSize = 13
+	countLabel.TextColor3 = C.Gray400
+	countLabel.TextXAlignment = Enum.TextXAlignment.Left
+	countLabel.Text = #MindBody .. " activities"
+	countLabel.ZIndex = 84
+	countLabel.Parent = header
 	
 	for i, item in ipairs(MindBody) do
 		self:createActivityCard(section, item, i, C.Cyan, C.CyanPale)
@@ -251,15 +370,59 @@ end
 function ActivitiesScreen:populateSocial()
 	self:updateInfoBar()
 	
-	local section = UI.createSectionCard(self.contentScroll, {
-		name = "SocialSection",
-		title = "Social",
-		subtitle = #Social .. " activities",
-		accentColor = C.Pink,
-		badgeWidth = 75,
-		order = 1,
-		zIndex = 82
-	})
+	local section = Instance.new("Frame")
+	section.Name = "SocialSection"
+	section.Size = UDim2.new(1, 0, 0, 0)
+	section.AutomaticSize = Enum.AutomaticSize.Y
+	section.BackgroundColor3 = C.White
+	section.LayoutOrder = 1
+	section.ZIndex = 82
+	section.Parent = self.contentScroll
+	UI.corner(section, 18)
+	UI.stroke(section, 1, 0.88, C.Gray200)
+	UI.pad(section, 14, 14, 14, 16)
+	
+	local sectionLayout = Instance.new("UIListLayout")
+	sectionLayout.Padding = UDim.new(0, 10)
+	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sectionLayout.Parent = section
+	
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 36)
+	header.BackgroundTransparency = 1
+	header.LayoutOrder = 0
+	header.ZIndex = 83
+	header.Parent = section
+	
+	local badge = Instance.new("Frame")
+	badge.Size = UDim2.new(0, 90, 0, 32)
+	badge.BackgroundColor3 = C.Pink
+	badge.ZIndex = 84
+	badge.Parent = header
+	UI.pill(badge)
+	
+	local badgeLabel = Instance.new("TextLabel")
+	badgeLabel.Size = UDim2.fromScale(1, 1)
+	badgeLabel.BackgroundTransparency = 1
+	badgeLabel.Font = F.Button
+	badgeLabel.TextSize = 14
+	badgeLabel.TextColor3 = C.White
+	badgeLabel.Text = "Social"
+	badgeLabel.ZIndex = 85
+	badgeLabel.Parent = badge
+	
+	local countLabel = Instance.new("TextLabel")
+	countLabel.Size = UDim2.new(0, 80, 1, 0)
+	countLabel.Position = UDim2.new(0, 100, 0, 0)
+	countLabel.BackgroundTransparency = 1
+	countLabel.Font = F.Medium
+	countLabel.TextSize = 13
+	countLabel.TextColor3 = C.Gray400
+	countLabel.TextXAlignment = Enum.TextXAlignment.Left
+	countLabel.Text = #Social .. " activities"
+	countLabel.ZIndex = 84
+	countLabel.Parent = header
 	
 	for i, item in ipairs(Social) do
 		self:createActivityCard(section, item, i, C.Pink, C.PinkPale)
@@ -269,15 +432,59 @@ end
 function ActivitiesScreen:populateFun()
 	self:updateInfoBar()
 	
-	local section = UI.createSectionCard(self.contentScroll, {
-		name = "FunSection",
-		title = "Entertainment",
-		subtitle = #Entertainment .. " options",
-		accentColor = C.Purple,
-		badgeWidth = 115,
-		order = 1,
-		zIndex = 82
-	})
+	local section = Instance.new("Frame")
+	section.Name = "FunSection"
+	section.Size = UDim2.new(1, 0, 0, 0)
+	section.AutomaticSize = Enum.AutomaticSize.Y
+	section.BackgroundColor3 = C.White
+	section.LayoutOrder = 1
+	section.ZIndex = 82
+	section.Parent = self.contentScroll
+	UI.corner(section, 18)
+	UI.stroke(section, 1, 0.88, C.Gray200)
+	UI.pad(section, 14, 14, 14, 16)
+	
+	local sectionLayout = Instance.new("UIListLayout")
+	sectionLayout.Padding = UDim.new(0, 10)
+	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sectionLayout.Parent = section
+	
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 36)
+	header.BackgroundTransparency = 1
+	header.LayoutOrder = 0
+	header.ZIndex = 83
+	header.Parent = section
+	
+	local badge = Instance.new("Frame")
+	badge.Size = UDim2.new(0, 125, 0, 32)
+	badge.BackgroundColor3 = C.Purple
+	badge.ZIndex = 84
+	badge.Parent = header
+	UI.pill(badge)
+	
+	local badgeLabel = Instance.new("TextLabel")
+	badgeLabel.Size = UDim2.fromScale(1, 1)
+	badgeLabel.BackgroundTransparency = 1
+	badgeLabel.Font = F.Button
+	badgeLabel.TextSize = 14
+	badgeLabel.TextColor3 = C.White
+	badgeLabel.Text = "Entertainment"
+	badgeLabel.ZIndex = 85
+	badgeLabel.Parent = badge
+	
+	local countLabel = Instance.new("TextLabel")
+	countLabel.Size = UDim2.new(0, 80, 1, 0)
+	countLabel.Position = UDim2.new(0, 135, 0, 0)
+	countLabel.BackgroundTransparency = 1
+	countLabel.Font = F.Medium
+	countLabel.TextSize = 13
+	countLabel.TextColor3 = C.Gray400
+	countLabel.TextXAlignment = Enum.TextXAlignment.Left
+	countLabel.Text = #Entertainment .. " options"
+	countLabel.ZIndex = 84
+	countLabel.Parent = header
 	
 	for i, item in ipairs(Entertainment) do
 		self:createActivityCard(section, item, i, C.Purple, C.PurplePale)
@@ -301,9 +508,10 @@ function ActivitiesScreen:populateCrime()
 	warnIcon.Size = UDim2.new(0, 50, 0, 50)
 	warnIcon.Position = UDim2.new(0, 14, 0.5, -25)
 	warnIcon.BackgroundTransparency = 1
-	warnIcon.Font = F.Body
-	warnIcon.TextSize = 30
-	warnIcon.Text = "⚠️"
+	warnIcon.Font = F.Title
+	warnIcon.TextSize = 24
+	warnIcon.Text = "WARNING"
+	warnIcon.TextColor3 = C.Red
 	warnIcon.ZIndex = 83
 	warnIcon.Parent = warningCard
 	
@@ -320,15 +528,48 @@ function ActivitiesScreen:populateCrime()
 	warnText.ZIndex = 83
 	warnText.Parent = warningCard
 	
-	local section = UI.createSectionCard(self.contentScroll, {
-		name = "CrimeSection",
-		title = "Criminal Acts",
-		subtitle = #Crimes .. " options",
-		accentColor = C.Red,
-		badgeWidth = 110,
-		order = 1,
-		zIndex = 82
-	})
+	-- Crime section
+	local section = Instance.new("Frame")
+	section.Name = "CrimeSection"
+	section.Size = UDim2.new(1, 0, 0, 0)
+	section.AutomaticSize = Enum.AutomaticSize.Y
+	section.BackgroundColor3 = C.White
+	section.LayoutOrder = 1
+	section.ZIndex = 82
+	section.Parent = self.contentScroll
+	UI.corner(section, 18)
+	UI.stroke(section, 1, 0.88, C.Gray200)
+	UI.pad(section, 14, 14, 14, 16)
+	
+	local sectionLayout = Instance.new("UIListLayout")
+	sectionLayout.Padding = UDim.new(0, 10)
+	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sectionLayout.Parent = section
+	
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 36)
+	header.BackgroundTransparency = 1
+	header.LayoutOrder = 0
+	header.ZIndex = 83
+	header.Parent = section
+	
+	local badge = Instance.new("Frame")
+	badge.Size = UDim2.new(0, 125, 0, 32)
+	badge.BackgroundColor3 = C.Red
+	badge.ZIndex = 84
+	badge.Parent = header
+	UI.pill(badge)
+	
+	local badgeLabel = Instance.new("TextLabel")
+	badgeLabel.Size = UDim2.fromScale(1, 1)
+	badgeLabel.BackgroundTransparency = 1
+	badgeLabel.Font = F.Button
+	badgeLabel.TextSize = 14
+	badgeLabel.TextColor3 = C.White
+	badgeLabel.Text = "Criminal Acts"
+	badgeLabel.ZIndex = 85
+	badgeLabel.Parent = badge
 	
 	for i, item in ipairs(Crimes) do
 		self:createCrimeCard(section, item, i)
@@ -351,9 +592,10 @@ function ActivitiesScreen:populatePrison()
 	headerIcon.Size = UDim2.new(0, 55, 0, 55)
 	headerIcon.Position = UDim2.new(0, 16, 0.5, -27.5)
 	headerIcon.BackgroundTransparency = 1
-	headerIcon.Font = F.Body
-	headerIcon.TextSize = 38
-	headerIcon.Text = "⛓️"
+	headerIcon.Font = F.Title
+	headerIcon.TextSize = 28
+	headerIcon.Text = "PRISON"
+	headerIcon.TextColor3 = C.White
 	headerIcon.ZIndex = 83
 	headerIcon.Parent = headerCard
 	
@@ -381,15 +623,48 @@ function ActivitiesScreen:populatePrison()
 	headerSub.ZIndex = 83
 	headerSub.Parent = headerCard
 	
-	local section = UI.createSectionCard(self.contentScroll, {
-		name = "PrisonSection",
-		title = "Prison Actions",
-		subtitle = #PrisonActivities .. " options",
-		accentColor = C.Gray600,
-		badgeWidth = 115,
-		order = 1,
-		zIndex = 82
-	})
+	-- Prison section
+	local section = Instance.new("Frame")
+	section.Name = "PrisonSection"
+	section.Size = UDim2.new(1, 0, 0, 0)
+	section.AutomaticSize = Enum.AutomaticSize.Y
+	section.BackgroundColor3 = C.White
+	section.LayoutOrder = 1
+	section.ZIndex = 82
+	section.Parent = self.contentScroll
+	UI.corner(section, 18)
+	UI.stroke(section, 1, 0.88, C.Gray200)
+	UI.pad(section, 14, 14, 14, 16)
+	
+	local sectionLayout = Instance.new("UIListLayout")
+	sectionLayout.Padding = UDim.new(0, 10)
+	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sectionLayout.Parent = section
+	
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 36)
+	header.BackgroundTransparency = 1
+	header.LayoutOrder = 0
+	header.ZIndex = 83
+	header.Parent = section
+	
+	local badge = Instance.new("Frame")
+	badge.Size = UDim2.new(0, 130, 0, 32)
+	badge.BackgroundColor3 = C.Gray600
+	badge.ZIndex = 84
+	badge.Parent = header
+	UI.pill(badge)
+	
+	local badgeLabel = Instance.new("TextLabel")
+	badgeLabel.Size = UDim2.fromScale(1, 1)
+	badgeLabel.BackgroundTransparency = 1
+	badgeLabel.Font = F.Button
+	badgeLabel.TextSize = 14
+	badgeLabel.TextColor3 = C.White
+	badgeLabel.Text = "Prison Actions"
+	badgeLabel.ZIndex = 85
+	badgeLabel.Parent = badge
 	
 	for i, item in ipairs(PrisonActivities) do
 		self:createPrisonCard(section, item, i)
@@ -404,41 +679,41 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	
 	local card = Instance.new("Frame")
 	card.Name = item.id
-	card.Size = UDim2.new(1, 0, 0, 90)
+	card.Size = UDim2.new(1, 0, 0, 85)
 	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
 	card.ZIndex = 83
 	card.Parent = parent
-	UI.corner(card, 16)
-	UI.stroke(card, 1, 0.88, C.Gray200)
+	UI.corner(card, 14)
+	UI.stroke(card, 1, canDo and 0.7 or 0.88, canDo and accentColor or C.Gray200)
 	
-	-- Icon
+	-- Icon frame
 	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 58, 0, 58)
-	iconFrame.Position = UDim2.new(0, 14, 0.5, -29)
+	iconFrame.Size = UDim2.new(0, 54, 0, 54)
+	iconFrame.Position = UDim2.new(0, 12, 0.5, -27)
 	iconFrame.BackgroundColor3 = paleColor
 	iconFrame.ZIndex = 84
 	iconFrame.Parent = card
-	UI.corner(iconFrame, 14)
-	UI.gradient(iconFrame, paleColor, paleColor:Lerp(C.White, 0.3), 135)
+	UI.corner(iconFrame, 12)
 	
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Font = F.Body
-	iconLabel.TextSize = 30
+	iconLabel.Font = F.Medium
+	iconLabel.TextSize = 11
+	iconLabel.TextColor3 = accentColor
 	iconLabel.Text = item.emoji
 	iconLabel.ZIndex = 85
 	iconLabel.Parent = iconFrame
 	
 	-- Title
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(0.5, 0, 0, 24)
-	titleLabel.Position = UDim2.new(0, 86, 0, 14)
+	titleLabel.Size = UDim2.new(0.5, 0, 0, 22)
+	titleLabel.Position = UDim2.new(0, 78, 0, 12)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = F.Title
 	titleLabel.TextSize = 15
-	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextColor3 = canDo and C.Gray900 or C.Gray500
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Text = item.name
 	titleLabel.ZIndex = 84
@@ -446,8 +721,8 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	
 	-- Effect badge
 	local effectBadge = Instance.new("Frame")
-	effectBadge.Size = UDim2.new(0, cost > 0 and 140 or 105, 0, 26)
-	effectBadge.Position = UDim2.new(0, 86, 0, 42)
+	effectBadge.Size = UDim2.new(0, cost > 0 and 135 or 105, 0, 24)
+	effectBadge.Position = UDim2.new(0, 78, 0, 38)
 	effectBadge.BackgroundColor3 = cost > 0 and C.AmberPale or C.GreenPale
 	effectBadge.ZIndex = 84
 	effectBadge.Parent = card
@@ -459,7 +734,7 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	effectLabel.Font = F.Medium
 	effectLabel.TextSize = 11
 	effectLabel.TextColor3 = cost > 0 and C.AmberDark or C.GreenDark
-	effectLabel.Text = item.effect .. (cost > 0 and " • $" .. cost or "")
+	effectLabel.Text = item.effect .. (cost > 0 and " | $" .. cost or "")
 	effectLabel.ZIndex = 85
 	effectLabel.Parent = effectBadge
 	
@@ -467,22 +742,22 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	if item.hasMinigame then
 		local miniLabel = Instance.new("TextLabel")
 		miniLabel.Size = UDim2.new(0, 80, 0, 16)
-		miniLabel.Position = UDim2.new(0, 86, 0, 70)
+		miniLabel.Position = UDim2.new(0, 78, 0, 65)
 		miniLabel.BackgroundTransparency = 1
 		miniLabel.Font = F.Body
 		miniLabel.TextSize = 11
 		miniLabel.TextColor3 = C.Purple
 		miniLabel.TextXAlignment = Enum.TextXAlignment.Left
-		miniLabel.Text = "🎮 Minigame"
+		miniLabel.Text = "Minigame!"
 		miniLabel.ZIndex = 84
 		miniLabel.Parent = card
 	end
 	
 	-- Action button
 	local actionBtn = Instance.new("TextButton")
-	actionBtn.Size = UDim2.new(0, 72, 0, 44)
+	actionBtn.Size = UDim2.new(0, 68, 0, 42)
 	actionBtn.AnchorPoint = Vector2.new(1, 0.5)
-	actionBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	actionBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	actionBtn.BackgroundColor3 = canDo and accentColor or C.Gray300
 	actionBtn.Font = F.Button
 	actionBtn.TextSize = 14
@@ -495,16 +770,10 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	if canDo then
 		actionBtn.Text = "Go!"
 		actionBtn.MouseEnter:Connect(function()
-			UI.tween(actionBtn, TweenInfo.new(0.12), { 
-				Size = UDim2.new(0, 78, 0, 48),
-				BackgroundColor3 = accentColor:Lerp(C.Black, 0.15)
-			})
+			UI.tween(actionBtn, TweenInfo.new(0.12), { BackgroundColor3 = accentColor:Lerp(C.Black, 0.15) })
 		end)
 		actionBtn.MouseLeave:Connect(function()
-			UI.tween(actionBtn, TweenInfo.new(0.12), { 
-				Size = UDim2.new(0, 72, 0, 44),
-				BackgroundColor3 = accentColor
-			})
+			UI.tween(actionBtn, TweenInfo.new(0.12), { BackgroundColor3 = accentColor })
 		end)
 		actionBtn.MouseButton1Click:Connect(function()
 			if item.hasMinigame then
@@ -514,7 +783,7 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 			end
 		end)
 	else
-		actionBtn.Text = age < item.minAge and "Age " .. item.minAge .. "+" or (money < cost and "Need $" or "Jailed")
+		actionBtn.Text = age < item.minAge and "Age " .. item.minAge or (money < cost and "Need $" or "Jailed")
 	end
 end
 
@@ -524,28 +793,29 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	
 	local card = Instance.new("Frame")
 	card.Name = item.id
-	card.Size = UDim2.new(1, 0, 0, 95)
+	card.Size = UDim2.new(1, 0, 0, 90)
 	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
 	card.ZIndex = 83
 	card.Parent = parent
-	UI.corner(card, 16)
+	UI.corner(card, 14)
 	UI.stroke(card, canDo and 1 or 1, canDo and 0.7 or 0.88, canDo and C.Red or C.Gray200)
 	
 	-- Icon
 	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 58, 0, 58)
-	iconFrame.Position = UDim2.new(0, 14, 0.5, -29)
+	iconFrame.Size = UDim2.new(0, 56, 0, 56)
+	iconFrame.Position = UDim2.new(0, 12, 0.5, -28)
 	iconFrame.BackgroundColor3 = C.RedPale
 	iconFrame.ZIndex = 84
 	iconFrame.Parent = card
-	UI.corner(iconFrame, 14)
+	UI.corner(iconFrame, 12)
 	
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Font = F.Body
-	iconLabel.TextSize = 30
+	iconLabel.Font = F.Medium
+	iconLabel.TextSize = 11
+	iconLabel.TextColor3 = C.Red
 	iconLabel.Text = item.emoji
 	iconLabel.ZIndex = 85
 	iconLabel.Parent = iconFrame
@@ -553,11 +823,11 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	-- Title
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Size = UDim2.new(0.5, 0, 0, 22)
-	titleLabel.Position = UDim2.new(0, 86, 0, 12)
+	titleLabel.Position = UDim2.new(0, 80, 0, 10)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = F.Title
 	titleLabel.TextSize = 15
-	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextColor3 = canDo and C.Gray900 or C.Gray500
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Text = item.name
 	titleLabel.ZIndex = 84
@@ -569,7 +839,7 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	
 	local riskBadge = Instance.new("Frame")
 	riskBadge.Size = UDim2.new(0, 85, 0, 24)
-	riskBadge.Position = UDim2.new(0, 86, 0, 36)
+	riskBadge.Position = UDim2.new(0, 80, 0, 34)
 	riskBadge.BackgroundColor3 = riskColor
 	riskBadge.ZIndex = 84
 	riskBadge.Parent = card
@@ -581,28 +851,28 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	riskLabel.Font = F.Medium
 	riskLabel.TextSize = 11
 	riskLabel.TextColor3 = riskText
-	riskLabel.Text = "⚠️ " .. item.risk .. "% risk"
+	riskLabel.Text = "Risk: " .. item.risk .. "%"
 	riskLabel.ZIndex = 85
 	riskLabel.Parent = riskBadge
 	
 	-- Reward
 	local rewardLabel = Instance.new("TextLabel")
-	rewardLabel.Size = UDim2.new(0.4, 0, 0, 20)
-	rewardLabel.Position = UDim2.new(0, 86, 0, 62)
+	rewardLabel.Size = UDim2.new(0.4, 0, 0, 18)
+	rewardLabel.Position = UDim2.new(0, 80, 0, 62)
 	rewardLabel.BackgroundTransparency = 1
 	rewardLabel.Font = F.Body
 	rewardLabel.TextSize = 12
 	rewardLabel.TextColor3 = C.Gray500
 	rewardLabel.TextXAlignment = Enum.TextXAlignment.Left
-	rewardLabel.Text = "💰 " .. item.reward
+	rewardLabel.Text = "Reward: " .. item.reward
 	rewardLabel.ZIndex = 84
 	rewardLabel.Parent = card
 	
 	-- Action button
 	local actionBtn = Instance.new("TextButton")
-	actionBtn.Size = UDim2.new(0, 82, 0, 46)
+	actionBtn.Size = UDim2.new(0, 78, 0, 44)
 	actionBtn.AnchorPoint = Vector2.new(1, 0.5)
-	actionBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	actionBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	actionBtn.BackgroundColor3 = canDo and C.Red or C.Gray300
 	actionBtn.Font = F.Button
 	actionBtn.TextSize = 13
@@ -610,7 +880,7 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	actionBtn.AutoButtonColor = false
 	actionBtn.ZIndex = 84
 	actionBtn.Parent = card
-	UI.corner(actionBtn, 14)
+	UI.corner(actionBtn, 12)
 	
 	if canDo then
 		actionBtn.Text = "Commit"
@@ -635,36 +905,37 @@ function ActivitiesScreen:createPrisonCard(parent, item, order)
 	
 	local card = Instance.new("Frame")
 	card.Name = item.id
-	card.Size = UDim2.new(1, 0, 0, 95)
+	card.Size = UDim2.new(1, 0, 0, 90)
 	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
 	card.ZIndex = 83
 	card.Parent = parent
-	UI.corner(card, 16)
+	UI.corner(card, 14)
 	UI.stroke(card, 1, 0.88, C.Gray200)
 	
 	-- Icon
 	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 58, 0, 58)
-	iconFrame.Position = UDim2.new(0, 14, 0.5, -29)
+	iconFrame.Size = UDim2.new(0, 56, 0, 56)
+	iconFrame.Position = UDim2.new(0, 12, 0.5, -28)
 	iconFrame.BackgroundColor3 = item.risk and C.RedPale or C.Gray100
 	iconFrame.ZIndex = 84
 	iconFrame.Parent = card
-	UI.corner(iconFrame, 14)
+	UI.corner(iconFrame, 12)
 	
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Font = F.Body
-	iconLabel.TextSize = 30
+	iconLabel.Font = F.Medium
+	iconLabel.TextSize = 11
+	iconLabel.TextColor3 = item.risk and C.Red or C.Gray600
 	iconLabel.Text = item.emoji
 	iconLabel.ZIndex = 85
 	iconLabel.Parent = iconFrame
 	
 	-- Title
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(0.5, 0, 0, 24)
-	titleLabel.Position = UDim2.new(0, 86, 0, 14)
+	titleLabel.Size = UDim2.new(0.5, 0, 0, 22)
+	titleLabel.Position = UDim2.new(0, 80, 0, 12)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = F.Title
 	titleLabel.TextSize = 15
@@ -680,8 +951,8 @@ function ActivitiesScreen:createPrisonCard(parent, item, order)
 	local badgeColor = item.risk and C.RedDark or C.GreenDark
 	
 	local effectBadge = Instance.new("Frame")
-	effectBadge.Size = UDim2.new(0, 120, 0, 26)
-	effectBadge.Position = UDim2.new(0, 86, 0, 42)
+	effectBadge.Size = UDim2.new(0, 115, 0, 24)
+	effectBadge.Position = UDim2.new(0, 80, 0, 38)
 	effectBadge.BackgroundColor3 = badgeBg
 	effectBadge.ZIndex = 84
 	effectBadge.Parent = card
@@ -693,15 +964,15 @@ function ActivitiesScreen:createPrisonCard(parent, item, order)
 	effectLabel.Font = F.Medium
 	effectLabel.TextSize = 11
 	effectLabel.TextColor3 = badgeColor
-	effectLabel.Text = badgeText .. (cost > 0 and " • $" .. cost or "")
+	effectLabel.Text = badgeText .. (cost > 0 and " | $" .. cost or "")
 	effectLabel.ZIndex = 85
 	effectLabel.Parent = effectBadge
 	
 	-- Action button
 	local actionBtn = Instance.new("TextButton")
-	actionBtn.Size = UDim2.new(0, 72, 0, 44)
+	actionBtn.Size = UDim2.new(0, 68, 0, 42)
 	actionBtn.AnchorPoint = Vector2.new(1, 0.5)
-	actionBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	actionBtn.Position = UDim2.new(1, -12, 0.5, 0)
 	actionBtn.BackgroundColor3 = canDo and (item.risk and C.Red or C.Amber) or C.Gray300
 	actionBtn.Font = F.Button
 	actionBtn.TextSize = 14
@@ -753,7 +1024,6 @@ function ActivitiesScreen:createMinigameModal()
 	card.ZIndex = 97
 	card.Parent = self.minigameOverlay
 	UI.corner(card, 24)
-	UI.createShadow(card, 6, 20, C.Black, 0.85)
 	self.minigameCard = card
 	
 	-- Title
@@ -763,7 +1033,7 @@ function ActivitiesScreen:createMinigameModal()
 	self.minigameTitle.Font = F.Title
 	self.minigameTitle.TextSize = 24
 	self.minigameTitle.TextColor3 = C.Gray900
-	self.minigameTitle.Text = "🏋️ Tap to Workout!"
+	self.minigameTitle.Text = "Tap to Workout!"
 	self.minigameTitle.ZIndex = 98
 	self.minigameTitle.Parent = card
 	
@@ -791,14 +1061,13 @@ function ActivitiesScreen:createMinigameModal()
 	self.tapArea.Position = UDim2.new(0.5, 0, 0, 100)
 	self.tapArea.BackgroundColor3 = C.Cyan
 	self.tapArea.Font = F.Title
-	self.tapArea.TextSize = 70
+	self.tapArea.TextSize = 50
 	self.tapArea.TextColor3 = C.White
-	self.tapArea.Text = "💪"
+	self.tapArea.Text = "TAP!"
 	self.tapArea.AutoButtonColor = false
 	self.tapArea.ZIndex = 98
 	self.tapArea.Parent = card
 	UI.corner(self.tapArea, 24)
-	UI.createShadow(self.tapArea, 4, 12, C.Black, 0.9)
 	
 	-- Counter
 	self.tapCounter = Instance.new("TextLabel")
@@ -864,11 +1133,10 @@ function ActivitiesScreen:showMinigame(item, accentColor)
 	self.tapGoal = item.id == "gym" and 25 or 15
 	self.minigameActive = true
 	
-	local emoji = item.id == "gym" and "💪" or "📚"
-	local title = item.id == "gym" and "🏋️ Tap to Workout!" or "📖 Tap to Study!"
+	local title = item.id == "gym" and "Tap to Workout!" or "Tap to Study!"
 	
 	self.minigameTitle.Text = title
-	self.tapArea.Text = emoji
+	self.tapArea.Text = "TAP!"
 	self.tapArea.BackgroundColor3 = accentColor
 	self.progressFill.BackgroundColor3 = accentColor
 	self.progressFill.Size = UDim2.new(0, 0, 1, 0)
@@ -899,54 +1167,54 @@ function ActivitiesScreen:completeMinigame(success)
 		if success then
 			self:doActivity(self.currentMinigameItem, true)
 		else
-			self:showResult(false, "You gave up halfway through. No gains today!", "😓")
+			self:showResult(false, "You gave up halfway through. No gains today!", "Failed")
 		end
 	end)
 end
 
 function ActivitiesScreen:doActivity(item, bonus)
 	if not DoActivity then
-		self:showResult(false, "Server not available", "❌")
+		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
 	local result = DoActivity:InvokeServer(item.id, bonus or false)
 	if result then
-		self:showResult(result.success, result.message, result.success and "🎉" or "😔")
+		self:showResult(result.success, result.message, result.success and "Done!" or "Failed")
 	else
-		self:showResult(false, "Server error", "❌")
+		self:showResult(false, "Server error", "Error")
 	end
 end
 
 function ActivitiesScreen:doCrime(item)
 	if not CommitCrime then
-		self:showResult(false, "Server not available", "❌")
+		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
 	local result = CommitCrime:InvokeServer(item.id)
 	if result then
-		local emoji = result.caught and "🚔" or (result.success and "💰" or "😔")
+		local emoji = result.caught and "Caught!" or (result.success and "Success!" or "Failed")
 		self:showResult(result.success, result.message, emoji)
 	else
-		self:showResult(false, "Server error", "❌")
+		self:showResult(false, "Server error", "Error")
 	end
 end
 
 function ActivitiesScreen:doPrisonActivity(item)
 	if not DoPrisonAction then
-		self:showResult(false, "Server not available", "❌")
+		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
 	local result = DoPrisonAction:InvokeServer(item.id)
 	if result then
-		local emoji = result.success and "✅" or "❌"
-		if item.id == "prison_escape" then emoji = result.success and "🔓" or "🚔" end
-		if item.id == "prison_riot" then emoji = result.success and "🔥" or "🚔" end
+		local emoji = result.success and "Done!" or "Failed"
+		if item.id == "prison_escape" then emoji = result.success and "Free!" or "Caught!" end
+		if item.id == "prison_riot" then emoji = result.success and "Chaos!" or "Caught!" end
 		self:showResult(result.success, result.message, emoji)
 	else
-		self:showResult(false, "Server error", "❌")
+		self:showResult(false, "Server error", "Error")
 	end
 end
 
@@ -958,7 +1226,7 @@ function ActivitiesScreen:showResult(success, message, emoji)
 	self.resultModal.shell.BackgroundColor3 = shellColor
 	self.resultModal.shellStroke.Color = shellStroke
 	self.resultModal.emojiFrame.BackgroundColor3 = pale
-	self.resultModal.emojiLabel.Text = emoji or (success and "🎉" or "😔")
+	self.resultModal.emojiLabel.Text = emoji or (success and "OK" or "X")
 	self.resultModal.titleLabel.Text = success and "Success!" or "Uh oh..."
 	self.resultModal.titleLabel.TextColor3 = success and C.GreenDark or C.RedDark
 	self.resultModal.messageLabel.Text = message or ""
