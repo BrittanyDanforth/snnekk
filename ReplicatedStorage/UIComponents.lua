@@ -253,7 +253,7 @@ function UIComponents.createModalCard(parent, config)
 	shell.ZIndex = (config.zIndex or 96) + 2
 	shell.Parent = shadowFrame
 	UIComponents.corner(shell, 26)
-	UIComponents.stroke(shell, 2, 0.3, config.accentDark or C.GreenDark)
+	local shellStroke = UIComponents.stroke(shell, 2, 0.3, config.accentDark or C.GreenDark)
 	
 	-- Inner padding frame
 	UIComponents.pad(shell, 4, 4, 4, 4)
@@ -358,6 +358,7 @@ function UIComponents.createModalCard(parent, config)
 		overlay = overlay,
 		shadowFrame = shadowFrame,
 		shell = shell,
+		shellStroke = shellStroke,
 		card = card,
 		content = content,
 		emojiFrame = emojiFrame,

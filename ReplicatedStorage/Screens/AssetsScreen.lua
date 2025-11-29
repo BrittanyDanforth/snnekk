@@ -546,11 +546,29 @@ function AssetsScreen:populateProperty()
 	
 	local assets = self:getAssets()
 	local ownedProperties = {}
+	local catalogIds = {}
 	
-	-- Find owned properties
+	-- Find owned properties from shop catalog
 	for _, prop in ipairs(Properties) do
+		catalogIds[prop.id] = true
 		if assets[prop.id] then
 			table.insert(ownedProperties, prop)
+		end
+	end
+	
+	-- Also include event-acquired properties that aren't in the catalog
+	local ownedList = self:getOwnedList("property")
+	for _, owned in ipairs(ownedList) do
+		if not catalogIds[owned.id] then
+			-- Create a display entry for this event-acquired property
+			table.insert(ownedProperties, {
+				id = owned.id,
+				name = owned.name or owned.id,
+				emoji = "🏡",
+				price = owned.value or 0,
+				minAge = 0,
+				isEventAcquired = true
+			})
 		end
 	end
 	
@@ -643,11 +661,29 @@ function AssetsScreen:populateVehicles()
 	
 	local assets = self:getAssets()
 	local ownedVehicles = {}
+	local catalogIds = {}
 	
-	-- Find owned vehicles
+	-- Find owned vehicles from shop catalog
 	for _, veh in ipairs(Vehicles) do
+		catalogIds[veh.id] = true
 		if assets[veh.id] then
 			table.insert(ownedVehicles, veh)
+		end
+	end
+	
+	-- Also include event-acquired vehicles that aren't in the catalog
+	local ownedList = self:getOwnedList("vehicle")
+	for _, owned in ipairs(ownedList) do
+		if not catalogIds[owned.id] then
+			-- Create a display entry for this event-acquired vehicle
+			table.insert(ownedVehicles, {
+				id = owned.id,
+				name = owned.name or owned.id,
+				emoji = "🏎️",
+				price = owned.value or 0,
+				minAge = 0,
+				isEventAcquired = true
+			})
 		end
 	end
 	
@@ -740,11 +776,29 @@ function AssetsScreen:populateShop()
 	
 	local assets = self:getAssets()
 	local ownedItems = {}
+	local catalogIds = {}
 	
-	-- Find owned items
+	-- Find owned items from shop catalog
 	for _, itm in ipairs(Shop) do
+		catalogIds[itm.id] = true
 		if assets[itm.id] then
 			table.insert(ownedItems, itm)
+		end
+	end
+	
+	-- Also include event-acquired items that aren't in the catalog
+	local ownedList = self:getOwnedList("item")
+	for _, owned in ipairs(ownedList) do
+		if not catalogIds[owned.id] then
+			-- Create a display entry for this event-acquired item
+			table.insert(ownedItems, {
+				id = owned.id,
+				name = owned.name or owned.id,
+				emoji = "🎁",
+				price = owned.value or 0,
+				minAge = 0,
+				isEventAcquired = true
+			})
 		end
 	end
 	

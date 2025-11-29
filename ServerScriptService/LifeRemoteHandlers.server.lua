@@ -66,7 +66,7 @@ local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"
 -- Get all remotes
 local GetCapabilities = getRemote("GetCapabilities", true)
 local ApplyForJob = getRemote("ApplyForJob", true)
-local QuitJob = getRemote("QuitJob", false)
+local QuitJob = getRemote("QuitJob", true)
 local DoWork = getRemote("DoWork", true)
 local EnrollEducation = getRemote("EnrollEducation", true)
 local DoFreelance = getRemote("DoFreelance", true)
@@ -571,13 +571,17 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	}
 end
 
-QuitJob.OnServerEvent:Connect(function(player)
+QuitJob.OnServerInvoke = function(player)
 	local extState = getExtendedState(player)
 	if extState.CurrentJob then
+		local jobTitle = extState.CurrentJob.title or "your job"
 		extState.CurrentJob = nil
 		syncStateToClient(player)
+		return { success = true, message = "You quit " .. jobTitle .. ". You're now unemployed." }
+	else
+		return { success = false, message = "You don't have a job to quit!" }
 	end
-end)
+end
 
 DoWork.OnServerInvoke = function(player)
 	local extState = getExtendedState(player)
