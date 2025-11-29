@@ -473,73 +473,89 @@ navGrad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C.NavBlue), Col
 navGrad.Rotation = 90
 navGrad.Parent = navBar
 
-pad(navBar, 12, 12, 6, 22)
+-- LEFT SIDE container (Work, Assets)
+local navLeft = Instance.new("Frame")
+navLeft.Name = "NavLeft"
+navLeft.Size = UDim2.new(0.5, -50, 1, 0)
+navLeft.Position = UDim2.new(0, 0, 0, 0)
+navLeft.BackgroundTransparency = 1
+navLeft.ZIndex = 7
+navLeft.Parent = navBar
 
-local navLayout = Instance.new("UIListLayout")
-navLayout.FillDirection = Enum.FillDirection.Horizontal
-navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-navLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-navLayout.Padding = UDim.new(0, 2)
-navLayout.Parent = navBar
+local navLeftLayout = Instance.new("UIListLayout")
+navLeftLayout.FillDirection = Enum.FillDirection.Horizontal
+navLeftLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+navLeftLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+navLeftLayout.Padding = UDim.new(0, 6)
+navLeftLayout.Parent = navLeft
 
-local navItems = {
-	{ icon = "💼", text = "Work", screen = "occupation" },
-	{ icon = "🏠", text = "Assets", screen = "assets" },
-	{ icon = "❤️", text = "People", screen = "relationships" },
-	{ icon = "🎭", text = "Activities", screen = "activities" },
-	{ icon = "⭐", text = "Story", screen = "storypaths" },
-}
+pad(navLeft, 8, 15, 6, 20)
+
+-- RIGHT SIDE container (People, Activities, Story)
+local navRight = Instance.new("Frame")
+navRight.Name = "NavRight"
+navRight.Size = UDim2.new(0.5, -50, 1, 0)
+navRight.Position = UDim2.new(0.5, 50, 0, 0)
+navRight.BackgroundTransparency = 1
+navRight.ZIndex = 7
+navRight.Parent = navBar
+
+local navRightLayout = Instance.new("UIListLayout")
+navRightLayout.FillDirection = Enum.FillDirection.Horizontal
+navRightLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+navRightLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+navRightLayout.Padding = UDim.new(0, 6)
+navRightLayout.Parent = navRight
+
+pad(navRight, 15, 8, 6, 20)
 
 local navBtnRefs = {}
 
-for idx, info in ipairs(navItems) do
-	-- Create spacer before People (idx 3) for the Age button
-	if idx == 3 then
-		local spacer = Instance.new("Frame")
-		spacer.Size = UDim2.new(0, 76, 0, 1)
-		spacer.BackgroundTransparency = 1
-		spacer.LayoutOrder = idx
-		spacer.Parent = navBar
-	end
-	
+local function createNavButton(info, parent, order)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 54, 0, 52) -- Slightly smaller to fit 5 items
+	btn.Size = UDim2.new(0, 56, 0, 48)
 	btn.BackgroundTransparency = 1
 	btn.AutoButtonColor = false
-	btn.LayoutOrder = idx < 3 and idx or idx + 1
+	btn.LayoutOrder = order
 	btn.Text = ""
-	btn.ZIndex = 7
-	btn.Parent = navBar
-	
+	btn.ZIndex = 8
+	btn.Parent = parent
+
 	local btnLayout = Instance.new("UIListLayout")
 	btnLayout.FillDirection = Enum.FillDirection.Vertical
 	btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	btnLayout.Padding = UDim.new(0, 2)
+	btnLayout.Padding = UDim.new(0, 1)
 	btnLayout.Parent = btn
-	
+
 	local iconLbl = Instance.new("TextLabel")
-	iconLbl.Size = UDim2.new(1, 0, 0, 22)
+	iconLbl.Size = UDim2.new(1, 0, 0, 24)
 	iconLbl.BackgroundTransparency = 1
 	iconLbl.Font = F.Body
-	iconLbl.TextSize = 18
+	iconLbl.TextSize = 20
 	iconLbl.TextColor3 = C.White
 	iconLbl.Text = info.icon
-	iconLbl.ZIndex = 8
+	iconLbl.ZIndex = 9
 	iconLbl.Parent = btn
-	
+
 	local textLbl = Instance.new("TextLabel")
-	textLbl.Size = UDim2.new(1, 0, 0, 12)
+	textLbl.Size = UDim2.new(1, 0, 0, 14)
 	textLbl.BackgroundTransparency = 1
-	textLbl.Font = F.Body
-	textLbl.TextSize = 9
+	textLbl.Font = F.Medium
+	textLbl.TextSize = 10
 	textLbl.TextColor3 = Color3.fromRGB(148, 163, 184)
 	textLbl.Text = info.text
-	textLbl.ZIndex = 8
+	textLbl.ZIndex = 9
 	textLbl.Parent = btn
-	
-	btn.MouseEnter:Connect(function() iconLbl.TextColor3 = C.Yellow end)
-	btn.MouseLeave:Connect(function() iconLbl.TextColor3 = C.White end)
-	
+
+	btn.MouseEnter:Connect(function()
+		iconLbl.TextColor3 = C.Yellow
+		textLbl.TextColor3 = C.White
+	end)
+	btn.MouseLeave:Connect(function()
+		iconLbl.TextColor3 = C.White
+		textLbl.TextColor3 = Color3.fromRGB(148, 163, 184)
+	end)
+
 	btn.MouseButton1Click:Connect(function()
 		if info.screen == "occupation" and occupationScreenInstance then occupationScreenInstance:show()
 		elseif info.screen == "assets" and assetsScreenInstance then assetsScreenInstance:show()
@@ -548,9 +564,19 @@ for idx, info in ipairs(navItems) do
 		elseif info.screen == "storypaths" and storyPathsScreenInstance then storyPathsScreenInstance:show()
 		end
 	end)
-	
+
 	navBtnRefs[info.screen] = btn
+	return btn
 end
+
+-- LEFT buttons (Work, Assets)
+createNavButton({ icon = "💼", text = "Work", screen = "occupation" }, navLeft, 1)
+createNavButton({ icon = "🏠", text = "Assets", screen = "assets" }, navLeft, 2)
+
+-- RIGHT buttons (People, Fun, Story)
+createNavButton({ icon = "❤️", text = "People", screen = "relationships" }, navRight, 1)
+createNavButton({ icon = "🎭", text = "Fun", screen = "activities" }, navRight, 2)
+createNavButton({ icon = "⭐", text = "Story", screen = "storypaths" }, navRight, 3)
 
 -- AGE BUTTON (Centered, overlapping nav)
 local ageBtnContainer = Instance.new("Frame")
