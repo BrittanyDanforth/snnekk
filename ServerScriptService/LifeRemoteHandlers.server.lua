@@ -1332,7 +1332,11 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 			life.Flags.in_prison = true
 			life.Flags.incarcerated = true
 			life.Flags.arrested = true
-			print("[LifeRemoteHandlers] Set prison flags in life state")
+			life.Flags.did_time = true
+			-- IMPORTANT: Clear sentence_complete when going to prison (prevents bugs from previous stints)
+			life.Flags.sentence_complete = nil
+			life.Flags.released_from_prison = nil
+			print("[LifeRemoteHandlers] Set prison flags in life state, cleared any previous release flags")
 		end
 		
 		syncStateToClient(player)
@@ -1622,25 +1626,50 @@ _G.ReduceJailTime = function(player, years)
 		print("[LifeRemoteHandlers] Reducing jail time by", years, "years. Current:", extState.JailYearsLeft)
 		extState.JailYearsLeft = extState.JailYearsLeft - years
 		if extState.JailYearsLeft <= 0 then
-			extState.InJail = false
-			extState.JailYearsLeft = 0
-			
-			-- Clear prison flags in life state for event system
+			-- IMPORTANT: Set sentence_complete FIRST, but KEEP in_prison TRUE
+			-- This allows prison_release_day event to fire (which requires BOTH flags)
+			-- The event's choice will then clear in_prison when player picks a response
 			if life then
 				life.Flags = life.Flags or {}
-				life.Flags.in_prison = nil
-				life.Flags.incarcerated = nil
-				life.Flags.ex_convict = true
 				life.Flags.sentence_complete = true -- For release day event
-				print("[LifeRemoteHandlers] Cleared prison flags for", player.Name)
+				life.Flags.ex_convict = true
+				-- Keep in_prison = true so the prison_release_day event can fire!
+				-- The event choice will clear it
+				print("[LifeRemoteHandlers] Set sentence_complete flag - prison_release_day event should fire")
 			end
 			
-			print("[LifeRemoteHandlers] ✅", player.Name, "released from jail! Served their time.")
+			-- Mark jail time as complete but don't immediately release
+			-- The prison_release_day event handles the actual release
+			extState.JailYearsLeft = 0
+			print("[LifeRemoteHandlers] ✅", player.Name, "has served their time! Release day event will fire.")
 		else
-			print("[LifeRemoteHandlers]", player.Name, "has", extState.JailYearsLeft, "years left in jail")
+			print("[LifeRemoteHandlers]", player.Name, "has", string.format("%.2f", extState.JailYearsLeft), "years left in jail")
 		end
 		syncStateToClient(player)
 	end
+end
+
+-- Force release from prison (called when prison_release_day event choice is made or as fallback)
+_G.ForceReleaseFromPrison = function(player)
+	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
+	
+	print("[LifeRemoteHandlers] ForceReleaseFromPrison called for", player.Name)
+	
+	extState.InJail = false
+	extState.JailYearsLeft = 0
+	
+	if life then
+		life.Flags = life.Flags or {}
+		life.Flags.in_prison = nil
+		life.Flags.incarcerated = nil
+		life.Flags.sentence_complete = nil
+		life.Flags.ex_convict = true
+		life.Flags.released_from_prison = true
+		print("[LifeRemoteHandlers] Cleared all prison flags, player is now free")
+	end
+	
+	syncStateToClient(player)
 end
 
 -- Hook for yearly updates (called from LifeManager)
@@ -1651,6 +1680,75 @@ end
 -- Get extended state for external access
 _G.GetExtendedState = function(player)
 	return getExtendedState(player)
+end
+
+-- Sync prison state from flags (called after event choice processing)
+-- This ensures ExtendedStates stays in sync with Flags
+_G.SyncPrisonStateFromFlags = function(player)
+	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
+	
+	if not life then return end
+	
+	local flags = life.Flags or {}
+	
+	print("[LifeRemoteHandlers] SyncPrisonStateFromFlags - in_prison:", flags.in_prison, "InJail:", extState.InJail, "ex_convict:", flags.ex_convict)
+	
+	-- CASE 1: in_prison flag is set but ExtendedStates says not in jail - PUT THEM IN JAIL
+	if flags.in_prison and not extState.InJail then
+		-- This can happen from event choices like recapture
+		local addedTime = flags.escape_recaptured and math.random(3, 8) or math.random(2, 5)
+		extState.InJail = true
+		extState.JailYearsLeft = (extState.JailYearsLeft or 0) + addedTime
+		-- Clear sentence_complete since they're back in
+		flags.sentence_complete = nil
+		print("[LifeRemoteHandlers] Synced prison state - Player jailed for", addedTime, "years from event")
+		syncStateToClient(player)
+		return
+	end
+	
+	-- CASE 2: in_prison flag is NOT set but ExtendedStates says in jail - RELEASE THEM
+	-- This happens when event choice clears in_prison flag (like prison_release_day)
+	if not flags.in_prison and extState.InJail then
+		-- Check if this is a legitimate release (ex_convict flag set or sentence_complete)
+		if flags.ex_convict or flags.escaped_prison or flags.released_from_prison then
+			extState.InJail = false
+			extState.JailYearsLeft = 0
+			-- Clear any remaining sentence flags
+			flags.sentence_complete = nil
+			print("[LifeRemoteHandlers] Synced prison state - Player released from prison (flags cleared by event)")
+			syncStateToClient(player)
+			return
+		end
+	end
+	
+	-- CASE 3: Both states agree - nothing to do
+	-- (in_prison and InJail both true, or both false)
+end
+
+-- Send player to jail (callable from other scripts)
+_G.SendToJail = function(player, years)
+	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
+	
+	print("[LifeRemoteHandlers] SendToJail called - Player:", player.Name, "Years:", years)
+	
+	extState.InJail = true
+	extState.JailYearsLeft = (extState.JailYearsLeft or 0) + years
+	extState.CurrentJob = nil -- Lose job
+	
+	if life then
+		life.Flags = life.Flags or {}
+		life.Flags.in_prison = true
+		life.Flags.incarcerated = true
+		life.Flags.did_time = true
+		-- Clear any release flags
+		life.Flags.sentence_complete = nil
+		life.Flags.released_from_prison = nil
+	end
+	
+	syncStateToClient(player)
+	print("[LifeRemoteHandlers] Player sent to jail for", years, "years")
 end
 
 print("[LifeRemoteHandlers] ✅ All remote handlers initialized!")

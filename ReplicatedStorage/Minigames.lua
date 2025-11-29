@@ -1725,6 +1725,408 @@ function Minigames:endMash(success)
 end
 
 -- ═══════════════════════════════════════════════════════════════
+-- HACKER TYPING MINIGAME (Hacker Career)
+-- Type the code quickly and accurately to hack!
+-- ═══════════════════════════════════════════════════════════════
+
+function Minigames:createHackingGame()
+	self.hackOverlay = Instance.new("Frame")
+	self.hackOverlay.Size = UDim2.fromScale(1, 1)
+	self.hackOverlay.BackgroundColor3 = Color3.fromRGB(0, 10, 0)
+	self.hackOverlay.BackgroundTransparency = 0.15
+	self.hackOverlay.Visible = false
+	self.hackOverlay.ZIndex = 200
+	self.hackOverlay.Parent = self.screenGui
+	
+	self.hackCard = Instance.new("Frame")
+	self.hackCard.Size = UDim2.new(0.95, 0, 0, 480)
+	self.hackCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.hackCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.hackCard.BackgroundColor3 = Color3.fromRGB(15, 25, 15)
+	self.hackCard.ZIndex = 201
+	self.hackCard.Parent = self.hackOverlay
+	corner(self.hackCard, 20)
+	stroke(self.hackCard, 2, 0, Color3.fromRGB(0, 255, 0))
+	
+	-- Scanline effect overlay
+	local scanlines = Instance.new("Frame")
+	scanlines.Size = UDim2.fromScale(1, 1)
+	scanlines.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
+	scanlines.BackgroundTransparency = 0.95
+	scanlines.ZIndex = 202
+	scanlines.Parent = self.hackCard
+	corner(scanlines, 20)
+	
+	-- Title with hacker aesthetic
+	local hackTitle = Instance.new("TextLabel")
+	hackTitle.Size = UDim2.new(1, 0, 0, 60)
+	hackTitle.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+	hackTitle.Font = F.Title
+	hackTitle.TextSize = 22
+	hackTitle.TextColor3 = Color3.fromRGB(0, 255, 0)
+	hackTitle.Text = "💻 SYSTEM BREACH INITIATED"
+	hackTitle.ZIndex = 203
+	hackTitle.Parent = self.hackCard
+	corner(hackTitle, 20)
+	
+	local titleFix = Instance.new("Frame")
+	titleFix.Size = UDim2.new(1, 0, 0, 30)
+	titleFix.Position = UDim2.new(0, 0, 0, 35)
+	titleFix.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+	titleFix.ZIndex = 202
+	titleFix.Parent = hackTitle
+	
+	-- Status text
+	self.hackStatus = Instance.new("TextLabel")
+	self.hackStatus.Size = UDim2.new(0.9, 0, 0, 30)
+	self.hackStatus.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackStatus.Position = UDim2.new(0.5, 0, 0, 70)
+	self.hackStatus.BackgroundTransparency = 1
+	self.hackStatus.Font = F.Medium
+	self.hackStatus.TextSize = 14
+	self.hackStatus.TextColor3 = Color3.fromRGB(0, 200, 0)
+	self.hackStatus.Text = ">> Type the code below to breach the system..."
+	self.hackStatus.ZIndex = 203
+	self.hackStatus.Parent = self.hackCard
+	
+	-- Timer bar
+	self.hackTimerBg = Instance.new("Frame")
+	self.hackTimerBg.Size = UDim2.new(0.85, 0, 0, 12)
+	self.hackTimerBg.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackTimerBg.Position = UDim2.new(0.5, 0, 0, 105)
+	self.hackTimerBg.BackgroundColor3 = C.Gray700
+	self.hackTimerBg.ZIndex = 203
+	self.hackTimerBg.Parent = self.hackCard
+	pill(self.hackTimerBg)
+	
+	self.hackTimerFill = Instance.new("Frame")
+	self.hackTimerFill.Size = UDim2.new(1, 0, 1, 0)
+	self.hackTimerFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	self.hackTimerFill.ZIndex = 204
+	self.hackTimerFill.Parent = self.hackTimerBg
+	pill(self.hackTimerFill)
+	
+	-- Code to type display (the target)
+	self.hackTargetFrame = Instance.new("Frame")
+	self.hackTargetFrame.Size = UDim2.new(0.9, 0, 0, 80)
+	self.hackTargetFrame.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackTargetFrame.Position = UDim2.new(0.5, 0, 0, 130)
+	self.hackTargetFrame.BackgroundColor3 = Color3.fromRGB(10, 30, 10)
+	self.hackTargetFrame.ZIndex = 203
+	self.hackTargetFrame.Parent = self.hackCard
+	corner(self.hackTargetFrame, 12)
+	stroke(self.hackTargetFrame, 1, 0.5, Color3.fromRGB(0, 150, 0))
+	
+	self.hackTargetLabel = Instance.new("TextLabel")
+	self.hackTargetLabel.Size = UDim2.fromScale(1, 1)
+	self.hackTargetLabel.BackgroundTransparency = 1
+	self.hackTargetLabel.Font = Enum.Font.Code
+	self.hackTargetLabel.TextSize = 32
+	self.hackTargetLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+	self.hackTargetLabel.Text = "HACK123"
+	self.hackTargetLabel.ZIndex = 204
+	self.hackTargetLabel.Parent = self.hackTargetFrame
+	
+	-- Player input display
+	self.hackInputFrame = Instance.new("Frame")
+	self.hackInputFrame.Size = UDim2.new(0.9, 0, 0, 60)
+	self.hackInputFrame.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackInputFrame.Position = UDim2.new(0.5, 0, 0, 220)
+	self.hackInputFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+	self.hackInputFrame.ZIndex = 203
+	self.hackInputFrame.Parent = self.hackCard
+	corner(self.hackInputFrame, 12)
+	stroke(self.hackInputFrame, 2, 0, Color3.fromRGB(100, 100, 150))
+	
+	self.hackInputLabel = Instance.new("TextLabel")
+	self.hackInputLabel.Size = UDim2.fromScale(1, 1)
+	self.hackInputLabel.BackgroundTransparency = 1
+	self.hackInputLabel.Font = Enum.Font.Code
+	self.hackInputLabel.TextSize = 28
+	self.hackInputLabel.TextColor3 = C.White
+	self.hackInputLabel.Text = "_"
+	self.hackInputLabel.ZIndex = 204
+	self.hackInputLabel.Parent = self.hackInputFrame
+	
+	-- Round counter
+	self.hackRoundLabel = Instance.new("TextLabel")
+	self.hackRoundLabel.Size = UDim2.new(0.9, 0, 0, 24)
+	self.hackRoundLabel.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackRoundLabel.Position = UDim2.new(0.5, 0, 0, 290)
+	self.hackRoundLabel.BackgroundTransparency = 1
+	self.hackRoundLabel.Font = F.Medium
+	self.hackRoundLabel.TextSize = 16
+	self.hackRoundLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+	self.hackRoundLabel.Text = "Round 1/5"
+	self.hackRoundLabel.ZIndex = 203
+	self.hackRoundLabel.Parent = self.hackCard
+	
+	-- Virtual keyboard
+	self.hackKeyboard = Instance.new("Frame")
+	self.hackKeyboard.Size = UDim2.new(0.95, 0, 0, 150)
+	self.hackKeyboard.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackKeyboard.Position = UDim2.new(0.5, 0, 0, 320)
+	self.hackKeyboard.BackgroundTransparency = 1
+	self.hackKeyboard.ZIndex = 203
+	self.hackKeyboard.Parent = self.hackCard
+	
+	-- Create keyboard rows
+	local keyRows = {
+		"QWERTYUIOP",
+		"ASDFGHJKL",
+		"ZXCVBNM123",
+		"4567890⌫",
+	}
+	
+	self.hackKeys = {}
+	for rowIdx, row in ipairs(keyRows) do
+		local rowFrame = Instance.new("Frame")
+		rowFrame.Size = UDim2.new(1, 0, 0.22, 0)
+		rowFrame.Position = UDim2.new(0, 0, (rowIdx-1) * 0.25, 0)
+		rowFrame.BackgroundTransparency = 1
+		rowFrame.ZIndex = 204
+		rowFrame.Parent = self.hackKeyboard
+		
+		local rowLayout = Instance.new("UIListLayout")
+		rowLayout.FillDirection = Enum.FillDirection.Horizontal
+		rowLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		rowLayout.Padding = UDim.new(0, 3)
+		rowLayout.Parent = rowFrame
+		
+		for i = 1, #row do
+			local char = string.sub(row, i, i)
+			local keyBtn = Instance.new("TextButton")
+			keyBtn.Size = UDim2.new(0, 28, 0, 32)
+			keyBtn.BackgroundColor3 = char == "⌫" and C.Red or Color3.fromRGB(40, 60, 40)
+			keyBtn.Font = Enum.Font.Code
+			keyBtn.TextSize = 16
+			keyBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
+			keyBtn.Text = char
+			keyBtn.AutoButtonColor = false
+			keyBtn.ZIndex = 205
+			keyBtn.Parent = rowFrame
+			corner(keyBtn, 6)
+			
+			self.hackKeys[char] = keyBtn
+		end
+	end
+	
+	-- Result display
+	self.hackResult = Instance.new("TextLabel")
+	self.hackResult.Size = UDim2.new(0.9, 0, 0, 40)
+	self.hackResult.AnchorPoint = Vector2.new(0.5, 0)
+	self.hackResult.Position = UDim2.new(0.5, 0, 0, 475)
+	self.hackResult.BackgroundTransparency = 1
+	self.hackResult.Font = F.Title
+	self.hackResult.TextSize = 20
+	self.hackResult.TextColor3 = Color3.fromRGB(0, 255, 0)
+	self.hackResult.Text = ""
+	self.hackResult.ZIndex = 203
+	self.hackResult.Parent = self.hackCard
+	
+	-- Hack code words database
+	self.hackCodes = {
+		easy = {"HACK", "CODE", "ROOT", "SUDO", "PING", "PORT", "SCAN", "EXEC"},
+		medium = {"HACK123", "ACCESS1", "BYPASS01", "ROOTKIT", "EXPLOIT", "PAYLOAD", "MALWARE"},
+		hard = {"DECRYPT99", "BACKDOOR1", "ZERODAY42", "FIREWALL0", "INJECTION", "OVERFLOW1"},
+	}
+end
+
+function Minigames:startHacking(callback, options)
+	if not self.hackOverlay then
+		self:createHackingGame()
+	end
+	
+	options = options or {}
+	self.callback = callback
+	self.hackOverlay.Visible = true
+	self.activeGame = "hacking"
+	self.hackResult.Text = ""
+	
+	-- Difficulty determines code complexity and time
+	local difficulty = options.difficulty or "medium"
+	self.hackDifficulty = difficulty
+	
+	local codePool = self.hackCodes[difficulty] or self.hackCodes.medium
+	local timePerCode = difficulty == "easy" and 6 or difficulty == "hard" and 3.5 or 4.5
+	
+	self.hackTotalRounds = options.rounds or 5
+	self.hackCurrentRound = 0
+	self.hackSuccesses = 0
+	self.hackCurrentInput = ""
+	self.hackCodePool = codePool
+	self.hackTimePerCode = timePerCode
+	
+	-- Connect keyboard
+	for char, btn in pairs(self.hackKeys) do
+		btn.MouseButton1Click:Connect(function()
+			self:handleHackInput(char)
+		end)
+	end
+	
+	-- Start first round
+	self:startHackRound()
+end
+
+function Minigames:startHackRound()
+	self.hackCurrentRound = self.hackCurrentRound + 1
+	
+	if self.hackCurrentRound > self.hackTotalRounds then
+		self:endHacking()
+		return
+	end
+	
+	-- Pick a random code
+	self.hackTargetCode = self.hackCodePool[math.random(#self.hackCodePool)]
+	self.hackCurrentInput = ""
+	
+	-- Update display
+	self.hackTargetLabel.Text = self.hackTargetCode
+	self.hackInputLabel.Text = "_"
+	self.hackRoundLabel.Text = "Round " .. self.hackCurrentRound .. "/" .. self.hackTotalRounds
+	self.hackStatus.Text = ">> Type the code to breach security layer " .. self.hackCurrentRound .. "..."
+	
+	-- Reset timer
+	self.hackTimerFill.Size = UDim2.new(1, 0, 1, 0)
+	self.hackTimerFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	
+	-- Animate timer
+	local timerTween = tween(self.hackTimerFill, TweenInfo.new(self.hackTimePerCode, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 1, 0) })
+	
+	-- Color change as time runs out
+	task.delay(self.hackTimePerCode * 0.5, function()
+		if self.activeGame == "hacking" then
+			tween(self.hackTimerFill, TweenInfo.new(0.3), { BackgroundColor3 = C.Amber })
+		end
+	end)
+	task.delay(self.hackTimePerCode * 0.8, function()
+		if self.activeGame == "hacking" then
+			tween(self.hackTimerFill, TweenInfo.new(0.3), { BackgroundColor3 = C.Red })
+		end
+	end)
+	
+	-- Timeout
+	self.hackTimerConnection = task.delay(self.hackTimePerCode, function()
+		if self.activeGame == "hacking" then
+			self:handleHackTimeout()
+		end
+	end)
+end
+
+function Minigames:handleHackInput(char)
+	if self.activeGame ~= "hacking" then return end
+	
+	if char == "⌫" then
+		-- Backspace
+		if #self.hackCurrentInput > 0 then
+			self.hackCurrentInput = string.sub(self.hackCurrentInput, 1, -2)
+		end
+	else
+		-- Add character
+		self.hackCurrentInput = self.hackCurrentInput .. char
+	end
+	
+	-- Update display with cursor
+	if #self.hackCurrentInput > 0 then
+		self.hackInputLabel.Text = self.hackCurrentInput .. "_"
+	else
+		self.hackInputLabel.Text = "_"
+	end
+	
+	-- Check if complete
+	if #self.hackCurrentInput >= #self.hackTargetCode then
+		self:checkHackAnswer()
+	end
+end
+
+function Minigames:checkHackAnswer()
+	if self.hackTimerConnection then
+		task.cancel(self.hackTimerConnection)
+		self.hackTimerConnection = nil
+	end
+	
+	local correct = self.hackCurrentInput == self.hackTargetCode
+	
+	if correct then
+		self.hackSuccesses = self.hackSuccesses + 1
+		self.hackInputFrame.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+		self.hackStatus.Text = ">> LAYER BREACHED! Security compromised..."
+		stroke(self.hackInputFrame, 2, 0, Color3.fromRGB(0, 255, 0))
+		
+		-- Flash target green
+		tween(self.hackTargetFrame, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(0, 100, 0) })
+	else
+		self.hackInputFrame.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+		self.hackStatus.Text = ">> ERROR! Incorrect input detected..."
+		stroke(self.hackInputFrame, 2, 0, C.Red)
+		
+		-- Flash target red
+		tween(self.hackTargetFrame, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(100, 0, 0) })
+	end
+	
+	-- Next round after delay
+	task.delay(0.8, function()
+		if self.activeGame == "hacking" then
+			-- Reset colors
+			self.hackInputFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+			self.hackTargetFrame.BackgroundColor3 = Color3.fromRGB(10, 30, 10)
+			stroke(self.hackInputFrame, 2, 0, Color3.fromRGB(100, 100, 150))
+			
+			self:startHackRound()
+		end
+	end)
+end
+
+function Minigames:handleHackTimeout()
+	-- Timeout counts as failure
+	self.hackInputFrame.BackgroundColor3 = Color3.fromRGB(80, 50, 0)
+	self.hackStatus.Text = ">> TIMEOUT! Connection lost..."
+	
+	task.delay(0.6, function()
+		if self.activeGame == "hacking" then
+			self.hackInputFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+			self:startHackRound()
+		end
+	end)
+end
+
+function Minigames:endHacking()
+	self.activeGame = nil
+	
+	if self.hackTimerConnection then
+		task.cancel(self.hackTimerConnection)
+		self.hackTimerConnection = nil
+	end
+	
+	-- Calculate success
+	local successRate = self.hackSuccesses / self.hackTotalRounds
+	local won = successRate >= 0.6 -- Need at least 60% correct
+	
+	-- Show result
+	if won then
+		self.hackResult.Text = "✅ SYSTEM BREACHED! Access granted."
+		self.hackResult.TextColor3 = Color3.fromRGB(0, 255, 0)
+	else
+		self.hackResult.Text = "❌ HACK FAILED! Security alert triggered."
+		self.hackResult.TextColor3 = C.Red
+	end
+	
+	task.delay(1.5, function()
+		self.hackOverlay.Visible = false
+		
+		if self.callback then
+			self.callback(won, { 
+				successes = self.hackSuccesses, 
+				rounds = self.hackTotalRounds,
+				difficulty = self.hackDifficulty,
+			})
+			self.callback = nil
+		end
+	end)
+end
+
+-- ═══════════════════════════════════════════════════════════════
 -- PUBLIC API
 -- ═══════════════════════════════════════════════════════════════
 
@@ -1743,6 +2145,8 @@ function Minigames:play(gameType, callback, options)
 		self:startPrisonEscape(callback)
 	elseif gameType == "mash" then
 		self:startMash(callback, options)
+	elseif gameType == "hacking" then
+		self:startHacking(callback, options)
 	else
 		-- Unknown game type, just call callback with success
 		if callback then
@@ -1763,6 +2167,7 @@ function Minigames:cancel()
 	if self.qteOverlay then self.qteOverlay.Visible = false end
 	if self.prisonOverlay then self.prisonOverlay.Visible = false end
 	if self.mashOverlay then self.mashOverlay.Visible = false end
+	if self.hackOverlay then self.hackOverlay.Visible = false end
 	self.callback = nil
 end
 
@@ -1774,6 +2179,7 @@ function Minigames:getAvailableGames()
 		{ id = "qte", name = "Quick Time", emoji = "⚡", description = "Tap at the right moment" },
 		{ id = "prison_escape", name = "Prison Escape", emoji = "🔐", description = "Navigate the maze" },
 		{ id = "mash", name = "Mash", emoji = "👆", description = "Tap as fast as you can" },
+		{ id = "hacking", name = "Hacking", emoji = "💻", description = "Type codes to breach systems" },
 	}
 end
 

@@ -655,6 +655,11 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
 	
+	-- Sync prison state from flags (handles recapture, release, etc.)
+	if _G.SyncPrisonStateFromFlags then
+		_G.SyncPrisonStateFromFlags(player)
+	end
+	
 	-- Calculate actual deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
 	local healthDelta = (state.Stats.Health or 100) - beforeHealth
@@ -747,6 +752,11 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	pendingEvents[player] = nil
 
 	state:AddFeed(feedText)
+	
+	-- Sync prison state from flags (handles recapture, release, etc.)
+	if _G.SyncPrisonStateFromFlags then
+		_G.SyncPrisonStateFromFlags(player)
+	end
 	
 	-- Calculate total deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness

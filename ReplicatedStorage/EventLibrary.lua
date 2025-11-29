@@ -8296,6 +8296,486 @@ local musicalEvents = {
 	},
 }
 
+-- ═══════════════════════════════════════════════════════════════════
+-- CRIMINAL CAREER PATHS (Roblox-appropriate)
+-- Gun Dealer, Car Thief, House Robber paths
+-- ═══════════════════════════════════════════════════════════════════
+
+local criminalCareerEvents = {
+	-- ===============================
+	-- CAR THIEF CAREER PATH
+	-- ===============================
+	{
+		id = "car_thief_start",
+		minAge = 16, maxAge = 35,
+		weight = 20, oneTime = true,
+		emoji = "🚗", title = "Chop Shop Introduction",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.criminal_tendencies or f.gang_member) and not f.car_thief_career
+		end,
+		text = "A shady contact knows someone who runs a chop shop. They need people who can 'acquire' vehicles.",
+		choices = {
+			{ text = "🚗 I'm interested", effects = { Happiness = 5, Smarts = 3 }, resultText = "You're now connected to the car theft ring.", setFlags = {"car_thief_career", "connected"} },
+			{ text = "🚫 Too risky", effects = { Smarts = 3 }, resultText = "You stayed away from that life." },
+		},
+	},
+	
+	{
+		id = "car_thief_first_job",
+		minAge = 16, maxAge = 50,
+		weight = 25, cooldown = 3,
+		emoji = "🔑", title = "First Vehicle Acquisition",
+		category = "crime",
+		requiresFlag = "car_thief_career",
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local cars = {"Honda Civic", "Toyota Camry", "Ford Mustang", "BMW 3 Series", "pickup truck"}
+			return { car = cars[math.random(#cars)] }
+		end,
+		text = "Your contact has a target: a %car% parked in a quiet neighborhood.",
+		choices = {
+			{ text = "🔓 Steal it", effects = { Money = 3000, Happiness = 5 }, resultText = "You delivered the car to the chop shop. Easy money!", minigame = "heist" },
+			{ text = "👀 Scout first", effects = { Money = 2000, Smarts = 5 }, resultText = "Your careful approach paid off. Clean job.", setFlag = "careful_thief" },
+			{ text = "⏭️ Pass on this one", effects = {}, resultText = "You waited for a better opportunity." },
+		},
+	},
+	
+	{
+		id = "car_thief_luxury",
+		minAge = 18, maxAge = 50,
+		weight = 15, cooldown = 5,
+		emoji = "🏎️", title = "Luxury Target",
+		category = "crime",
+		requiresFlag = "car_thief_career",
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local cars = {"Porsche 911", "Mercedes AMG", "Tesla Model S", "Range Rover", "Lamborghini"}
+			return { car = cars[math.random(#cars)] }
+		end,
+		text = "A %car% spotted outside an upscale restaurant. High risk, high reward.",
+		choices = {
+			{ text = "🏎️ Go for it!", effects = { Money = 25000, Happiness = 10 }, resultText = "Jackpot! The chop shop paid top dollar!", setFlag = "luxury_thief", minigame = "heist" },
+			{ text = "🎯 Need better intel", effects = { Smarts = 3 }, resultText = "You passed. Luxury cars have better security." },
+		},
+	},
+	
+	{
+		id = "car_thief_ring_promotion",
+		minAge = 20, maxAge = 55,
+		weight = 10, oneTime = true,
+		emoji = "👔", title = "Moving Up",
+		category = "crime",
+		requiresFlag = "car_thief_career",
+		requiresFlag2 = "luxury_thief",
+		blockIfFlag = "in_prison",
+		text = "The chop shop boss is impressed. They want you to recruit and manage a crew.",
+		choices = {
+			{ text = "👔 Accept the promotion", effects = { Money = 10000, Happiness = 12, Smarts = 5 }, resultText = "You're now running your own crew!", setFlags = {"car_ring_leader", "crew_boss"} },
+			{ text = "🚗 Prefer solo work", effects = { Money = 5000 }, resultText = "You stayed a lone wolf operator." },
+		},
+	},
+	
+	-- ===============================
+	-- HOUSE ROBBER CAREER PATH  
+	-- ===============================
+	{
+		id = "burglary_start",
+		minAge = 16, maxAge = 40,
+		weight = 20, oneTime = true,
+		emoji = "🏠", title = "Breaking & Entering",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.criminal_tendencies or f.petty_thief) and not f.burglar_career
+		end,
+		text = "A friend tells you about houses that are easy targets. Empty homes with valuable stuff.",
+		choices = {
+			{ text = "🏠 Show me", effects = { Smarts = 3, Happiness = 3 }, resultText = "You learned the basics of residential burglary.", setFlags = {"burglar_career", "knows_targets"} },
+			{ text = "🚫 Not interested", effects = { Smarts = 2 }, resultText = "You drew the line at breaking into homes." },
+		},
+	},
+	
+	{
+		id = "burglary_job",
+		minAge = 16, maxAge = 55,
+		weight = 25, cooldown = 2,
+		emoji = "🔦", title = "Night Job",
+		category = "crime",
+		requiresFlag = "burglar_career",
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local items = {"jewelry", "electronics", "designer items", "collectibles", "cash stash"}
+			return { items = items[math.random(#items)] }
+		end,
+		text = "You found a house where the owners are on vacation. Intel says they have %items%.",
+		choices = {
+			{ text = "🌙 Hit it tonight", effects = { Money = 4000, Happiness = 5 }, resultText = "You got in and out clean with the goods!", minigame = "heist" },
+			{ text = "🕵️ Watch for a week", effects = { Money = 5500, Smarts = 5, Happiness = 3 }, resultText = "Your patience paid off. Perfect timing.", setFlag = "patient_burglar" },
+			{ text = "⏭️ Bad feeling", effects = {}, resultText = "You trusted your gut and passed." },
+		},
+	},
+	
+	{
+		id = "burglary_mansion",
+		minAge = 20, maxAge = 55,
+		weight = 12, cooldown = 8,
+		emoji = "🏰", title = "The Big Score",
+		category = "crime",
+		requiresFlag = "burglar_career",
+		requiresAnyFlag = {"patient_burglar", "master_thief"},
+		blockIfFlag = "in_prison",
+		text = "A mansion in the hills. Rich owner, minimal security, gone for a month. This could set you up for life.",
+		choices = {
+			{ text = "🏰 Go for the big score!", effects = { Money = 100000, Happiness = 20 }, resultText = "MASSIVE haul! You're set for a while!", setFlag = "mansion_heist", minigame = "heist" },
+			{ text = "🎯 Need a crew", effects = { Money = 75000, Happiness = 15 }, resultText = "Your crew helped pull it off. Split the take.", setFlags = {"mansion_heist", "has_crew"} },
+			{ text = "🚫 Too ambitious", effects = { Smarts = 5 }, resultText = "Mansions have surprises. Smart to pass." },
+		},
+	},
+	
+	{
+		id = "burglary_fence_connection",
+		minAge = 18, maxAge = 55,
+		weight = 15, oneTime = true,
+		emoji = "🤝", title = "Meet the Fence",
+		category = "crime",
+		requiresFlag = "burglar_career",
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local names = {"Rico", "Snake", "Ghost", "Diamond", "Vex"}
+			return { fenceName = names[math.random(#names)] }
+		end,
+		text = "%fenceName% is a high-end fence who pays 70% of value instead of the usual 30%. Want an introduction?",
+		choices = {
+			{ text = "🤝 Get me connected", effects = { Happiness = 8, Smarts = 5 }, resultText = "Now you have a premium fence contact!", setFlag = "premium_fence" },
+			{ text = "🚫 Don't trust new people", effects = { Smarts = 3 }, resultText = "You stuck with your current connections." },
+		},
+	},
+	
+	-- ===============================
+	-- GUN DEALER CAREER PATH (Roblox-appropriate: focuses on "replica" and "collectible" angle)
+	-- ===============================
+	{
+		id = "collector_dealer_start",
+		minAge = 18, maxAge = 50,
+		weight = 15, oneTime = true,
+		emoji = "🎯", title = "Underground Market",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.gang_member or f.criminal_tendencies or f.connected) and not f.dealer_career
+		end,
+		text = "Someone approaches you about selling 'collectible items' on the underground market. Very profitable.",
+		choices = {
+			{ text = "💰 Tell me more", effects = { Smarts = 5 }, resultText = "You learned about the underground collectibles trade.", setFlags = {"dealer_career", "underground_trader"} },
+			{ text = "🚫 Stay out of it", effects = { Smarts = 3 }, resultText = "You wanted nothing to do with that world." },
+		},
+	},
+	
+	{
+		id = "dealer_first_sale",
+		minAge = 18, maxAge = 60,
+		weight = 20, cooldown = 3,
+		emoji = "📦", title = "First Client",
+		category = "crime",
+		requiresFlag = "dealer_career",
+		blockIfFlag = "in_prison",
+		text = "A client wants to buy some 'collectibles'. Standard deal, nothing too risky.",
+		choices = {
+			{ text = "📦 Make the deal", effects = { Money = 5000, Happiness = 5 }, resultText = "Smooth transaction. Easy money." },
+			{ text = "💰 Charge premium", effects = { Money = 7000, Happiness = 3 }, resultText = "You upsold them. Good business.", setFlag = "shrewd_dealer" },
+			{ text = "⏭️ Bad vibes", effects = {}, resultText = "Something felt off. You passed." },
+		},
+	},
+	
+	{
+		id = "dealer_bulk_opportunity",
+		minAge = 20, maxAge = 55,
+		weight = 12, cooldown = 8,
+		emoji = "📈", title = "Bulk Order",
+		category = "crime",
+		requiresFlag = "dealer_career",
+		blockIfFlag = "in_prison",
+		text = "A big buyer wants a large quantity. Massive payout but higher exposure.",
+		choices = {
+			{ text = "📦 Take the order", effects = { Money = 50000, Happiness = 10 }, resultText = "Huge payout! But you're now on the radar.", setFlags = {"big_dealer", "high_profile"} },
+			{ text = "🎯 Counter with smaller deal", effects = { Money = 20000, Happiness = 8 }, resultText = "You kept things manageable. Smart.", setFlag = "cautious_dealer" },
+			{ text = "🚫 Too risky", effects = { Smarts = 5 }, resultText = "Bulk deals attract attention. You passed." },
+		},
+	},
+	
+	{
+		id = "dealer_territory",
+		minAge = 22, maxAge = 55,
+		weight = 10, oneTime = true,
+		emoji = "🗺️", title = "Expand Territory",
+		category = "crime",
+		requiresFlag = "big_dealer",
+		blockIfFlag = "in_prison",
+		text = "You could expand your operation to neighboring areas. More profit, more risk.",
+		choices = {
+			{ text = "🗺️ Expand operations", effects = { Money = 30000, Happiness = 10 }, resultText = "Your network now spans multiple areas!", setFlag = "territory_boss" },
+			{ text = "🏠 Stay local", effects = { Money = 10000, Smarts = 3 }, resultText = "You kept things contained. Lower profile." },
+		},
+	},
+}
+
+-- ═══════════════════════════════════════════════════════════════════
+-- HACKER JOB CAREER EVENTS (With typing minigame!)
+-- Ethical and Unethical paths
+-- ═══════════════════════════════════════════════════════════════════
+
+local hackerJobEvents = {
+	-- ===============================
+	-- ETHICAL HACKER PATH
+	-- ===============================
+	{
+		id = "ethical_hacker_job_offer",
+		minAge = 18, maxAge = 45,
+		weight = 18, oneTime = true,
+		emoji = "🛡️", title = "Cybersecurity Job Offer",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.white_hat or f.programmer or f.computer_interest) and not f.hacker_job
+		end,
+		getDynamicData = function()
+			local companies = {"SecureNet Inc", "CyberGuard Corp", "Digital Fortress", "TrustShield", "ByteArmor"}
+			local salaries = {65000, 75000, 85000, 95000}
+			return { company = companies[math.random(#companies)], salary = salaries[math.random(#salaries)] }
+		end,
+		text = "%company% is hiring ethical hackers! Starting salary: $%salary%/year.",
+		choices = {
+			{ text = "🛡️ Apply now!", effects = { Happiness = 12, Money = 0 }, resultText = "You got the job! Time to protect systems.", setFlags = {"hacker_job", "ethical_hacker_job", "employed"}, minigame = "hacking" },
+			{ text = "📚 Need more training", effects = { Smarts = 5 }, resultText = "You decided to improve your skills first." },
+			{ text = "💰 Want higher pay", effects = {}, resultText = "You'll wait for a better offer." },
+		},
+	},
+	
+	{
+		id = "ethical_hacker_pentest",
+		minAge = 18, maxAge = 60,
+		weight = 25, cooldown = 2,
+		emoji = "🔍", title = "Penetration Test Assignment",
+		category = "work",
+		requiresFlag = "ethical_hacker_job",
+		getDynamicData = function()
+			local clients = {"a major bank", "a hospital network", "a government agency", "a tech startup", "an e-commerce site"}
+			local bounties = {2000, 5000, 10000, 15000}
+			return { client = clients[math.random(#clients)], bounty = bounties[math.random(#bounties)] }
+		end,
+		text = "Your company assigned you to test %client%'s security. Bonus potential: $%bounty%.",
+		choices = {
+			{ text = "💻 Begin penetration test", effects = { Money = 0, Smarts = 5 }, resultText = "You found several vulnerabilities!", minigame = "hacking" },
+			{ text = "📝 Document approach first", effects = { Smarts = 8, Money = 0 }, resultText = "Your thorough documentation impressed the client!" },
+		},
+	},
+	
+	{
+		id = "ethical_hacker_bug_bounty",
+		minAge = 16, maxAge = 60,
+		weight = 22, cooldown = 3,
+		emoji = "🐛", title = "Bug Bounty Hunt",
+		category = "work",
+		requiresAnyFlag = {"white_hat", "ethical_hacker_job", "computer_interest"},
+		getDynamicData = function()
+			local companies = {"Google", "Facebook", "Microsoft", "Apple", "Tesla", "Uber"}
+			local bounties = {500, 1000, 5000, 10000, 25000}
+			return { company = companies[math.random(#companies)], bounty = bounties[math.random(#bounties)] }
+		end,
+		text = "%company% has a bug bounty program. Find a vulnerability and earn up to $%bounty%!",
+		choices = {
+			{ text = "🐛 Hunt for bugs!", effects = { Smarts = 5, Money = 0, Happiness = 8 }, resultText = "You found a critical vulnerability!", setFlag = "bug_hunter", minigame = "hacking" },
+			{ text = "⏭️ Not worth the time", effects = {}, resultText = "You passed on the opportunity." },
+		},
+	},
+	
+	{
+		id = "ethical_hacker_promotion",
+		minAge = 22, maxAge = 55,
+		weight = 12, oneTime = true,
+		emoji = "📈", title = "Senior Security Position",
+		category = "work",
+		requiresFlag = "ethical_hacker_job",
+		requiresFlag2 = "bug_hunter",
+		text = "Your work has been exceptional. They're promoting you to Senior Security Analyst!",
+		choices = {
+			{ text = "📈 Accept promotion!", effects = { Money = 25000, Happiness = 15, Smarts = 5 }, resultText = "You're now a senior security professional!", setFlag = "senior_hacker" },
+			{ text = "🏢 Start own firm", effects = { Money = -10000, Happiness = 10 }, resultText = "You launched your own cybersecurity consultancy!", setFlags = {"security_founder", "entrepreneur"} },
+		},
+	},
+	
+	{
+		id = "ethical_hacker_zero_day",
+		minAge = 20, maxAge = 60,
+		weight = 8, oneTime = true,
+		emoji = "💎", title = "Zero-Day Discovery!",
+		category = "work",
+		requiresAnyFlag = {"senior_hacker", "elite_hacker", "bug_hunter"},
+		getDynamicData = function()
+			local systems = {"Windows", "iOS", "Android", "Chrome", "Linux kernel"}
+			return { system = systems[math.random(#systems)] }
+		end,
+		text = "You discovered a zero-day vulnerability in %system%! This is HUGE.",
+		choices = {
+			{ text = "🏛️ Report responsibly", effects = { Money = 100000, Happiness = 20, Smarts = 10 }, resultText = "Massive bounty! You're a legend in the security community!", setFlags = {"zero_day_finder", "famous_hacker"} },
+			{ text = "💰 Sell to highest bidder", effects = { Money = 500000, Happiness = 10 }, resultText = "You sold it on the dark market. Risky but lucrative.", setFlags = {"sold_zero_day", "gray_hat"}, clearFlag = "white_hat" },
+		},
+	},
+	
+	-- ===============================
+	-- UNETHICAL HACKER PATH (Black Hat)
+	-- ===============================
+	{
+		id = "blackhat_first_hack",
+		minAge = 14, maxAge = 40,
+		weight = 20, oneTime = true,
+		emoji = "💀", title = "Dark Side Temptation",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.black_hat or f.hacker_skills or f.computer_interest) and not f.blackhat_career
+		end,
+		text = "Someone on a hacker forum is offering to pay for 'services'. This isn't ethical, but it's money.",
+		choices = {
+			{ text = "💀 Take the job", effects = { Money = 2000, Happiness = 5 }, resultText = "You crossed a line. Welcome to the dark side.", setFlags = {"blackhat_career", "black_hat"}, minigame = "hacking" },
+			{ text = "🛡️ Stay ethical", effects = { Smarts = 5, Happiness = 3 }, resultText = "You maintained your principles.", setFlag = "white_hat" },
+		},
+	},
+	
+	{
+		id = "blackhat_corporate_hack",
+		minAge = 16, maxAge = 55,
+		weight = 18, cooldown = 4,
+		emoji = "🏢", title = "Corporate Target",
+		category = "crime",
+		requiresFlag = "blackhat_career",
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local companies = {"MegaCorp", "GlobalTech", "DataHoard Inc", "InfoSystems", "TechGiant"}
+			local payouts = {10000, 25000, 50000, 75000}
+			return { company = companies[math.random(#companies)], payout = payouts[math.random(#payouts)] }
+		end,
+		text = "A client wants data from %company%. They're paying $%payout% for the job.",
+		choices = {
+			{ text = "💻 Hack them", effects = { Money = 0, Happiness = 5 }, resultText = "You breached their systems and extracted the data!", minigame = "hacking" },
+			{ text = "💰 Demand more", effects = { Money = 0, Happiness = 3 }, resultText = "You negotiated a higher fee.", setFlag = "shrewd_blackhat" },
+			{ text = "⏭️ Too risky", effects = { Smarts = 3 }, resultText = "You passed on this one." },
+		},
+	},
+	
+	{
+		id = "blackhat_ransomware",
+		minAge = 18, maxAge = 50,
+		weight = 12, cooldown = 8,
+		emoji = "🔐", title = "Ransomware Operation",
+		category = "crime",
+		requiresFlag = "blackhat_career",
+		blockIfFlag = "in_prison",
+		text = "You could deploy ransomware and demand crypto payments. VERY illegal but potentially huge money.",
+		choices = {
+			{ text = "🔐 Deploy ransomware", effects = { Money = 200000, Happiness = 5, Smarts = -5 }, resultText = "Several companies paid up. You're now a serious cybercriminal.", setFlags = {"ransomware_operator", "high_priority_target"}, minigame = "hacking" },
+			{ text = "💰 Just steal data", effects = { Money = 50000, Happiness = 3 }, resultText = "You stuck to data theft. Less heat.", minigame = "hacking" },
+			{ text = "🚫 Way too dangerous", effects = { Smarts = 5 }, resultText = "Ransomware attracts federal attention. Smart to avoid." },
+		},
+	},
+	
+	{
+		id = "blackhat_collective_invite",
+		minAge = 18, maxAge = 45,
+		weight = 10, oneTime = true,
+		emoji = "👥", title = "Hacker Collective Invite",
+		category = "crime",
+		requiresFlag = "blackhat_career",
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local groups = {"Shadow Collective", "Binary Ghosts", "Zero Day Syndicate", "Phantom Hackers", "Dark Network"}
+			return { group = groups[math.random(#groups)] }
+		end,
+		text = "The infamous %group% wants you to join. They only recruit the best.",
+		choices = {
+			{ text = "👥 Join them", effects = { Happiness = 15, Smarts = 10 }, resultText = "You're now part of an elite hacking collective!", setFlags = {"hacker_collective", "elite_hacker"} },
+			{ text = "🐺 Work alone", effects = { Happiness = 5 }, resultText = "You preferred to stay independent." },
+		},
+	},
+	
+	{
+		id = "blackhat_feds_hunting",
+		minAge = 18, maxAge = 60,
+		weight = 15, cooldown = 5,
+		emoji = "🚨", title = "Feds Are Hunting You",
+		category = "crime",
+		requiresAnyFlag = {"ransomware_operator", "hacked_government", "high_priority_target"},
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local agents = {"Agent Smith", "Agent Chen", "Agent Williams", "Agent Kumar"}
+			return { agent = agents[math.random(#agents)] }
+		end,
+		text = "FBI Cyber Division is closing in. %agent% has been assigned to your case.",
+		choices = {
+			{ text = "💻 Cover your tracks", effects = { Smarts = 10, Happiness = -5 }, resultText = "You erased your digital footprint. For now.", minigame = "hacking" },
+			{ text = "🏃 Go dark completely", effects = { Happiness = -15, Money = -10000 }, resultText = "You abandoned everything and disappeared." },
+			{ text = "🔄 Become an informant", effects = { Happiness = 5, Money = 25000 }, resultText = "You cut a deal. Immunity for information.", setFlag = "fbi_informant", clearFlags = {"blackhat_career", "hacker_collective"} },
+		},
+	},
+	
+	-- ===============================
+	-- HACKER WORK EVENTS (Random gigs for any hacker)
+	-- ===============================
+	{
+		id = "hacker_freelance_gig",
+		minAge = 16, maxAge = 60,
+		weight = 30, cooldown = 2,
+		emoji = "💻", title = "Freelance Hack Job",
+		category = "work",
+		requiresAnyFlag = {"hacker_job", "blackhat_career", "hacker_skills", "computer_interest"},
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local jobs = {"recover a lost password", "test website security", "find data online", "unlock a device", "trace a scammer"}
+			local pays = {200, 500, 1000, 2000, 3000}
+			return { job = jobs[math.random(#jobs)], pay = pays[math.random(#pays)] }
+		end,
+		text = "Someone needs you to %job%. They're offering $%pay%.",
+		choices = {
+			{ text = "💻 Take the job", effects = { Money = 0, Happiness = 5, Smarts = 3 }, resultText = "Job completed successfully!", minigame = "hacking" },
+			{ text = "⏭️ Not interested", effects = {}, resultText = "You passed on this one." },
+		},
+	},
+	
+	{
+		id = "hacker_crypto_recovery",
+		minAge = 18, maxAge = 60,
+		weight = 15, cooldown = 5,
+		emoji = "₿", title = "Crypto Recovery Job",
+		category = "work",
+		requiresAnyFlag = {"hacker_job", "blackhat_career", "elite_hacker"},
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local amounts = {5000, 25000, 100000, 500000}
+			return { cryptoValue = amounts[math.random(#amounts)] }
+		end,
+		text = "A client lost access to a crypto wallet worth $%cryptoValue%. They'll pay 20% if you can recover it.",
+		choices = {
+			{ text = "💻 Attempt recovery", effects = { Money = 0, Smarts = 8 }, resultText = "You recovered the wallet! Huge payday!", minigame = "hacking" },
+			{ text = "📚 Research first", effects = { Smarts = 5 }, resultText = "You studied the problem. Might take longer but more likely to succeed." },
+			{ text = "⏭️ Too complicated", effects = {}, resultText = "This was beyond your expertise." },
+		},
+	},
+}
+
+-- Add criminal career events to main table
+for _, event in ipairs(criminalCareerEvents) do
+	table.insert(events, event)
+end
+print("[EventLibrary] Added", #criminalCareerEvents, "criminal career events!")
+
+-- Add hacker job events to main table
+for _, event in ipairs(hackerJobEvents) do
+	table.insert(events, event)
+end
+print("[EventLibrary] Added", #hackerJobEvents, "hacker job events!")
+
 -- Add all trait events to the main events table
 for _, event in ipairs(codingEvents) do
 	table.insert(events, event)
