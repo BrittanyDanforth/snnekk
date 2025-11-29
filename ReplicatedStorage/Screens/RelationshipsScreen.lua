@@ -547,20 +547,20 @@ function RelationshipsScreen:createInteractionModal()
 	self.modalHeader.ZIndex = 93
 	self.modalHeader.Parent = self.interactionCard
 
-	-- Close button for modal
+	-- Close button for modal (clean X)
 	local modalClose = Instance.new("TextButton")
-	modalClose.Size = UDim2.new(0, 36, 0, 36)
+	modalClose.Size = UDim2.new(0, 34, 0, 34)
 	modalClose.AnchorPoint = Vector2.new(1, 0)
 	modalClose.Position = UDim2.new(1, -12, 0, 16)
 	modalClose.BackgroundColor3 = C.Gray100
 	modalClose.Font = F.Title
-	modalClose.TextSize = 16
+	modalClose.TextSize = 18
 	modalClose.TextColor3 = C.Gray500
 	modalClose.Text = "X"
 	modalClose.AutoButtonColor = false
 	modalClose.ZIndex = 95
 	modalClose.Parent = self.modalHeader
-	corner(modalClose, 18)
+	corner(modalClose, 17)
 
 	modalClose.MouseButton1Click:Connect(function()
 		self:hideInteractionModal()
@@ -661,70 +661,100 @@ function RelationshipsScreen:createInteractionModal()
 end
 
 ---------------------------------------------------------------------
--- Result Modal
+-- Result Modal (BitLife-style card with colored shell)
 ---------------------------------------------------------------------
 
 function RelationshipsScreen:createResultModal()
 	self.resultOverlay = Instance.new("Frame")
 	self.resultOverlay.Size = UDim2.fromScale(1, 1)
 	self.resultOverlay.BackgroundColor3 = C.Black
-	self.resultOverlay.BackgroundTransparency = 0.4
+	self.resultOverlay.BackgroundTransparency = 0.5
 	self.resultOverlay.Visible = false
 	self.resultOverlay.ZIndex = 96
 	self.resultOverlay.Parent = self.screenGui
 
-	self.resultCard = Instance.new("Frame")
-	self.resultCard.Size = UDim2.new(0.88, 0, 0, 0)
-	self.resultCard.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultCard.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.resultCard.Position = UDim2.fromScale(0.5, 0.5)
-	self.resultCard.BackgroundColor3 = C.White
-	self.resultCard.ZIndex = 97
-	self.resultCard.Parent = self.resultOverlay
-	corner(self.resultCard, 28)
+	-- Click outside to close
+	local resultCloseArea = Instance.new("TextButton")
+	resultCloseArea.Size = UDim2.fromScale(1, 1)
+	resultCloseArea.BackgroundTransparency = 1
+	resultCloseArea.Text = ""
+	resultCloseArea.ZIndex = 96
+	resultCloseArea.Parent = self.resultOverlay
+	resultCloseArea.MouseButton1Click:Connect(function()
+		self:hideResultModal()
+	end)
 
+	-- Outer colored shell (changes based on success/fail)
+	self.resultShell = Instance.new("Frame")
+	self.resultShell.Size = UDim2.new(0.88, 0, 0, 0)
+	self.resultShell.AutomaticSize = Enum.AutomaticSize.Y
+	self.resultShell.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.resultShell.Position = UDim2.fromScale(0.5, 0.5)
+	self.resultShell.BackgroundColor3 = C.Green
+	self.resultShell.ZIndex = 97
+	self.resultShell.Parent = self.resultOverlay
+	corner(self.resultShell, 24)
+
+	self.resultShellStroke = stroke(self.resultShell, 3, 0, C.GreenDark)
+
+	-- Shell padding
+	pad(self.resultShell, 4, 4, 4, 4)
+
+	-- Inner white card
+	self.resultCard = Instance.new("Frame")
+	self.resultCard.Size = UDim2.new(1, 0, 0, 0)
+	self.resultCard.AutomaticSize = Enum.AutomaticSize.Y
+	self.resultCard.BackgroundColor3 = C.White
+	self.resultCard.ZIndex = 98
+	self.resultCard.Parent = self.resultShell
+	corner(self.resultCard, 20)
+
+	-- Content container
 	local resultContent = Instance.new("Frame")
 	resultContent.Size = UDim2.new(1, 0, 0, 0)
 	resultContent.AutomaticSize = Enum.AutomaticSize.Y
 	resultContent.BackgroundTransparency = 1
-	resultContent.ZIndex = 98
+	resultContent.ZIndex = 99
 	resultContent.Parent = self.resultCard
 
-	pad(resultContent, 28, 28, 32, 28)
+	pad(resultContent, 24, 24, 28, 24)
 
 	local layout = Instance.new("UIListLayout")
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 16)
+	layout.Padding = UDim.new(0, 14)
 	layout.Parent = resultContent
 
+	-- Emoji circle
 	self.resultEmojiFrame = Instance.new("Frame")
-	self.resultEmojiFrame.Size = UDim2.new(0, 80, 0, 80)
+	self.resultEmojiFrame.Size = UDim2.new(0, 72, 0, 72)
 	self.resultEmojiFrame.BackgroundColor3 = C.GreenPale
 	self.resultEmojiFrame.LayoutOrder = 1
-	self.resultEmojiFrame.ZIndex = 99
+	self.resultEmojiFrame.ZIndex = 100
 	self.resultEmojiFrame.Parent = resultContent
-	corner(self.resultEmojiFrame, 40)
+	corner(self.resultEmojiFrame, 36)
 
 	self.resultEmoji = Instance.new("TextLabel")
 	self.resultEmoji.Size = UDim2.fromScale(1, 1)
 	self.resultEmoji.BackgroundTransparency = 1
 	self.resultEmoji.Font = F.Body
-	self.resultEmoji.TextSize = 44
-	self.resultEmoji.Text = "✅"
-	self.resultEmoji.ZIndex = 100
+	self.resultEmoji.TextSize = 38
+	self.resultEmoji.Text = "😊"
+	self.resultEmoji.ZIndex = 101
 	self.resultEmoji.Parent = self.resultEmojiFrame
 
+	-- Title
 	self.resultTitle = Instance.new("TextLabel")
-	self.resultTitle.Size = UDim2.new(1, 0, 0, 30)
+	self.resultTitle.Size = UDim2.new(1, 0, 0, 28)
 	self.resultTitle.BackgroundTransparency = 1
 	self.resultTitle.Font = F.Title
-	self.resultTitle.TextSize = 24
+	self.resultTitle.TextSize = 22
 	self.resultTitle.TextColor3 = C.Gray900
 	self.resultTitle.Text = "It went well!"
 	self.resultTitle.LayoutOrder = 2
-	self.resultTitle.ZIndex = 99
+	self.resultTitle.ZIndex = 100
 	self.resultTitle.Parent = resultContent
 
+	-- Message
 	self.resultMsg = Instance.new("TextLabel")
 	self.resultMsg.Size = UDim2.new(1, 0, 0, 0)
 	self.resultMsg.AutomaticSize = Enum.AutomaticSize.Y
@@ -733,43 +763,43 @@ function RelationshipsScreen:createResultModal()
 	self.resultMsg.TextSize = 15
 	self.resultMsg.TextColor3 = C.Gray600
 	self.resultMsg.TextWrapped = true
-	self.resultMsg.LineHeight = 1.5
+	self.resultMsg.LineHeight = 1.4
 	self.resultMsg.Text = "Your relationship has improved."
 	self.resultMsg.LayoutOrder = 3
-	self.resultMsg.ZIndex = 99
+	self.resultMsg.ZIndex = 100
 	self.resultMsg.Parent = resultContent
 
+	-- Spacer
 	local spacer = Instance.new("Frame")
-	spacer.Size = UDim2.new(1, 0, 0, 8)
+	spacer.Size = UDim2.new(1, 0, 0, 6)
 	spacer.BackgroundTransparency = 1
 	spacer.LayoutOrder = 4
 	spacer.Parent = resultContent
 
-	local okBtn = Instance.new("TextButton")
-	okBtn.Size = UDim2.new(1, 0, 0, 52)
-	okBtn.BackgroundColor3 = C.Green
-	okBtn.Font = F.Button
-	okBtn.TextSize = 17
-	okBtn.TextColor3 = C.White
-	okBtn.Text = "Continue"
-	okBtn.AutoButtonColor = false
-	okBtn.LayoutOrder = 5
-	okBtn.ZIndex = 99
-	okBtn.Parent = resultContent
-	corner(okBtn, 14)
+	-- Continue button
+	self.resultOkBtn = Instance.new("TextButton")
+	self.resultOkBtn.Size = UDim2.new(1, 0, 0, 50)
+	self.resultOkBtn.BackgroundColor3 = C.Green
+	self.resultOkBtn.Font = F.Button
+	self.resultOkBtn.TextSize = 16
+	self.resultOkBtn.TextColor3 = C.White
+	self.resultOkBtn.Text = "Continue"
+	self.resultOkBtn.AutoButtonColor = false
+	self.resultOkBtn.LayoutOrder = 5
+	self.resultOkBtn.ZIndex = 100
+	self.resultOkBtn.Parent = resultContent
+	corner(self.resultOkBtn, 12)
 
-	self.resultOkBtn = okBtn
-
-	okBtn.MouseButton1Click:Connect(function()
+	self.resultOkBtn.MouseButton1Click:Connect(function()
 		self:hideResultModal()
 	end)
 
-	okBtn.MouseEnter:Connect(function()
-		tween(okBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.GreenDark })
+	self.resultOkBtn.MouseEnter:Connect(function()
+		tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.GreenDark })
 	end)
 
-	okBtn.MouseLeave:Connect(function()
-		tween(okBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Green })
+	self.resultOkBtn.MouseLeave:Connect(function()
+		tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Green })
 	end)
 end
 
@@ -924,39 +954,54 @@ function RelationshipsScreen:performAction(actionKey)
 	end
 
 	task.delay(0.25, function()
+		local success = result and result.success or false
+		
+		-- Set shell color based on success
+		local shellColor = success and C.Green or C.Red
+		local shellStrokeColor = success and C.GreenDark or C.RedDark
+		
+		self.resultShell.BackgroundColor3 = shellColor
+		self.resultShellStroke.Color = shellStrokeColor
+		
 		if result then
-			local success = result.success
 			self.resultEmoji.Text = success and "😊" or "😔"
 			self.resultEmojiFrame.BackgroundColor3 = success and C.GreenPale or C.RedPale
 			self.resultTitle.Text = success and "It went well!" or "That didn't go well..."
 			self.resultTitle.TextColor3 = success and C.GreenDark or C.RedDark
 			self.resultMsg.Text = result.message or "Something happened."
-			self.resultOkBtn.BackgroundColor3 = success and C.Green or C.Gray600
+			self.resultOkBtn.BackgroundColor3 = success and C.Green or C.Red
 		else
+			self.resultShell.BackgroundColor3 = C.Gray500
+			self.resultShellStroke.Color = C.Gray600
 			self.resultEmoji.Text = "❓"
 			self.resultEmojiFrame.BackgroundColor3 = C.Gray100
 			self.resultTitle.Text = "No response"
 			self.resultTitle.TextColor3 = C.Gray700
 			self.resultMsg.Text = "The server didn't respond. Try again."
-			self.resultOkBtn.BackgroundColor3 = C.Gray600
+			self.resultOkBtn.BackgroundColor3 = C.Gray500
 		end
 
 		self.resultOverlay.Visible = true
-		self.resultCard.Position = UDim2.new(0.5, 0, 0.5, 40)
+		self.resultShell.Position = UDim2.new(0.5, 0, 0.5, 40)
+		self.resultShell.BackgroundTransparency = 1
 		self.resultCard.BackgroundTransparency = 1
 
-		tween(self.resultCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		tween(self.resultShell, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			Position = UDim2.fromScale(0.5, 0.5),
+			BackgroundTransparency = 0,
+		})
+		tween(self.resultCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			BackgroundTransparency = 0,
 		})
 	end)
 end
 
 function RelationshipsScreen:hideResultModal()
-	local t = tween(self.resultCard, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+	local t = tween(self.resultShell, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Position = UDim2.new(0.5, 0, 0.5, 40),
 		BackgroundTransparency = 1,
 	})
+	tween(self.resultCard, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
 	t.Completed:Connect(function()
 		self.resultOverlay.Visible = false
 	end)

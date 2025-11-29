@@ -121,12 +121,14 @@ function ActivitiesScreen:createUI()
 	self.overlay.ZIndex = 80
 	self.overlay.Parent = self.screenGui
 	
-	-- Header
+	-- Header (offset down for Roblox UI)
 	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0, 60)
+	header.Size = UDim2.new(1, -16, 0, 60)
+	header.Position = UDim2.new(0, 8, 0, 44)
 	header.BackgroundColor3 = C.Amber
 	header.ZIndex = 85
 	header.Parent = self.overlay
+	corner(header, 18)
 	
 	local hGrad = Instance.new("UIGradient")
 	hGrad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C.Amber), ColorSequenceKeypoint.new(1, C.AmberDark) })
@@ -145,30 +147,32 @@ function ActivitiesScreen:createUI()
 	title.ZIndex = 86
 	title.Parent = header
 	
-	-- Close button
+	-- Close button (clean X)
 	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 44, 0, 44)
+	closeBtn.Size = UDim2.new(0, 40, 0, 40)
 	closeBtn.AnchorPoint = Vector2.new(1, 0.5)
 	closeBtn.Position = UDim2.new(1, -10, 0.5, 0)
 	closeBtn.BackgroundColor3 = C.White
-	closeBtn.BackgroundTransparency = 0.85
+	closeBtn.BackgroundTransparency = 0.1
 	closeBtn.Font = F.Title
-	closeBtn.TextSize = 20
-	closeBtn.TextColor3 = C.White
-	closeBtn.Text = "✕"
+	closeBtn.TextSize = 18
+	closeBtn.TextColor3 = C.AmberDark
+	closeBtn.Text = "X"
 	closeBtn.AutoButtonColor = false
 	closeBtn.ZIndex = 86
 	closeBtn.Parent = header
-	corner(closeBtn, 22)
+	corner(closeBtn, 20)
 	
 	closeBtn.MouseButton1Click:Connect(function() self:hide() end)
-	closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.6 }) end)
-	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.85 }) end)
+	closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0 }) end)
+	closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.1), { BackgroundTransparency = 0.1 }) end)
 	
-	-- Info bar
+	-- Info bar (adjusted for header offset)
+	local contentTopOffset = 44 + 60 + 8 -- header offset + height + spacing
+	
 	self.infoBar = Instance.new("Frame")
 	self.infoBar.Size = UDim2.new(1, -20, 0, 48)
-	self.infoBar.Position = UDim2.new(0, 10, 0, 68)
+	self.infoBar.Position = UDim2.new(0, 10, 0, contentTopOffset)
 	self.infoBar.BackgroundColor3 = C.White
 	self.infoBar.ZIndex = 84
 	self.infoBar.Parent = self.overlay
@@ -189,7 +193,7 @@ function ActivitiesScreen:createUI()
 	-- Tab bar
 	local tabBar = Instance.new("Frame")
 	tabBar.Size = UDim2.new(1, -20, 0, 46)
-	tabBar.Position = UDim2.new(0, 10, 0, 124)
+	tabBar.Position = UDim2.new(0, 10, 0, contentTopOffset + 56)
 	tabBar.BackgroundColor3 = C.Gray100
 	tabBar.ZIndex = 84
 	tabBar.Parent = self.overlay
@@ -231,9 +235,10 @@ function ActivitiesScreen:createUI()
 	end
 	
 	-- Content
+	local scrollTop = contentTopOffset + 56 + 54 -- info bar + tab bar + spacing
 	self.contentScroll = Instance.new("ScrollingFrame")
-	self.contentScroll.Size = UDim2.new(1, -20, 1, -190)
-	self.contentScroll.Position = UDim2.new(0, 10, 0, 178)
+	self.contentScroll.Size = UDim2.new(1, -20, 1, -(scrollTop + 12))
+	self.contentScroll.Position = UDim2.new(0, 10, 0, scrollTop)
 	self.contentScroll.BackgroundTransparency = 1
 	self.contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	self.contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -764,61 +769,85 @@ function ActivitiesScreen:createResultModal()
 	self.resultOverlay = Instance.new("Frame")
 	self.resultOverlay.Size = UDim2.fromScale(1, 1)
 	self.resultOverlay.BackgroundColor3 = C.Black
-	self.resultOverlay.BackgroundTransparency = 0.4
+	self.resultOverlay.BackgroundTransparency = 0.5
 	self.resultOverlay.Visible = false
 	self.resultOverlay.ZIndex = 98
 	self.resultOverlay.Parent = self.screenGui
 	
+	-- Click outside to close
+	local resultCloseArea = Instance.new("TextButton")
+	resultCloseArea.Size = UDim2.fromScale(1, 1)
+	resultCloseArea.BackgroundTransparency = 1
+	resultCloseArea.Text = ""
+	resultCloseArea.ZIndex = 98
+	resultCloseArea.Parent = self.resultOverlay
+	resultCloseArea.MouseButton1Click:Connect(function()
+		self:hideResultModal()
+	end)
+	
+	-- Outer colored shell (BitLife-style)
+	self.resultShell = Instance.new("Frame")
+	self.resultShell.Size = UDim2.new(0.88, 0, 0, 0)
+	self.resultShell.AutomaticSize = Enum.AutomaticSize.Y
+	self.resultShell.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.resultShell.Position = UDim2.fromScale(0.5, 0.5)
+	self.resultShell.BackgroundColor3 = C.Amber
+	self.resultShell.ZIndex = 99
+	self.resultShell.Parent = self.resultOverlay
+	corner(self.resultShell, 24)
+	
+	self.resultShellStroke = stroke(self.resultShell, 3, 0, C.AmberDark)
+	pad(self.resultShell, 4, 4, 4, 4)
+	
+	-- Inner white card
 	self.resultCard = Instance.new("Frame")
-	self.resultCard.Size = UDim2.new(0.88, 0, 0, 0)
+	self.resultCard.Size = UDim2.new(1, 0, 0, 0)
 	self.resultCard.AutomaticSize = Enum.AutomaticSize.Y
-	self.resultCard.AnchorPoint = Vector2.new(0.5, 0.5)
-	self.resultCard.Position = UDim2.fromScale(0.5, 0.5)
 	self.resultCard.BackgroundColor3 = C.White
-	self.resultCard.ZIndex = 99
-	self.resultCard.Parent = self.resultOverlay
-	corner(self.resultCard, 28)
+	self.resultCard.ZIndex = 100
+	self.resultCard.Parent = self.resultShell
+	corner(self.resultCard, 20)
 	
 	local content = Instance.new("Frame")
 	content.Size = UDim2.new(1, 0, 0, 0)
 	content.AutomaticSize = Enum.AutomaticSize.Y
 	content.BackgroundTransparency = 1
-	content.ZIndex = 100
+	content.ZIndex = 101
 	content.Parent = self.resultCard
 	
-	pad(content, 28, 28, 32, 28)
+	pad(content, 24, 24, 28, 24)
 	
 	local layout = Instance.new("UIListLayout")
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 16)
+	layout.Padding = UDim.new(0, 14)
 	layout.Parent = content
 	
 	self.resultEmojiFrame = Instance.new("Frame")
-	self.resultEmojiFrame.Size = UDim2.new(0, 80, 0, 80)
+	self.resultEmojiFrame.Size = UDim2.new(0, 72, 0, 72)
 	self.resultEmojiFrame.BackgroundColor3 = C.GreenPale
 	self.resultEmojiFrame.LayoutOrder = 1
-	self.resultEmojiFrame.ZIndex = 101
+	self.resultEmojiFrame.ZIndex = 102
 	self.resultEmojiFrame.Parent = content
-	corner(self.resultEmojiFrame, 40)
+	corner(self.resultEmojiFrame, 36)
 	
 	self.resultEmoji = Instance.new("TextLabel")
 	self.resultEmoji.Size = UDim2.fromScale(1, 1)
 	self.resultEmoji.BackgroundTransparency = 1
 	self.resultEmoji.Font = F.Body
-	self.resultEmoji.TextSize = 44
-	self.resultEmoji.Text = "✅"
-	self.resultEmoji.ZIndex = 102
+	self.resultEmoji.TextSize = 38
+	self.resultEmoji.Text = "🎉"
+	self.resultEmoji.ZIndex = 103
 	self.resultEmoji.Parent = self.resultEmojiFrame
 	
 	self.resultTitle = Instance.new("TextLabel")
-	self.resultTitle.Size = UDim2.new(1, 0, 0, 30)
+	self.resultTitle.Size = UDim2.new(1, 0, 0, 28)
 	self.resultTitle.BackgroundTransparency = 1
 	self.resultTitle.Font = F.Title
-	self.resultTitle.TextSize = 24
+	self.resultTitle.TextSize = 22
 	self.resultTitle.TextColor3 = C.Gray900
 	self.resultTitle.Text = "Done!"
 	self.resultTitle.LayoutOrder = 2
-	self.resultTitle.ZIndex = 101
+	self.resultTitle.ZIndex = 102
 	self.resultTitle.Parent = content
 	
 	self.resultMsg = Instance.new("TextLabel")
@@ -829,60 +858,71 @@ function ActivitiesScreen:createResultModal()
 	self.resultMsg.TextSize = 15
 	self.resultMsg.TextColor3 = C.Gray600
 	self.resultMsg.TextWrapped = true
-	self.resultMsg.LineHeight = 1.5
+	self.resultMsg.LineHeight = 1.4
 	self.resultMsg.Text = ""
 	self.resultMsg.LayoutOrder = 3
-	self.resultMsg.ZIndex = 101
+	self.resultMsg.ZIndex = 102
 	self.resultMsg.Parent = content
 	
 	local spacer = Instance.new("Frame")
-	spacer.Size = UDim2.new(1, 0, 0, 8)
+	spacer.Size = UDim2.new(1, 0, 0, 6)
 	spacer.BackgroundTransparency = 1
 	spacer.LayoutOrder = 4
 	spacer.Parent = content
 	
-	local okBtn = Instance.new("TextButton")
-	okBtn.Size = UDim2.new(1, 0, 0, 52)
-	okBtn.BackgroundColor3 = C.Amber
-	okBtn.Font = F.Button
-	okBtn.TextSize = 17
-	okBtn.TextColor3 = C.White
-	okBtn.Text = "Continue"
-	okBtn.AutoButtonColor = false
-	okBtn.LayoutOrder = 5
-	okBtn.ZIndex = 101
-	okBtn.Parent = content
-	corner(okBtn, 14)
+	self.resultOkBtn = Instance.new("TextButton")
+	self.resultOkBtn.Size = UDim2.new(1, 0, 0, 50)
+	self.resultOkBtn.BackgroundColor3 = C.Amber
+	self.resultOkBtn.Font = F.Button
+	self.resultOkBtn.TextSize = 16
+	self.resultOkBtn.TextColor3 = C.White
+	self.resultOkBtn.Text = "Continue"
+	self.resultOkBtn.AutoButtonColor = false
+	self.resultOkBtn.LayoutOrder = 5
+	self.resultOkBtn.ZIndex = 102
+	self.resultOkBtn.Parent = content
+	corner(self.resultOkBtn, 12)
 	
-	self.resultOkBtn = okBtn
-	
-	okBtn.MouseButton1Click:Connect(function() self:hideResultModal() end)
-	okBtn.MouseEnter:Connect(function() tween(okBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.AmberDark }) end)
-	okBtn.MouseLeave:Connect(function() tween(okBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Amber }) end)
+	self.resultOkBtn.MouseButton1Click:Connect(function() self:hideResultModal() end)
+	self.resultOkBtn.MouseEnter:Connect(function() tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.AmberDark }) end)
+	self.resultOkBtn.MouseLeave:Connect(function() tween(self.resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Amber }) end)
 end
 
 function ActivitiesScreen:showResult(success, message, emoji)
-	self.resultEmoji.Text = emoji or (success and "✅" or "❌")
+	-- Set shell color based on success
+	local shellColor = success and C.Green or C.Red
+	local shellStrokeColor = success and C.GreenDark or C.RedDark
+	
+	self.resultShell.BackgroundColor3 = shellColor
+	self.resultShellStroke.Color = shellStrokeColor
+	
+	self.resultEmoji.Text = emoji or (success and "🎉" or "😔")
 	self.resultEmojiFrame.BackgroundColor3 = success and C.GreenPale or C.RedPale
 	self.resultTitle.Text = success and "Success!" or "Uh oh..."
 	self.resultTitle.TextColor3 = success and C.GreenDark or C.RedDark
 	self.resultMsg.Text = message or ""
-	self.resultOkBtn.BackgroundColor3 = success and C.Green or C.Gray600
+	self.resultOkBtn.BackgroundColor3 = success and C.Green or C.Red
 	
 	self.resultOverlay.Visible = true
-	self.resultCard.Position = UDim2.new(0.5, 0, 0.5, 40)
+	self.resultShell.Position = UDim2.new(0.5, 0, 0.5, 40)
+	self.resultShell.BackgroundTransparency = 1
 	self.resultCard.BackgroundTransparency = 1
-	tween(self.resultCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	
+	tween(self.resultShell, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0
+	})
+	tween(self.resultCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 0
 	})
 end
 
 function ActivitiesScreen:hideResultModal()
-	local t = tween(self.resultCard, TweenInfo.new(0.2), {
+	local t = tween(self.resultShell, TweenInfo.new(0.2), {
 		Position = UDim2.new(0.5, 0, 0.5, 40),
 		BackgroundTransparency = 1
 	})
+	tween(self.resultCard, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
 	t.Completed:Connect(function()
 		self.resultOverlay.Visible = false
 		self:switchTab(self.currentTab)
