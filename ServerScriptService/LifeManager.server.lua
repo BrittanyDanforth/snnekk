@@ -234,6 +234,21 @@ end)
 -- LIFE SUMMARY GENERATOR
 ----------------------------------------------------------------
 
+-- Local helper to format money
+local function formatMoney(amount)
+	if not amount then return "$0" end
+	amount = math.floor(amount)
+	if amount >= 1000000000 then
+		return string.format("$%.1fB", amount / 1000000000)
+	elseif amount >= 1000000 then
+		return string.format("$%.1fM", amount / 1000000)
+	elseif amount >= 1000 then
+		return string.format("$%.1fK", amount / 1000)
+	else
+		return "$" .. tostring(amount)
+	end
+end
+
 local function generateLifeSummary(state, deathCause)
 	local flags = state.Flags or {}
 	local achievements = {}
