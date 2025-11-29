@@ -12,6 +12,15 @@ local F = UI.Fonts
 local RelationshipsScreen = {}
 RelationshipsScreen.__index = RelationshipsScreen
 
+-- Debug logging
+local DEBUG = true
+local function log(...)
+	if DEBUG then print("[RelationshipsScreen]", ...) end
+end
+local function logWarn(...)
+	warn("[RelationshipsScreen]", ...)
+end
+
 -- Remotes
 local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
 local DoInteraction = remotesFolder and remotesFolder:WaitForChild("DoInteraction", 15)
@@ -55,6 +64,7 @@ local EnemyActions = {
 }
 
 function RelationshipsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
+	log("=== CREATING RelationshipsScreen ===")
 	local self = setmetatable({}, RelationshipsScreen)
 	self.screenGui = screenGui
 	self.playerState = playerState or {}
@@ -62,12 +72,18 @@ function RelationshipsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurF
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentTab = "family"
+	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney())
 	self:createUI()
+	log("✅ RelationshipsScreen created successfully")
 	return self
 end
 
 function RelationshipsScreen:updateState(newState)
-	if newState then self.playerState = newState end
+	log("Updating state...")
+	if newState then 
+		self.playerState = newState 
+		log("State updated - Age:", self:getAge(), "Money:", self:getMoney())
+	end
 end
 
 function RelationshipsScreen:getAge()
@@ -1341,17 +1357,27 @@ function RelationshipsScreen:createResultModal()
 end
 
 function RelationshipsScreen:doInteraction(actionId, relType, person)
+	log("=== DOING INTERACTION ===")
+	log("Action ID:", actionId, "Relation Type:", relType)
+	log("Person:", person and person.name or "None", "Person ID:", person and person.id or "None")
+	log("Player Money:", self:getMoney())
+	
 	if not DoInteraction then
+		logWarn("DoInteraction remote not available!")
 		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
 	local personId = person and person.id or nil
+	log("Invoking server DoInteraction...")
 	local result = DoInteraction:InvokeServer(actionId, relType, personId)
+	log("Server response:", result and "received" or "nil")
 	
 	if result then
+		log("Success:", result.success, "Message:", result.message)
 		self:showResult(result.success, result.message, result.success and "Done!" or "Failed")
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error", "Error")
 	end
 end
@@ -1374,16 +1400,26 @@ function RelationshipsScreen:showResult(success, message, emoji)
 end
 
 function RelationshipsScreen:show()
+	log("=== SHOWING RelationshipsScreen ===")
+	log("Current state - Age:", self:getAge(), "Money:", self:getMoney())
+	local family = self:getFamily()
+	log("Family members:", #family)
+	for _, f in ipairs(family) do
+		log("  -", f.name, "(", f.role, ") Age:", f.age, "Alive:", f.alive)
+	end
 	self:updateInfoBar()
 	self:switchTab(self.currentTab)
 	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
+	log("✅ RelationshipsScreen is now visible")
 end
 
 function RelationshipsScreen:hide()
+	log("=== HIDING RelationshipsScreen ===")
 	UI.slideOutScreen(self.overlay, "right", function()
 		self.resultModal.overlay.Visible = false
 		self.interactOverlay.Visible = false
+		log("✅ RelationshipsScreen hidden, modals cleaned up")
 	end)
 	self.isVisible = false
 end

@@ -12,6 +12,15 @@ local F = UI.Fonts
 local AssetsScreen = {}
 AssetsScreen.__index = AssetsScreen
 
+-- Debug logging
+local DEBUG = true
+local function log(...)
+	if DEBUG then print("[AssetsScreen]", ...) end
+end
+local function logWarn(...)
+	warn("[AssetsScreen]", ...)
+end
+
 -- Remotes
 local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
 local BuyProperty = remotesFolder and remotesFolder:WaitForChild("BuyProperty", 15)
@@ -47,6 +56,7 @@ local Shop = {
 }
 
 function AssetsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
+	log("=== CREATING AssetsScreen ===")
 	local self = setmetatable({}, AssetsScreen)
 	self.screenGui = screenGui
 	self.playerState = playerState or {}
@@ -54,12 +64,18 @@ function AssetsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, pl
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentTab = "property"
+	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney())
 	self:createUI()
+	log("✅ AssetsScreen created successfully")
 	return self
 end
 
 function AssetsScreen:updateState(newState)
-	if newState then self.playerState = newState end
+	log("Updating state...")
+	if newState then 
+		self.playerState = newState
+		log("State updated - Age:", self:getAge(), "Money:", self:getMoney())
+	end
 end
 
 function AssetsScreen:getAge()
@@ -812,16 +828,21 @@ function AssetsScreen:showResult(success, message, emoji)
 end
 
 function AssetsScreen:show()
+	log("=== SHOWING AssetsScreen ===")
+	log("Current state - Age:", self:getAge(), "Money:", self:getMoney())
 	self:updateBalanceBar()
 	self:switchTab(self.currentTab)
 	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
+	log("✅ AssetsScreen is now visible")
 end
 
 function AssetsScreen:hide()
+	log("=== HIDING AssetsScreen ===")
 	UI.slideOutScreen(self.overlay, "right", function()
 		self.resultModal.overlay.Visible = false
 		self.gamblingOverlay.Visible = false
+		log("✅ AssetsScreen hidden, modals cleaned up")
 	end)
 	self.isVisible = false
 end

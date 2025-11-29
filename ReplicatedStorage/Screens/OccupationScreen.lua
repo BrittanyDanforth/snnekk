@@ -50,7 +50,17 @@ local Education = {
 	{ id = "phd", name = "PhD Program", emoji = "🎓", duration = 5, cost = 100000, minAge = 24, requirement = "master" },
 }
 
+-- Debug logging
+local DEBUG = true
+local function log(...)
+	if DEBUG then print("[OccupationScreen]", ...) end
+end
+local function logWarn(...)
+	warn("[OccupationScreen]", ...)
+end
+
 function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
+	log("=== CREATING OccupationScreen ===")
 	local self = setmetatable({}, OccupationScreen)
 	self.screenGui = screenGui
 	self.playerState = playerState or {}
@@ -58,12 +68,18 @@ function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentTab = "jobs"
+	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney(), "Job:", self:getCurrentJob() or "None")
 	self:createUI()
+	log("✅ OccupationScreen created successfully")
 	return self
 end
 
 function OccupationScreen:updateState(newState)
-	if newState then self.playerState = newState end
+	log("Updating state...")
+	if newState then 
+		self.playerState = newState 
+		log("State updated - Age:", self:getAge(), "Money:", self:getMoney(), "Job:", self:getCurrentJob() or "None")
+	end
 end
 
 function OccupationScreen:getAge()
@@ -274,13 +290,16 @@ function OccupationScreen:updateInfoBar()
 end
 
 function OccupationScreen:switchTab(tabId)
+	log("Switching tab to:", tabId)
 	self.currentTab = tabId
 	
 	if tabId == "jobs" then
+		log("Animating to Jobs tab")
 		UI.tween(self.jobsTab, TweenInfo.new(0.15), { BackgroundColor3 = C.Blue, TextColor3 = C.White })
 		UI.tween(self.eduTab, TweenInfo.new(0.15), { BackgroundColor3 = C.White, TextColor3 = C.Gray600 })
 		self:populateJobs()
 	else
+		log("Animating to Education tab")
 		UI.tween(self.jobsTab, TweenInfo.new(0.15), { BackgroundColor3 = C.White, TextColor3 = C.Gray600 })
 		UI.tween(self.eduTab, TweenInfo.new(0.15), { BackgroundColor3 = C.Purple, TextColor3 = C.White })
 		self:populateEducation()
@@ -958,43 +977,72 @@ function OccupationScreen:createResultModal()
 end
 
 function OccupationScreen:applyForJob(jobId)
+	log("=== APPLYING FOR JOB ===")
+	log("Job ID:", jobId)
+	log("Player Age:", self:getAge(), "Money:", self:getMoney())
+	
 	if not ApplyForJob then
+		logWarn("ApplyForJob remote not available!")
 		self:showResult(false, "Server not available. Please try again later.", "X")
 		return
 	end
 	
+	log("Invoking server ApplyForJob...")
 	local result = ApplyForJob:InvokeServer(jobId)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
+		log("Success:", result.success, "Message:", result.message)
 		self:showResult(result.success, result.message, result.success and "Hired!" or "Rejected")
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error. Please try again.", "X")
 	end
 end
 
 function OccupationScreen:quitJob()
+	log("=== QUITTING JOB ===")
+	log("Current job:", self:getCurrentJob() or "None")
+	
 	if not QuitJob then
+		logWarn("QuitJob remote not available!")
 		self:showResult(false, "Server not available.", "X")
 		return
 	end
 	
+	log("Invoking server QuitJob...")
 	local result = QuitJob:InvokeServer()
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
+		log("Success:", result.success, "Message:", result.message)
 		self:showResult(result.success, result.message, result.success and "Done" or "Error")
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error.", "X")
 	end
 end
 
 function OccupationScreen:enrollEducation(eduId)
+	log("=== ENROLLING IN EDUCATION ===")
+	log("Education ID:", eduId)
+	log("Player Age:", self:getAge(), "Money:", self:getMoney(), "Current Edu:", self:getEducationLevel())
+	
 	if not EnrollEducation then
+		logWarn("EnrollEducation remote not available!")
 		self:showResult(false, "Server not available.", "X")
 		return
 	end
 	
+	log("Invoking server EnrollEducation...")
 	local result = EnrollEducation:InvokeServer(eduId)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
+		log("Success:", result.success, "Message:", result.message)
 		self:showResult(result.success, result.message, result.success and "Enrolled!" or "Failed")
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error.", "X")
 	end
 end
@@ -1017,15 +1065,20 @@ function OccupationScreen:showResult(success, message, emoji)
 end
 
 function OccupationScreen:show()
+	log("=== SHOWING OccupationScreen ===")
+	log("Current state - Age:", self:getAge(), "Money:", self:getMoney(), "Job:", self:getCurrentJob() or "None")
 	self:updateInfoBar()
 	self:switchTab(self.currentTab)
 	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
+	log("✅ OccupationScreen is now visible")
 end
 
 function OccupationScreen:hide()
+	log("=== HIDING OccupationScreen ===")
 	UI.slideOutScreen(self.overlay, "right", function()
 		self.resultModal.overlay.Visible = false
+		log("✅ OccupationScreen hidden, modal cleaned up")
 	end)
 	self.isVisible = false
 end

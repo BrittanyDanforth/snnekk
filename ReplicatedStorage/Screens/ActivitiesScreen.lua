@@ -66,7 +66,17 @@ local PrisonActivities = {
 	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "😇", effect = "-Sentence Time", minAge = 0 },
 }
 
+-- Debug logging
+local DEBUG = true
+local function log(...)
+	if DEBUG then print("[ActivitiesScreen]", ...) end
+end
+local function logWarn(...)
+	warn("[ActivitiesScreen]", ...)
+end
+
 function ActivitiesScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
+	log("=== CREATING ActivitiesScreen ===")
 	local self = setmetatable({}, ActivitiesScreen)
 	self.screenGui = screenGui
 	self.playerState = playerState or {}
@@ -74,12 +84,18 @@ function ActivitiesScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentTab = "mindbody"
+	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail())
 	self:createUI()
+	log("✅ ActivitiesScreen created successfully")
 	return self
 end
 
 function ActivitiesScreen:updateState(newState)
-	if newState then self.playerState = newState end
+	log("Updating state...")
+	if newState then 
+		self.playerState = newState 
+		log("State updated - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail())
+	end
 end
 
 function ActivitiesScreen:getAge()
@@ -278,6 +294,7 @@ function ActivitiesScreen:updateInfoBar()
 end
 
 function ActivitiesScreen:switchTab(tabId)
+	log("Switching tab to:", tabId)
 	self.currentTab = tabId
 	
 	for id, data in pairs(self.tabBtns) do
@@ -293,11 +310,13 @@ function ActivitiesScreen:switchTab(tabId)
 		if child:IsA("Frame") then child:Destroy() end
 	end
 	
+	log("Populating tab content...")
 	if tabId == "prison" then self:populatePrison()
 	elseif tabId == "mindbody" then self:populateMindBody()
 	elseif tabId == "social" then self:populateSocial()
 	elseif tabId == "fun" then self:populateFun()
 	elseif tabId == "crime" then self:populateCrime() end
+	log("Tab content populated")
 end
 
 function ActivitiesScreen:populateMindBody()
@@ -1169,47 +1188,77 @@ function ActivitiesScreen:completeMinigame(success)
 end
 
 function ActivitiesScreen:doActivity(item, bonus)
+	log("=== DOING ACTIVITY ===")
+	log("Activity ID:", item.id, "Name:", item.name, "Bonus:", bonus or false)
+	log("Player Age:", self:getAge(), "Money:", self:getMoney())
+	
 	if not DoActivity then
+		logWarn("DoActivity remote not available!")
 		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
+	log("Invoking server DoActivity...")
 	local result = DoActivity:InvokeServer(item.id, bonus or false)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
+		log("Success:", result.success, "Message:", result.message)
 		self:showResult(result.success, result.message, result.success and "Done!" or "Failed")
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error", "Error")
 	end
 end
 
 function ActivitiesScreen:doCrime(item)
+	log("=== COMMITTING CRIME ===")
+	log("Crime ID:", item.id, "Name:", item.name, "Risk:", item.risk)
+	log("Player Age:", self:getAge(), "Money:", self:getMoney())
+	
 	if not CommitCrime then
+		logWarn("CommitCrime remote not available!")
 		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
+	log("Invoking server CommitCrime...")
 	local result = CommitCrime:InvokeServer(item.id)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
+		log("Success:", result.success, "Caught:", result.caught, "Message:", result.message)
 		local emoji = result.caught and "Caught!" or (result.success and "Success!" or "Failed")
 		self:showResult(result.success, result.message, emoji)
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error", "Error")
 	end
 end
 
 function ActivitiesScreen:doPrisonActivity(item)
+	log("=== DOING PRISON ACTIVITY ===")
+	log("Prison Activity ID:", item.id, "Name:", item.name)
+	log("Player Money:", self:getMoney())
+	
 	if not DoPrisonAction then
+		logWarn("DoPrisonAction remote not available!")
 		self:showResult(false, "Server not available", "Error")
 		return
 	end
 	
+	log("Invoking server DoPrisonAction...")
 	local result = DoPrisonAction:InvokeServer(item.id)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
+		log("Success:", result.success, "Message:", result.message)
 		local emoji = result.success and "Done!" or "Failed"
 		if item.id == "prison_escape" then emoji = result.success and "Free!" or "Caught!" end
 		if item.id == "prison_riot" then emoji = result.success and "Chaos!" or "Caught!" end
 		self:showResult(result.success, result.message, emoji)
 	else
+		logWarn("Server returned nil!")
 		self:showResult(false, "Server error", "Error")
 	end
 end
@@ -1232,17 +1281,22 @@ function ActivitiesScreen:showResult(success, message, emoji)
 end
 
 function ActivitiesScreen:show()
+	log("=== SHOWING ActivitiesScreen ===")
+	log("Current state - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail())
 	self:updateInfoBar()
 	self:rebuildTabs()
 	self:switchTab(self.currentTab)
 	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
+	log("✅ ActivitiesScreen is now visible")
 end
 
 function ActivitiesScreen:hide()
+	log("=== HIDING ActivitiesScreen ===")
 	UI.slideOutScreen(self.overlay, "right", function()
 		self.resultModal.overlay.Visible = false
 		self.minigameOverlay.Visible = false
+		log("✅ ActivitiesScreen hidden, modals cleaned up")
 	end)
 	self.isVisible = false
 end

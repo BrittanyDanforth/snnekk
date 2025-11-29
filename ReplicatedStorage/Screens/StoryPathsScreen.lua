@@ -12,6 +12,15 @@ local F = UI.Fonts
 local StoryPathsScreen = {}
 StoryPathsScreen.__index = StoryPathsScreen
 
+-- Debug logging
+local DEBUG = true
+local function log(...)
+	if DEBUG then print("[StoryPathsScreen]", ...) end
+end
+local function logWarn(...)
+	warn("[StoryPathsScreen]", ...)
+end
+
 -- Remotes
 local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
 local StartPath = remotesFolder and remotesFolder:WaitForChild("StartPath", 15)
@@ -122,6 +131,7 @@ local Paths = {
 }
 
 function StoryPathsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
+	log("=== CREATING StoryPathsScreen ===")
 	local self = setmetatable({}, StoryPathsScreen)
 	self.screenGui = screenGui
 	self.playerState = playerState or {}
@@ -129,7 +139,9 @@ function StoryPathsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	self.hideBlur = hideBlurFunc
 	self.isVisible = false
 	self.currentPath = nil
+	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney(), "Active Path:", self:getActivePath() or "None")
 	self:createUI()
+	log("✅ StoryPathsScreen created successfully")
 	return self
 end
 
@@ -933,33 +945,53 @@ function StoryPathsScreen:createResultModal()
 end
 
 function StoryPathsScreen:startPath(pathId)
+	log("=== STARTING STORY PATH ===")
+	log("Path ID:", pathId)
+	log("Player Age:", self:getAge(), "Money:", self:getMoney())
+	
 	if not StartPath then
-		self:showResult(false, "Server not available", "❌")
+		logWarn("StartPath remote not available!")
+		self:showResult(false, "Server not available", "X")
 		return
 	end
 	
+	log("Invoking server StartPath...")
 	local result = StartPath:InvokeServer(pathId)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
-		self:showResult(result.success, result.message, result.success and "🌟" or "😔")
+		log("Success:", result.success, "Message:", result.message)
+		self:showResult(result.success, result.message, result.success and "Started!" or "Failed")
 	else
-		self:showResult(false, "Server error", "❌")
+		logWarn("Server returned nil!")
+		self:showResult(false, "Server error", "X")
 	end
 end
 
 function StoryPathsScreen:doPathAction(pathId, actionId)
+	log("=== DOING PATH ACTION ===")
+	log("Path ID:", pathId, "Action ID:", actionId)
+	log("Player Money:", self:getMoney())
+	
 	if not DoPathAction then
-		self:showResult(false, "Server not available", "❌")
+		logWarn("DoPathAction remote not available!")
+		self:showResult(false, "Server not available", "X")
 		return
 	end
 	
+	log("Invoking server DoPathAction...")
 	local result = DoPathAction:InvokeServer(pathId, actionId)
+	log("Server response:", result and "received" or "nil")
+	
 	if result then
-		local emoji = result.success and "✨" or "😔"
-		if result.promoted then emoji = "🎉" end
-		if result.caught then emoji = "🚔" end
+		log("Success:", result.success, "Promoted:", result.promoted, "Caught:", result.caught, "Message:", result.message)
+		local emoji = result.success and "Done!" or "Failed"
+		if result.promoted then emoji = "Promoted!" end
+		if result.caught then emoji = "Caught!" end
 		self:showResult(result.success, result.message, emoji)
 	else
-		self:showResult(false, "Server error", "❌")
+		logWarn("Server returned nil!")
+		self:showResult(false, "Server error", "X")
 	end
 end
 
@@ -981,19 +1013,24 @@ function StoryPathsScreen:showResult(success, message, emoji)
 end
 
 function StoryPathsScreen:show()
+	log("=== SHOWING StoryPathsScreen ===")
+	log("Current state - Age:", self:getAge(), "Money:", self:getMoney(), "Active Path:", self:getActivePath() or "None")
 	self:updateInfoBar()
 	self:populatePaths()
 	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true
+	log("✅ StoryPathsScreen is now visible")
 end
 
 function StoryPathsScreen:hide()
+	log("=== HIDING StoryPathsScreen ===")
 	UI.slideOutScreen(self.overlay, "right", function()
 		self.resultModal.overlay.Visible = false
 		if self.actionsOverlay then
 			self.actionsOverlay:Destroy()
 			self.actionsOverlay = nil
 		end
+		log("✅ StoryPathsScreen hidden, modals cleaned up")
 	end)
 	self.isVisible = false
 end

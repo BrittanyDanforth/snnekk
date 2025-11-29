@@ -78,6 +78,7 @@ local GetSpecialActions = getRemoteFunction("GetSpecialActions")
 ----------------------------------------------------------------
 
 local playerLives = {}  -- [Player] = LifeStateType
+local pendingEvents = {} -- [Player] = { eventDef, dynamicData, choiceIndex } -- MUST be declared before resetPlayerLife!
 
 -- Forward declare serializeState
 local function serializeState(state)
@@ -151,21 +152,53 @@ local function getLife(player)
 end
 
 local function resetPlayerLife(player)
+	print("[LifeManager] === RESETTING PLAYER LIFE ===")
+	print("[LifeManager] Player:", player and player.Name or "NIL PLAYER")
+	
+	-- Validate player
+	if not player then
+		warn("[LifeManager] resetPlayerLife called with nil player!")
+		return false
+	end
+	
 	-- Create a completely new life state
+	print("[LifeManager] Creating new LifeState...")
 	local newState = LifeState.new(player)
 	
+	if not newState then
+		warn("[LifeManager] Failed to create new LifeState!")
+		return false
+	end
+	print("[LifeManager] New state created for:", newState.Name or "Unknown")
+	
 	-- Initialize event history and flags
-	EventRunner.initHistory(newState)
+	print("[LifeManager] Initializing event history...")
+	if EventRunner and EventRunner.initHistory then
+		EventRunner.initHistory(newState)
+		print("[LifeManager] Event history initialized")
+	else
+		warn("[LifeManager] EventRunner.initHistory not available!")
+	end
 	
+	-- Store in playerLives
 	playerLives[player] = newState
+	print("[LifeManager] Stored new state in playerLives")
 	
-	-- Clear pending events
-	pendingEvents[player] = nil
+	-- Clear pending events (pendingEvents is declared at top of file)
+	if pendingEvents then
+		pendingEvents[player] = nil
+		print("[LifeManager] Cleared pending events")
+	else
+		warn("[LifeManager] pendingEvents table is nil!")
+	end
 	
 	-- Sync the fresh state to client (will show intro screen again)
-	SyncState:FireClient(player, serializeState(newState), "🔄 A new life begins...", nil)
+	print("[LifeManager] Syncing state to client...")
+	local serialized = serializeState(newState)
+	SyncState:FireClient(player, serialized, "A new life begins...", nil)
 	
-	print("[LifeManager] Player", player.Name, "started a new life")
+	print("[LifeManager] ✅ Player", player.Name, "started a new life successfully!")
+	return true
 end
 
 local function createNewLife(player)
@@ -176,8 +209,7 @@ local function createNewLife(player)
 	return state
 end
 
--- Store pending event data for choice resolution
-local pendingEvents = {} -- [Player] = { eventDef, dynamicData, choiceIndex }
+-- pendingEvents is declared at top of STATE section
 
 ----------------------------------------------------------------
 -- PLAYER HANDLERS
