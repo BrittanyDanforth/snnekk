@@ -34,6 +34,14 @@ function LifeState.new(player)
 	}
 
 	self.Feed = {}
+	
+	-- Job system
+	self.Job = nil -- { id, title, company, salary, emoji }
+	
+	-- Crime system
+	self.InJail = false
+	self.JailYearsLeft = 0
+	self.CrimeRecord = 0
 
 	return self
 end
