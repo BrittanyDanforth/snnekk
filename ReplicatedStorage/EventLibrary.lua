@@ -3775,6 +3775,3360 @@ local events = {
 			{ text = "💊 Sleep aids", effects = { Health = 3 }, resultText = "It helped but probably shouldn't become a habit." },
 		},
 	},
+
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 1: EARLY LIFE EVENTS (0-11)
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	-- ─────────────────────────────────────────────────────────────────
+	-- MORE INFANT EVENTS (Ages 0-2)
+	-- ─────────────────────────────────────────────────────────────────
+	
+	{
+		id = "baby_food_reaction",
+		minAge = 0, maxAge = 1,
+		weight = 40, oneTime = true,
+		emoji = "🥄", title = "First Solid Food",
+		category = "family",
+		getDynamicData = function()
+			local foods = {"mashed peas", "sweet potato puree", "apple sauce", "banana mush", "carrot paste"}
+			return { food = foods[math.random(#foods)] }
+		end,
+		text = "Your parents are trying to feed you %food% for the first time!",
+		choices = {
+			{ text = "😋 Love it!", effects = { Health = 3, Happiness = 5 }, resultText = "You couldn't get enough! A future foodie." },
+			{ text = "🤮 Spit it out", effects = { Happiness = 2 }, resultText = "Your parents' clothes were a mess, but you were happy." },
+			{ text = "🤔 Cautiously curious", effects = { Smarts = 3, Health = 2 }, resultText = "You examined each bite before eating. Thoughtful baby!" },
+		},
+	},
+	
+	{
+		id = "baby_music_discovery",
+		minAge = 0, maxAge = 2,
+		weight = 35, oneTime = true,
+		emoji = "🎵", title = "Musical Moment",
+		category = "family",
+		text = "Music is playing and you're reacting to it for the first time!",
+		choices = {
+			{ text = "💃 Dance around!", effects = { Happiness = 6, Health = 2 }, resultText = "You've got natural rhythm!", setFlag = "musical_baby" },
+			{ text = "😊 Smile and clap", effects = { Happiness = 5 }, resultText = "Music makes you so happy!" },
+			{ text = "😴 Fall asleep", effects = { Health = 3 }, resultText = "Lullabies work wonders on you." },
+		},
+	},
+	
+	{
+		id = "baby_bath_time",
+		minAge = 0, maxAge = 2,
+		weight = 40, cooldown = 2,
+		emoji = "🛁", title = "Bath Time Adventure",
+		category = "family",
+		text = "It's bath time! The water is warm and bubbly.",
+		choices = {
+			{ text = "💦 Splash everywhere!", effects = { Happiness = 6, Health = 2 }, resultText = "The bathroom is soaked but you had fun!" },
+			{ text = "🦆 Play with rubber ducky", effects = { Happiness = 5, Smarts = 2 }, resultText = "You and ducky are best friends now." },
+			{ text = "😭 Hate bath time", effects = { Happiness = -3 }, resultText = "You screamed through the whole thing." },
+		},
+	},
+	
+	{
+		id = "baby_peek_a_boo",
+		minAge = 0, maxAge = 1,
+		weight = 45, oneTime = true,
+		emoji = "🙈", title = "Peek-a-boo!",
+		category = "family",
+		text = "Your parent is playing peek-a-boo with you!",
+		choices = {
+			{ text = "😄 Laugh hysterically", effects = { Happiness = 7 }, resultText = "Best game ever! You laughed so hard you hiccupped." },
+			{ text = "🙈 Cover your own eyes", effects = { Happiness = 5, Smarts = 4 }, resultText = "You learned the game! So clever!" },
+		},
+	},
+	
+	{
+		id = "baby_mirror_discovery",
+		minAge = 0, maxAge = 2,
+		weight = 35, oneTime = true,
+		emoji = "🪞", title = "Mirror Discovery",
+		category = "family",
+		text = "You discovered your reflection in a mirror!",
+		choices = {
+			{ text = "👋 Wave at yourself", effects = { Smarts = 4, Happiness = 4 }, resultText = "You recognized yourself! A cognitive milestone!" },
+			{ text = "😘 Kiss the mirror", effects = { Happiness = 5, Looks = 2 }, resultText = "You love what you see!" },
+			{ text = "😠 Get upset at 'other baby'", effects = { Happiness = 2 }, resultText = "Who is that baby and why are they copying you?!" },
+		},
+	},
+	
+	{
+		id = "baby_grandparents_visit",
+		minAge = 0, maxAge = 3,
+		weight = 30, cooldown = 2,
+		emoji = "👴", title = "Grandparents Visit!",
+		category = "family",
+		text = "Your grandparents came to visit!",
+		choices = {
+			{ text = "🤗 Run to them", effects = { Happiness = 8 }, resultText = "They showered you with love and treats!" },
+			{ text = "😳 Act shy", effects = { Happiness = 3, Smarts = 2 }, resultText = "You warmed up eventually. They thought it was adorable." },
+			{ text = "💤 Sleep through it", effects = { Health = 2 }, resultText = "They just watched you sleep peacefully." },
+		},
+	},
+	
+	{
+		id = "baby_separation_anxiety",
+		minAge = 1, maxAge = 3,
+		weight = 30, oneTime = true,
+		emoji = "😢", title = "Where Did They Go?",
+		category = "family",
+		text = "Your parent left the room and you can't see them anymore!",
+		choices = {
+			{ text = "😭 Cry loudly", effects = { Happiness = -3 }, resultText = "They came running back! Crisis averted." },
+			{ text = "🏃 Crawl/walk to find them", effects = { Health = 2, Smarts = 3 }, resultText = "You found them! Independence level: unlocked." },
+			{ text = "🎮 Get distracted by toys", effects = { Happiness = 4 }, resultText = "You forgot they were gone. Self-soothing mastered!" },
+		},
+	},
+	
+	{
+		id = "baby_stacking_blocks",
+		minAge = 1, maxAge = 3,
+		weight = 35, oneTime = true,
+		emoji = "🧱", title = "Block Building",
+		category = "family",
+		getDynamicData = function() return { height = math.random(3, 6) } end,
+		text = "You're playing with building blocks!",
+		choices = {
+			{ text = "🏗️ Build a tower", effects = { Smarts = 5, Happiness = 4 }, resultText = "You built a %height%-block tower! Future engineer!", setFlag = "builder_interest" },
+			{ text = "💥 Knock them down!", effects = { Happiness = 6 }, resultText = "CRASH! Destruction is fun too!" },
+			{ text = "🎨 Sort by color", effects = { Smarts = 6 }, resultText = "You organized them perfectly. Pattern recognition!" },
+		},
+	},
+	
+	{
+		id = "baby_animal_sounds",
+		minAge = 1, maxAge = 3,
+		weight = 35, oneTime = true,
+		emoji = "🐄", title = "Animal Sounds",
+		category = "family",
+		text = "Your parent is teaching you animal sounds!",
+		choices = {
+			{ text = "🐄 Moo like a cow", effects = { Happiness = 5, Smarts = 3 }, resultText = "MOOO! You got it!" },
+			{ text = "🐕 Bark like a dog", effects = { Happiness = 5, Smarts = 3 }, resultText = "WOOF WOOF! Natural communicator!" },
+			{ text = "🦁 Roar like a lion", effects = { Happiness = 6, Smarts = 3 }, resultText = "RAWR! You're fearsome!" },
+		},
+	},
+	
+	{
+		id = "baby_picture_book",
+		minAge = 1, maxAge = 3,
+		weight = 40, cooldown = 2,
+		emoji = "📖", title = "Story Time",
+		category = "family",
+		getDynamicData = function()
+			local books = {"Goodnight Moon", "The Very Hungry Caterpillar", "Where the Wild Things Are", "Pat the Bunny"}
+			return { book = books[math.random(#books)] }
+		end,
+		text = "Your parent is reading '%book%' to you!",
+		choices = {
+			{ text = "📖 Listen intently", effects = { Smarts = 5, Happiness = 4 }, resultText = "You loved the story! Books are amazing.", setFlag = "loves_stories" },
+			{ text = "🖐️ Touch the pictures", effects = { Smarts = 4, Happiness = 3 }, resultText = "You tried to 'help' turn the pages." },
+			{ text = "😴 Fall asleep", effects = { Health = 3 }, resultText = "Perfect bedtime routine." },
+		},
+	},
+	
+	{
+		id = "baby_daycare_first",
+		minAge = 1, maxAge = 3,
+		weight = 25, oneTime = true, milestone = true,
+		emoji = "🏫", title = "First Day at Daycare",
+		category = "family",
+		text = "Your parents are dropping you off at daycare for the first time!",
+		choices = {
+			{ text = "👋 Wave bye-bye happily", effects = { Happiness = 5, Smarts = 3 }, resultText = "You adapted so well! Made new friends already.", setFlag = "daycare_kid" },
+			{ text = "😭 Cling and cry", effects = { Happiness = -3 }, resultText = "It was hard at first, but you adjusted." },
+			{ text = "🧸 Bring comfort item", effects = { Happiness = 3 }, resultText = "Your teddy bear helped you feel safe." },
+		},
+	},
+	
+	{
+		id = "baby_halloween",
+		minAge = 0, maxAge = 3,
+		weight = 20, cooldown = 3,
+		emoji = "🎃", title = "First Halloween",
+		category = "family",
+		getDynamicData = function()
+			local costumes = {"pumpkin", "bunny", "superhero", "princess", "dinosaur", "lion"}
+			return { costume = costumes[math.random(#costumes)] }
+		end,
+		text = "Your parents dressed you up as a %costume% for Halloween!",
+		choices = {
+			{ text = "😊 Look adorable", effects = { Happiness = 6, Looks = 3 }, resultText = "Everyone said you were the cutest %costume% ever!" },
+			{ text = "😠 Hate the costume", effects = { Happiness = -2 }, resultText = "You kept trying to take it off." },
+		},
+	},
+	
+	{
+		id = "baby_first_holiday",
+		minAge = 0, maxAge = 2,
+		weight = 25, oneTime = true,
+		emoji = "🎄", title = "First Holiday Season",
+		category = "family",
+		text = "It's your first holiday season! The house is decorated beautifully.",
+		choices = {
+			{ text = "✨ Mesmerized by lights", effects = { Happiness = 7 }, resultText = "You stared at the lights for hours in wonder!" },
+			{ text = "🎁 Tear up wrapping paper", effects = { Happiness = 8 }, resultText = "You cared more about the paper than the gift!" },
+			{ text = "😱 Scared of decorations", effects = { Happiness = -2 }, resultText = "Giant inflatable Santa was terrifying." },
+		},
+	},
+	
+	-- ─────────────────────────────────────────────────────────────────
+	-- MORE TODDLER EVENTS (Ages 3-4)
+	-- ─────────────────────────────────────────────────────────────────
+	
+	{
+		id = "toddler_playground_hero",
+		minAge = 3, maxAge = 5,
+		weight = 30, oneTime = true,
+		emoji = "🦸", title = "Playground Hero",
+		category = "social",
+		getDynamicData = function() return { kidName = randomName() } end,
+		text = "A smaller kid named %kidName% fell down at the playground and is crying!",
+		choices = {
+			{ text = "🤗 Help them up", effects = { Happiness = 6, Smarts = 3 }, resultText = "You helped them feel better. Natural caregiver!", setFlag = "compassionate" },
+			{ text = "📢 Call for adult", effects = { Smarts = 4 }, resultText = "You got help quickly. Smart thinking!" },
+			{ text = "🤷 Keep playing", effects = {}, resultText = "Someone else helped them." },
+		},
+	},
+	
+	{
+		id = "toddler_picky_eater",
+		minAge = 2, maxAge = 5,
+		weight = 35, cooldown = 2,
+		emoji = "🥦", title = "Picky Eater Phase",
+		category = "family",
+		getDynamicData = function()
+			local veggies = {"broccoli", "spinach", "peas", "carrots", "green beans"}
+			return { veggie = veggies[math.random(#veggies)] }
+		end,
+		text = "Your parents want you to eat your %veggie%!",
+		choices = {
+			{ text = "😤 No way!", effects = { Happiness = 3, Health = -2 }, resultText = "You won this battle. No vegetables today." },
+			{ text = "😣 Eat it reluctantly", effects = { Health = 5, Happiness = -2 }, resultText = "It wasn't as bad as you thought." },
+			{ text = "🎭 Make a game of it", effects = { Happiness = 4, Health = 3 }, resultText = "Pretending to be a dinosaur eating trees made it fun!", setFlag = "imaginative" },
+		},
+	},
+	
+	{
+		id = "toddler_first_sleepover",
+		minAge = 4, maxAge = 6,
+		weight = 25, oneTime = true,
+		emoji = "🌙", title = "First Sleepover",
+		category = "social",
+		getDynamicData = function() return { friendName = randomName() } end,
+		text = "You're invited to your first sleepover at %friendName%'s house!",
+		choices = {
+			{ text = "🎉 So excited!", effects = { Happiness = 8 }, resultText = "Best night ever! You stayed up way too late." },
+			{ text = "😰 Too scary", effects = { Happiness = -3 }, resultText = "You called your parents to come get you." },
+			{ text = "🧸 Bring backup", effects = { Happiness = 5 }, resultText = "Your stuffed animal made you feel brave enough." },
+		},
+	},
+	
+	{
+		id = "toddler_coloring_mastery",
+		minAge = 3, maxAge = 5,
+		weight = 35, oneTime = true,
+		emoji = "🖍️", title = "Coloring Skills",
+		category = "family",
+		text = "You're getting really good at coloring inside the lines!",
+		choices = {
+			{ text = "🖍️ Perfect every page", effects = { Smarts = 4, Happiness = 4 }, resultText = "Your coloring books are works of art!", setFlag = "detail_oriented" },
+			{ text = "🌈 Use ALL the colors", effects = { Happiness = 5 }, resultText = "Rules are for boring people! Creative chaos!" },
+			{ text = "🎨 Start drawing own pictures", effects = { Smarts = 5, Happiness = 3 }, resultText = "You graduated from coloring to creating!", setFlag = "art_interest" },
+		},
+	},
+	
+	{
+		id = "toddler_question_phase",
+		minAge = 3, maxAge = 5,
+		weight = 40, cooldown = 2,
+		emoji = "❓", title = "Why? Why? Why?",
+		category = "family",
+		text = "You've discovered the most powerful word: WHY?",
+		choices = {
+			{ text = "❓ Ask everything", effects = { Smarts = 6, Happiness = 3 }, resultText = "You drove your parents crazy but learned so much!", setFlag = "curious_mind" },
+			{ text = "🔬 Investigate yourself", effects = { Smarts = 5, Health = -2 }, resultText = "You found out why the stove is hot. Ouch." },
+			{ text = "📚 Look at books", effects = { Smarts = 4 }, resultText = "Pictures helped answer some questions." },
+		},
+	},
+	
+	{
+		id = "toddler_sharing_lesson",
+		minAge = 2, maxAge = 5,
+		weight = 35, oneTime = true,
+		emoji = "🤝", title = "Learning to Share",
+		category = "social",
+		getDynamicData = function() return { friendName = randomName() } end,
+		text = "%friendName% wants to play with your favorite toy!",
+		choices = {
+			{ text = "🤝 Share it", effects = { Happiness = 5, Smarts = 3 }, resultText = "Sharing is caring! You made a good friend.", setFlag = "generous" },
+			{ text = "😤 Mine!", effects = { Happiness = 3, Smarts = -2 }, resultText = "You kept it but felt weird about it later." },
+			{ text = "🔄 Take turns", effects = { Smarts = 5, Happiness = 4 }, resultText = "You invented a turn-taking game! Problem solved.", setFlag = "problem_solver" },
+		},
+	},
+	
+	{
+		id = "toddler_monster_fear",
+		minAge = 3, maxAge = 6,
+		weight = 30, oneTime = true,
+		emoji = "👹", title = "Monster Under the Bed",
+		category = "family",
+		text = "You're convinced there's a monster under your bed!",
+		choices = {
+			{ text = "😭 Cry for parents", effects = { Happiness = 3 }, resultText = "They checked and showed you it was safe." },
+			{ text = "💪 Be brave", effects = { Happiness = 5, Smarts = 3 }, resultText = "You looked yourself! Nothing there. You're so brave!", setFlag = "brave" },
+			{ text = "🔦 Keep a flashlight", effects = { Happiness = 4, Smarts = 2 }, resultText = "Monsters hate light. You're prepared now." },
+		},
+	},
+	
+	{
+		id = "toddler_owie",
+		minAge = 2, maxAge = 5,
+		weight = 35, cooldown = 2,
+		emoji = "🩹", title = "First Big Owie",
+		category = "health",
+		text = "You fell and got a scrape on your knee!",
+		choices = {
+			{ text = "😭 Cry a lot", effects = { Happiness = -3, Health = -2 }, resultText = "It really hurt! But mom's kisses helped." },
+			{ text = "💪 Tough it out", effects = { Health = -2, Happiness = 5 }, resultText = "You barely cried! So brave!", setFlag = "pain_tolerant" },
+			{ text = "🩹 Want a cool bandaid", effects = { Happiness = 3, Health = 2 }, resultText = "The dinosaur bandaid made everything better." },
+		},
+	},
+	
+	{
+		id = "toddler_counting",
+		minAge = 3, maxAge = 5,
+		weight = 35, oneTime = true,
+		emoji = "🔢", title = "Learning to Count",
+		category = "family",
+		text = "You're learning your numbers!",
+		choices = {
+			{ text = "🔢 Count everything", effects = { Smarts = 6, Happiness = 3 }, resultText = "1, 2, 3... you counted all the way to 20!", setFlag = "math_interest" },
+			{ text = "🎵 Sing number songs", effects = { Smarts = 4, Happiness = 5 }, resultText = "Learning through music makes it fun!" },
+			{ text = "🤷 Numbers are boring", effects = { Smarts = 2 }, resultText = "You preferred other activities." },
+		},
+	},
+	
+	{
+		id = "toddler_abc",
+		minAge = 3, maxAge = 5,
+		weight = 35, oneTime = true,
+		emoji = "📝", title = "Learning the Alphabet",
+		category = "family",
+		text = "ABC, it's easy as 1-2-3!",
+		choices = {
+			{ text = "🎵 Sing the ABC song", effects = { Smarts = 5, Happiness = 4 }, resultText = "Now you know your ABCs!" },
+			{ text = "✏️ Practice writing letters", effects = { Smarts = 6 }, resultText = "Your letters are getting better!", setFlag = "early_reader" },
+			{ text = "📚 Find letters everywhere", effects = { Smarts = 5, Happiness = 3 }, resultText = "You point out letters on signs, cereal boxes, everywhere!" },
+		},
+	},
+	
+	{
+		id = "toddler_bike_training",
+		minAge = 3, maxAge = 5,
+		weight = 30, oneTime = true,
+		emoji = "🚲", title = "Training Wheels",
+		category = "family",
+		text = "You got a bike with training wheels!",
+		choices = {
+			{ text = "🚲 Ride everywhere!", effects = { Health = 5, Happiness = 6 }, resultText = "Freedom! You love your bike!", setFlag = "bike_rider" },
+			{ text = "😰 Scary at first", effects = { Happiness = 3, Health = 3 }, resultText = "You're getting more confident every day." },
+			{ text = "🏃 Prefer running", effects = { Health = 4, Happiness = 2 }, resultText = "Bikes aren't your thing." },
+		},
+	},
+	
+	{
+		id = "toddler_first_lie",
+		minAge = 3, maxAge = 5,
+		weight = 25, oneTime = true,
+		emoji = "🤥", title = "First Little Lie",
+		category = "family",
+		getDynamicData = function()
+			local situations = {"broken vase", "eaten cookie", "colored wall", "spilled juice"}
+			return { situation = situations[math.random(#situations)] }
+		end,
+		text = "There's a %situation% and your parents ask if you did it...",
+		choices = {
+			{ text = "😇 Tell the truth", effects = { Smarts = 4, Happiness = 3 }, resultText = "Honesty is the best policy. You got praised for being truthful.", setFlag = "honest" },
+			{ text = "🤥 Wasn't me!", effects = { Smarts = 2, Happiness = -3 }, resultText = "They knew you were lying. Trust is hard to rebuild." },
+			{ text = "🐕 Blame the pet", effects = { Smarts = 3, Happiness = 2 }, resultText = "Creative, but they didn't buy it." },
+		},
+	},
+	
+	-- ─────────────────────────────────────────────────────────────────
+	-- MORE CHILDHOOD EVENTS (Ages 5-11)
+	-- ─────────────────────────────────────────────────────────────────
+	
+	{
+		id = "child_school_play",
+		minAge = 6, maxAge = 11,
+		weight = 25, cooldown = 3,
+		emoji = "🎭", title = "School Play",
+		category = "school",
+		getDynamicData = function()
+			local plays = {"The Wizard of Oz", "Peter Pan", "Alice in Wonderland", "Christmas Carol"}
+			return { play = plays[math.random(#plays)] }
+		end,
+		text = "There's a school production of '%play%'. Auditions are open!",
+		choices = {
+			{ text = "🌟 Try for the lead", effects = { Happiness = 8, Looks = 3 }, resultText = "You got the lead role! Star of the show!", setFlag = "performer" },
+			{ text = "🎭 Get a supporting role", effects = { Happiness = 5 }, resultText = "You nailed your part! Great experience." },
+			{ text = "🔧 Work backstage", effects = { Smarts = 4, Happiness = 3 }, resultText = "Behind the scenes is where the magic happens." },
+			{ text = "🙅 Too nervous", effects = { Happiness = -2 }, resultText = "Maybe next time you'll be braver." },
+		},
+	},
+	
+	{
+		id = "child_sports_tryout",
+		minAge = 6, maxAge = 12,
+		weight = 30, cooldown = 2,
+		emoji = "⚽", title = "Sports Tryouts",
+		category = "school",
+		getDynamicData = function()
+			local sports = {"soccer", "basketball", "baseball", "swimming", "gymnastics", "martial arts"}
+			return { sport = sports[math.random(#sports)] }
+		end,
+		text = "Tryouts for the %sport% team are coming up!",
+		choices = {
+			{ text = "🏆 Go for it!", effects = { Health = 6, Happiness = 6 }, resultText = "You made the team!", setFlag = "athletic_child" },
+			{ text = "😅 Just for fun", effects = { Health = 4, Happiness = 4 }, resultText = "You didn't make it but had fun trying." },
+			{ text = "📚 Sports aren't my thing", effects = { Smarts = 2 }, resultText = "You focused on other activities instead." },
+		},
+	},
+	
+	{
+		id = "child_class_president",
+		minAge = 8, maxAge = 12,
+		weight = 20, oneTime = true,
+		emoji = "🎤", title = "Class President Election",
+		category = "school",
+		text = "Elections for class president! Do you want to run?",
+		choices = {
+			{ text = "📢 Campaign hard!", effects = { Smarts = 5, Happiness = 8 }, resultText = "You won! First taste of leadership.", setFlags = {"class_president", "political_interest"} },
+			{ text = "🤝 Help a friend run", effects = { Happiness = 5, Smarts = 3 }, resultText = "Your friend won thanks to you! Team player.", setFlag = "campaign_experience" },
+			{ text = "🙅 Not interested", effects = {}, resultText = "Politics isn't your thing." },
+		},
+	},
+	
+	{
+		id = "child_spelling_bee",
+		minAge = 7, maxAge = 12,
+		weight = 25, cooldown = 3,
+		emoji = "📝", title = "Spelling Bee",
+		category = "school",
+		getDynamicData = function()
+			local words = {"supercalifragilisticexpialidocious", "pneumonia", "entrepreneur", "conscientious", "onomatopoeia"}
+			return { word = words[math.random(#words)] }
+		end,
+		text = "The school spelling bee finals! Your word is... '%word%'!",
+		choices = {
+			{ text = "📝 Spell it perfectly", effects = { Smarts = 8, Happiness = 8 }, resultText = "CORRECT! You're the spelling champion!", setFlag = "spelling_champion" },
+			{ text = "😰 Panic and guess", effects = { Smarts = 3, Happiness = -2 }, resultText = "You got it wrong but learned from the experience." },
+		},
+	},
+	
+	{
+		id = "child_first_crush",
+		minAge = 8, maxAge = 12,
+		weight = 20, oneTime = true,
+		emoji = "💕", title = "First Crush",
+		category = "social",
+		getDynamicData = function() return { crushName = randomName() } end,
+		text = "You can't stop thinking about %crushName% in your class...",
+		choices = {
+			{ text = "💌 Write a note", effects = { Happiness = 5 }, resultText = "They thought it was sweet! You're friends now." },
+			{ text = "😳 Keep it secret", effects = { Happiness = 3, Smarts = 2 }, resultText = "Some feelings are private. You handled it maturely." },
+			{ text = "🗣️ Tell everyone", effects = { Happiness = -3 }, resultText = "Kids are cruel. You got teased." },
+		},
+	},
+	
+	{
+		id = "child_club_join",
+		minAge = 7, maxAge = 12,
+		weight = 30, cooldown = 2,
+		emoji = "🎯", title = "Join a Club",
+		category = "school",
+		getDynamicData = function()
+			local clubs = {"chess club", "debate team", "robotics club", "art club", "coding club", "book club", "drama club"}
+			return { club = clubs[math.random(#clubs)] }
+		end,
+		text = "The %club% is looking for new members!",
+		choices = {
+			{ text = "✅ Sign up!", effects = { Smarts = 5, Happiness = 4 }, resultText = "You love the %club%! Made new friends too." },
+			{ text = "🤔 Not for me", effects = {}, resultText = "You passed. Something else will come along." },
+		},
+	},
+	
+	{
+		id = "child_library_discovery",
+		minAge = 6, maxAge = 12,
+		weight = 25, oneTime = true,
+		emoji = "📚", title = "Library Card!",
+		category = "school",
+		text = "You got your very own library card!",
+		choices = {
+			{ text = "📚 Read everything!", effects = { Smarts = 8, Happiness = 5 }, resultText = "You discovered a whole world of books!", setFlag = "bookworm" },
+			{ text = "🔬 Find the science section", effects = { Smarts = 6, Happiness = 4 }, resultText = "So many science books! Experiments await!", setFlag = "science_interest" },
+			{ text = "💻 Use the computers", effects = { Smarts = 5, Happiness = 3 }, resultText = "You discovered the internet at the library!", setFlag = "computer_interest" },
+		},
+	},
+	
+	{
+		id = "child_allowance",
+		minAge = 6, maxAge = 12,
+		weight = 30, oneTime = true,
+		emoji = "💰", title = "First Allowance",
+		category = "family",
+		getDynamicData = function() return { amount = math.random(5, 15) } end,
+		text = "You started getting $%amount% weekly allowance!",
+		choices = {
+			{ text = "💰 Save it all", effects = { Smarts = 5, Money = 50 }, resultText = "You're learning about money management!", setFlag = "saver" },
+			{ text = "🍬 Spend immediately", effects = { Happiness = 6 }, resultText = "Candy and toys! So much fun!" },
+			{ text = "📊 Save half, spend half", effects = { Smarts = 6, Happiness = 3, Money = 25 }, resultText = "Balanced approach. Financially smart!" },
+		},
+	},
+	
+	{
+		id = "child_instrument_choice",
+		minAge = 6, maxAge = 10,
+		weight = 25, oneTime = true,
+		emoji = "🎸", title = "Music Lessons",
+		category = "school",
+		text = "You can start learning a musical instrument!",
+		choices = {
+			{ text = "🎹 Piano", effects = { Smarts = 5, Happiness = 4 }, resultText = "Piano lessons begin! Classical foundations.", setFlag = "musician" },
+			{ text = "🎸 Guitar", effects = { Happiness = 6, Looks = 2 }, resultText = "Guitar is so cool! You're going to rock.", setFlag = "musician" },
+			{ text = "🥁 Drums", effects = { Happiness = 7, Health = 3 }, resultText = "You're a natural drummer! Loud but fun.", setFlag = "musician" },
+			{ text = "🎻 Violin", effects = { Smarts = 6 }, resultText = "Violin requires dedication. You're committed.", setFlag = "musician" },
+			{ text = "🙅 No music", effects = { Happiness = 2 }, resultText = "Music isn't your thing." },
+		},
+	},
+	
+	{
+		id = "child_camp_summer",
+		minAge = 7, maxAge = 12,
+		weight = 20, cooldown = 3,
+		emoji = "🏕️", title = "Summer Camp",
+		category = "social",
+		getDynamicData = function()
+			local camps = {"wilderness camp", "science camp", "sports camp", "art camp", "computer camp"}
+			return { camp = camps[math.random(#camps)] }
+		end,
+		text = "Your parents want to send you to %camp% this summer!",
+		choices = {
+			{ text = "🎉 Can't wait!", effects = { Happiness = 8, Health = 3 }, resultText = "Best summer ever! You made lifelong friends." },
+			{ text = "😰 Homesick worry", effects = { Happiness = 4, Smarts = 3 }, resultText = "You were scared at first but ended up loving it." },
+			{ text = "🙅 Stay home", effects = { Happiness = 3 }, resultText = "You had a quiet summer instead." },
+		},
+	},
+	
+	{
+		id = "child_video_game_love",
+		minAge = 6, maxAge = 12,
+		weight = 35, oneTime = true,
+		emoji = "🎮", title = "Gaming Discovery",
+		category = "social",
+		getDynamicData = function()
+			local games = {"Mario", "Minecraft", "Pokémon", "Zelda", "Roblox"}
+			return { game = games[math.random(#games)] }
+		end,
+		text = "You discovered %game%! Video games are amazing!",
+		choices = {
+			{ text = "🎮 Play constantly", effects = { Happiness = 8, Health = -2 }, resultText = "You got really good but should go outside more." },
+			{ text = "⚖️ Balance gaming and life", effects = { Happiness = 5, Smarts = 3 }, resultText = "You learned to manage your time well." },
+			{ text = "🛠️ Start modding games", effects = { Smarts = 6, Happiness = 4 }, resultText = "You started customizing games! Future developer?", setFlag = "computer_interest" },
+		},
+	},
+	
+	{
+		id = "child_cooking_helper",
+		minAge = 6, maxAge = 11,
+		weight = 25, oneTime = true,
+		emoji = "👨‍🍳", title = "Kitchen Helper",
+		category = "family",
+		text = "Your parent asks if you want to help cook dinner!",
+		choices = {
+			{ text = "👨‍🍳 Yes please!", effects = { Smarts = 4, Happiness = 5 }, resultText = "You made dinner together! Delicious and fun.", setFlag = "cooking_interest" },
+			{ text = "🍪 Only if we make dessert", effects = { Happiness = 6 }, resultText = "Cookies! The best part of cooking." },
+			{ text = "📺 Rather watch TV", effects = { Happiness = 3 }, resultText = "You missed a bonding moment." },
+		},
+	},
+	
+	{
+		id = "child_lost_tooth",
+		minAge = 5, maxAge = 10,
+		weight = 35, cooldown = 2,
+		emoji = "🦷", title = "Lost a Tooth!",
+		category = "health",
+		text = "Your tooth is super wiggly... and it just came out!",
+		choices = {
+			{ text = "🧚 Put it under pillow", effects = { Happiness = 5, Money = 5 }, resultText = "The tooth fairy left you money!" },
+			{ text = "😬 Show everyone", effects = { Happiness = 4, Looks = -2 }, resultText = "You smiled big showing your new gap!" },
+			{ text = "😰 Scared", effects = { Happiness = -2 }, resultText = "It was scary but you're okay." },
+		},
+	},
+	
+	{
+		id = "child_homework_struggle",
+		minAge = 6, maxAge = 12,
+		weight = 40, cooldown = 2,
+		emoji = "📝", title = "Homework Challenge",
+		category = "school",
+		getDynamicData = function()
+			local subjects = {"math", "reading", "science", "history", "writing"}
+			return { subject = subjects[math.random(#subjects)] }
+		end,
+		text = "This %subject% homework is really hard!",
+		choices = {
+			{ text = "💪 Keep trying", effects = { Smarts = 6, Happiness = 4 }, resultText = "You figured it out! Persistence pays off.", setFlag = "determined" },
+			{ text = "🙋 Ask for help", effects = { Smarts = 5, Happiness = 3 }, resultText = "A parent or teacher helped you understand." },
+			{ text = "😴 Give up", effects = { Smarts = -2, Happiness = -3 }, resultText = "You didn't finish it. Teacher was disappointed." },
+		},
+	},
+	
+	{
+		id = "child_glasses_needed",
+		minAge = 6, maxAge = 12,
+		weight = 15, oneTime = true,
+		emoji = "👓", title = "You Need Glasses",
+		category = "health",
+		text = "The eye doctor says you need glasses!",
+		choices = {
+			{ text = "😎 Pick cool frames", effects = { Happiness = 5, Looks = 3, Smarts = 3 }, resultText = "You can see AND you look stylish!", setFlag = "wears_glasses" },
+			{ text = "😞 Don't want them", effects = { Happiness = -3, Smarts = 3 }, resultText = "You got them anyway. At least you can see now.", setFlag = "wears_glasses" },
+		},
+	},
+	
+	{
+		id = "child_nature_discovery",
+		minAge = 5, maxAge = 11,
+		weight = 25, oneTime = true,
+		emoji = "🐛", title = "Nature Explorer",
+		category = "social",
+		text = "You're exploring outside and find a fascinating insect!",
+		choices = {
+			{ text = "🔬 Study it closely", effects = { Smarts = 6, Happiness = 4 }, resultText = "You learned so much about bugs!", setFlag = "science_interest" },
+			{ text = "🏠 Keep it as a pet", effects = { Happiness = 5 }, resultText = "You had a new friend... for a few days." },
+			{ text = "😱 Eww, gross!", effects = { Happiness = 2 }, resultText = "You ran away. Bugs aren't for everyone." },
+		},
+	},
+	
+	{
+		id = "child_standing_up_bully",
+		minAge = 7, maxAge = 12,
+		weight = 20, oneTime = true,
+		emoji = "💪", title = "Defending a Friend",
+		category = "social",
+		getDynamicData = function() return { friendName = randomName(), bullyName = randomName() } end,
+		text = "%bullyName% is picking on your friend %friendName%!",
+		choices = {
+			{ text = "🦸 Stand up for them", effects = { Happiness = 8, Health = -3 }, resultText = "You defended your friend! They'll never forget it.", setFlags = {"brave", "loyal_friend"} },
+			{ text = "📢 Get a teacher", effects = { Smarts = 5, Happiness = 4 }, resultText = "The teacher handled it. Smart choice." },
+			{ text = "👀 Watch from afar", effects = { Happiness = -5 }, resultText = "You felt guilty for not helping." },
+		},
+	},
+	
+	{
+		id = "child_bike_no_training",
+		minAge = 5, maxAge = 8,
+		weight = 25, oneTime = true,
+		emoji = "🚲", title = "Training Wheels Off!",
+		category = "family",
+		requires = function(state) return state.Flags and state.Flags.bike_rider end,
+		text = "Time to take off the training wheels!",
+		choices = {
+			{ text = "💪 Go for it!", effects = { Health = 4, Happiness = 8 }, resultText = "You did it! Riding without training wheels!", setFlag = "real_cyclist" },
+			{ text = "😰 Not ready yet", effects = { Happiness = -2 }, resultText = "Maybe next time you'll be braver." },
+		},
+	},
+	
+	{
+		id = "child_chores",
+		minAge = 6, maxAge = 12,
+		weight = 35, cooldown = 2,
+		emoji = "🧹", title = "Chore Time",
+		category = "family",
+		getDynamicData = function()
+			local chores = {"clean your room", "do the dishes", "take out the trash", "mow the lawn", "fold laundry"}
+			return { chore = chores[math.random(#chores)] }
+		end,
+		text = "Your parent asks you to %chore%!",
+		choices = {
+			{ text = "✅ Do it without complaining", effects = { Happiness = 4, Smarts = 2 }, resultText = "Good job! You earned some praise." },
+			{ text = "😤 Complain then do it", effects = { Happiness = 2 }, resultText = "You did it eventually. Drama was unnecessary." },
+			{ text = "🙅 Refuse", effects = { Happiness = -5 }, resultText = "You got in trouble. Not worth it." },
+		},
+	},
+	
+	{
+		id = "child_new_kid_school",
+		minAge = 6, maxAge = 12,
+		weight = 20, cooldown = 3,
+		emoji = "👋", title = "New Kid in Class",
+		category = "social",
+		getDynamicData = function() return { newKidName = randomName() } end,
+		text = "A new kid named %newKidName% joined your class. They look lonely.",
+		choices = {
+			{ text = "👋 Be their friend", effects = { Happiness = 6, Smarts = 2 }, resultText = "You made a new friend! They were so grateful.", setFlag = "compassionate" },
+			{ text = "🤷 Let them figure it out", effects = {}, resultText = "Someone else befriended them." },
+			{ text = "😈 Be mean", effects = { Happiness = -5, Smarts = -3 }, resultText = "Why would you do that? You felt bad later." },
+		},
+	},
+
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 2: TEEN YEARS (12-17)
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "teen_middle_school",
+		minAge = 12, maxAge = 12,
+		weight = 100, oneTime = true, milestone = true,
+		emoji = "🏫", title = "Middle School Begins",
+		category = "school",
+		text = "Welcome to middle school! Everything is changing - your body, your friends, your life.",
+		choices = {
+			{ text = "📚 Focus on grades", effects = { Smarts = 6, Happiness = 3 }, resultText = "You decided academics would be your priority.", setFlag = "studious" },
+			{ text = "👥 Focus on friends", effects = { Happiness = 6, Smarts = 2 }, resultText = "Your social circle expanded dramatically.", setFlag = "social_butterfly" },
+			{ text = "🏃 Focus on activities", effects = { Health = 5, Happiness = 4 }, resultText = "You joined everything! Sports, clubs, you name it.", setFlag = "active_kid" },
+		},
+	},
+	
+	{
+		id = "teen_puberty_start",
+		minAge = 12, maxAge = 14,
+		weight = 35, oneTime = true,
+		emoji = "😰", title = "Puberty Hits",
+		category = "health",
+		text = "Your body is going through some... changes. It's confusing.",
+		choices = {
+			{ text = "📚 Learn about it", effects = { Smarts = 5, Happiness = 3 }, resultText = "You educated yourself. Knowledge is power." },
+			{ text = "😰 Panic a little", effects = { Happiness = -3 }, resultText = "Everyone goes through this. It gets easier." },
+			{ text = "🤷 Go with the flow", effects = { Happiness = 2, Health = 2 }, resultText = "You handled it with grace." },
+		},
+	},
+	
+	{
+		id = "teen_acne_struggle",
+		minAge = 12, maxAge = 18,
+		weight = 30, cooldown = 3,
+		emoji = "😫", title = "Acne Attack",
+		category = "health",
+		text = "You woke up with a face full of acne before a big event!",
+		choices = {
+			{ text = "💊 Get treatment", effects = { Money = -50, Looks = 3, Happiness = 3 }, resultText = "The treatment helped a lot!" },
+			{ text = "🤷 It's just skin", effects = { Happiness = 5, Smarts = 3 }, resultText = "You didn't let it bother you. Confidence is attractive." },
+			{ text = "😭 Hide at home", effects = { Happiness = -5, Looks = -2 }, resultText = "You missed out and felt worse." },
+		},
+	},
+	
+	{
+		id = "teen_first_job_offer",
+		minAge = 14, maxAge = 17,
+		weight = 25, oneTime = true,
+		emoji = "💼", title = "First Job Offer",
+		category = "work",
+		getDynamicData = function()
+			local jobs = {"babysitting", "lawn mowing", "fast food", "retail", "tutoring", "lifeguarding"}
+			return { job = jobs[math.random(#jobs)] }
+		end,
+		text = "You got offered a part-time %job% job!",
+		choices = {
+			{ text = "💼 Take the job!", effects = { Money = 500, Happiness = 5, Smarts = 3 }, resultText = "Your first paycheck! Financial independence begins.", setFlag = "first_job_done" },
+			{ text = "📚 Focus on school", effects = { Smarts = 5 }, resultText = "Grades come first. Smart choice." },
+			{ text = "🎮 Too busy", effects = { Happiness = 3 }, resultText = "You had other priorities." },
+		},
+	},
+	
+	{
+		id = "teen_first_party",
+		minAge = 14, maxAge = 18,
+		weight = 30, oneTime = true,
+		emoji = "🎉", title = "First Real Party",
+		category = "social",
+		getDynamicData = function() return { hostName = randomName() } end,
+		text = "%hostName% is throwing a party and you're invited! Parents won't be home...",
+		choices = {
+			{ text = "🎉 Go and have fun responsibly", effects = { Happiness = 8 }, resultText = "It was epic! You had a blast and made great memories." },
+			{ text = "😈 Go wild!", effects = { Happiness = 10, Health = -5, Smarts = -3 }, resultText = "You partied too hard. Worth it? Maybe.", setFlag = "party_animal" },
+			{ text = "🙅 Skip it", effects = { Happiness = -3, Smarts = 2 }, resultText = "You heard stories on Monday. FOMO is real." },
+			{ text = "🚔 Tell parents", effects = { Happiness = -5, Smarts = 3 }, resultText = "Party got shut down. You're not popular now." },
+		},
+	},
+	
+	{
+		id = "teen_first_date",
+		minAge = 14, maxAge = 18,
+		weight = 30, oneTime = true,
+		emoji = "💕", title = "First Real Date",
+		category = "romance",
+		getDynamicData = function() return { dateName = randomName() } end,
+		text = "%dateName% asked you out on a real date!",
+		choices = {
+			{ text = "💕 Say yes!", effects = { Happiness = 10 }, resultText = "Butterflies in your stomach! The date went great.", setFlag = "dating_experience" },
+			{ text = "😰 Too nervous", effects = { Happiness = -3 }, resultText = "You said no and immediately regretted it." },
+			{ text = "🤔 Friends first", effects = { Happiness = 3, Smarts = 3 }, resultText = "You wanted to know them better first. Mature!" },
+		},
+	},
+	
+	{
+		id = "teen_social_media_account",
+		minAge = 13, maxAge = 16,
+		weight = 35, oneTime = true,
+		emoji = "📱", title = "Social Media",
+		category = "social",
+		text = "All your friends are on social media. Do you join?",
+		choices = {
+			{ text = "📱 Create accounts!", effects = { Happiness = 6 }, resultText = "You're connected! So many followers already.", setFlag = "social_media_user" },
+			{ text = "📸 Just for photos", effects = { Happiness = 4, Looks = 3 }, resultText = "You use it for art/photos only." },
+			{ text = "🙅 Stay offline", effects = { Smarts = 4, Happiness = -2 }, resultText = "You missed out socially but avoided drama." },
+		},
+	},
+	
+	{
+		id = "teen_gaming_career",
+		minAge = 13, maxAge = 18,
+		weight = 20, oneTime = true,
+		emoji = "🎮", title = "Gaming Ambitions",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.computer_interest end,
+		text = "You're really good at games. Could you go pro?",
+		choices = {
+			{ text = "🎮 Try competitive gaming", effects = { Smarts = 4, Happiness = 6 }, resultText = "You started entering tournaments!", setFlag = "competitive_gamer" },
+			{ text = "📺 Start streaming", effects = { Happiness = 5, Money = 100 }, resultText = "You started a gaming channel!", setFlag = "content_creator" },
+			{ text = "🤷 Just for fun", effects = { Happiness = 3 }, resultText = "Games are a hobby, not a career. That's okay." },
+		},
+	},
+	
+	{
+		id = "teen_peer_pressure_alcohol",
+		minAge = 15, maxAge = 18,
+		weight = 20, oneTime = true,
+		emoji = "🍺", title = "Peer Pressure",
+		category = "social",
+		getDynamicData = function() return { peerName = randomName() } end,
+		text = "%peerName% offers you a drink at a party. Everyone's watching.",
+		choices = {
+			{ text = "🍺 Just one...", effects = { Happiness = 3, Health = -3, Smarts = -2 }, resultText = "One turned into more. You didn't feel great the next day." },
+			{ text = "🙅 No thanks", effects = { Happiness = 5, Smarts = 5 }, resultText = "You stood your ground. Real friends respected that.", setFlag = "resists_peer_pressure" },
+			{ text = "🏃 Leave the party", effects = { Happiness = -3, Health = 2 }, resultText = "You removed yourself from the situation. Smart." },
+		},
+	},
+	
+	{
+		id = "teen_peer_pressure_drugs",
+		minAge = 15, maxAge = 18,
+		weight = 15, oneTime = true,
+		emoji = "💊", title = "Dangerous Offer",
+		category = "social",
+		getDynamicData = function() return { dealerName = randomName() } end,
+		text = "%dealerName% is offering something illegal. Your heart is racing.",
+		choices = {
+			{ text = "💊 Try it", effects = { Happiness = 3, Health = -10, Smarts = -5 }, resultText = "Bad decision. Really bad decision.", setFlag = "drug_user" },
+			{ text = "🙅 Hard pass", effects = { Happiness = 5, Smarts = 8 }, resultText = "You said no. Best choice you ever made.", setFlag = "drug_free" },
+			{ text = "🚔 Report them", effects = { Smarts = 5, Happiness = -3 }, resultText = "You did the right thing but made an enemy." },
+		},
+	},
+	
+	{
+		id = "teen_body_image",
+		minAge = 13, maxAge = 18,
+		weight = 25, cooldown = 3,
+		emoji = "🪞", title = "Body Image",
+		category = "health",
+		text = "You've been comparing yourself to others. Feeling insecure.",
+		choices = {
+			{ text = "💪 Start working out", effects = { Health = 6, Looks = 4, Happiness = 5 }, resultText = "Exercise helped you feel better in your own skin." },
+			{ text = "🧠 Work on self-love", effects = { Happiness = 8, Smarts = 4 }, resultText = "You learned to appreciate yourself. Growth!" },
+			{ text = "😔 Spiral down", effects = { Happiness = -10, Health = -5 }, resultText = "It got bad. Please talk to someone." },
+		},
+	},
+	
+	{
+		id = "teen_SAT_prep",
+		minAge = 16, maxAge = 17,
+		weight = 35, oneTime = true,
+		emoji = "📝", title = "SAT Prep",
+		category = "school",
+		text = "SAT testing is coming up. Time to prepare!",
+		choices = {
+			{ text = "📚 Study intensively", effects = { Smarts = 10, Happiness = -3 }, resultText = "You scored amazingly! College doors are open.", setFlag = "high_SAT" },
+			{ text = "📖 Moderate study", effects = { Smarts = 6, Happiness = 2 }, resultText = "Good score. Solid performance." },
+			{ text = "🤷 Wing it", effects = { Smarts = 2, Happiness = 3 }, resultText = "Could have gone better. More options would be nice." },
+		},
+	},
+	
+	{
+		id = "teen_college_tour",
+		minAge = 16, maxAge = 17,
+		weight = 30, oneTime = true,
+		emoji = "🎓", title = "College Tour",
+		category = "school",
+		getDynamicData = function() return { college = randomUniversity() } end,
+		text = "Your family is touring %college%!",
+		choices = {
+			{ text = "😍 I love it here!", effects = { Happiness = 8, Smarts = 3 }, resultText = "This could be your future home!", setFlag = "dream_college" },
+			{ text = "🤔 It's okay", effects = { Happiness = 3 }, resultText = "Keep looking. The right fit is out there." },
+			{ text = "🙅 College isn't for me", effects = { Happiness = 2, Smarts = -2 }, resultText = "You're considering other paths." },
+		},
+	},
+	
+	{
+		id = "teen_part_time_coding",
+		minAge = 15, maxAge = 18,
+		weight = 15, oneTime = true,
+		emoji = "💻", title = "Coding Side Gig",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.computer_interest end,
+		text = "Someone found out you can code and wants to pay you for a website!",
+		choices = {
+			{ text = "💻 Take the gig!", effects = { Money = 500, Smarts = 6, Happiness = 8 }, resultText = "You built a website and got paid! Entrepreneurial spirit.", setFlag = "freelance_dev" },
+			{ text = "😰 Too much pressure", effects = { Smarts = 2 }, resultText = "You passed. Maybe next time." },
+		},
+	},
+	
+	{
+		id = "teen_volunteer_work",
+		minAge = 14, maxAge = 18,
+		weight = 25, cooldown = 2,
+		emoji = "🤝", title = "Volunteer Opportunity",
+		category = "social",
+		getDynamicData = function()
+			local orgs = {"homeless shelter", "animal rescue", "food bank", "hospital", "environmental cleanup"}
+			return { org = orgs[math.random(#orgs)] }
+		end,
+		text = "There's an opportunity to volunteer at the %org%.",
+		choices = {
+			{ text = "🤝 Sign up!", effects = { Happiness = 8, Smarts = 4 }, resultText = "You made a real difference! College apps will love this.", setFlag = "volunteer" },
+			{ text = "⏰ Too busy", effects = {}, resultText = "You had other commitments." },
+		},
+	},
+	
+	{
+		id = "teen_fight_at_school",
+		minAge = 13, maxAge = 18,
+		weight = 15, cooldown = 3,
+		emoji = "👊", title = "School Fight",
+		category = "social",
+		getDynamicData = function() return { enemyName = randomName() } end,
+		text = "%enemyName% is trying to start a fight with you at school!",
+		choices = {
+			{ text = "👊 Fight back", effects = { Health = -10, Happiness = 5 }, resultText = "You got suspended but earned respect.", setFlags = {"fights_back", "suspension"} },
+			{ text = "🗣️ Talk it out", effects = { Smarts = 6, Happiness = 3 }, resultText = "You de-escalated the situation. Impressive." },
+			{ text = "🏃 Walk away", effects = { Happiness = -5, Smarts = 4 }, resultText = "Some called you a coward. You called it smart." },
+		},
+	},
+	
+	{
+		id = "teen_heartbreak",
+		minAge = 14, maxAge = 18,
+		weight = 20, cooldown = 3,
+		emoji = "💔", title = "First Heartbreak",
+		category = "romance",
+		requires = function(state) return state.Flags and state.Flags.dating_experience end,
+		getDynamicData = function() return { exName = randomName() } end,
+		text = "%exName% broke up with you. It hurts so much.",
+		choices = {
+			{ text = "😭 Cry it out", effects = { Happiness = -10 }, resultText = "You needed to feel this. It's part of growing up." },
+			{ text = "🎵 Channel it into art", effects = { Happiness = -3, Smarts = 5 }, resultText = "Your pain became beautiful art.", setFlag = "creative_outlet" },
+			{ text = "💪 Focus on yourself", effects = { Happiness = 3, Health = 5 }, resultText = "You hit the gym and worked on yourself." },
+		},
+	},
+	
+	{
+		id = "teen_prom_ask",
+		minAge = 16, maxAge = 18,
+		weight = 25, cooldown = 2,
+		emoji = "🌹", title = "Prom-posal",
+		category = "romance",
+		getDynamicData = function() return { promName = randomName() } end,
+		text = "Prom is coming up! %promName% is who you want to go with.",
+		choices = {
+			{ text = "🌹 Ask them big!", effects = { Happiness = 10, Money = -50 }, resultText = "They said yes! Your promposal went viral!", setFlag = "has_prom_date" },
+			{ text = "😊 Ask simply", effects = { Happiness = 7 }, resultText = "They said yes! Simple but sweet." },
+			{ text = "🙅 Go alone/with friends", effects = { Happiness = 5 }, resultText = "You don't need a date to have fun!" },
+		},
+	},
+	
+	{
+		id = "teen_prom_night",
+		minAge = 17, maxAge = 18,
+		weight = 50, oneTime = true, milestone = true,
+		emoji = "🎭", title = "Prom Night!",
+		category = "social",
+		text = "It's prom night! The biggest event of high school!",
+		choices = {
+			{ text = "👑 Best night ever", effects = { Happiness = 15, Looks = 5 }, resultText = "You danced all night. Unforgettable memories.", setFlag = "prom_king_queen" },
+			{ text = "😊 Great night", effects = { Happiness = 10 }, resultText = "A wonderful night with friends and fun." },
+			{ text = "😔 Disaster", effects = { Happiness = -10 }, resultText = "Everything went wrong. At least it's over." },
+		},
+	},
+	
+	{
+		id = "teen_summer_romance",
+		minAge = 15, maxAge = 18,
+		weight = 20, cooldown = 3,
+		emoji = "☀️", title = "Summer Romance",
+		category = "romance",
+		getDynamicData = function() return { summerLove = randomName() } end,
+		text = "You met %summerLove% this summer. There's something special here.",
+		choices = {
+			{ text = "❤️ Fall in love", effects = { Happiness = 12 }, resultText = "The perfect summer romance. You'll never forget them." },
+			{ text = "🤝 Stay friends", effects = { Happiness = 6 }, resultText = "A great summer friendship that might become more." },
+			{ text = "💔 Long distance is hard", effects = { Happiness = -5 }, resultText = "You tried but distance won." },
+		},
+	},
+	
+	{
+		id = "teen_mentor_discovered",
+		minAge = 14, maxAge = 18,
+		weight = 15, oneTime = true,
+		emoji = "🧙", title = "Finding a Mentor",
+		category = "school",
+		getDynamicData = function() return { mentorName = randomName() } end,
+		text = "Your teacher %mentorName% sees potential in you and offers to mentor you.",
+		choices = {
+			{ text = "🙏 Accept gratefully", effects = { Smarts = 8, Happiness = 8 }, resultText = "This mentorship changes your life trajectory.", setFlags = {"has_mentor", "teaching_interest"} },
+			{ text = "🤷 I don't need help", effects = { Smarts = 2 }, resultText = "You missed an opportunity." },
+		},
+	},
+	
+	{
+		id = "teen_startup_idea",
+		minAge = 15, maxAge = 18,
+		weight = 15, oneTime = true,
+		emoji = "💡", title = "Startup Idea",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.computer_interest end,
+		text = "You had an amazing app idea! Could this be the next big thing?",
+		choices = {
+			{ text = "🚀 Start building!", effects = { Smarts = 8, Happiness = 8 }, resultText = "You started working on your app!", setFlag = "teen_entrepreneur" },
+			{ text = "📝 Write it down for later", effects = { Smarts = 4 }, resultText = "Saved for when you have more time." },
+			{ text = "🤷 Someone's probably done it", effects = { Happiness = -2 }, resultText = "Self-doubt killed the dream." },
+		},
+	},
+	
+	{
+		id = "teen_car_accident",
+		minAge = 16, maxAge = 18,
+		weight = 10, oneTime = true,
+		emoji = "🚗", title = "Car Accident",
+		category = "health",
+		requires = function(state) return state.Flags and state.Flags.has_license end,
+		text = "You were in a car accident! It wasn't serious but very scary.",
+		choices = {
+			{ text = "🏥 Get checked out", effects = { Health = 3, Money = -200 }, resultText = "Doctor said you're fine. Relief." },
+			{ text = "💪 I'm fine", effects = { Health = -5 }, resultText = "You should have seen a doctor." },
+			{ text = "😰 Scared to drive", effects = { Happiness = -5, Smarts = 2 }, resultText = "It took a while to get behind the wheel again." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 3: DEEP HACKER CAREER PATH
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "hacker_computer_build",
+		minAge = 12, maxAge = 18,
+		weight = 20, oneTime = true,
+		emoji = "🖥️", title = "Building Your Rig",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.computer_interest end,
+		text = "You saved up enough to build your own custom computer!",
+		choices = {
+			{ text = "🖥️ Build a beast!", effects = { Smarts = 6, Happiness = 8, Money = -500 }, resultText = "You built an amazing machine from scratch!", setFlag = "custom_pc" },
+			{ text = "💻 Upgrade what you have", effects = { Smarts = 4, Happiness = 4, Money = -200 }, resultText = "Upgrades made a big difference!" },
+		},
+	},
+	
+	{
+		id = "hacker_ctf_competition",
+		minAge = 14, maxAge = 30,
+		weight = 15, cooldown = 2,
+		emoji = "🏆", title = "CTF Competition",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.hacker_skills end,
+		getDynamicData = function()
+			local events = {"DEF CON CTF", "PicoCTF", "Google CTF", "HackTheBox CTF"}
+			return { event = events[math.random(#events)] }
+		end,
+		text = "There's a Capture The Flag hacking competition: %event%!",
+		choices = {
+			{ text = "🏆 Compete to win!", effects = { Smarts = 8, Happiness = 10, Money = 1000 }, resultText = "You placed in the top rankings! Scouts noticed.", setFlag = "ctf_champion" },
+			{ text = "📚 Participate to learn", effects = { Smarts = 6, Happiness = 5 }, resultText = "You learned so much! Great experience." },
+		},
+	},
+	
+	{
+		id = "hacker_found_backdoor",
+		minAge = 16, maxAge = 35,
+		weight = 12, oneTime = true,
+		emoji = "🚪", title = "Discovered a Backdoor",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.hacker_skills and not f.backdoor_found
+		end,
+		text = "While exploring a major company's systems, you found a pre-existing backdoor. Someone else was here first.",
+		choices = {
+			{ text = "🔍 Investigate further", effects = { Smarts = 8 }, resultText = "You traced it to a nation-state actor. Heavy stuff.", setFlag = "backdoor_found" },
+			{ text = "📧 Report to the company", effects = { Smarts = 5, Money = 5000, Happiness = 5 }, resultText = "They paid you well for the discovery.", setFlags = {"backdoor_found", "white_hat"} },
+			{ text = "🤫 Use it yourself", effects = { Smarts = 5, Money = 2000 }, resultText = "You now have access whenever you want.", setFlags = {"backdoor_found", "black_hat"} },
+		},
+	},
+	
+	{
+		id = "hacker_cryptocurrency",
+		minAge = 18, maxAge = 45,
+		weight = 12, cooldown = 3,
+		emoji = "₿", title = "Crypto Opportunity",
+		category = "money",
+		requires = function(state) return state.Flags and state.Flags.computer_interest end,
+		text = "You understand cryptocurrency better than most. Investment opportunity?",
+		choices = {
+			{ text = "💰 Invest heavily", effects = { Money = 10000, Smarts = 3 }, resultText = "Your timing was perfect! Huge gains!" },
+			{ text = "📊 Mine some", effects = { Money = 2000, Smarts = 5 }, resultText = "Mining brought steady income.", setFlag = "crypto_miner" },
+			{ text = "🔧 Build trading bots", effects = { Smarts = 8, Money = 5000 }, resultText = "Your algorithms made money while you slept!", setFlag = "algo_trader" },
+		},
+	},
+	
+	{
+		id = "hacker_social_engineering",
+		minAge = 16, maxAge = 40,
+		weight = 12, oneTime = true,
+		emoji = "🎭", title = "Social Engineering",
+		category = "crime",
+		requires = function(state) return state.Flags and state.Flags.hacker_skills end,
+		text = "Sometimes hacking people is easier than hacking computers. Try social engineering?",
+		choices = {
+			{ text = "📞 Phishing call", effects = { Smarts = 5, Money = 1000 }, resultText = "You talked your way into system access. Scary effective.", setFlag = "social_engineer" },
+			{ text = "📧 Phishing email", effects = { Smarts = 4, Money = 500 }, resultText = "So many people clicked your fake link." },
+			{ text = "🙅 That's manipulation", effects = { Smarts = 2, Happiness = 3 }, resultText = "You prefer technical challenges." },
+		},
+	},
+	
+	{
+		id = "hacker_virus_creation",
+		minAge = 16, maxAge = 40,
+		weight = 8, oneTime = true,
+		emoji = "🦠", title = "Create Malware?",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.black_hat and f.hacker_skills
+		end,
+		text = "You could create your own virus/malware. The power is tempting.",
+		choices = {
+			{ text = "🦠 Create it", effects = { Smarts = 8, Happiness = -5 }, resultText = "You created something dangerous. It spread.", setFlag = "malware_author" },
+			{ text = "🔬 For research only", effects = { Smarts = 10 }, resultText = "You studied malware but never released it. Ethical.", setFlag = "malware_researcher" },
+			{ text = "🚫 That's too far", effects = { Happiness = 5, Smarts = 3 }, resultText = "Some lines shouldn't be crossed." },
+		},
+	},
+	
+	{
+		id = "hacker_darknet_market",
+		minAge = 18, maxAge = 45,
+		weight = 8, oneTime = true,
+		emoji = "🌑", title = "Darknet Marketplace",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.black_hat and (f.hacker_group or f.elite_hacker)
+		end,
+		text = "You could set up a marketplace on the darknet. Illegal but profitable.",
+		choices = {
+			{ text = "💻 Create a marketplace", effects = { Money = 100000, Smarts = 5, Happiness = -10 }, resultText = "You became a darknet kingpin. The feds are watching.", setFlag = "darknet_operator" },
+			{ text = "🤝 Just be a vendor", effects = { Money = 20000, Smarts = 3 }, resultText = "You sold data on existing markets." },
+			{ text = "🚫 Too risky", effects = { Smarts = 3, Happiness = 5 }, resultText = "Smart call. That life ends badly." },
+		},
+	},
+	
+	{
+		id = "hacker_zero_day",
+		minAge = 20, maxAge = 50,
+		weight = 8, cooldown = 5,
+		emoji = "⚡", title = "Zero-Day Discovery",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.elite_hacker or f.hacker_career
+		end,
+		getDynamicData = function()
+			local targets = {"major OS", "browser", "IoT device", "enterprise software", "cloud platform"}
+			return { target = targets[math.random(#targets)] }
+		end,
+		text = "You discovered a zero-day vulnerability in a %target%!",
+		choices = {
+			{ text = "💵 Sell to highest bidder", effects = { Money = 200000, Smarts = 5 }, resultText = "Sold to... you don't want to know who.", setFlag = "zero_day_seller" },
+			{ text = "📧 Responsible disclosure", effects = { Money = 50000, Happiness = 10, Smarts = 5 }, resultText = "The vendor paid the bug bounty and thanked you publicly.", setFlag = "zero_day_hunter" },
+			{ text = "🏛️ Sell to government", effects = { Money = 100000, Smarts = 3 }, resultText = "The NSA is your new client." },
+		},
+	},
+	
+	{
+		id = "hacker_arrested_risk",
+		minAge = 18, maxAge = 50,
+		weight = 10, cooldown = 5,
+		emoji = "🚔", title = "Close Call",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.black_hat and (f.hacker_group or f.hacked_government)
+		end,
+		text = "FBI agents showed up at your door asking questions. They're getting close.",
+		choices = {
+			{ text = "😇 Play innocent", effects = { Smarts = 5, Happiness = -10 }, resultText = "They bought it... for now. Time to cover tracks." },
+			{ text = "🏃 Go dark immediately", effects = { Happiness = -15, Smarts = 8 }, resultText = "You destroyed evidence and went underground.", setFlag = "underground" },
+			{ text = "⚖️ Lawyer up", effects = { Money = -10000, Smarts = 5 }, resultText = "Expensive but necessary protection." },
+		},
+	},
+	
+	{
+		id = "hacker_job_nsa",
+		minAge = 22, maxAge = 45,
+		weight = 8, oneTime = true,
+		emoji = "🏛️", title = "Government Recruiting",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.elite_hacker or f.ctf_champion) and not f.black_hat
+		end,
+		text = "A three-letter agency wants to recruit you. NSA, CIA, they're all interested.",
+		choices = {
+			{ text = "🏛️ Join the government", effects = { Money = 5000, Smarts = 8, Happiness = 5 }, resultText = "You now work for the government. Clearance level: Top Secret.", setFlag = "government_hacker" },
+			{ text = "💼 Stay private sector", effects = { Money = 8000, Happiness = 3 }, resultText = "More money in corporations anyway." },
+			{ text = "🐺 Stay independent", effects = { Happiness = 5, Smarts = 3 }, resultText = "You prefer freedom." },
+		},
+	},
+	
+	{
+		id = "hacker_silicon_valley",
+		minAge = 22, maxAge = 40,
+		weight = 10, oneTime = true,
+		emoji = "🌉", title = "Silicon Valley Calling",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.programmer or f.hacker_career) and not f.silicon_valley
+		end,
+		getDynamicData = function()
+			local companies = {"Google", "Apple", "Meta", "Amazon", "Microsoft", "Netflix", "Stripe", "Cloudflare"}
+			return { company = companies[math.random(#companies)] }
+		end,
+		text = "%company% is recruiting you! The offer is incredible.",
+		choices = {
+			{ text = "💼 Take the job!", effects = { Money = 15000, Happiness = 10, Smarts = 5 }, resultText = "You're now at a top tech company!", setFlag = "silicon_valley" },
+			{ text = "🤔 Negotiate harder", effects = { Money = 25000, Happiness = 8, Smarts = 5 }, resultText = "They really wanted you. Stock options included!", setFlag = "silicon_valley" },
+			{ text = "🚀 Start my own thing", effects = { Happiness = 5, Smarts = 3 }, resultText = "You'd rather be the founder than the employee." },
+		},
+	},
+	
+	{
+		id = "hacker_security_breach_response",
+		minAge = 24, maxAge = 50,
+		weight = 10, cooldown = 3,
+		emoji = "🚨", title = "Security Incident Response",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.hacker_career end,
+		text = "A major breach just hit your company! All hands on deck!",
+		choices = {
+			{ text = "💻 Lead the response", effects = { Smarts = 8, Happiness = 5, Money = 5000 }, resultText = "You contained the breach. Promoted for your leadership.", setFlag = "incident_responder" },
+			{ text = "🔍 Investigate quietly", effects = { Smarts = 6, Happiness = 3 }, resultText = "You found evidence others missed." },
+			{ text = "📢 Go public", effects = { Smarts = 3, Happiness = -5 }, resultText = "Whistleblowing made you unpopular but it was right." },
+		},
+	},
+	
+	{
+		id = "hacker_conference_speaker",
+		minAge = 25, maxAge = 55,
+		weight = 8, cooldown = 3,
+		emoji = "🎤", title = "Conference Speaker",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.elite_hacker or f.hacker_career
+		end,
+		getDynamicData = function()
+			local conferences = {"Black Hat", "DEF CON", "RSA Conference", "CCC", "ShmooCon"}
+			return { conference = conferences[math.random(#conferences)] }
+		end,
+		text = "You've been invited to speak at %conference%!",
+		choices = {
+			{ text = "🎤 Prepare an epic talk", effects = { Smarts = 8, Happiness = 10, Money = 3000 }, resultText = "Standing ovation! You're a legend now.", setFlag = "conference_speaker" },
+			{ text = "😰 Too scary", effects = { Happiness = -5 }, resultText = "You passed. Maybe next time." },
+		},
+	},
+	
+	{
+		id = "hacker_open_source",
+		minAge = 18, maxAge = 50,
+		weight = 12, cooldown = 3,
+		emoji = "🌐", title = "Open Source Project",
+		category = "work",
+		requires = function(state) return state.Flags and (state.Flags.programmer or state.Flags.hacker_career) end,
+		text = "You created an open source security tool. It's gaining traction!",
+		choices = {
+			{ text = "🌐 Keep it free", effects = { Happiness = 10, Smarts = 5 }, resultText = "Thousands of people use your tool! Community hero.", setFlag = "open_source_creator" },
+			{ text = "💰 Monetize it", effects = { Money = 20000, Happiness = 5, Smarts = 3 }, resultText = "Enterprise version brings in money." },
+			{ text = "🏢 Sell to a company", effects = { Money = 100000, Happiness = -5 }, resultText = "They bought it but you lost control." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 4: DEEP TEACHER CAREER PATH
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "teacher_education_degree",
+		minAge = 18, maxAge = 30,
+		weight = 20, oneTime = true,
+		emoji = "🎓", title = "Education Degree",
+		category = "school",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teaching_interest and f.college_student and not f.education_degree
+		end,
+		getDynamicData = function() return { university = randomUniversity() } end,
+		text = "You're studying Education at %university%! This is your calling.",
+		choices = {
+			{ text = "📚 Double major", effects = { Smarts = 10, Happiness = 5 }, resultText = "You added a content area. More versatile!", setFlag = "education_degree" },
+			{ text = "🎓 Focus on pedagogy", effects = { Smarts = 8, Happiness = 6 }, resultText = "You became an expert in how people learn.", setFlag = "education_degree" },
+		},
+	},
+	
+	{
+		id = "teacher_student_teaching",
+		minAge = 21, maxAge = 30,
+		weight = 25, oneTime = true,
+		emoji = "👨‍🏫", title = "Student Teaching",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.education_degree and not f.student_teaching_done
+		end,
+		getDynamicData = function() return { school = randomSchool(), mentor = randomName() } end,
+		text = "Time for student teaching at %school% under %mentor%!",
+		choices = {
+			{ text = "💪 Give it your all", effects = { Smarts = 6, Happiness = 8 }, resultText = "Your mentor praised your natural ability!", setFlag = "student_teaching_done" },
+			{ text = "📚 Learn by observing", effects = { Smarts = 8, Happiness = 4 }, resultText = "You learned so much watching an expert.", setFlag = "student_teaching_done" },
+		},
+	},
+	
+	{
+		id = "teacher_first_classroom",
+		minAge = 22, maxAge = 35,
+		weight = 30, oneTime = true, milestone = true,
+		emoji = "🏫", title = "Your Own Classroom!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.student_teaching_done and not f.teacher
+		end,
+		getDynamicData = function() return { school = randomSchool() } end,
+		text = "You got hired at %school%! You have your own classroom!",
+		choices = {
+			{ text = "😍 Best day ever!", effects = { Happiness = 15, Smarts = 5, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher" },
+		},
+	},
+	
+	{
+		id = "teacher_first_year_challenge",
+		minAge = 22, maxAge = 40,
+		weight = 25, oneTime = true,
+		emoji = "😰", title = "First Year Struggles",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teacher and not f.survived_first_year
+		end,
+		text = "First year teaching is HARD. You're exhausted and questioning everything.",
+		choices = {
+			{ text = "💪 Push through", effects = { Smarts = 5, Happiness = -5 }, resultText = "You made it. Year one done. It gets easier.", setFlag = "survived_first_year" },
+			{ text = "🤝 Seek mentorship", effects = { Smarts = 8, Happiness = 3 }, resultText = "Veteran teachers helped you survive.", setFlags = {"survived_first_year", "has_mentor"} },
+			{ text = "😭 Consider quitting", effects = { Happiness = -10 }, resultText = "Many new teachers quit. You're not alone in struggling." },
+		},
+	},
+	
+	{
+		id = "teacher_difficult_student",
+		minAge = 23, maxAge = 65,
+		weight = 20, cooldown = 2,
+		emoji = "😤", title = "Difficult Student",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.teacher end,
+		getDynamicData = function() return { studentName = randomName() } end,
+		text = "%studentName% is disrupting your class constantly. Nothing seems to work.",
+		choices = {
+			{ text = "💗 Find their story", effects = { Smarts = 5, Happiness = 8 }, resultText = "You discovered why they act out. Breakthrough achieved!" },
+			{ text = "📞 Contact parents", effects = { Smarts = 3, Happiness = 3 }, resultText = "Parent meeting helped address the issue." },
+			{ text = "📝 Document and escalate", effects = { Smarts = 4 }, resultText = "Administration got involved. Problem handled." },
+		},
+	},
+	
+	{
+		id = "teacher_breakthrough_moment",
+		minAge = 23, maxAge = 65,
+		weight = 15, cooldown = 3,
+		emoji = "💡", title = "Teaching Breakthrough",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.teacher end,
+		getDynamicData = function() return { studentName = randomName() } end,
+		text = "%studentName% finally understood something they've struggled with for months! Their face lit up!",
+		choices = {
+			{ text = "🎉 This is why I teach!", effects = { Happiness = 15, Smarts = 3 }, resultText = "That moment made everything worth it." },
+		},
+	},
+	
+	{
+		id = "teacher_extra_curricular",
+		minAge = 23, maxAge = 55,
+		weight = 15, cooldown = 3,
+		emoji = "🎯", title = "Run an Activity",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.teacher end,
+		getDynamicData = function()
+			local activities = {"drama club", "debate team", "robotics club", "student newspaper", "chess club", "tutoring program"}
+			return { activity = activities[math.random(#activities)] }
+		end,
+		text = "The school needs someone to run the %activity%. Extra work but extra impact.",
+		choices = {
+			{ text = "✅ I'll do it!", effects = { Happiness = 8, Money = 2000, Smarts = 3 }, resultText = "Students love you even more now!", setFlag = "club_advisor" },
+			{ text = "⏰ No time", effects = { Happiness = 2 }, resultText = "You need to protect your work-life balance." },
+		},
+	},
+	
+	{
+		id = "teacher_grad_school",
+		minAge = 25, maxAge = 50,
+		weight = 12, oneTime = true,
+		emoji = "🎓", title = "Graduate School",
+		category = "school",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teacher and not f.masters_degree
+		end,
+		getDynamicData = function() return { university = randomUniversity() } end,
+		text = "%university% accepted you into their Master's program in Education!",
+		choices = {
+			{ text = "📚 Start the program", effects = { Smarts = 12, Happiness = 5, Money = -20000 }, resultText = "Grad school while teaching is hard but you're growing.", setFlag = "masters_degree" },
+			{ text = "⏰ Maybe later", effects = {}, resultText = "The timing isn't right." },
+		},
+	},
+	
+	{
+		id = "teacher_national_board",
+		minAge = 28, maxAge = 55,
+		weight = 10, oneTime = true,
+		emoji = "🏆", title = "National Board Certification",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teacher and f.masters_degree and not f.national_board
+		end,
+		text = "You could pursue National Board Certification - the highest credential in teaching.",
+		choices = {
+			{ text = "📝 Go for it!", effects = { Smarts = 10, Happiness = 10, Money = 5000 }, resultText = "You're National Board Certified! Elite status achieved!", setFlag = "national_board" },
+			{ text = "😰 Too much work", effects = {}, resultText = "Maybe when you have more time." },
+		},
+	},
+	
+	{
+		id = "teacher_department_head_offer",
+		minAge = 30, maxAge = 55,
+		weight = 12, oneTime = true,
+		emoji = "👔", title = "Department Head Opening",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teacher and f.survived_first_year and not f.department_head
+		end,
+		text = "There's an opening for department head. More responsibility, more pay.",
+		choices = {
+			{ text = "👔 Apply!", effects = { Money = 5000, Happiness = 8, Smarts = 5 }, resultText = "You're now leading your department!", setFlag = "department_head" },
+			{ text = "📚 Stay in classroom", effects = { Happiness = 3 }, resultText = "You prefer direct student impact." },
+		},
+	},
+	
+	{
+		id = "teacher_admin_track",
+		minAge = 35, maxAge = 55,
+		weight = 10, oneTime = true,
+		emoji = "🏫", title = "Administration Path",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.department_head and f.masters_degree and not f.admin_certificate
+		end,
+		text = "People keep suggesting you'd make a great principal. Get admin certified?",
+		choices = {
+			{ text = "📚 Get the certificate", effects = { Smarts = 8, Money = -10000 }, resultText = "You're now qualified for administration roles!", setFlag = "admin_certificate" },
+			{ text = "🙅 Teaching is where I belong", effects = { Happiness = 5 }, resultText = "Not everyone should be admin. Teachers matter." },
+		},
+	},
+	
+	{
+		id = "teacher_assistant_principal",
+		minAge = 35, maxAge = 58,
+		weight = 10, oneTime = true,
+		emoji = "📋", title = "Assistant Principal",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.admin_certificate and not f.assistant_principal
+		end,
+		getDynamicData = function() return { school = randomSchool() } end,
+		text = "%school% is hiring an assistant principal and you're a top candidate!",
+		choices = {
+			{ text = "📋 Take the position", effects = { Money = 10000, Happiness = 8, Smarts = 5 }, resultText = "You're now in school leadership!", setFlag = "assistant_principal", clearFlag = "teacher" },
+			{ text = "📚 Stay a teacher", effects = { Happiness = 5 }, resultText = "Administration isn't for everyone." },
+		},
+	},
+	
+	{
+		id = "teacher_principal_promotion",
+		minAge = 38, maxAge = 62,
+		weight = 8, oneTime = true, milestone = true,
+		emoji = "🎓", title = "Principal!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.assistant_principal and not f.principal
+		end,
+		getDynamicData = function() return { school = randomSchool() } end,
+		text = "The principal position at %school% just opened up!",
+		choices = {
+			{ text = "🎓 This is my moment!", effects = { Money = 15000, Happiness = 15, Smarts = 5 }, resultText = "You're the principal! Your school, your vision.", setFlag = "principal" },
+		},
+	},
+	
+	{
+		id = "teacher_superintendent",
+		minAge = 45, maxAge = 65,
+		weight = 5, oneTime = true, milestone = true,
+		emoji = "🏛️", title = "Superintendent",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.principal and (state.Age or 0) >= 45 and not f.superintendent
+		end,
+		text = "The district is looking for a new superintendent. Your name keeps coming up.",
+		choices = {
+			{ text = "🏛️ Lead the district!", effects = { Money = 30000, Happiness = 15, Smarts = 8 }, resultText = "You're now superintendent of the entire district!", setFlag = "superintendent" },
+			{ text = "🏫 Stay at my school", effects = { Happiness = 5 }, resultText = "You love your school community too much to leave." },
+		},
+	},
+	
+	{
+		id = "teacher_union_leadership",
+		minAge = 28, maxAge = 55,
+		weight = 10, oneTime = true,
+		emoji = "✊", title = "Union Leadership",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.teacher end,
+		text = "The teachers' union is looking for new leadership. Advocate for your colleagues?",
+		choices = {
+			{ text = "✊ Run for union president", effects = { Happiness = 8, Smarts = 5 }, resultText = "You're now fighting for teachers' rights!", setFlag = "union_leader" },
+			{ text = "🤝 Committee member", effects = { Happiness = 4, Smarts = 3 }, resultText = "You contribute without the spotlight." },
+			{ text = "🙅 Stay out of politics", effects = {}, resultText = "You focus on your students instead." },
+		},
+	},
+	
+	{
+		id = "teacher_scholarship_student",
+		minAge = 25, maxAge = 55,
+		weight = 12, cooldown = 3,
+		emoji = "🌟", title = "Star Student",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.teacher end,
+		getDynamicData = function() return { studentName = randomName() } end,
+		text = "%studentName% got a full scholarship thanks to your recommendation and guidance!",
+		choices = {
+			{ text = "🎉 This is my legacy!", effects = { Happiness = 15 }, resultText = "Changing lives - that's what it's all about." },
+		},
+	},
+	
+	{
+		id = "teacher_former_student_success",
+		minAge = 30, maxAge = 65,
+		weight = 10, cooldown = 5,
+		emoji = "🎓", title = "Former Student Success",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.teacher end,
+		getDynamicData = function() return { studentName = randomName() } end,
+		text = "You ran into your former student %studentName%. They're now a successful professional and thanked you for believing in them.",
+		choices = {
+			{ text = "🥹 This means everything", effects = { Happiness = 20 }, resultText = "The impact you've made is immeasurable." },
+		},
+	},
+	
+	{
+		id = "teacher_write_curriculum",
+		minAge = 30, maxAge = 60,
+		weight = 10, oneTime = true,
+		emoji = "📖", title = "Write Curriculum",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teacher and (f.department_head or f.national_board)
+		end,
+		text = "The district wants you to write new curriculum for your subject area.",
+		choices = {
+			{ text = "📖 Create something amazing", effects = { Smarts = 10, Money = 5000, Happiness = 8 }, resultText = "Your curriculum is being used district-wide!", setFlag = "curriculum_author" },
+			{ text = "⏰ No time", effects = {}, resultText = "You passed on the opportunity." },
+		},
+	},
+	
+	{
+		id = "teacher_conference_presenter",
+		minAge = 28, maxAge = 60,
+		weight = 10, cooldown = 3,
+		emoji = "🎤", title = "Present at Conference",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.teacher and (f.teacher_award or f.national_board)
+		end,
+		getDynamicData = function()
+			local conferences = {"National Education Conference", "State Teachers Convention", "Subject Area Summit"}
+			return { conference = conferences[math.random(#conferences)] }
+		end,
+		text = "You've been invited to present at the %conference%!",
+		choices = {
+			{ text = "🎤 Share your expertise", effects = { Smarts = 6, Happiness = 10, Money = 1000 }, resultText = "Your session was a hit! Educators were inspired." },
+			{ text = "😰 Public speaking is scary", effects = {}, resultText = "Maybe next time." },
+		},
+	},
+
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 5: DEEP CRIMINAL CAREER PATH
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "crime_first_fight",
+		minAge = 12, maxAge = 20,
+		weight = 20, oneTime = true,
+		emoji = "👊", title = "First Fight",
+		category = "social",
+		getDynamicData = function() return { enemyName = randomName() } end,
+		text = "%enemyName% pushed you too far. Are you going to do something about it?",
+		choices = {
+			{ text = "👊 Fight them", effects = { Health = -5, Happiness = 5 }, resultText = "You got in your first real fight. Won some respect.", setFlag = "scrapper" },
+			{ text = "🗣️ Use words", effects = { Smarts = 4, Happiness = 3 }, resultText = "You talked your way out of it. Smart." },
+			{ text = "🏃 Walk away", effects = { Happiness = -3 }, resultText = "Live to fight another day." },
+		},
+	},
+	
+	{
+		id = "crime_steal_from_store",
+		minAge = 12, maxAge = 25,
+		weight = 15, cooldown = 3,
+		emoji = "🛒", title = "Five-Finger Discount",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.criminal_tendencies or f.scrapper
+		end,
+		getDynamicData = function()
+			local items = {"candy", "video game", "electronics", "clothes", "makeup"}
+			return { item = items[math.random(#items)] }
+		end,
+		text = "That %item% would be so easy to steal. Nobody's watching...",
+		choices = {
+			{ text = "🖐️ Take it", effects = { Happiness = 5 }, resultText = "You got away with it. The rush is real.", setFlag = "shoplifter" },
+			{ text = "🚶 Walk away", effects = { Smarts = 3 }, resultText = "Not worth the risk." },
+			{ text = "🚨 Get caught!", effects = { Happiness = -10, Money = -100 }, resultText = "Security grabbed you. Your parents are so disappointed." },
+		},
+	},
+	
+	{
+		id = "crime_vandalism",
+		minAge = 13, maxAge = 22,
+		weight = 15, oneTime = true,
+		emoji = "🖌️", title = "Vandalism",
+		category = "crime",
+		requires = function(state) return state.Flags and state.Flags.criminal_tendencies end,
+		text = "Your friends want to tag some walls. Join them?",
+		choices = {
+			{ text = "🖌️ Leave your mark", effects = { Happiness = 5 }, resultText = "Your tag is everywhere now!", setFlag = "vandal" },
+			{ text = "🙅 Nah, too risky", effects = { Smarts = 3 }, resultText = "You passed. Smart choice." },
+		},
+	},
+	
+	{
+		id = "crime_sell_drugs_start",
+		minAge = 16, maxAge = 30,
+		weight = 12, oneTime = true,
+		emoji = "💊", title = "Dealing Opportunity",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.criminal_tendencies or f.gang_prospect) and not f.drug_dealer
+		end,
+		getDynamicData = function() return { contactName = randomName() } end,
+		text = "%contactName% says you could make good money selling. Easy work.",
+		choices = {
+			{ text = "💊 Start dealing", effects = { Money = 2000, Happiness = 3 }, resultText = "The money flows in. But so does the risk.", setFlag = "drug_dealer" },
+			{ text = "🚫 Not for me", effects = { Smarts = 5 }, resultText = "You don't want that life." },
+		},
+	},
+	
+	{
+		id = "crime_street_race",
+		minAge = 17, maxAge = 35,
+		weight = 12, cooldown = 3,
+		emoji = "🏎️", title = "Street Racing",
+		category = "crime",
+		requires = function(state) return state.Flags and state.Flags.has_license end,
+		getDynamicData = function() return { location = "downtown strip", prize = math.random(500, 2000) } end,
+		text = "There's a street race at the %location% tonight. Prize is $%prize%.",
+		choices = {
+			{ text = "🏎️ Race!", effects = { Happiness = 8, Money = 1000 }, resultText = "You won! Cops almost caught you though.", setFlag = "street_racer", minigame = "getaway" },
+			{ text = "👀 Watch", effects = { Happiness = 3 }, resultText = "You enjoyed the show safely." },
+			{ text = "🚫 Too dangerous", effects = { Smarts = 3 }, resultText = "Someone got hurt that night. Good call." },
+		},
+	},
+	
+	{
+		id = "crime_burglary_first",
+		minAge = 18, maxAge = 40,
+		weight = 10, oneTime = true,
+		emoji = "🏠", title = "First Burglary",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.car_thief or f.drug_dealer
+		end,
+		text = "Someone's vacation home is empty for weeks. Lot of valuables inside.",
+		choices = {
+			{ text = "🏠 Break in", effects = { Money = 5000, Happiness = 5 }, resultText = "You cleaned the place out. Big haul.", setFlag = "burglar", minigame = "heist" },
+			{ text = "🚫 Too far", effects = { Smarts = 3 }, resultText = "That's someone's home. You passed." },
+		},
+	},
+	
+	{
+		id = "crime_fence_connection",
+		minAge = 18, maxAge = 50,
+		weight = 12, oneTime = true,
+		emoji = "🤝", title = "Meet a Fence",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.burglar or f.car_thief
+		end,
+		getDynamicData = function() return { fenceName = randomName() } end,
+		text = "You met %fenceName%, a fence who buys stolen goods. Better prices than pawning.",
+		choices = {
+			{ text = "🤝 Make the connection", effects = { Money = 2000, Smarts = 3 }, resultText = "Now you have a reliable outlet for your goods.", setFlag = "has_fence" },
+			{ text = "🚫 Don't trust them", effects = {}, resultText = "Could be a cop. Better safe." },
+		},
+	},
+	
+	{
+		id = "crime_gang_war_battle",
+		minAge = 18, maxAge = 45,
+		weight = 12, cooldown = 2,
+		emoji = "⚔️", title = "Gang Battle",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.gang_member and f.initiated
+		end,
+		getDynamicData = function() return { rival = "The Southside Crew" } end,
+		text = "%rival% is making moves on your territory. It's war.",
+		choices = {
+			{ text = "⚔️ Lead the charge", effects = { Health = -15, Happiness = 8, Money = 5000 }, resultText = "Victory. But at what cost?", setFlag = "war_veteran", minigame = "getaway" },
+			{ text = "🛡️ Defend only", effects = { Health = -5, Happiness = 3 }, resultText = "You held the line but didn't expand." },
+			{ text = "🕊️ Negotiate peace", effects = { Smarts = 8, Happiness = 3 }, resultText = "You talked it out. Bloodshed avoided." },
+		},
+	},
+	
+	{
+		id = "crime_police_informant",
+		minAge = 20, maxAge = 50,
+		weight = 10, oneTime = true,
+		emoji = "🐀", title = "Become an Informant?",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.gang_member and f.arrested
+		end,
+		getDynamicData = function() return { detectiveName = randomName() } end,
+		text = "Detective %detectiveName% offers a deal: information for immunity.",
+		choices = {
+			{ text = "🐀 Become a snitch", effects = { Happiness = -10, Smarts = 3 }, resultText = "You're informing on your crew. Dangerous game.", setFlag = "informant", clearFlag = "snitch" },
+			{ text = "🤐 Stay loyal", effects = { Happiness = 5 }, resultText = "You kept your mouth shut. Respect." },
+		},
+	},
+	
+	{
+		id = "crime_witness_murder",
+		minAge = 18, maxAge = 55,
+		weight = 8, oneTime = true,
+		emoji = "👀", title = "Witness to Murder",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.gang_member or f.crime_boss
+		end,
+		getDynamicData = function() return { victimName = randomName() } end,
+		text = "You witnessed the gang eliminate %victimName%. You know too much.",
+		choices = {
+			{ text = "🤐 Never speak of it", effects = { Happiness = -15, Smarts = 3 }, resultText = "Some things you take to the grave.", setFlag = "knows_secrets" },
+			{ text = "🏃 Get out", effects = { Happiness = -10, Health = -5 }, resultText = "You tried to leave the life. They didn't make it easy." },
+		},
+	},
+	
+	{
+		id = "crime_corrupt_cop",
+		minAge = 22, maxAge = 55,
+		weight = 10, oneTime = true,
+		emoji = "🚔", title = "Crooked Cop",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.gang_captain or f.underboss or f.crime_boss
+		end,
+		getDynamicData = function() return { copName = randomName() } end,
+		text = "Officer %copName% is on the take. Want police protection?",
+		choices = {
+			{ text = "💵 Pay them off", effects = { Money = -5000, Happiness = 5 }, resultText = "Now you have a cop in your pocket.", setFlag = "has_dirty_cop" },
+			{ text = "🚫 Don't trust cops", effects = { Smarts = 3 }, resultText = "Could be a setup. You passed." },
+		},
+	},
+	
+	{
+		id = "crime_family_threat",
+		minAge = 25, maxAge = 60,
+		weight = 8, oneTime = true,
+		emoji = "👨‍👩‍👧", title = "Family Threatened",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.gang_captain or f.underboss
+		end,
+		text = "Rivals threatened your family. This is getting serious.",
+		choices = {
+			{ text = "🏠 Hide them", effects = { Money = -10000, Happiness = -10 }, resultText = "You moved your family somewhere safe." },
+			{ text = "💀 Send a message", effects = { Happiness = -5, Health = -5 }, resultText = "They won't threaten your family again.", setFlag = "made_example" },
+			{ text = "🏃 Leave the life", effects = { Happiness = 10, Money = -50000 }, resultText = "You tried to go straight. For your family.", clearFlags = {"gang_member", "gang_captain"} },
+		},
+	},
+	
+	{
+		id = "crime_rico_investigation",
+		minAge = 28, maxAge = 60,
+		weight = 6, oneTime = true,
+		emoji = "📋", title = "RICO Investigation",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.crime_boss or f.underboss
+		end,
+		text = "The feds are building a RICO case against your organization.",
+		choices = {
+			{ text = "⚖️ Lawyer up hard", effects = { Money = -100000, Smarts = 5 }, resultText = "Best lawyers money can buy. Case might fall apart." },
+			{ text = "🏃 Flee the country", effects = { Money = -200000, Happiness = -15 }, resultText = "You're now living abroad under a new identity.", setFlag = "in_exile", clearFlags = {"crime_boss", "underboss"} },
+			{ text = "🤝 Make a deal", effects = { Happiness = -20, Smarts = 3 }, resultText = "You cooperated. Witness protection awaits.", setFlag = "witness_protection", clearFlag = "crime_boss" },
+		},
+	},
+	
+	{
+		id = "crime_prison_life_hard",
+		minAge = 18, maxAge = 70,
+		weight = 15, cooldown = 2,
+		emoji = "⛓️", title = "Prison Life",
+		category = "prison",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison
+		end,
+		text = "Life behind bars is tough. How will you handle it?",
+		choices = {
+			{ text = "💪 Work out constantly", effects = { Health = 8, Looks = 3 }, resultText = "You're getting massive. Nobody messes with you." },
+			{ text = "📚 Use the library", effects = { Smarts = 8, Happiness = 3 }, resultText = "You're educating yourself. Rehabilitation?" },
+			{ text = "🤝 Make connections", effects = { Smarts = 4, Happiness = 3 }, resultText = "Prison networks might be useful on the outside." },
+		},
+	},
+	
+	{
+		id = "crime_prison_fight",
+		minAge = 18, maxAge = 70,
+		weight = 12, cooldown = 3,
+		emoji = "👊", title = "Prison Fight",
+		category = "prison",
+		requires = function(state) return state.Flags and state.Flags.in_prison end,
+		getDynamicData = function() return { inmateame = randomName() } end,
+		text = "%inmateName% is challenging you. Back down and you're a target forever.",
+		choices = {
+			{ text = "👊 Fight", effects = { Health = -10, Happiness = 5 }, resultText = "You held your own. Earned some respect." },
+			{ text = "🗣️ Talk your way out", effects = { Smarts = 6, Happiness = 3 }, resultText = "Silver tongue saves the day." },
+			{ text = "🛡️ Get protection", effects = { Money = -500 }, resultText = "You paid for protection. Safe for now." },
+		},
+	},
+	
+	{
+		id = "crime_prison_gang",
+		minAge = 18, maxAge = 60,
+		weight = 10, oneTime = true,
+		emoji = "⛓️", title = "Prison Gang",
+		category = "prison",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison and not f.prison_gang
+		end,
+		getDynamicData = function()
+			local gangs = {"Aryan Brotherhood", "La Nuestra Familia", "Black Guerrilla Family", "The Bloods"}
+			return { gang = gangs[math.random(#gangs)] }
+		end,
+		text = "%gang% wants you to join. Protection in exchange for loyalty.",
+		choices = {
+			{ text = "⛓️ Join them", effects = { Happiness = 3 }, resultText = "You're protected now. But you owe them.", setFlag = "prison_gang" },
+			{ text = "🙅 Stay independent", effects = { Health = -5, Happiness = -3 }, resultText = "Dangerous choice but you kept your freedom." },
+		},
+	},
+	
+	{
+		id = "crime_empire_built",
+		minAge = 35, maxAge = 65,
+		weight = 5, oneTime = true, milestone = true,
+		emoji = "🏰", title = "Criminal Empire",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.crime_boss and f.money_launderer and not f.empire_built
+		end,
+		text = "You've built a criminal empire. Drugs, gambling, construction - you control it all.",
+		choices = {
+			{ text = "👑 Long live the king", effects = { Money = 500000, Happiness = 15 }, resultText = "You are the kingpin. Everyone answers to you.", setFlag = "empire_built" },
+		},
+	},
+	
+	{
+		id = "crime_go_legit",
+		minAge = 35, maxAge = 65,
+		weight = 8, oneTime = true,
+		emoji = "📑", title = "Go Legitimate",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.crime_boss and f.empire_built
+		end,
+		text = "You have enough money. Could you walk away and go legitimate?",
+		choices = {
+			{ text = "📑 Go clean", effects = { Money = -100000, Happiness = 15 }, resultText = "You're out of the game. Legal businesses only.", setFlag = "reformed_criminal", clearFlags = {"crime_boss", "gang_member"} },
+			{ text = "👑 This is who I am", effects = { Happiness = 5 }, resultText = "Once a boss, always a boss." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 6: ADULT LIFE EVENTS (25-60)
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "adult_first_apartment",
+		minAge = 18, maxAge = 30,
+		weight = 25, oneTime = true,
+		emoji = "🏢", title = "First Apartment",
+		category = "money",
+		text = "You're getting your own place! Independence at last!",
+		choices = {
+			{ text = "🏢 Nice place", effects = { Money = -2000, Happiness = 10 }, resultText = "Your first apartment is great!", setFlag = "has_apartment" },
+			{ text = "🏚️ Cheap place", effects = { Money = -500, Happiness = 5 }, resultText = "It's not much but it's yours." },
+			{ text = "👨‍👩‍👧 Stay with family", effects = { Money = 1000, Happiness = -3 }, resultText = "You saved money but sacrificed independence." },
+		},
+	},
+	
+	{
+		id = "adult_career_change",
+		minAge = 25, maxAge = 50,
+		weight = 12, cooldown = 5,
+		emoji = "🔄", title = "Career Change",
+		category = "work",
+		text = "You've been thinking about changing careers entirely.",
+		choices = {
+			{ text = "🔄 Make the switch", effects = { Happiness = 10, Money = -5000, Smarts = 5 }, resultText = "Fresh start! Scary but exciting." },
+			{ text = "📚 Go back to school", effects = { Smarts = 10, Money = -20000, Happiness = 5 }, resultText = "You're investing in a new direction." },
+			{ text = "🛡️ Stay safe", effects = { Happiness = -3 }, resultText = "The familiar path continues." },
+		},
+	},
+	
+	{
+		id = "adult_proposal",
+		minAge = 22, maxAge = 45,
+		weight = 15, oneTime = true,
+		emoji = "💍", title = "The Proposal",
+		category = "romance",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_love and not f.married and not f.engaged
+		end,
+		getDynamicData = function() return { partnerName = randomName() } end,
+		text = "You're ready to propose to %partnerName%. This is the moment.",
+		choices = {
+			{ text = "💍 Pop the question!", effects = { Happiness = 20, Money = -5000 }, resultText = "They said YES!", setFlag = "engaged" },
+			{ text = "⏳ Wait a bit longer", effects = { Happiness = -3 }, resultText = "The timing didn't feel right." },
+		},
+	},
+	
+	{
+		id = "adult_wedding",
+		minAge = 22, maxAge = 50,
+		weight = 40, oneTime = true, milestone = true,
+		emoji = "👰", title = "Wedding Day!",
+		category = "romance",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.engaged and not f.married
+		end,
+		text = "Today's the day! Your wedding is finally here!",
+		choices = {
+			{ text = "🎉 Best day ever!", effects = { Happiness = 25, Money = -20000 }, resultText = "You're married! Here's to forever.", setFlag = "married", clearFlag = "engaged" },
+			{ text = "😰 Cold feet...", effects = { Happiness = -30 }, resultText = "You couldn't go through with it.", clearFlag = "engaged" },
+		},
+	},
+	
+	{
+		id = "adult_having_baby",
+		minAge = 22, maxAge = 45,
+		weight = 20, oneTime = true, milestone = true,
+		emoji = "👶", title = "Having a Baby!",
+		category = "family",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.married and not f.has_children
+		end,
+		text = "Your partner is pregnant! You're going to be a parent!",
+		choices = {
+			{ text = "👶 So excited!", effects = { Happiness = 20 }, resultText = "Parenthood awaits! Your life will never be the same.", setFlag = "has_children" },
+			{ text = "😰 Terrified", effects = { Happiness = 5, Smarts = 3 }, resultText = "You're scared but committed.", setFlag = "has_children" },
+		},
+	},
+	
+	{
+		id = "adult_baby_born",
+		minAge = 22, maxAge = 48,
+		weight = 50, oneTime = true, milestone = true,
+		emoji = "🍼", title = "Baby Arrives!",
+		category = "family",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.has_children and not f.baby_born
+		end,
+		getDynamicData = function()
+			local genders = {"boy", "girl"}
+			local names = {"Emma", "Liam", "Olivia", "Noah", "Ava", "Ethan", "Sophia", "Mason"}
+			return { gender = genders[math.random(#genders)], babyName = names[math.random(#names)] }
+		end,
+		text = "Your baby %babyName% is here! A beautiful %gender%!",
+		choices = {
+			{ text = "❤️ Pure joy", effects = { Happiness = 25 }, resultText = "Holding your child for the first time is indescribable.", setFlag = "baby_born" },
+		},
+	},
+	
+	{
+		id = "adult_sleep_deprivation",
+		minAge = 22, maxAge = 50,
+		weight = 25, cooldown = 3,
+		emoji = "😴", title = "Sleep Deprivation",
+		category = "family",
+		requires = function(state) return state.Flags and state.Flags.baby_born end,
+		text = "The baby won't sleep. Neither will you. For months.",
+		choices = {
+			{ text = "💪 Power through", effects = { Health = -5, Happiness = -5 }, resultText = "Exhausted but managing. It gets better, right?" },
+			{ text = "🤝 Get help", effects = { Money = -500, Happiness = 3 }, resultText = "A night nurse saved your sanity." },
+		},
+	},
+	
+	{
+		id = "adult_first_house",
+		minAge = 25, maxAge = 50,
+		weight = 15, oneTime = true,
+		emoji = "🏡", title = "Buying a House",
+		category = "money",
+		requires = function(state) return (state.Money or 0) >= 50000 end,
+		text = "You found your dream home! The mortgage is scary but doable.",
+		choices = {
+			{ text = "🏡 Buy it!", effects = { Money = -50000, Happiness = 20 }, resultText = "You're a homeowner! Welcome to the American dream.", setFlag = "homeowner" },
+			{ text = "🏢 Keep renting", effects = { Happiness = -3 }, resultText = "Maybe next year." },
+		},
+	},
+	
+	{
+		id = "adult_job_loss",
+		minAge = 25, maxAge = 60,
+		weight = 10, cooldown = 5,
+		emoji = "📦", title = "Laid Off",
+		category = "work",
+		requires = function(state) return state.Flags and (state.Flags.first_job_done or state.Flags.teacher or state.Flags.hacker_career) end,
+		text = "You got laid off. The company is downsizing.",
+		choices = {
+			{ text = "🔍 Job hunt immediately", effects = { Smarts = 5, Happiness = -5 }, resultText = "You found something new quickly." },
+			{ text = "💡 Start a business", effects = { Money = -10000, Happiness = 5, Smarts = 5 }, resultText = "Maybe this is your opportunity!", setFlag = "entrepreneur" },
+			{ text = "😔 Wallow", effects = { Happiness = -15, Health = -5 }, resultText = "It took a while to recover." },
+		},
+	},
+	
+	{
+		id = "adult_affair_opportunity",
+		minAge = 25, maxAge = 55,
+		weight = 8, cooldown = 5,
+		emoji = "💋", title = "Temptation",
+		category = "romance",
+		requires = function(state) return state.Flags and state.Flags.married end,
+		getDynamicData = function() return { tempterName = randomName() } end,
+		text = "%tempterName% is flirting with you. They're attractive and interested.",
+		choices = {
+			{ text = "💋 Give in", effects = { Happiness = 5, Smarts = -5 }, resultText = "You had an affair. It was exciting but wrong.", setFlag = "cheater" },
+			{ text = "💍 Stay faithful", effects = { Happiness = 5, Smarts = 5 }, resultText = "You honored your vows. Good choice." },
+		},
+	},
+	
+	{
+		id = "adult_divorce",
+		minAge = 25, maxAge = 65,
+		weight = 10, oneTime = true,
+		emoji = "💔", title = "Divorce",
+		category = "romance",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.married and (f.cheater or (state.Stats and state.Stats.Happiness and state.Stats.Happiness < 30))
+		end,
+		text = "Your marriage is falling apart. Divorce seems inevitable.",
+		choices = {
+			{ text = "💔 Get divorced", effects = { Money = -50000, Happiness = -20 }, resultText = "It's over. Time to rebuild.", clearFlag = "married", setFlag = "divorced" },
+			{ text = "💪 Fight for it", effects = { Happiness = -10, Money = -5000 }, resultText = "Marriage counseling might help." },
+		},
+	},
+	
+	{
+		id = "adult_kids_graduation",
+		minAge = 40, maxAge = 70,
+		weight = 15, oneTime = true,
+		emoji = "🎓", title = "Child's Graduation",
+		category = "family",
+		requires = function(state) return state.Flags and state.Flags.has_children end,
+		getDynamicData = function() return { childName = randomName() } end,
+		text = "%childName% is graduating! You're so proud!",
+		choices = {
+			{ text = "🎉 Celebrate big!", effects = { Happiness = 20, Money = -2000 }, resultText = "What a wonderful moment. You did it, parent!" },
+			{ text = "😢 Happy tears", effects = { Happiness = 15 }, resultText = "Where did the time go?" },
+		},
+	},
+	
+	{
+		id = "adult_empty_nest",
+		minAge = 45, maxAge = 65,
+		weight = 15, oneTime = true,
+		emoji = "🏠", title = "Empty Nest",
+		category = "family",
+		requires = function(state) return state.Flags and state.Flags.has_children end,
+		text = "Your kids have all moved out. The house is quiet.",
+		choices = {
+			{ text = "😢 Miss them", effects = { Happiness = -10 }, resultText = "The quiet is deafening." },
+			{ text = "🎉 Freedom!", effects = { Happiness = 15 }, resultText = "Finally! Time for yourself again!" },
+			{ text = "🏡 Downsize", effects = { Money = 50000, Happiness = 5 }, resultText = "You sold the big house. Fresh start." },
+		},
+	},
+	
+	{
+		id = "adult_health_scare",
+		minAge = 35, maxAge = 70,
+		weight = 10, cooldown = 5,
+		emoji = "🏥", title = "Health Scare",
+		category = "health",
+		getDynamicData = function()
+			local conditions = {"heart issue", "cancer scare", "diabetes warning", "high blood pressure"}
+			return { condition = conditions[math.random(#conditions)] }
+		end,
+		text = "The doctor found a %condition%. It's serious but treatable.",
+		choices = {
+			{ text = "🏥 Take it seriously", effects = { Health = 10, Money = -5000, Happiness = -5 }, resultText = "You changed your lifestyle. Health improved." },
+			{ text = "🤷 Ignore it", effects = { Health = -15, Happiness = 3 }, resultText = "Bad choice. It got worse." },
+		},
+	},
+	
+	{
+		id = "adult_become_millionaire",
+		minAge = 30, maxAge = 70,
+		weight = 5, oneTime = true, milestone = true,
+		emoji = "💰", title = "Millionaire!",
+		category = "money",
+		requires = function(state) return (state.Money or 0) >= 1000000 end,
+		text = "Your net worth just crossed one million dollars!",
+		choices = {
+			{ text = "💰 I made it!", effects = { Happiness = 25 }, resultText = "You're officially a millionaire!", setFlag = "millionaire" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 7: SENIOR & ELDER EVENTS (60+)
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "senior_retirement_official",
+		minAge = 60, maxAge = 70,
+		weight = 30, oneTime = true, milestone = true,
+		emoji = "🏖️", title = "Retirement!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return not f.retired
+		end,
+		text = "It's time to retire. You've worked hard your whole life.",
+		choices = {
+			{ text = "🏖️ Retire happily", effects = { Happiness = 20 }, resultText = "You've earned this rest!", setFlag = "retired" },
+			{ text = "💼 Keep working", effects = { Happiness = 5, Money = 5000 }, resultText = "You're not ready to slow down." },
+		},
+	},
+	
+	{
+		id = "senior_grandchildren",
+		minAge = 50, maxAge = 80,
+		weight = 20, oneTime = true, milestone = true,
+		emoji = "👶", title = "Grandparent!",
+		category = "family",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.has_children and not f.grandparent
+		end,
+		getDynamicData = function() return { grandchildName = randomName() } end,
+		text = "Your child just had a baby! You're a grandparent! Meet %grandchildName%!",
+		choices = {
+			{ text = "👶 Pure joy!", effects = { Happiness = 25 }, resultText = "Grandchildren are the best!", setFlag = "grandparent" },
+		},
+	},
+	
+	{
+		id = "senior_spoil_grandkids",
+		minAge = 55, maxAge = 90,
+		weight = 15, cooldown = 3,
+		emoji = "🎁", title = "Spoiling Grandkids",
+		category = "family",
+		requires = function(state) return state.Flags and state.Flags.grandparent end,
+		text = "Your grandchildren are visiting! Time to spoil them rotten!",
+		choices = {
+			{ text = "🎁 Spoil them!", effects = { Happiness = 15, Money = -500 }, resultText = "Their parents might be mad but it's worth it!" },
+			{ text = "📚 Teach them things", effects = { Happiness = 10, Smarts = 3 }, resultText = "You're passing on wisdom." },
+		},
+	},
+	
+	{
+		id = "senior_bucket_list",
+		minAge = 60, maxAge = 85,
+		weight = 15, oneTime = true,
+		emoji = "📝", title = "Bucket List",
+		category = "social",
+		text = "You made a bucket list. What's first?",
+		choices = {
+			{ text = "✈️ Travel the world", effects = { Happiness = 20, Money = -30000 }, resultText = "You saw places you always dreamed of!", setFlag = "world_traveler" },
+			{ text = "🏔️ Adventure", effects = { Health = 5, Happiness = 15, Money = -10000 }, resultText = "You went skydiving/hiking/rafting!" },
+			{ text = "📖 Write your memoir", effects = { Smarts = 8, Happiness = 10 }, resultText = "Your life story is now written.", setFlag = "memoir_written" },
+		},
+	},
+	
+	{
+		id = "senior_health_decline",
+		minAge = 65, maxAge = 90,
+		weight = 20, cooldown = 3,
+		emoji = "🦯", title = "Health Declining",
+		category = "health",
+		text = "Getting older is hard. Your body isn't what it used to be.",
+		choices = {
+			{ text = "💪 Stay active", effects = { Health = 5, Happiness = 5 }, resultText = "You're fighting the decline!" },
+			{ text = "🧘 Gentle exercise", effects = { Health = 3, Happiness = 3 }, resultText = "Yoga and walking help." },
+			{ text = "😔 Accept it", effects = { Health = -5, Happiness = -5 }, resultText = "Age catches up with everyone." },
+		},
+	},
+	
+	{
+		id = "senior_lose_spouse",
+		minAge = 60, maxAge = 100,
+		weight = 10, oneTime = true,
+		emoji = "💔", title = "Losing Your Spouse",
+		category = "family",
+		requires = function(state) return state.Flags and state.Flags.married end,
+		getDynamicData = function() return { spouseName = randomName() } end,
+		text = "%spouseName% has passed away. You've lost your life partner.",
+		choices = {
+			{ text = "😢 Grieve deeply", effects = { Happiness = -30, Health = -10 }, resultText = "The grief is overwhelming.", clearFlag = "married", setFlag = "widowed" },
+			{ text = "💪 Honor their memory", effects = { Happiness = -15, Smarts = 5 }, resultText = "You'll carry them in your heart forever.", clearFlag = "married", setFlag = "widowed" },
+		},
+	},
+	
+	{
+		id = "senior_legacy_planning",
+		minAge = 65, maxAge = 90,
+		weight = 15, oneTime = true,
+		emoji = "📜", title = "Estate Planning",
+		category = "money",
+		text = "It's time to think about your legacy. Who gets what?",
+		choices = {
+			{ text = "📜 Write a will", effects = { Smarts = 5, Money = -1000 }, resultText = "Your affairs are in order.", setFlag = "has_will" },
+			{ text = "🎁 Start giving now", effects = { Happiness = 10, Money = -50000 }, resultText = "You're helping your family while you're still here." },
+			{ text = "🤷 Deal with it later", effects = { Happiness = -3 }, resultText = "Procrastination might cause problems." },
+		},
+	},
+	
+	{
+		id = "senior_assisted_living",
+		minAge = 75, maxAge = 100,
+		weight = 15, oneTime = true,
+		emoji = "🏥", title = "Assisted Living",
+		category = "health",
+		requires = function(state) return (state.Stats and state.Stats.Health and state.Stats.Health < 40) end,
+		text = "You might need to move to assisted living.",
+		choices = {
+			{ text = "🏥 Accept help", effects = { Health = 10, Happiness = -10, Money = -20000 }, resultText = "It's hard but necessary.", setFlag = "in_assisted_living" },
+			{ text = "🏠 Stay home", effects = { Health = -10, Happiness = 5 }, resultText = "You're stubborn. Hopefully it works out." },
+		},
+	},
+	
+	{
+		id = "senior_find_old_friend",
+		minAge = 60, maxAge = 90,
+		weight = 12, cooldown = 5,
+		emoji = "👥", title = "Reconnecting",
+		category = "social",
+		getDynamicData = function() return { friendName = randomName() } end,
+		text = "You reconnected with your old friend %friendName% after decades!",
+		choices = {
+			{ text = "🤗 Wonderful reunion!", effects = { Happiness = 15 }, resultText = "It's like no time has passed at all!" },
+			{ text = "📞 Stay in touch", effects = { Happiness = 8 }, resultText = "You'll call each other regularly now." },
+		},
+	},
+	
+	{
+		id = "senior_life_reflection",
+		minAge = 70, maxAge = 100,
+		weight = 20, cooldown = 5,
+		emoji = "🔮", title = "Life Reflection",
+		category = "social",
+		text = "Looking back on your life, how do you feel?",
+		choices = {
+			{ text = "😊 Content", effects = { Happiness = 20 }, resultText = "You lived a good life. No major regrets." },
+			{ text = "🤔 Some regrets", effects = { Happiness = 5, Smarts = 5 }, resultText = "There are things you'd do differently, but overall okay." },
+			{ text = "😢 Many regrets", effects = { Happiness = -10 }, resultText = "If only you could do it all again..." },
+		},
+	},
+	
+	{
+		id = "senior_centenarian",
+		minAge = 100, maxAge = 120,
+		weight = 100, oneTime = true, milestone = true,
+		emoji = "🎂", title = "Centenarian!",
+		category = "health",
+		text = "You've reached 100 years old! Incredible!",
+		choices = {
+			{ text = "🎂 Celebrate!", effects = { Happiness = 30 }, resultText = "You're a living legend! What a life!", setFlag = "centenarian" },
+		},
+	},
+	
+	{
+		id = "elder_final_wisdom",
+		minAge = 85, maxAge = 110,
+		weight = 15, oneTime = true,
+		emoji = "🦉", title = "Passing On Wisdom",
+		category = "family",
+		text = "Your family gathers to hear your wisdom. What do you tell them?",
+		choices = {
+			{ text = "❤️ Love matters most", effects = { Happiness = 15 }, resultText = "They'll remember your words forever." },
+			{ text = "💪 Never give up", effects = { Happiness = 12 }, resultText = "Your strength inspires them." },
+			{ text = "😊 Live fully", effects = { Happiness = 15 }, resultText = "You taught them to seize every moment." },
+		},
+	},
+	
+	{
+		id = "elder_peaceful_day",
+		minAge = 75, maxAge = 110,
+		weight = 20, cooldown = 2,
+		emoji = "☀️", title = "A Beautiful Day",
+		category = "social",
+		text = "It's a beautiful day. The sun is shining, birds are singing.",
+		choices = {
+			{ text = "🌳 Sit in the garden", effects = { Happiness = 10, Health = 3 }, resultText = "Simple pleasures are the best." },
+			{ text = "👨‍👩‍👧 Call family", effects = { Happiness = 12 }, resultText = "Hearing their voices brings joy." },
+			{ text = "📖 Read a good book", effects = { Happiness = 8, Smarts = 3 }, resultText = "A peaceful afternoon." },
+		},
+	},
+
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 8: DEEP RACER CAREER PATH
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "racer_first_gokart",
+		minAge = 8, maxAge = 14,
+		weight = 15, oneTime = true,
+		emoji = "🏎️", title = "First Go-Kart",
+		category = "hobby",
+		text = "Your parents take you to a go-kart track! The speed is exhilarating!",
+		choices = {
+			{ text = "🏎️ This is amazing!", effects = { Happiness = 15 }, resultText = "You fell in love with racing!", setFlag = "loves_racing" },
+			{ text = "😬 A bit scary", effects = { Happiness = 3 }, resultText = "Fun but the speed was intense." },
+		},
+	},
+	
+	{
+		id = "racer_junior_karting",
+		minAge = 10, maxAge = 16,
+		weight = 12, oneTime = true,
+		emoji = "🏁", title = "Junior Karting League",
+		category = "hobby",
+		requires = function(state) return state.Flags and state.Flags.loves_racing end,
+		text = "There's a junior karting league in town. Want to join?",
+		choices = {
+			{ text = "🏁 Sign up!", effects = { Money = -500, Happiness = 15 }, resultText = "You're officially a junior racer!", setFlag = "junior_racer" },
+			{ text = "👀 Watch first", effects = { Happiness = 5 }, resultText = "You observed but didn't compete yet." },
+		},
+	},
+	
+	{
+		id = "racer_first_win",
+		minAge = 12, maxAge = 18,
+		weight = 15, oneTime = true,
+		emoji = "🏆", title = "First Racing Win!",
+		category = "hobby",
+		requires = function(state) return state.Flags and state.Flags.junior_racer end,
+		text = "You crossed the finish line first! Your first ever win!",
+		choices = {
+			{ text = "🏆 Victory!", effects = { Happiness = 20, Money = 200 }, resultText = "The crowd cheered your name!", setFlag = "first_race_win" },
+		},
+	},
+	
+	{
+		id = "racer_talent_spotted",
+		minAge = 14, maxAge = 20,
+		weight = 10, oneTime = true,
+		emoji = "👀", title = "Talent Scout",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.junior_racer and f.first_race_win
+		end,
+		getDynamicData = function() return { scoutName = randomName(), team = randomRacingTeam() } end,
+		text = "%scoutName% from %team% noticed your talent! They want to develop you.",
+		choices = {
+			{ text = "🏎️ Join their program!", effects = { Happiness = 20, Smarts = 5 }, resultText = "You're now part of a real racing program!", setFlag = "racing_academy" },
+			{ text = "📚 Focus on school first", effects = { Smarts = 5, Happiness = -5 }, resultText = "Maybe later. Education comes first." },
+		},
+	},
+	
+	{
+		id = "racer_formula_4",
+		minAge = 16, maxAge = 20,
+		weight = 12, oneTime = true,
+		emoji = "🏎️", title = "Formula 4 Debut",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.racing_academy end,
+		text = "You're ready to move up to Formula 4! Real single-seaters!",
+		choices = {
+			{ text = "🏎️ Let's race!", effects = { Happiness = 20, Money = -5000 }, resultText = "You're now a Formula 4 driver!", setFlag = "f4_driver" },
+			{ text = "🏁 Stay in karting", effects = { Happiness = 5, Money = 1000 }, resultText = "You dominated karting but missed the step up." },
+		},
+	},
+	
+	{
+		id = "racer_crash_injury",
+		minAge = 16, maxAge = 45,
+		weight = 8, cooldown = 5,
+		emoji = "💥", title = "Racing Crash",
+		category = "health",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f4_driver or f.f3_driver or f.f2_driver or f.f1_driver
+		end,
+		text = "You had a serious crash during practice. The car is destroyed.",
+		choices = {
+			{ text = "🏥 Get checked out", effects = { Health = -20, Happiness = -10 }, resultText = "Injuries but you'll recover. The mental scars are real." },
+			{ text = "💪 Back in the car", effects = { Health = -10, Happiness = 5 }, resultText = "You showed courage getting back in immediately." },
+		},
+	},
+	
+	{
+		id = "racer_formula_3",
+		minAge = 17, maxAge = 23,
+		weight = 10, oneTime = true,
+		emoji = "🏎️", title = "Formula 3 Promotion",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.f4_driver end,
+		getDynamicData = function() return { team = randomRacingTeam() } end,
+		text = "%team% wants you for their Formula 3 team! Closer to F1!",
+		choices = {
+			{ text = "🏎️ Sign the contract!", effects = { Happiness = 20, Money = 10000 }, resultText = "F3 driver! The dream continues!", setFlag = "f3_driver" },
+			{ text = "💰 Negotiate harder", effects = { Smarts = 5, Money = 20000 }, resultText = "You got a better deal!", setFlag = "f3_driver" },
+		},
+	},
+	
+	{
+		id = "racer_rivalry",
+		minAge = 17, maxAge = 35,
+		weight = 12, cooldown = 3,
+		emoji = "😤", title = "Racing Rival",
+		category = "social",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f3_driver or f.f2_driver or f.f1_driver
+		end,
+		getDynamicData = function() return { rivalName = randomName() } end,
+		text = "%rivalName% is your biggest rival. They're talking trash in the press.",
+		choices = {
+			{ text = "🏎️ Beat them on track", effects = { Happiness = 10 }, resultText = "Your racing does the talking!", setFlag = "has_rival" },
+			{ text = "🗣️ Fire back", effects = { Happiness = 5, Looks = 3 }, resultText = "The media loves the drama!" },
+			{ text = "🤝 Stay professional", effects = { Smarts = 5 }, resultText = "You took the high road." },
+		},
+	},
+	
+	{
+		id = "racer_formula_2",
+		minAge = 18, maxAge = 25,
+		weight = 10, oneTime = true,
+		emoji = "🏎️", title = "Formula 2!",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.f3_driver end,
+		getDynamicData = function() return { team = randomRacingTeam() } end,
+		text = "%team% wants you in Formula 2! One step away from Formula 1!",
+		choices = {
+			{ text = "🏎️ This is it!", effects = { Happiness = 25, Money = 50000 }, resultText = "F2! The final step before the pinnacle!", setFlag = "f2_driver" },
+		},
+	},
+	
+	{
+		id = "racer_f2_championship",
+		minAge = 18, maxAge = 26,
+		weight = 8, oneTime = true, milestone = true,
+		emoji = "🏆", title = "F2 Championship!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f2_driver and not f.f2_champion
+		end,
+		text = "Final race of the season. Win this and you're F2 World Champion!",
+		choices = {
+			{ text = "🏆 Win it all!", effects = { Happiness = 30, Money = 100000 }, resultText = "F2 WORLD CHAMPION! F1 is calling!", setFlag = "f2_champion", minigame = "getaway" },
+		},
+	},
+	
+	{
+		id = "racer_f1_call",
+		minAge = 19, maxAge = 30,
+		weight = 15, oneTime = true, milestone = true,
+		emoji = "📞", title = "The F1 Call",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f2_champion and not f.f1_driver
+		end,
+		getDynamicData = function()
+			local teams = {"Red Bull Racing", "Ferrari", "Mercedes", "McLaren", "Aston Martin", "Alpine"}
+			return { team = teams[math.random(#teams)] }
+		end,
+		text = "%team% wants you to race in Formula 1! Your dream is coming true!",
+		choices = {
+			{ text = "📝 SIGN EVERYTHING!", effects = { Happiness = 50, Money = 500000 }, resultText = "YOU'RE AN F1 DRIVER! CHILDHOOD DREAM ACHIEVED!", setFlag = "f1_driver" },
+		},
+	},
+	
+	{
+		id = "racer_f1_first_race",
+		minAge = 19, maxAge = 35,
+		weight = 20, oneTime = true,
+		emoji = "🏁", title = "First F1 Race",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.f1_driver end,
+		text = "Your first Formula 1 race. Millions are watching. This is it.",
+		choices = {
+			{ text = "🏎️ Full focus", effects = { Happiness = 25, Smarts = 5 }, resultText = "You finished! An F1 finisher!", setFlag = "f1_debut" },
+		},
+	},
+	
+	{
+		id = "racer_f1_first_points",
+		minAge = 19, maxAge = 40,
+		weight = 15, oneTime = true,
+		emoji = "🔢", title = "First F1 Points!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f1_debut and not f.f1_points
+		end,
+		text = "You finished in the top 10! Your first ever F1 points!",
+		choices = {
+			{ text = "🎉 Incredible!", effects = { Happiness = 25, Money = 50000 }, resultText = "Points on the board! You're competing with the best!", setFlag = "f1_points" },
+		},
+	},
+	
+	{
+		id = "racer_f1_podium",
+		minAge = 20, maxAge = 42,
+		weight = 10, oneTime = true, milestone = true,
+		emoji = "🥇", title = "First F1 Podium!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f1_points and not f.f1_podium
+		end,
+		text = "Third place! You're on the podium! Champagne spraying everywhere!",
+		choices = {
+			{ text = "🍾 Spray the champagne!", effects = { Happiness = 35, Money = 200000 }, resultText = "AN F1 PODIUM! This feeling is unreal!", setFlag = "f1_podium" },
+		},
+	},
+	
+	{
+		id = "racer_f1_first_win",
+		minAge = 20, maxAge = 45,
+		weight = 8, oneTime = true, milestone = true,
+		emoji = "🏆", title = "First F1 Win!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f1_podium and not f.f1_winner
+		end,
+		text = "FIRST! You've won a Formula 1 Grand Prix! Your national anthem plays!",
+		choices = {
+			{ text = "🏆 CHAMPION FEELING!", effects = { Happiness = 50, Money = 500000 }, resultText = "F1 RACE WINNER! You're among legends now!", setFlag = "f1_winner" },
+		},
+	},
+	
+	{
+		id = "racer_f1_world_champion",
+		minAge = 21, maxAge = 45,
+		weight = 5, oneTime = true, milestone = true,
+		emoji = "👑", title = "F1 World Champion!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f1_winner and not f.f1_champion
+		end,
+		text = "You've won the Formula 1 World Championship! The pinnacle of motorsport!",
+		choices = {
+			{ text = "👑 I AM THE CHAMPION!", effects = { Happiness = 100, Money = 5000000 }, resultText = "F1 WORLD CHAMPION! Your name is etched in history forever!", setFlag = "f1_champion" },
+		},
+	},
+	
+	{
+		id = "racer_multi_champion",
+		minAge = 23, maxAge = 45,
+		weight = 3, oneTime = true, milestone = true,
+		emoji = "🌟", title = "Multiple Championships!",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.f1_champion end,
+		text = "You've won MULTIPLE F1 World Championships! You're a legend!",
+		choices = {
+			{ text = "🌟 LEGEND STATUS!", effects = { Happiness = 50, Money = 10000000 }, resultText = "Multi-time World Champion! Among the all-time greats!", setFlag = "multi_champion" },
+		},
+	},
+	
+	{
+		id = "racer_team_switch",
+		minAge = 22, maxAge = 40,
+		weight = 10, cooldown = 3,
+		emoji = "🔄", title = "Team Offer",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.f1_driver end,
+		getDynamicData = function()
+			local teams = {"Red Bull Racing", "Ferrari", "Mercedes", "McLaren", "Aston Martin"}
+			return { newTeam = teams[math.random(#teams)], salary = math.random(5, 20) * 1000000 }
+		end,
+		text = "%newTeam% wants to sign you! They're offering $%salary%!",
+		choices = {
+			{ text = "📝 Sign with them", effects = { Happiness = 10, Money = 10000000 }, resultText = "New team, new chapter!" },
+			{ text = "🤝 Stay loyal", effects = { Happiness = 5 }, resultText = "You're committed to your current team." },
+		},
+	},
+	
+	{
+		id = "racer_sponsor_deal",
+		minAge = 20, maxAge = 45,
+		weight = 12, cooldown = 2,
+		emoji = "💼", title = "Sponsorship Deal",
+		category = "money",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.f1_driver or f.f1_champion
+		end,
+		getDynamicData = function()
+			local brands = {"Rolex", "Richard Mille", "Tommy Hilfiger", "Hugo Boss", "Monster Energy"}
+			return { brand = brands[math.random(#brands)], amount = math.random(1, 5) * 1000000 }
+		end,
+		text = "%brand% wants you as their brand ambassador! $%amount% deal!",
+		choices = {
+			{ text = "📝 Sign the deal", effects = { Money = 2000000, Looks = 5 }, resultText = "You're now a brand ambassador!" },
+			{ text = "🚫 Too commercial", effects = { Smarts = 3 }, resultText = "You prefer to stay focused on racing." },
+		},
+	},
+	
+	{
+		id = "racer_retire",
+		minAge = 35, maxAge = 50,
+		weight = 10, oneTime = true,
+		emoji = "🏁", title = "Racing Retirement",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.f1_driver end,
+		text = "Your body is telling you it's time. Ready to retire from racing?",
+		choices = {
+			{ text = "🏁 Final race", effects = { Happiness = 15 }, resultText = "You retired a legend. What a career!", setFlag = "retired_racer", clearFlag = "f1_driver" },
+			{ text = "🏎️ One more season", effects = { Health = -5, Happiness = 10 }, resultText = "You're not done yet!" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 9: DEEP ARTIST CAREER PATH
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "artist_childhood_talent",
+		minAge = 5, maxAge = 10,
+		weight = 15, oneTime = true,
+		emoji = "🎨", title = "Artistic Talent",
+		category = "hobby",
+		text = "Your drawings are better than everyone else's in class!",
+		choices = {
+			{ text = "🎨 I love drawing!", effects = { Happiness = 10, Smarts = 3 }, resultText = "You have real talent!", setFlag = "art_talent" },
+			{ text = "🤷 It's just doodles", effects = { Happiness = 3 }, resultText = "You don't think much of it." },
+		},
+	},
+	
+	{
+		id = "artist_art_class",
+		minAge = 8, maxAge = 18,
+		weight = 12, oneTime = true,
+		emoji = "🖌️", title = "Art Classes",
+		category = "education",
+		requires = function(state) return state.Flags and state.Flags.art_talent end,
+		text = "Your parents want to sign you up for professional art classes.",
+		choices = {
+			{ text = "🖌️ Yes please!", effects = { Money = -500, Smarts = 8, Happiness = 10 }, resultText = "You're learning from real artists!", setFlag = "art_trained" },
+			{ text = "🎮 Rather play games", effects = { Happiness = 3 }, resultText = "Maybe another time." },
+		},
+	},
+	
+	{
+		id = "artist_find_style",
+		minAge = 14, maxAge = 25,
+		weight = 12, oneTime = true,
+		emoji = "✨", title = "Finding Your Style",
+		category = "hobby",
+		requires = function(state) return state.Flags and state.Flags.art_trained end,
+		getDynamicData = function() return { style = randomArtStyle() } end,
+		text = "You've developed a unique artistic style - %style%. It's distinctly YOU.",
+		choices = {
+			{ text = "✨ My signature!", effects = { Happiness = 15, Smarts = 5 }, resultText = "You found your artistic voice!", setFlag = "has_art_style" },
+		},
+	},
+	
+	{
+		id = "artist_first_sale",
+		minAge = 16, maxAge = 30,
+		weight = 15, oneTime = true,
+		emoji = "💰", title = "First Art Sale!",
+		category = "money",
+		requires = function(state) return state.Flags and state.Flags.has_art_style end,
+		getDynamicData = function() return { price = math.random(50, 200), buyer = randomName() } end,
+		text = "%buyer% wants to buy one of your pieces for $%price%!",
+		choices = {
+			{ text = "💰 SOLD!", effects = { Money = 100, Happiness = 20 }, resultText = "Your first sale! You're a professional artist now!", setFlag = "artist_first_sale" },
+			{ text = "❤️ Not for sale", effects = { Happiness = 3 }, resultText = "Some pieces are too personal." },
+		},
+	},
+	
+	{
+		id = "artist_art_school",
+		minAge = 18, maxAge = 25,
+		weight = 12, oneTime = true,
+		emoji = "🏛️", title = "Art School",
+		category = "education",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.has_art_style and not f.art_school
+		end,
+		getDynamicData = function()
+			local schools = {"Parsons School of Design", "Rhode Island School of Design", "School of Visual Arts", "CalArts", "Pratt Institute"}
+			return { school = schools[math.random(#schools)] }
+		end,
+		text = "You got accepted to %school%! A prestigious art school!",
+		choices = {
+			{ text = "🏛️ Attend!", effects = { Money = -40000, Smarts = 15, Happiness = 15 }, resultText = "You're learning from the best!", setFlag = "art_school" },
+			{ text = "🛠️ Self-taught path", effects = { Smarts = 5, Money = 40000 }, resultText = "You'll learn on your own." },
+		},
+	},
+	
+	{
+		id = "artist_gallery_showing",
+		minAge = 20, maxAge = 45,
+		weight = 12, oneTime = true,
+		emoji = "🖼️", title = "Gallery Showing",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.artist_first_sale or f.art_school
+		end,
+		getDynamicData = function() return { gallery = "The Downtown Art Gallery" } end,
+		text = "%gallery% wants to feature your work in a group show!",
+		choices = {
+			{ text = "🖼️ Amazing opportunity!", effects = { Happiness = 20, Money = 2000, Looks = 5 }, resultText = "Your work is on display for the world!", setFlag = "gallery_show" },
+			{ text = "😰 Not ready yet", effects = { Happiness = -5 }, resultText = "Maybe next time." },
+		},
+	},
+	
+	{
+		id = "artist_commissions",
+		minAge = 20, maxAge = 60,
+		weight = 15, cooldown = 2,
+		emoji = "📝", title = "Commission Work",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.gallery_show end,
+		getDynamicData = function()
+			local clients = {"a wealthy collector", "a tech CEO", "a celebrity", "a corporation"}
+			return { client = clients[math.random(#clients)], amount = math.random(1, 10) * 1000 }
+		end,
+		text = "%client% wants to commission original artwork! Offering $%amount%.",
+		choices = {
+			{ text = "📝 Accept commission", effects = { Money = 5000, Happiness = 10 }, resultText = "You created a custom piece!" },
+			{ text = "🎨 Pure art only", effects = { Happiness = 3, Smarts = 3 }, resultText = "You prefer personal projects." },
+		},
+	},
+	
+	{
+		id = "artist_solo_show",
+		minAge = 25, maxAge = 60,
+		weight = 10, oneTime = true, milestone = true,
+		emoji = "🌟", title = "Solo Exhibition!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.gallery_show and not f.solo_show
+		end,
+		getDynamicData = function() return { gallery = "Prestige Modern Art Gallery" } end,
+		text = "%gallery% wants to give you a SOLO EXHIBITION! Your name on the marquee!",
+		choices = {
+			{ text = "🌟 Dreams come true!", effects = { Happiness = 30, Money = 20000, Looks = 10 }, resultText = "Your solo show was a massive success!", setFlag = "solo_show" },
+		},
+	},
+	
+	{
+		id = "artist_critic_praise",
+		minAge = 25, maxAge = 70,
+		weight = 10, cooldown = 3,
+		emoji = "📰", title = "Critical Acclaim",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.solo_show end,
+		getDynamicData = function()
+			local critics = {"Art Monthly", "The New York Times", "ArtForum", "The Guardian"}
+			return { publication = critics[math.random(#critics)] }
+		end,
+		text = "%publication% wrote a glowing review of your work! 'A voice of a generation!'",
+		choices = {
+			{ text = "📰 Frame that review!", effects = { Happiness = 20, Looks = 5, Smarts = 5 }, resultText = "Critical acclaim feels amazing!", setFlag = "critical_acclaim" },
+		},
+	},
+	
+	{
+		id = "artist_museum_acquisition",
+		minAge = 30, maxAge = 80,
+		weight = 6, oneTime = true, milestone = true,
+		emoji = "🏛️", title = "Museum Acquisition!",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.critical_acclaim and not f.museum_artist
+		end,
+		getDynamicData = function()
+			local museums = {"MoMA", "The Tate", "The Louvre", "The Guggenheim", "The Whitney"}
+			return { museum = museums[math.random(#museums)], price = math.random(50, 500) * 1000 }
+		end,
+		text = "%museum% wants to acquire one of your pieces for their permanent collection! $%price%!",
+		choices = {
+			{ text = "🏛️ IMMORTALIZED!", effects = { Happiness = 50, Money = 250000 }, resultText = "Your art will be seen for generations!", setFlag = "museum_artist" },
+		},
+	},
+	
+	{
+		id = "artist_art_market_boom",
+		minAge = 30, maxAge = 70,
+		weight = 8, cooldown = 5,
+		emoji = "📈", title = "Art Market Boom",
+		category = "money",
+		requires = function(state) return state.Flags and state.Flags.museum_artist end,
+		getDynamicData = function() return { multiplier = math.random(2, 10) } end,
+		text = "Your work is selling for %multiplier%x what it used to! The market loves you!",
+		choices = {
+			{ text = "📈 Cash in!", effects = { Money = 500000, Happiness = 20 }, resultText = "You sold multiple pieces at peak prices!" },
+			{ text = "🎨 Keep creating", effects = { Happiness = 10, Smarts = 5 }, resultText = "The art matters more than the money." },
+		},
+	},
+	
+	{
+		id = "artist_famous_portrait",
+		minAge = 30, maxAge = 70,
+		weight = 8, oneTime = true,
+		emoji = "👤", title = "Celebrity Portrait",
+		category = "work",
+		requires = function(state) return state.Flags and state.Flags.solo_show end,
+		getDynamicData = function()
+			local celebs = {"a famous actor", "a world leader", "a tech billionaire", "a pop star", "a royal family member"}
+			return { celeb = celebs[math.random(#celebs)] }
+		end,
+		text = "%celeb% wants you to paint their official portrait!",
+		choices = {
+			{ text = "👤 An honor!", effects = { Money = 100000, Happiness = 20, Looks = 10 }, resultText = "You painted a portrait that will hang in history!", setFlag = "celeb_portrait" },
+			{ text = "🚫 Too commercial", effects = { Smarts = 5 }, resultText = "You prefer to choose your own subjects." },
+		},
+	},
+	
+	{
+		id = "artist_retrospective",
+		minAge = 50, maxAge = 90,
+		weight = 6, oneTime = true, milestone = true,
+		emoji = "🎨", title = "Career Retrospective",
+		category = "work",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.museum_artist and not f.retrospective
+		end,
+		getDynamicData = function()
+			local museums = {"The Met", "MoMA", "The National Gallery", "Centre Pompidou"}
+			return { museum = museums[math.random(#museums)] }
+		end,
+		text = "%museum% wants to host a retrospective of your entire career!",
+		choices = {
+			{ text = "🎨 A lifetime of work!", effects = { Happiness = 40, Money = 100000 }, resultText = "Your life's work celebrated in one place. Incredible.", setFlag = "retrospective" },
+		},
+	},
+	
+	{
+		id = "artist_legacy_foundation",
+		minAge = 55, maxAge = 90,
+		weight = 8, oneTime = true,
+		emoji = "🏛️", title = "Art Foundation",
+		category = "money",
+		requires = function(state) return state.Flags and state.Flags.retrospective end,
+		text = "You could start a foundation to support young artists.",
+		choices = {
+			{ text = "🏛️ Give back", effects = { Money = -500000, Happiness = 30 }, resultText = "The foundation will help artists for generations!", setFlag = "art_foundation" },
+			{ text = "💰 Keep the money", effects = { Money = 100000, Happiness = 5 }, resultText = "You'll help in other ways." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════════════════
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- MASSIVE EXPANSION PART 10: MORE RANDOM LIFE EVENTS (ALL AGES)
+	-- ███████████████████████████████████████████████████████████████████████████
+	-- ═══════════════════════════════════════════════════════════════════════════
+	
+	{
+		id = "random_find_money",
+		minAge = 5, maxAge = 90,
+		weight = 8, cooldown = 5,
+		emoji = "💵", title = "Found Money!",
+		category = "money",
+		getDynamicData = function() return { amount = math.random(1, 5) * 20 } end,
+		text = "You found $%amount% on the ground!",
+		choices = {
+			{ text = "💵 Keep it!", effects = { Money = 50, Happiness = 10 }, resultText = "Finders keepers!" },
+			{ text = "👮 Turn it in", effects = { Happiness = 8, Smarts = 3 }, resultText = "You did the right thing." },
+		},
+	},
+	
+	{
+		id = "random_car_accident",
+		minAge = 16, maxAge = 90,
+		weight = 6, cooldown = 5,
+		emoji = "🚗", title = "Car Accident",
+		category = "health",
+		requires = function(state) return state.Flags and state.Flags.has_license end,
+		text = "You were in a car accident! It wasn't your fault.",
+		choices = {
+			{ text = "🏥 Minor injuries", effects = { Health = -15, Happiness = -10, Money = 5000 }, resultText = "You're okay but shaken. Insurance helped." },
+			{ text = "😰 Just scared", effects = { Happiness = -5 }, resultText = "Thankfully just a fender bender." },
+		},
+	},
+	
+	{
+		id = "random_natural_disaster",
+		minAge = 0, maxAge = 100,
+		weight = 3, cooldown = 10,
+		emoji = "🌪️", title = "Natural Disaster",
+		category = "health",
+		getDynamicData = function()
+			local disasters = {"hurricane", "earthquake", "tornado", "flood", "wildfire"}
+			return { disaster = disasters[math.random(#disasters)] }
+		end,
+		text = "A %disaster% hit your area! Everyone is scrambling!",
+		choices = {
+			{ text = "🏃 Evacuate!", effects = { Health = -5, Happiness = -15 }, resultText = "You got out safely but lost some possessions." },
+			{ text = "🏠 Shelter in place", effects = { Health = -10, Happiness = -10 }, resultText = "You rode it out. Scary but survived." },
+		},
+	},
+	
+	{
+		id = "random_lottery_small",
+		minAge = 18, maxAge = 100,
+		weight = 5, cooldown = 3,
+		emoji = "🎫", title = "Lottery Ticket",
+		category = "money",
+		text = "You bought a scratch-off lottery ticket...",
+		choices = {
+			{ text = "🎫 Scratch it!", effects = { Money = 100, Happiness = 10 }, resultText = "You won $100! Not bad!" },
+			{ text = "😔 Nothing...", effects = { Money = -5, Happiness = -3 }, resultText = "Better luck next time." },
+		},
+	},
+	
+	{
+		id = "random_lottery_jackpot",
+		minAge = 18, maxAge = 100,
+		weight = 1, oneTime = true, milestone = true,
+		emoji = "🎰", title = "LOTTERY JACKPOT!",
+		category = "money",
+		getDynamicData = function() return { amount = math.random(1, 10) * 1000000 } end,
+		text = "YOU WON THE LOTTERY! $%amount%!!! THIS IS REAL!!!",
+		choices = {
+			{ text = "🎉 LIFE CHANGED!", effects = { Money = 5000000, Happiness = 50 }, resultText = "You're RICH! What will you do with it all?", setFlag = "lottery_winner" },
+		},
+	},
+	
+	{
+		id = "random_pet_adoption",
+		minAge = 10, maxAge = 80,
+		weight = 10, cooldown = 5,
+		emoji = "🐕", title = "Pet Adoption",
+		category = "social",
+		getDynamicData = function()
+			local pets = {"dog", "cat", "hamster", "bird", "rabbit"}
+			local names = {"Max", "Luna", "Charlie", "Bella", "Buddy", "Coco"}
+			return { pet = pets[math.random(#pets)], name = names[math.random(#names)] }
+		end,
+		text = "There's an adorable %pet% at the shelter. They're calling them %name%.",
+		choices = {
+			{ text = "🐕 Adopt!", effects = { Money = -200, Happiness = 20 }, resultText = "You have a new furry friend!", setFlag = "has_pet" },
+			{ text = "😢 Can't right now", effects = { Happiness = -5 }, resultText = "Maybe someday." },
+		},
+	},
+	
+	{
+		id = "random_pet_death",
+		minAge = 15, maxAge = 100,
+		weight = 8, oneTime = true,
+		emoji = "🌈", title = "Pet Passes Away",
+		category = "social",
+		requires = function(state) return state.Flags and state.Flags.has_pet end,
+		getDynamicData = function() return { petName = "your beloved pet" } end,
+		text = "%petName% has crossed the rainbow bridge. They lived a good life.",
+		choices = {
+			{ text = "😢 Goodbye friend", effects = { Happiness = -20 }, resultText = "They were family. You'll miss them forever.", clearFlag = "has_pet" },
+		},
+	},
+	
+	{
+		id = "random_random_act_kindness",
+		minAge = 10, maxAge = 100,
+		weight = 10, cooldown = 3,
+		emoji = "💝", title = "Random Act of Kindness",
+		category = "social",
+		getDynamicData = function() return { stranger = randomName() } end,
+		text = "A stranger named %stranger% did something really kind for you today!",
+		choices = {
+			{ text = "💝 Pay it forward", effects = { Happiness = 15, Money = -20 }, resultText = "You did something kind for someone else!" },
+			{ text = "😊 Just smile", effects = { Happiness = 10 }, resultText = "Faith in humanity restored!" },
+		},
+	},
+	
+	{
+		id = "random_viral_moment",
+		minAge = 12, maxAge = 60,
+		weight = 5, oneTime = true,
+		emoji = "📱", title = "Went Viral!",
+		category = "social",
+		text = "Something you posted online went VIRAL! Millions of views!",
+		choices = {
+			{ text = "🌟 Enjoy the fame!", effects = { Happiness = 20, Looks = 5, Money = 1000 }, resultText = "You're internet famous!", setFlag = "went_viral" },
+			{ text = "😰 Delete everything", effects = { Happiness = -5 }, resultText = "You didn't want that attention." },
+		},
+	},
+	
+	{
+		id = "random_identity_theft",
+		minAge = 18, maxAge = 90,
+		weight = 4, cooldown = 10,
+		emoji = "🔓", title = "Identity Theft",
+		category = "crime",
+		text = "Someone stole your identity! Fraudulent charges everywhere!",
+		choices = {
+			{ text = "🚔 Report it", effects = { Money = -5000, Happiness = -15, Smarts = 3 }, resultText = "A nightmare to fix but you got through it." },
+			{ text = "😤 Track them down", effects = { Money = -3000, Happiness = 5, Smarts = 5 }, resultText = "You actually found the culprit!" },
+		},
+	},
+	
+	{
+		id = "random_surprise_inheritance",
+		minAge = 20, maxAge = 80,
+		weight = 4, oneTime = true,
+		emoji = "📜", title = "Surprise Inheritance",
+		category = "money",
+		getDynamicData = function()
+			local relatives = {"great-aunt", "distant cousin", "grandfather's friend", "unknown relative"}
+			return { relative = relatives[math.random(#relatives)], amount = math.random(10, 100) * 1000 }
+		end,
+		text = "Your %relative% passed away and left you $%amount% in their will!",
+		choices = {
+			{ text = "💰 Unexpected!", effects = { Money = 50000, Happiness = 10 }, resultText = "A bittersweet surprise.", setFlag = "got_inheritance" },
+		},
+	},
+	
+	{
+		id = "random_home_invasion",
+		minAge = 18, maxAge = 90,
+		weight = 3, cooldown = 10,
+		emoji = "🏚️", title = "Home Invasion",
+		category = "crime",
+		text = "Someone broke into your home while you were away! They took valuables!",
+		choices = {
+			{ text = "🚔 Call police", effects = { Money = -5000, Happiness = -20 }, resultText = "They never caught the thieves." },
+			{ text = "🔒 Security upgrade", effects = { Money = -8000, Happiness = -15 }, resultText = "You invested in serious security.", setFlag = "has_security" },
+		},
+	},
+	
+	{
+		id = "random_jury_duty",
+		minAge = 18, maxAge = 80,
+		weight = 10, cooldown = 5,
+		emoji = "⚖️", title = "Jury Duty",
+		category = "social",
+		text = "You've been summoned for jury duty.",
+		choices = {
+			{ text = "⚖️ Serve your duty", effects = { Smarts = 5, Happiness = -3, Money = -200 }, resultText = "Justice was served. Interesting experience." },
+			{ text = "🏃 Try to get out of it", effects = { Happiness = 3, Smarts = -3 }, resultText = "You dodged it this time." },
+		},
+	},
+	
+	{
+		id = "random_midlife_crisis",
+		minAge = 40, maxAge = 55,
+		weight = 15, oneTime = true,
+		emoji = "🏎️", title = "Midlife Crisis",
+		category = "social",
+		text = "Is this all there is? You're questioning everything about your life.",
+		choices = {
+			{ text = "🏎️ Buy a sports car", effects = { Money = -50000, Happiness = 15, Looks = 5 }, resultText = "The car is amazing. Crisis... managed?", setFlag = "midlife_crisis" },
+			{ text = "🔄 Make real changes", effects = { Happiness = 10, Smarts = 5 }, resultText = "You're making meaningful life adjustments." },
+			{ text = "🧘 Accept yourself", effects = { Happiness = 20 }, resultText = "You found peace with who you are." },
+		},
+	},
+	
+	{
+		id = "random_scam_attempt",
+		minAge = 18, maxAge = 100,
+		weight = 8, cooldown = 3,
+		emoji = "🎣", title = "Scam Attempt",
+		category = "social",
+		getDynamicData = function()
+			local scams = {"Nigerian prince email", "IRS phone call", "tech support scam", "romance scam", "crypto scheme"}
+			return { scam = scams[math.random(#scams)] }
+		end,
+		text = "Someone is trying to scam you with a %scam%!",
+		choices = {
+			{ text = "🚫 Not falling for it", effects = { Smarts = 5, Happiness = 3 }, resultText = "You saw right through it!" },
+			{ text = "😰 Almost fell for it", effects = { Smarts = 3, Happiness = -5 }, resultText = "That was close..." },
+		},
+	},
+	
+	{
+		id = "random_reunion",
+		minAge = 25, maxAge = 80,
+		weight = 10, cooldown = 10,
+		emoji = "🎉", title = "Class Reunion",
+		category = "social",
+		getDynamicData = function() return { years = math.random(1, 5) * 10 } end,
+		text = "Your %years%-year class reunion is coming up!",
+		choices = {
+			{ text = "🎉 Attend!", effects = { Happiness = 15, Looks = 3 }, resultText = "Great to see everyone! Some aged better than others." },
+			{ text = "🙅 Skip it", effects = { Happiness = -3 }, resultText = "You weren't that close anyway." },
+		},
+	},
+	
+	{
+		id = "random_good_deed_reward",
+		minAge = 10, maxAge = 90,
+		weight = 6, cooldown = 5,
+		emoji = "🏆", title = "Good Deed Rewarded",
+		category = "social",
+		getDynamicData = function()
+			local deeds = {"returned a lost wallet", "helped an elderly person", "saved a choking person", "stopped a thief"}
+			return { deed = deeds[math.random(#deeds)], reward = math.random(1, 5) * 100 }
+		end,
+		text = "Because you %deed%, someone wants to reward you with $%reward%!",
+		choices = {
+			{ text = "💵 Accept reward", effects = { Money = 250, Happiness = 15 }, resultText = "Good karma pays off!" },
+			{ text = "🙅 Refuse it", effects = { Happiness = 20, Smarts = 3 }, resultText = "The deed was reward enough." },
+		},
+	},
+	
+	{
+		id = "random_stranger_conversation",
+		minAge = 10, maxAge = 100,
+		weight = 12, cooldown = 2,
+		emoji = "💬", title = "Meaningful Conversation",
+		category = "social",
+		getDynamicData = function() return { stranger = randomName() } end,
+		text = "You had a deep, meaningful conversation with a stranger named %stranger%.",
+		choices = {
+			{ text = "💬 Exchange contact info", effects = { Happiness = 10, Smarts = 3 }, resultText = "You might have made a new friend!" },
+			{ text = "👋 Part ways", effects = { Happiness = 8 }, resultText = "Ships passing in the night, but memorable." },
+		},
+	},
+	
+	{
+		id = "random_embarrassing_moment",
+		minAge = 5, maxAge = 80,
+		weight = 10, cooldown = 3,
+		emoji = "😳", title = "Embarrassing Moment",
+		category = "social",
+		getDynamicData = function()
+			local moments = {"tripped in public", "called someone the wrong name", "spilled food on yourself", "forgot someone's name", "laughed at the wrong moment"}
+			return { moment = moments[math.random(#moments)] }
+		end,
+		text = "You %moment%. So embarrassing!",
+		choices = {
+			{ text = "😂 Laugh it off", effects = { Happiness = 3, Looks = -3 }, resultText = "Everyone has those moments!" },
+			{ text = "😳 Cringe", effects = { Happiness = -5 }, resultText = "You'll be thinking about this at 3am for years." },
+		},
+	},
+	
+	{
+		id = "random_perfect_day",
+		minAge = 5, maxAge = 100,
+		weight = 8, cooldown = 5,
+		emoji = "✨", title = "Perfect Day",
+		category = "social",
+		text = "Everything went right today. The weather, the food, the people. Perfect.",
+		choices = {
+			{ text = "✨ Appreciate it", effects = { Happiness = 20, Health = 5 }, resultText = "These days are rare. You savored every moment." },
+		},
+	},
+	
+	{
+		id = "random_terrible_day",
+		minAge = 5, maxAge = 100,
+		weight = 8, cooldown = 5,
+		emoji = "😞", title = "Terrible Day",
+		category = "social",
+		text = "Everything went wrong today. Murphy's Law in full effect.",
+		choices = {
+			{ text = "😞 Tomorrow is a new day", effects = { Happiness = -10, Smarts = 3 }, resultText = "You survived. That counts for something." },
+			{ text = "😤 Get angry", effects = { Happiness = -5, Health = -3 }, resultText = "Sometimes you just need to vent." },
+		},
+	},
+	
+	{
+		id = "random_deja_vu",
+		minAge = 10, maxAge = 100,
+		weight = 8, cooldown = 5,
+		emoji = "🔮", title = "Déjà Vu",
+		category = "social",
+		text = "You experienced intense déjà vu. Have you lived this moment before?",
+		choices = {
+			{ text = "🔮 Mysterious...", effects = { Smarts = 3, Happiness = 5 }, resultText = "The universe works in strange ways." },
+			{ text = "🧠 Just a brain glitch", effects = { Smarts = 5 }, resultText = "Science says it's just neural misfiring." },
+		},
+	},
+	
+	{
+		id = "random_insomnia",
+		minAge = 15, maxAge = 90,
+		weight = 10, cooldown = 3,
+		emoji = "😵", title = "Can't Sleep",
+		category = "health",
+		text = "You've been struggling with insomnia. Nights are long and restless.",
+		choices = {
+			{ text = "💊 See a doctor", effects = { Health = 5, Money = -200, Happiness = 3 }, resultText = "Treatment helped you sleep better." },
+			{ text = "☕ Power through", effects = { Health = -5, Happiness = -5, Smarts = 3 }, resultText = "You're exhausted but managing." },
+		},
+	},
+	
+	{
+		id = "random_food_poisoning",
+		minAge = 5, maxAge = 100,
+		weight = 8, cooldown = 5,
+		emoji = "🤢", title = "Food Poisoning",
+		category = "health",
+		getDynamicData = function()
+			local foods = {"sushi", "chicken", "shellfish", "buffet food", "street food"}
+			return { food = foods[math.random(#foods)] }
+		end,
+		text = "That %food% was a mistake. You're violently ill.",
+		choices = {
+			{ text = "🤢 Ride it out", effects = { Health = -10, Happiness = -10 }, resultText = "Worst 24 hours ever but you survived." },
+			{ text = "🏥 Hospital", effects = { Health = -5, Money = -500, Happiness = -5 }, resultText = "They gave you IV fluids. Felt better faster." },
+		},
+	},
+	
+	{
+		id = "random_new_hobby",
+		minAge = 10, maxAge = 80,
+		weight = 12, cooldown = 5,
+		emoji = "🎯", title = "New Hobby",
+		category = "hobby",
+		getDynamicData = function()
+			local hobbies = {"woodworking", "gardening", "photography", "cooking", "hiking", "chess", "bird watching", "pottery"}
+			return { hobby = hobbies[math.random(#hobbies)] }
+		end,
+		text = "You discovered an interest in %hobby%!",
+		choices = {
+			{ text = "🎯 Dive in!", effects = { Happiness = 15, Smarts = 5, Money = -200 }, resultText = "You found a new passion!", setFlag = "has_hobby" },
+			{ text = "🤷 Not for me", effects = { Happiness = 3 }, resultText = "Maybe something else will click." },
+		},
+	},
+	
+	{
+		id = "random_weather_extreme",
+		minAge = 0, maxAge = 100,
+		weight = 10, cooldown = 3,
+		emoji = "🌡️", title = "Extreme Weather",
+		category = "health",
+		getDynamicData = function()
+			local weather = {"heat wave", "cold snap", "massive storm", "heavy snow", "intense rain"}
+			return { weather = weather[math.random(#weather)] }
+		end,
+		text = "A %weather% hit your area! Everyone's talking about it.",
+		choices = {
+			{ text = "🏠 Stay inside", effects = { Happiness = -3 }, resultText = "You waited it out safely." },
+			{ text = "🚶 Brave the elements", effects = { Health = -5, Happiness = 5 }, resultText = "An adventure, but a bit rough." },
+		},
+	},
+	
+	{
+		id = "random_strange_dream",
+		minAge = 5, maxAge = 100,
+		weight = 10, cooldown = 3,
+		emoji = "💭", title = "Strange Dream",
+		category = "social",
+		text = "You had the strangest, most vivid dream last night. It felt so real.",
+		choices = {
+			{ text = "💭 What did it mean?", effects = { Smarts = 3, Happiness = 3 }, resultText = "You pondered its meaning all day." },
+			{ text = "🤷 Just a dream", effects = { Happiness = 3 }, resultText = "Brains are weird." },
+		},
+	},
 }
 
 ----------------------------------------------------------------------

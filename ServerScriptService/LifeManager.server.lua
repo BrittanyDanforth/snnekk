@@ -150,6 +150,24 @@ local function getLife(player)
 	return state
 end
 
+local function resetPlayerLife(player)
+	-- Create a completely new life state
+	local newState = LifeState.new(player)
+	
+	-- Initialize event history and flags
+	EventRunner.initHistory(newState)
+	
+	playerLives[player] = newState
+	
+	-- Clear pending events
+	pendingEvents[player] = nil
+	
+	-- Sync the fresh state to client (will show intro screen again)
+	SyncState:FireClient(player, serializeState(newState), "🔄 A new life begins...", nil)
+	
+	print("[LifeManager] Player", player.Name, "started a new life")
+end
+
 local function createNewLife(player)
 	local state = LifeState.new(player)
 	-- Initialize event history and flags
@@ -213,6 +231,109 @@ SetLifeInfo.OnServerEvent:Connect(function(player, name, gender)
 end)
 
 ----------------------------------------------------------------
+-- LIFE SUMMARY GENERATOR
+----------------------------------------------------------------
+
+local function generateLifeSummary(state, deathCause)
+	local flags = state.Flags or {}
+	local achievements = {}
+	local stats = state.Stats or {}
+	
+	-- Career achievements
+	if flags.president then table.insert(achievements, "🏛️ Became President of the United States") end
+	if flags.governor then table.insert(achievements, "🏛️ Served as State Governor") end
+	if flags.us_senator then table.insert(achievements, "🏛️ Served in the U.S. Senate") end
+	if flags.congressman then table.insert(achievements, "🏛️ Served in Congress") end
+	if flags.mayor then table.insert(achievements, "🏙️ Served as Mayor") end
+	
+	if flags.crime_boss then table.insert(achievements, "💀 Became a Crime Boss") end
+	if flags.gang_member then table.insert(achievements, "⛓️ Joined a Gang") end
+	if flags.escaped_prison then table.insert(achievements, "🔓 Escaped from Prison") end
+	
+	if flags.f1_champion then table.insert(achievements, "🏎️ Won F1 World Championship") end
+	if flags.f1_driver then table.insert(achievements, "🏎️ Became an F1 Driver") end
+	if flags.karting_champion then table.insert(achievements, "🏎️ Won Karting Championship") end
+	
+	if flags.famous_artist then table.insert(achievements, "🎨 Became a Famous Artist") end
+	if flags.museum_exhibit then table.insert(achievements, "🏛️ Had Art in a Museum") end
+	
+	if flags.elite_hacker then table.insert(achievements, "💻 Became an Elite Hacker") end
+	if flags.white_hat then table.insert(achievements, "🛡️ Became a White Hat Security Expert") end
+	if flags.black_hat then table.insert(achievements, "🖤 Became a Black Hat Hacker") end
+	
+	if flags.principal then table.insert(achievements, "📚 Became School Principal") end
+	if flags.teacher then table.insert(achievements, "📚 Became a Teacher") end
+	if flags.teacher_of_year then table.insert(achievements, "🏆 Won Teacher of the Year") end
+	
+	-- Life achievements
+	if flags.married then table.insert(achievements, "💒 Got Married") end
+	if flags.has_children then table.insert(achievements, "👶 Had Children") end
+	if flags.homeowner then table.insert(achievements, "🏠 Owned a Home") end
+	if flags.millionaire then table.insert(achievements, "💰 Became a Millionaire") end
+	if flags.college_graduate then table.insert(achievements, "🎓 Graduated College") end
+	if flags.doctorate then table.insert(achievements, "🎓 Earned a Doctorate") end
+	
+	-- Personality traits
+	if flags.brave then table.insert(achievements, "🦁 Known for Bravery") end
+	if flags.compassionate then table.insert(achievements, "❤️ Known for Compassion") end
+	if flags.creative_mind then table.insert(achievements, "🎨 Creative Mind") end
+	
+	-- Build summary text
+	local summaryParts = {}
+	table.insert(summaryParts, string.format("💀 %s passed away at age %d from %s.", state.Name or "You", state.Age, deathCause))
+	table.insert(summaryParts, "")
+	
+	-- Stats summary
+	table.insert(summaryParts, "📊 Final Stats:")
+	table.insert(summaryParts, string.format("   💰 Net Worth: $%s", formatMoney(state.Money or 0)))
+	table.insert(summaryParts, string.format("   😊 Happiness: %d%%", stats.Happiness or 50))
+	table.insert(summaryParts, string.format("   ❤️ Health: %d%%", stats.Health or 0))
+	table.insert(summaryParts, string.format("   🧠 Smarts: %d%%", stats.Smarts or 50))
+	table.insert(summaryParts, string.format("   ✨ Looks: %d%%", stats.Looks or 50))
+	
+	if #achievements > 0 then
+		table.insert(summaryParts, "")
+		table.insert(summaryParts, "🏆 Life Achievements:")
+		for _, achievement in ipairs(achievements) do
+			table.insert(summaryParts, "   " .. achievement)
+		end
+	end
+	
+	-- Life rating
+	local score = 0
+	score = score + (state.Age or 0) -- Points for longevity
+	score = score + (#achievements * 10) -- Points for achievements
+	score = score + math.floor((state.Money or 0) / 10000) -- Points for wealth
+	score = score + (stats.Happiness or 0) -- Points for happiness
+	
+	local rating = "F"
+	if score >= 500 then rating = "S+"
+	elseif score >= 400 then rating = "S"
+	elseif score >= 300 then rating = "A+"
+	elseif score >= 250 then rating = "A"
+	elseif score >= 200 then rating = "B+"
+	elseif score >= 150 then rating = "B"
+	elseif score >= 100 then rating = "C+"
+	elseif score >= 75 then rating = "C"
+	elseif score >= 50 then rating = "D"
+	end
+	
+	table.insert(summaryParts, "")
+	table.insert(summaryParts, string.format("⭐ Life Rating: %s (Score: %d)", rating, score))
+	
+	return {
+		summaryText = table.concat(summaryParts, "\n"),
+		achievements = achievements,
+		score = score,
+		rating = rating,
+		age = state.Age,
+		name = state.Name,
+		cause = deathCause,
+		money = state.Money or 0,
+	}
+end
+
+----------------------------------------------------------------
 -- AGE UP
 ----------------------------------------------------------------
 
@@ -221,6 +342,11 @@ local function ageUp(player)
 
 	if not state.Name then
 		return
+	end
+	
+	-- Check if already dead
+	if state.IsDead then
+		return -- Can't age up when dead
 	end
 
 	local oldAge = state.Age
@@ -290,16 +416,24 @@ local function ageUp(player)
 	-- Check for death (elder years)
 	local deathCheck = EventRunner.checkDeath(state)
 	if deathCheck.died then
+		-- Mark as dead - prevent further aging
+		state.IsDead = true
+		state:SetFlag("deceased")
+		
+		-- Generate life summary
+		local lifeSummary = generateLifeSummary(state, deathCheck.cause)
+		
 		-- Handle death
 		local deathPayload = {
 			id = "death",
 			emoji = "💀",
 			title = "Rest In Peace",
-			text = string.format("You died at age %d from %s.", deathCheck.age, deathCheck.cause),
+			text = lifeSummary.summaryText,
 			category = "death",
 			isDeath = true,
+			lifeSummary = lifeSummary,
 			choices = {
-				{ index = 1, text = "👼 Accept fate", effects = {}, result = "Your life has ended." }
+				{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
 			}
 		}
 		
@@ -309,9 +443,10 @@ local function ageUp(player)
 			choiceIndex = nil,
 			isDeath = true,
 			deathCause = deathCheck.cause,
+			lifeSummary = lifeSummary,
 		}
 		
-		state:AddFeed("💀 You have passed away from " .. deathCheck.cause)
+		state:AddFeed("💀 " .. state.Name .. " has passed away from " .. deathCheck.cause .. " at age " .. state.Age)
 		PresentEvent:FireClient(player, deathPayload, nil)
 		return
 	end
@@ -376,14 +511,17 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		return
 	end
 
-	-- Handle special events (stage transitions, death) - just continue
-	if pending.isStageTransition or pending.isDeath then
+	-- Handle special events (stage transitions, death)
+	if pending.isStageTransition then
 		pendingEvents[player] = nil
-		if pending.isDeath then
-			-- Handle death - could reset or show game over
-			state:AddFeed("Your journey has ended.")
-		end
 		pushState(player, state, "Life continues...")
+		return
+	end
+	
+	if pending.isDeath then
+		pendingEvents[player] = nil
+		-- Reset the player's life for a new game
+		resetPlayerLife(player)
 		return
 	end
 
