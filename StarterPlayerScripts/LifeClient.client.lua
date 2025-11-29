@@ -376,7 +376,7 @@ end
 -- BOTTOM SECTION: Stats + Nav + Age Button (Redesigned Layout)
 ----------------------------------------------------------------
 
--- STATS ROW (HORIZONTAL - Above nav bar, won't conflict with Age button)
+-- STATS ROW (Split into LEFT and RIGHT to avoid Age button)
 local statsRow = Instance.new("Frame")
 statsRow.Name = "StatsRow"
 statsRow.Size = UDim2.new(1, -16, 0, 52)
@@ -388,75 +388,104 @@ statsRow.Parent = mainContainer
 corner(statsRow, 14)
 stroke(statsRow, 1, 0.85, C.Gray200)
 
-pad(statsRow, 10, 10, 6, 6)
+-- LEFT stats container (Happiness, Health)
+local statsLeft = Instance.new("Frame")
+statsLeft.Name = "StatsLeft"
+statsLeft.Size = UDim2.new(0.5, -55, 1, 0)
+statsLeft.Position = UDim2.new(0, 0, 0, 0)
+statsLeft.BackgroundTransparency = 1
+statsLeft.ZIndex = 9
+statsLeft.Parent = statsRow
 
-local statsLayout = Instance.new("UIListLayout")
-statsLayout.FillDirection = Enum.FillDirection.Horizontal
-statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-statsLayout.Padding = UDim.new(0, 6)
-statsLayout.Parent = statsRow
+local statsLeftLayout = Instance.new("UIListLayout")
+statsLeftLayout.FillDirection = Enum.FillDirection.Horizontal
+statsLeftLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+statsLeftLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+statsLeftLayout.Padding = UDim.new(0, 6)
+statsLeftLayout.Parent = statsLeft
 
-local statMeta = {
-	{ key = "Happiness", icon = "😀", col = C.Green },
-	{ key = "Health", icon = "❤️", col = C.Red },
-	{ key = "Smarts", icon = "🧠", col = C.Purple },
-	{ key = "Looks", icon = "💄", col = C.Pink },
-}
+pad(statsLeft, 8, 8, 6, 6)
+
+-- RIGHT stats container (Smarts, Looks)
+local statsRight = Instance.new("Frame")
+statsRight.Name = "StatsRight"
+statsRight.Size = UDim2.new(0.5, -55, 1, 0)
+statsRight.Position = UDim2.new(0.5, 55, 0, 0)
+statsRight.BackgroundTransparency = 1
+statsRight.ZIndex = 9
+statsRight.Parent = statsRow
+
+local statsRightLayout = Instance.new("UIListLayout")
+statsRightLayout.FillDirection = Enum.FillDirection.Horizontal
+statsRightLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+statsRightLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+statsRightLayout.Padding = UDim.new(0, 6)
+statsRightLayout.Parent = statsRight
+
+pad(statsRight, 8, 8, 6, 6)
 
 local statCards = {}
 
-for i, info in ipairs(statMeta) do
+local function createStatCard(info, parent, order)
 	local statCard = Instance.new("Frame")
 	statCard.Name = "Stat_" .. info.key
-	statCard.Size = UDim2.new(0, 78, 0, 40)
+	statCard.Size = UDim2.new(0, 76, 0, 40)
 	statCard.BackgroundColor3 = C.Gray50
-	statCard.LayoutOrder = i
-	statCard.ZIndex = 9
-	statCard.Parent = statsRow
+	statCard.LayoutOrder = order
+	statCard.ZIndex = 10
+	statCard.Parent = parent
 	corner(statCard, 10)
-	
+
 	local iconLbl = Instance.new("TextLabel")
-	iconLbl.Size = UDim2.new(0, 24, 0, 24)
+	iconLbl.Size = UDim2.new(0, 22, 0, 22)
 	iconLbl.Position = UDim2.new(0, 4, 0, 3)
 	iconLbl.BackgroundTransparency = 1
 	iconLbl.Font = F.Body
-	iconLbl.TextSize = 16
+	iconLbl.TextSize = 15
 	iconLbl.Text = info.icon
-	iconLbl.ZIndex = 10
+	iconLbl.ZIndex = 11
 	iconLbl.Parent = statCard
-	
+
 	local percentLbl = Instance.new("TextLabel")
 	percentLbl.Name = "Percent"
-	percentLbl.Size = UDim2.new(0, 40, 0, 16)
-	percentLbl.Position = UDim2.new(0, 28, 0, 4)
+	percentLbl.Size = UDim2.new(0, 38, 0, 16)
+	percentLbl.Position = UDim2.new(0, 26, 0, 4)
 	percentLbl.BackgroundTransparency = 1
 	percentLbl.Font = F.Title
 	percentLbl.TextSize = 12
 	percentLbl.TextColor3 = info.col
 	percentLbl.TextXAlignment = Enum.TextXAlignment.Left
 	percentLbl.Text = "100%"
-	percentLbl.ZIndex = 10
+	percentLbl.ZIndex = 11
 	percentLbl.Parent = statCard
-	
+
 	local barBg = Instance.new("Frame")
-	barBg.Size = UDim2.new(1, -12, 0, 6)
-	barBg.Position = UDim2.new(0, 6, 1, -12)
+	barBg.Size = UDim2.new(1, -10, 0, 6)
+	barBg.Position = UDim2.new(0, 5, 1, -11)
 	barBg.BackgroundColor3 = C.Gray200
-	barBg.ZIndex = 10
+	barBg.ZIndex = 11
 	barBg.Parent = statCard
 	corner(barBg, 3)
-	
+
 	local barFill = Instance.new("Frame")
 	barFill.Name = "Fill"
 	barFill.Size = UDim2.new(1, 0, 1, 0)
 	barFill.BackgroundColor3 = info.col
-	barFill.ZIndex = 11
+	barFill.ZIndex = 12
 	barFill.Parent = barBg
 	corner(barFill, 3)
-	
+
 	statCards[info.key] = { percentLabel = percentLbl, barFill = barFill, color = info.col }
+	return statCard
 end
+
+-- LEFT stats: 😀 Happiness, ❤️ Health
+createStatCard({ key = "Happiness", icon = "😀", col = C.Green }, statsLeft, 1)
+createStatCard({ key = "Health", icon = "❤️", col = C.Red }, statsLeft, 2)
+
+-- RIGHT stats: 🧠 Smarts, 💄 Looks
+createStatCard({ key = "Smarts", icon = "🧠", col = C.Purple }, statsRight, 1)
+createStatCard({ key = "Looks", icon = "💄", col = C.Pink }, statsRight, 2)
 
 -- NAV BAR
 local navBar = Instance.new("Frame")
