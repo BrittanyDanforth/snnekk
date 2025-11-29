@@ -81,7 +81,7 @@ local playerLives = {}  -- [Player] = LifeStateType
 local pendingEvents = {} -- [Player] = { eventDef, dynamicData, choiceIndex } -- MUST be declared before resetPlayerLife!
 
 -- Forward declare serializeState
-local function serializeState(state)
+local function serializeState(state, player)
 	state:ClampStats()
 
 	-- Get story path info (with safety check)
@@ -94,6 +94,9 @@ local function serializeState(state)
 			criminal = { active = false, level = "None", progress = 0 },
 		}
 	end
+	
+	-- Get extended state from LifeRemoteHandlers (includes InJail, CurrentJob, Education, etc.)
+	local extState = _G.GetExtendedState and player and _G.GetExtendedState(player) or {}
 
 	return {
 		PlayerId = state.PlayerId,
@@ -113,6 +116,13 @@ local function serializeState(state)
 		StoryPaths = paths,
 		-- Flags (for UI)
 		Flags = state.Flags or {},
+		-- Extended state from LifeRemoteHandlers (prison, jobs, education)
+		InJail = extState.InJail or false,
+		JailYearsLeft = extState.JailYearsLeft or 0,
+		CurrentJob = extState.CurrentJob,
+		Education = extState.Education or "None",
+		-- Relationships (family, friends, etc.)
+		Relationships = state.Relationships or {},
 	}
 end
 
@@ -125,13 +135,13 @@ end
 _G.PushPlayerState = function(player, lastFeedText, resultData)
 	local state = playerLives[player]
 	if state then
-		SyncState:FireClient(player, serializeState(state), lastFeedText, resultData)
+		SyncState:FireClient(player, serializeState(state, player), lastFeedText, resultData)
 	end
 end
 
 -- Push state with optional result data for popup
 local function pushState(player, state, lastFeedText, resultData)
-	SyncState:FireClient(player, serializeState(state), lastFeedText, resultData)
+	SyncState:FireClient(player, serializeState(state, player), lastFeedText, resultData)
 end
 
 -- Show a result popup to the player
@@ -194,7 +204,7 @@ local function resetPlayerLife(player)
 	
 	-- Sync the fresh state to client (will show intro screen again)
 	print("[LifeManager] Syncing state to client...")
-	local serialized = serializeState(newState)
+	local serialized = serializeState(newState, player)
 	SyncState:FireClient(player, serialized, "A new life begins...", nil)
 	
 	print("[LifeManager] ✅ Player", player.Name, "started a new life successfully!")

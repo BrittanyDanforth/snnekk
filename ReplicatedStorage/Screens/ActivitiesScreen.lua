@@ -45,14 +45,14 @@ local Entertainment = {
 	{ id = "vacation", name = "Vacation", emoji = "✈️", effect = "+Happiness +Health", minAge = 5, cost = 2000 },
 }
 
+-- Crime IDs MUST match server's Crimes table exactly!
 local Crimes = {
-	{ id = "shoplift", name = "Shoplift", emoji = "🛒", risk = 30, reward = "$50-$200", minAge = 10 },
-	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", risk = 45, reward = "$100-$500", minAge = 12 },
-	{ id = "burglary", name = "Burglary", emoji = "🏠", risk = 60, reward = "$500-$5K", minAge = 16 },
-	{ id = "robbery", name = "Armed Robbery", emoji = "🔫", risk = 80, reward = "$5K-$50K", minAge = 18 },
-	{ id = "car_theft", name = "Grand Theft Auto", emoji = "🚗", risk = 65, reward = "$5K-$25K", minAge = 16 },
-	{ id = "drug_deal", name = "Drug Deal", emoji = "💊", risk = 55, reward = "$1K-$10K", minAge = 16 },
-	{ id = "bank_heist", name = "Bank Heist", emoji = "🏦", risk = 95, reward = "$50K-$500K", minAge = 21, hasMinigame = true },
+	{ id = "porch_pirate", name = "Porch Pirate", emoji = "📦", risk = 20, reward = "$10-$200", minAge = 10 },
+	{ id = "shoplift", name = "Shoplift", emoji = "🛒", risk = 25, reward = "$20-$150", minAge = 8 },
+	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", risk = 35, reward = "$30-$300", minAge = 10 },
+	{ id = "burglary", name = "Burglary", emoji = "🏠", risk = 50, reward = "$500-$5K", minAge = 16 },
+	{ id = "gta", name = "Grand Theft Auto", emoji = "🚗", risk = 60, reward = "$2K-$20K", minAge = 16 },
+	{ id = "bank_robbery", name = "Bank Robbery", emoji = "🏦", risk = 80, reward = "$10K-$500K", minAge = 18, hasMinigame = true },
 }
 
 local PrisonActivities = {
@@ -92,9 +92,24 @@ end
 
 function ActivitiesScreen:updateState(newState)
 	log("Updating state...")
+	local wasInJail = self.playerState and self.playerState.InJail
+	
 	if newState then 
 		self.playerState = newState 
-		log("State updated - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail())
+		log("State updated - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail(), "JailYearsLeft:", self:getJailYearsLeft())
+		
+		-- Check if jail status changed - need to rebuild tabs
+		local nowInJail = self:isInJail()
+		if wasInJail ~= nowInJail then
+			log("Jail status changed! Was:", wasInJail, "Now:", nowInJail)
+			-- Only rebuild if visible to avoid unnecessary work
+			if self.isVisible then
+				log("Rebuilding tabs due to jail status change")
+				self:rebuildTabs()
+				self:updateInfoBar()
+				self:switchTab(self.currentTab)
+			end
+		end
 	end
 end
 
@@ -113,7 +128,19 @@ end
 function ActivitiesScreen:isInJail()
 	local state = self.playerState
 	if not state then return false end
-	return state.InJail or (state.Flags and state.Flags.in_prison) or false
+	-- Check multiple sources for jail status
+	local inJail = state.InJail == true 
+		or (state.Flags and state.Flags.in_prison) 
+		or (state.Flags and state.Flags.incarcerated)
+		or false
+	log("Checking jail status - InJail:", state.InJail, "Flags.in_prison:", state.Flags and state.Flags.in_prison, "Result:", inJail)
+	return inJail
+end
+
+function ActivitiesScreen:getJailYearsLeft()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.JailYearsLeft or 0
 end
 
 function ActivitiesScreen:createUI()
@@ -288,9 +315,18 @@ function ActivitiesScreen:updateInfoBar()
 	self.moneyChip.text.Text = UI.formatMoney(self:getMoney())
 	
 	local inJail = self:isInJail()
-	self.statusChip.text.Text = inJail and "In Jail" or "Free"
-	self.statusChip.chip.BackgroundColor3 = inJail and C.RedPale or C.GreenPale
-	self.statusChip.text.TextColor3 = inJail and C.RedDark or C.GreenDark
+	local jailYears = self:getJailYearsLeft()
+	
+	if inJail then
+		local jailText = jailYears > 0 and string.format("%.1f yrs", jailYears) or "Jail"
+		self.statusChip.text.Text = jailText
+		self.statusChip.chip.BackgroundColor3 = C.RedPale
+		self.statusChip.text.TextColor3 = C.RedDark
+	else
+		self.statusChip.text.Text = "Free"
+		self.statusChip.chip.BackgroundColor3 = C.GreenPale
+		self.statusChip.text.TextColor3 = C.GreenDark
+	end
 end
 
 function ActivitiesScreen:switchTab(tabId)
@@ -592,31 +628,43 @@ function ActivitiesScreen:populateCrime()
 end
 
 function ActivitiesScreen:populatePrison()
+	log("=== POPULATING PRISON VIEW ===")
 	self:updateInfoBar()
+	
+	local jailYears = self:getJailYearsLeft()
+	log("Jail years remaining:", jailYears)
 	
 	-- Prison status header
 	local headerCard = Instance.new("Frame")
-	headerCard.Size = UDim2.new(1, 0, 0, 85)
+	headerCard.Size = UDim2.new(1, 0, 0, 95)
 	headerCard.BackgroundColor3 = C.Gray800
 	headerCard.LayoutOrder = 0
 	headerCard.ZIndex = 82
 	headerCard.Parent = self.contentScroll
 	UI.corner(headerCard, 18)
 	
+	-- Prison emoji icon
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 55, 0, 55)
+	iconFrame.Position = UDim2.new(0, 16, 0.5, -27.5)
+	iconFrame.BackgroundColor3 = C.Gray700
+	iconFrame.ZIndex = 83
+	iconFrame.Parent = headerCard
+	UI.corner(iconFrame, 12)
+	
 	local headerIcon = Instance.new("TextLabel")
-	headerIcon.Size = UDim2.new(0, 55, 0, 55)
-	headerIcon.Position = UDim2.new(0, 16, 0.5, -27.5)
+	headerIcon.Size = UDim2.fromScale(1, 1)
 	headerIcon.BackgroundTransparency = 1
-	headerIcon.Font = F.Title
-	headerIcon.TextSize = 28
-	headerIcon.Text = "PRISON"
+	headerIcon.Font = F.Body
+	headerIcon.TextSize = 32
+	headerIcon.Text = "⛓️"
 	headerIcon.TextColor3 = C.White
-	headerIcon.ZIndex = 83
-	headerIcon.Parent = headerCard
+	headerIcon.ZIndex = 84
+	headerIcon.Parent = iconFrame
 	
 	local headerText = Instance.new("TextLabel")
 	headerText.Size = UDim2.new(1, -85, 0, 26)
-	headerText.Position = UDim2.new(0, 80, 0, 16)
+	headerText.Position = UDim2.new(0, 80, 0, 14)
 	headerText.BackgroundTransparency = 1
 	headerText.Font = F.Title
 	headerText.TextSize = 20
@@ -626,12 +674,31 @@ function ActivitiesScreen:populatePrison()
 	headerText.ZIndex = 83
 	headerText.Parent = headerCard
 	
+	-- Sentence badge
+	local sentenceBadge = Instance.new("Frame")
+	sentenceBadge.Size = UDim2.new(0, 120, 0, 26)
+	sentenceBadge.Position = UDim2.new(0, 80, 0, 42)
+	sentenceBadge.BackgroundColor3 = C.RedPale
+	sentenceBadge.ZIndex = 83
+	sentenceBadge.Parent = headerCard
+	UI.pill(sentenceBadge)
+	
+	local sentenceText = Instance.new("TextLabel")
+	sentenceText.Size = UDim2.fromScale(1, 1)
+	sentenceText.BackgroundTransparency = 1
+	sentenceText.Font = F.Medium
+	sentenceText.TextSize = 12
+	sentenceText.TextColor3 = C.RedDark
+	sentenceText.Text = jailYears > 0 and string.format("%.1f years left", jailYears) or "Sentence pending"
+	sentenceText.ZIndex = 84
+	sentenceText.Parent = sentenceBadge
+	
 	local headerSub = Instance.new("TextLabel")
 	headerSub.Size = UDim2.new(1, -85, 0, 20)
-	headerSub.Position = UDim2.new(0, 80, 0, 44)
+	headerSub.Position = UDim2.new(0, 80, 0, 70)
 	headerSub.BackgroundTransparency = 1
 	headerSub.Font = F.Body
-	headerSub.TextSize = 14
+	headerSub.TextSize = 13
 	headerSub.TextColor3 = C.Gray400
 	headerSub.TextXAlignment = Enum.TextXAlignment.Left
 	headerSub.Text = "Choose your actions wisely..."
@@ -1032,7 +1099,7 @@ function ActivitiesScreen:createMinigameModal()
 	self.minigameOverlay.Parent = self.screenGui
 	
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0.9, 0, 0, 400)
+	card.Size = UDim2.new(0.92, 0, 0, 480) -- Taller for escape grid
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.fromScale(0.5, 0.5)
 	card.BackgroundColor3 = C.White
@@ -1052,8 +1119,9 @@ function ActivitiesScreen:createMinigameModal()
 	self.minigameTitle.ZIndex = 98
 	self.minigameTitle.Parent = card
 	
-	-- Progress bar
+	-- Progress bar (for tap games)
 	local progressBg = Instance.new("Frame")
+	progressBg.Name = "ProgressBg"
 	progressBg.Size = UDim2.new(0.85, 0, 0, 26)
 	progressBg.AnchorPoint = Vector2.new(0.5, 0)
 	progressBg.Position = UDim2.new(0.5, 0, 0, 60)
@@ -1061,6 +1129,7 @@ function ActivitiesScreen:createMinigameModal()
 	progressBg.ZIndex = 98
 	progressBg.Parent = card
 	UI.pill(progressBg)
+	self.progressBg = progressBg
 	
 	self.progressFill = Instance.new("Frame")
 	self.progressFill.Size = UDim2.new(0, 0, 1, 0)
@@ -1069,8 +1138,9 @@ function ActivitiesScreen:createMinigameModal()
 	self.progressFill.Parent = progressBg
 	UI.pill(self.progressFill)
 	
-	-- Tap area
+	-- Tap area (for tap games)
 	self.tapArea = Instance.new("TextButton")
+	self.tapArea.Name = "TapArea"
 	self.tapArea.Size = UDim2.new(0.65, 0, 0, 190)
 	self.tapArea.AnchorPoint = Vector2.new(0.5, 0)
 	self.tapArea.Position = UDim2.new(0.5, 0, 0, 100)
@@ -1098,17 +1168,128 @@ function ActivitiesScreen:createMinigameModal()
 	self.tapCounter.Parent = card
 	
 	-- Instructions
-	local instr = Instance.new("TextLabel")
-	instr.Size = UDim2.new(1, 0, 0, 30)
-	instr.AnchorPoint = Vector2.new(0.5, 0)
-	instr.Position = UDim2.new(0.5, 0, 0, 350)
-	instr.BackgroundTransparency = 1
-	instr.Font = F.Body
-	instr.TextSize = 15
-	instr.TextColor3 = C.Gray500
-	instr.Text = "Tap as fast as you can!"
-	instr.ZIndex = 98
-	instr.Parent = card
+	self.minigameInstructions = Instance.new("TextLabel")
+	self.minigameInstructions.Name = "Instructions"
+	self.minigameInstructions.Size = UDim2.new(1, 0, 0, 30)
+	self.minigameInstructions.AnchorPoint = Vector2.new(0.5, 0)
+	self.minigameInstructions.Position = UDim2.new(0.5, 0, 0, 350)
+	self.minigameInstructions.BackgroundTransparency = 1
+	self.minigameInstructions.Font = F.Body
+	self.minigameInstructions.TextSize = 15
+	self.minigameInstructions.TextColor3 = C.Gray500
+	self.minigameInstructions.Text = "Tap as fast as you can!"
+	self.minigameInstructions.ZIndex = 98
+	self.minigameInstructions.Parent = card
+	
+	-- ===== PRISON ESCAPE GRID (hidden by default) =====
+	self.escapeGrid = Instance.new("Frame")
+	self.escapeGrid.Name = "EscapeGrid"
+	self.escapeGrid.Size = UDim2.new(0, 280, 0, 280)
+	self.escapeGrid.AnchorPoint = Vector2.new(0.5, 0)
+	self.escapeGrid.Position = UDim2.new(0.5, 0, 0, 60)
+	self.escapeGrid.BackgroundColor3 = C.Gray800
+	self.escapeGrid.Visible = false
+	self.escapeGrid.ZIndex = 98
+	self.escapeGrid.Parent = card
+	UI.corner(self.escapeGrid, 12)
+	
+	-- Grid cells (8x8 grid)
+	self.gridSize = 8
+	self.cellSize = 35
+	self.gridCells = {}
+	for row = 1, self.gridSize do
+		self.gridCells[row] = {}
+		for col = 1, self.gridSize do
+			local cell = Instance.new("Frame")
+			cell.Name = "Cell_" .. row .. "_" .. col
+			cell.Size = UDim2.new(0, self.cellSize - 2, 0, self.cellSize - 2)
+			cell.Position = UDim2.new(0, (col - 1) * self.cellSize, 0, (row - 1) * self.cellSize)
+			cell.BackgroundColor3 = C.Gray700
+			cell.ZIndex = 99
+			cell.Parent = self.escapeGrid
+			UI.corner(cell, 4)
+			self.gridCells[row][col] = cell
+		end
+	end
+	
+	-- Player icon (green)
+	self.playerCell = Instance.new("TextLabel")
+	self.playerCell.Name = "Player"
+	self.playerCell.Size = UDim2.new(0, self.cellSize - 6, 0, self.cellSize - 6)
+	self.playerCell.BackgroundColor3 = C.Green
+	self.playerCell.Font = F.Body
+	self.playerCell.TextSize = 20
+	self.playerCell.TextColor3 = C.White
+	self.playerCell.Text = "🏃"
+	self.playerCell.ZIndex = 100
+	self.playerCell.Parent = self.escapeGrid
+	UI.corner(self.playerCell, 6)
+	
+	-- Cop icon (red)
+	self.copCell = Instance.new("TextLabel")
+	self.copCell.Name = "Cop"
+	self.copCell.Size = UDim2.new(0, self.cellSize - 6, 0, self.cellSize - 6)
+	self.copCell.BackgroundColor3 = C.Red
+	self.copCell.Font = F.Body
+	self.copCell.TextSize = 20
+	self.copCell.TextColor3 = C.White
+	self.copCell.Text = "👮"
+	self.copCell.ZIndex = 100
+	self.copCell.Parent = self.escapeGrid
+	UI.corner(self.copCell, 6)
+	
+	-- Exit icon (yellow)
+	self.exitCell = Instance.new("TextLabel")
+	self.exitCell.Name = "Exit"
+	self.exitCell.Size = UDim2.new(0, self.cellSize - 6, 0, self.cellSize - 6)
+	self.exitCell.BackgroundColor3 = C.Amber
+	self.exitCell.Font = F.Body
+	self.exitCell.TextSize = 20
+	self.exitCell.TextColor3 = C.Black
+	self.exitCell.Text = "🚪"
+	self.exitCell.ZIndex = 100
+	self.exitCell.Parent = self.escapeGrid
+	UI.corner(self.exitCell, 6)
+	
+	-- Direction buttons
+	self.dirButtons = Instance.new("Frame")
+	self.dirButtons.Name = "DirectionButtons"
+	self.dirButtons.Size = UDim2.new(0, 150, 0, 100)
+	self.dirButtons.AnchorPoint = Vector2.new(0.5, 0)
+	self.dirButtons.Position = UDim2.new(0.5, 0, 0, 345)
+	self.dirButtons.BackgroundTransparency = 1
+	self.dirButtons.Visible = false
+	self.dirButtons.ZIndex = 98
+	self.dirButtons.Parent = card
+	
+	local dirData = {
+		{ dir = "up", text = "⬆️", pos = UDim2.new(0.5, -20, 0, 0) },
+		{ dir = "down", text = "⬇️", pos = UDim2.new(0.5, -20, 0, 60) },
+		{ dir = "left", text = "⬅️", pos = UDim2.new(0, 0, 0, 30) },
+		{ dir = "right", text = "➡️", pos = UDim2.new(1, -40, 0, 30) },
+	}
+	
+	self.dirBtns = {}
+	for _, d in ipairs(dirData) do
+		local btn = Instance.new("TextButton")
+		btn.Name = d.dir
+		btn.Size = UDim2.new(0, 40, 0, 40)
+		btn.Position = d.pos
+		btn.BackgroundColor3 = C.Gray600
+		btn.Font = F.Body
+		btn.TextSize = 22
+		btn.TextColor3 = C.White
+		btn.Text = d.text
+		btn.AutoButtonColor = false
+		btn.ZIndex = 99
+		btn.Parent = self.dirButtons
+		UI.corner(btn, 10)
+		self.dirBtns[d.dir] = btn
+		
+		btn.MouseButton1Click:Connect(function()
+			self:movePlayer(d.dir)
+		end)
+	end
 	
 	-- Variables
 	self.tapCount = 0
@@ -1116,10 +1297,17 @@ function ActivitiesScreen:createMinigameModal()
 	self.minigameActive = false
 	self.currentMinigameItem = nil
 	self.minigameAccent = C.Cyan
+	self.minigameType = "tap" -- "tap" or "escape"
+	
+	-- Escape game state
+	self.playerPos = { row = 1, col = 1 }
+	self.copPos = { row = 8, col = 8 }
+	self.exitPos = { row = 8, col = 1 }
+	self.movesLeft = 20
 	
 	-- Tap handler
 	self.tapArea.MouseButton1Click:Connect(function()
-		if not self.minigameActive then return end
+		if not self.minigameActive or self.minigameType ~= "tap" then return end
 		self.tapCount = self.tapCount + 1
 		self.tapCounter.Text = self.tapCount .. " / " .. self.tapGoal
 		
@@ -1141,14 +1329,168 @@ function ActivitiesScreen:createMinigameModal()
 	end)
 end
 
+function ActivitiesScreen:setGridPosition(element, row, col)
+	local x = (col - 1) * self.cellSize + 2
+	local y = (row - 1) * self.cellSize + 2
+	element.Position = UDim2.new(0, x, 0, y)
+end
+
+function ActivitiesScreen:movePlayer(direction)
+	if not self.minigameActive or self.minigameType ~= "escape" then return end
+	
+	log("=== ESCAPE MINIGAME MOVE ===")
+	log("Direction:", direction)
+	log("Player pos before:", self.playerPos.row, self.playerPos.col)
+	log("Moves left:", self.movesLeft)
+	
+	local newRow, newCol = self.playerPos.row, self.playerPos.col
+	
+	if direction == "up" then newRow = newRow - 1
+	elseif direction == "down" then newRow = newRow + 1
+	elseif direction == "left" then newCol = newCol - 1
+	elseif direction == "right" then newCol = newCol + 1
+	end
+	
+	-- Boundary check
+	if newRow < 1 or newRow > self.gridSize or newCol < 1 or newCol > self.gridSize then
+		log("Move blocked - out of bounds")
+		return
+	end
+	
+	-- Move player
+	self.playerPos.row, self.playerPos.col = newRow, newCol
+	self:setGridPosition(self.playerCell, newRow, newCol)
+	self.movesLeft = self.movesLeft - 1
+	self.tapCounter.Text = "Moves: " .. self.movesLeft
+	
+	log("Player pos after:", self.playerPos.row, self.playerPos.col)
+	
+	-- Check win (reached exit)
+	if self.playerPos.row == self.exitPos.row and self.playerPos.col == self.exitPos.col then
+		log("ESCAPED! Player reached exit!")
+		self.minigameActive = false
+		self:completeMinigame(true)
+		return
+	end
+	
+	-- Move cop towards player (after player moves)
+	self:moveCop()
+	
+	-- Check if cop caught player
+	if self.playerPos.row == self.copPos.row and self.playerPos.col == self.copPos.col then
+		log("CAUGHT! Cop caught player!")
+		self.minigameActive = false
+		self:completeMinigame(false)
+		return
+	end
+	
+	-- Check out of moves
+	if self.movesLeft <= 0 then
+		log("OUT OF MOVES!")
+		self.minigameActive = false
+		self:completeMinigame(false)
+		return
+	end
+end
+
+function ActivitiesScreen:moveCop()
+	-- Cop moves toward player (simple chase AI)
+	local dRow = self.playerPos.row - self.copPos.row
+	local dCol = self.playerPos.col - self.copPos.col
+	
+	log("Cop moving - dRow:", dRow, "dCol:", dCol)
+	
+	-- Move in direction with greatest difference
+	if math.abs(dRow) >= math.abs(dCol) then
+		if dRow > 0 then
+			self.copPos.row = self.copPos.row + 1
+		elseif dRow < 0 then
+			self.copPos.row = self.copPos.row - 1
+		end
+	else
+		if dCol > 0 then
+			self.copPos.col = self.copPos.col + 1
+		elseif dCol < 0 then
+			self.copPos.col = self.copPos.col - 1
+		end
+	end
+	
+	-- Boundary check
+	self.copPos.row = math.clamp(self.copPos.row, 1, self.gridSize)
+	self.copPos.col = math.clamp(self.copPos.col, 1, self.gridSize)
+	
+	log("Cop pos after:", self.copPos.row, self.copPos.col)
+	
+	self:setGridPosition(self.copCell, self.copPos.row, self.copPos.col)
+end
+
+function ActivitiesScreen:showEscapeMinigame()
+	log("=== STARTING ESCAPE MINIGAME ===")
+	
+	self.minigameType = "escape"
+	self.minigameActive = true
+	
+	-- Hide tap elements
+	self.tapArea.Visible = false
+	self.progressBg.Visible = false
+	
+	-- Show escape elements
+	self.escapeGrid.Visible = true
+	self.dirButtons.Visible = true
+	
+	-- Reset positions
+	self.playerPos = { row = 1, col = 4 }
+	self.copPos = { row = 8, col = 5 }
+	self.exitPos = { row = 8, col = 1 }
+	self.movesLeft = 25
+	
+	self:setGridPosition(self.playerCell, self.playerPos.row, self.playerPos.col)
+	self:setGridPosition(self.copCell, self.copPos.row, self.copPos.col)
+	self:setGridPosition(self.exitCell, self.exitPos.row, self.exitPos.col)
+	
+	-- Mark exit cell visually
+	for row = 1, self.gridSize do
+		for col = 1, self.gridSize do
+			self.gridCells[row][col].BackgroundColor3 = C.Gray700
+		end
+	end
+	self.gridCells[self.exitPos.row][self.exitPos.col].BackgroundColor3 = C.AmberPale
+	
+	self.minigameTitle.Text = "🔓 ESCAPE PRISON!"
+	self.tapCounter.Text = "Moves: " .. self.movesLeft
+	self.minigameInstructions.Text = "Reach the 🚪 door before the 👮 cop catches you!"
+	
+	-- Show modal
+	self.minigameOverlay.Visible = true
+	self.minigameCard.Position = UDim2.new(0.5, 0, 0.5, 50)
+	self.minigameCard.BackgroundTransparency = 1
+	
+	UI.tween(self.minigameCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0
+	})
+	
+	log("Escape minigame started - Player:", self.playerPos.row, self.playerPos.col, "Cop:", self.copPos.row, self.copPos.col, "Exit:", self.exitPos.row, self.exitPos.col)
+end
+
 function ActivitiesScreen:showMinigame(item, accentColor)
+	log("=== STARTING TAP MINIGAME ===")
+	log("Item:", item.id, "Accent:", tostring(accentColor))
+	
 	self.currentMinigameItem = item
 	self.minigameAccent = accentColor
+	self.minigameType = "tap"
 	self.tapCount = 0
 	self.tapGoal = item.id == "gym" and 25 or 15
 	self.minigameActive = true
 	
-	local title = item.id == "gym" and "Tap to Workout!" or "Tap to Study!"
+	-- Show tap elements, hide escape elements
+	self.tapArea.Visible = true
+	self.progressBg.Visible = true
+	self.escapeGrid.Visible = false
+	self.dirButtons.Visible = false
+	
+	local title = item.id == "gym" and "💪 Tap to Workout!" or "📚 Tap to Study!"
 	
 	self.minigameTitle.Text = title
 	self.tapArea.Text = "TAP!"
@@ -1156,6 +1498,7 @@ function ActivitiesScreen:showMinigame(item, accentColor)
 	self.progressFill.BackgroundColor3 = accentColor
 	self.progressFill.Size = UDim2.new(0, 0, 1, 0)
 	self.tapCounter.Text = "0 / " .. self.tapGoal
+	self.minigameInstructions.Text = "Tap as fast as you can!"
 	
 	self.minigameOverlay.Visible = true
 	self.minigameCard.Position = UDim2.new(0.5, 0, 0.5, 50)
@@ -1168,7 +1511,7 @@ function ActivitiesScreen:showMinigame(item, accentColor)
 	
 	-- Timeout
 	task.delay(10, function()
-		if self.minigameActive and self.minigameOverlay.Visible then
+		if self.minigameActive and self.minigameOverlay.Visible and self.minigameType == "tap" then
 			self.minigameActive = false
 			self:completeMinigame(self.tapCount >= self.tapGoal * 0.5)
 		end
@@ -1176,15 +1519,64 @@ function ActivitiesScreen:showMinigame(item, accentColor)
 end
 
 function ActivitiesScreen:completeMinigame(success)
+	log("=== MINIGAME COMPLETE ===")
+	log("Type:", self.minigameType, "Success:", success)
+	
 	task.delay(0.3, function()
 		self.minigameOverlay.Visible = false
 		
-		if success then
-			self:doActivity(self.currentMinigameItem, true)
+		-- Reset UI elements
+		self.escapeGrid.Visible = false
+		self.dirButtons.Visible = false
+		self.tapArea.Visible = true
+		self.progressBg.Visible = true
+		
+		if self.minigameType == "escape" then
+			-- Prison escape minigame
+			if success then
+				log("Escape successful! Calling server...")
+				self:doPrisonActivityAfterMinigame(true)
+			else
+				log("Escape failed!")
+				self:doPrisonActivityAfterMinigame(false)
+			end
 		else
-			self:showResult(false, "You gave up halfway through. No gains today!", "Failed")
+			-- Tap minigame
+			if success then
+				self:doActivity(self.currentMinigameItem, true)
+			else
+				self:showResult(false, "You gave up halfway through. No gains today!", "Failed")
+			end
 		end
 	end)
+end
+
+function ActivitiesScreen:doPrisonActivityAfterMinigame(escaped)
+	log("=== PRISON ESCAPE MINIGAME RESULT ===")
+	log("Escaped:", escaped)
+	
+	if not DoPrisonAction then
+		logWarn("DoPrisonAction remote not available!")
+		self:showResult(false, "Server not available", "Error")
+		return
+	end
+	
+	-- The server handles the actual escape logic, but we pass the minigame result
+	if escaped then
+		-- Call server escape action
+		local result = DoPrisonAction:InvokeServer("prison_escape")
+		if result then
+			log("Server response:", result.success, result.message)
+			self:showResult(result.success, result.message, result.success and "FREE!" or "Caught!")
+		else
+			self:showResult(false, "Server error", "Error")
+		end
+	else
+		-- Player failed minigame - got caught
+		self:showResult(false, "You got caught trying to escape! More time added to your sentence.", "Caught!")
+		-- Server will add time when we call the action with failure
+		DoPrisonAction:InvokeServer("prison_escape_failed")
+	end
 end
 
 function ActivitiesScreen:doActivity(item, bonus)
@@ -1241,6 +1633,13 @@ function ActivitiesScreen:doPrisonActivity(item)
 	log("Prison Activity ID:", item.id, "Name:", item.name)
 	log("Player Money:", self:getMoney())
 	
+	-- Prison escape has a minigame!
+	if item.id == "prison_escape" then
+		log("Starting prison escape minigame...")
+		self:showEscapeMinigame()
+		return
+	end
+	
 	if not DoPrisonAction then
 		logWarn("DoPrisonAction remote not available!")
 		self:showResult(false, "Server not available", "Error")
@@ -1254,8 +1653,8 @@ function ActivitiesScreen:doPrisonActivity(item)
 	if result then
 		log("Success:", result.success, "Message:", result.message)
 		local emoji = result.success and "Done!" or "Failed"
-		if item.id == "prison_escape" then emoji = result.success and "Free!" or "Caught!" end
 		if item.id == "prison_riot" then emoji = result.success and "Chaos!" or "Caught!" end
+		if item.id == "prison_snitch" then emoji = result.success and "Snitched!" or "Oops!" end
 		self:showResult(result.success, result.message, emoji)
 	else
 		logWarn("Server returned nil!")
@@ -1282,9 +1681,21 @@ end
 
 function ActivitiesScreen:show()
 	log("=== SHOWING ActivitiesScreen ===")
-	log("Current state - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail())
-	self:updateInfoBar()
+	local inJail = self:isInJail()
+	log("Current state - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", inJail, "JailYearsLeft:", self:getJailYearsLeft())
+	
+	-- Rebuild tabs (jail vs normal mode)
 	self:rebuildTabs()
+	self:updateInfoBar()
+	
+	-- Set appropriate starting tab
+	if inJail then
+		self.currentTab = "prison"
+	elseif self.currentTab == "prison" then
+		-- Was viewing prison but no longer in jail - switch to normal tab
+		self.currentTab = "mindbody"
+	end
+	
 	self:switchTab(self.currentTab)
 	UI.slideInScreen(self.overlay, "right")
 	self.isVisible = true

@@ -97,7 +97,23 @@ end
 function OccupationScreen:getCurrentJob()
 	local state = self.playerState
 	if not state then return nil end
+	-- Check both old and new job system
+	if state.CurrentJob and state.CurrentJob.title then
+		return state.CurrentJob.title
+	end
 	return state.Job or (state.Career and state.Career.current)
+end
+
+function OccupationScreen:isInJail()
+	local state = self.playerState
+	if not state then return false end
+	return state.InJail == true or (state.Flags and state.Flags.in_prison) or false
+end
+
+function OccupationScreen:getJailYearsLeft()
+	local state = self.playerState
+	if not state then return 0 end
+	return state.JailYearsLeft or 0
 end
 
 function OccupationScreen:getEducationLevel()
@@ -317,8 +333,68 @@ function OccupationScreen:populateJobs()
 	local age = self:getAge()
 	local currentJob = self:getCurrentJob()
 	local eduLevel = self:getEducationLevel()
+	local inJail = self:isInJail()
 	
-	-- Current job section (if employed)
+	log("Populating jobs - Age:", age, "CurrentJob:", currentJob, "EduLevel:", eduLevel, "InJail:", inJail)
+	
+	-- Prison warning (if in jail)
+	if inJail then
+		local jailYears = self:getJailYearsLeft()
+		log("Player in jail! Years left:", jailYears)
+		
+		local prisonCard = Instance.new("Frame")
+		prisonCard.Size = UDim2.new(1, 0, 0, 95)
+		prisonCard.BackgroundColor3 = C.Gray800
+		prisonCard.LayoutOrder = -1
+		prisonCard.ZIndex = 82
+		prisonCard.Parent = self.contentScroll
+		UI.corner(prisonCard, 18)
+		
+		local iconFrame = Instance.new("Frame")
+		iconFrame.Size = UDim2.new(0, 55, 0, 55)
+		iconFrame.Position = UDim2.new(0, 16, 0.5, -27.5)
+		iconFrame.BackgroundColor3 = C.Gray700
+		iconFrame.ZIndex = 83
+		iconFrame.Parent = prisonCard
+		UI.corner(iconFrame, 12)
+		
+		local iconLabel = Instance.new("TextLabel")
+		iconLabel.Size = UDim2.fromScale(1, 1)
+		iconLabel.BackgroundTransparency = 1
+		iconLabel.Font = F.Body
+		iconLabel.TextSize = 32
+		iconLabel.Text = "⛓️"
+		iconLabel.TextColor3 = C.White
+		iconLabel.ZIndex = 84
+		iconLabel.Parent = iconFrame
+		
+		local headerText = Instance.new("TextLabel")
+		headerText.Size = UDim2.new(1, -85, 0, 24)
+		headerText.Position = UDim2.new(0, 80, 0, 14)
+		headerText.BackgroundTransparency = 1
+		headerText.Font = F.Title
+		headerText.TextSize = 18
+		headerText.TextColor3 = C.White
+		headerText.TextXAlignment = Enum.TextXAlignment.Left
+		headerText.Text = "You're Incarcerated"
+		headerText.ZIndex = 83
+		headerText.Parent = prisonCard
+		
+		local subText = Instance.new("TextLabel")
+		subText.Size = UDim2.new(1, -85, 0, 40)
+		subText.Position = UDim2.new(0, 80, 0, 40)
+		subText.BackgroundTransparency = 1
+		subText.Font = F.Body
+		subText.TextSize = 13
+		subText.TextColor3 = C.Gray400
+		subText.TextXAlignment = Enum.TextXAlignment.Left
+		subText.TextWrapped = true
+		subText.Text = jailYears > 0 and string.format("%.1f years remaining. You can't work while in prison.", jailYears) or "You can't work while in prison."
+		subText.ZIndex = 83
+		subText.Parent = prisonCard
+	end
+	
+	-- Current job section (if employed and not in jail)
 	if currentJob then
 		local currentSection = Instance.new("Frame")
 		currentSection.Name = "CurrentJobSection"
@@ -507,6 +583,7 @@ function OccupationScreen:createJobCard(parent, job, order, age, eduLevel)
 	local meetsAge = age >= job.minAge
 	local meetsEdu = true
 	local eduNeeded = nil
+	local inJail = self:isInJail()
 	
 	-- Check education requirement
 	if job.requirement then
@@ -519,7 +596,8 @@ function OccupationScreen:createJobCard(parent, job, order, age, eduLevel)
 		end
 	end
 	
-	local canApply = meetsAge and meetsEdu
+	-- Can't apply if in jail
+	local canApply = meetsAge and meetsEdu and not inJail
 	
 	local card = Instance.new("Frame")
 	card.Name = job.id
@@ -613,7 +691,18 @@ function OccupationScreen:createJobCard(parent, job, order, age, eduLevel)
 	applyBtn.Font = F.Button
 	applyBtn.TextSize = 14
 	applyBtn.TextColor3 = canApply and C.White or C.Gray500
-	applyBtn.Text = canApply and "Apply" or "Locked"
+	-- Button text based on why they can't apply
+	local btnText = "Apply"
+	if not canApply then
+		if inJail then
+			btnText = "Jailed"
+		elseif not meetsAge then
+			btnText = "Age " .. job.minAge
+		else
+			btnText = "Locked"
+		end
+	end
+	applyBtn.Text = btnText
 	applyBtn.AutoButtonColor = false
 	applyBtn.ZIndex = 84
 	applyBtn.Parent = card

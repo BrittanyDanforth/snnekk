@@ -79,6 +79,7 @@ local BuyCrypto = getRemote("BuyCrypto", true)
 local SellAsset = getRemote("SellAsset", true)
 
 local InteractPerson = getRemote("InteractPerson", true)
+local DoInteraction = getRemote("DoInteraction", true) -- Client uses this name
 local GiveMoney = getRemote("GiveMoney", true)
 
 local DoActivity = getRemote("DoActivity", true)
@@ -819,6 +820,245 @@ GiveMoney.OnServerInvoke = function(player, personId)
 end
 
 ----------------------------------------------------------------
+-- UNIFIED INTERACTION HANDLER (DoInteraction)
+-- Handles all relationship interactions: family, romance, friend, enemy
+----------------------------------------------------------------
+
+-- Extended relationship actions by type
+local AllRelationshipActions = {
+	-- Family actions
+	hug = { minAge = 2, cost = 0, successChance = 0.85, statMin = 3, statMax = 10, type = "family" },
+	talk = { minAge = 3, cost = 0, successChance = 0.8, statMin = 2, statMax = 8, type = "family" },
+	argue = { minAge = 5, cost = 0, successChance = 0.3, statMin = -12, statMax = -3, type = "family" },
+	money = { minAge = 5, cost = 0, successChance = 0.6, statMin = 0, statMax = 0, giveMoney = true, type = "family" },
+	vacation = { minAge = 5, cost = 2000, successChance = 0.9, statMin = 10, statMax = 25, type = "family" },
+	apologize = { minAge = 4, cost = 0, successChance = 0.65, statMin = 5, statMax = 20, type = "family" },
+	
+	-- Romance actions  
+	date = { minAge = 16, cost = 100, successChance = 0.75, statMin = 5, statMax = 15, type = "romance" },
+	kiss = { minAge = 14, cost = 0, successChance = 0.7, statMin = 5, statMax = 12, type = "romance" },
+	propose = { minAge = 18, cost = 5000, successChance = 0.5, statMin = 20, statMax = 50, type = "romance", special = "propose" },
+	breakup = { minAge = 14, cost = 0, successChance = 1.0, statMin = -50, statMax = -30, type = "romance", special = "breakup" },
+	flirt = { minAge = 14, cost = 0, successChance = 0.6, statMin = 3, statMax = 10, type = "romance" },
+	compliment = { minAge = 3, cost = 0, successChance = 0.8, statMin = 2, statMax = 8, type = "any" },
+	
+	-- Friend actions
+	hangout = { minAge = 5, cost = 0, successChance = 0.85, statMin = 3, statMax = 10, type = "friend" },
+	support = { minAge = 5, cost = 0, successChance = 0.9, statMin = 4, statMax = 12, type = "friend" },
+	party = { minAge = 14, cost = 0, successChance = 0.8, statMin = 5, statMax = 15, type = "friend" },
+	betray = { minAge = 10, cost = 0, successChance = 0.5, statMin = -30, statMax = -15, type = "friend", special = "betray" },
+	ghost = { minAge = 10, cost = 0, successChance = 1.0, statMin = -100, statMax = -50, type = "friend", special = "ghost" },
+	
+	-- Enemy actions
+	insult = { minAge = 5, cost = 0, successChance = 0.9, statMin = -10, statMax = -3, type = "enemy" },
+	fight = { minAge = 10, cost = 0, successChance = 0.5, statMin = -20, statMax = 10, type = "enemy", special = "fight" },
+	forgive = { minAge = 5, cost = 0, successChance = 0.6, statMin = 10, statMax = 30, type = "enemy", special = "forgive" },
+	prank = { minAge = 8, cost = 0, successChance = 0.7, statMin = -8, statMax = -2, type = "enemy" },
+	ignore = { minAge = 5, cost = 0, successChance = 1.0, statMin = 0, statMax = 0, type = "enemy" },
+	
+	-- Special actions (meeting new people)
+	meet_someone = { minAge = 16, cost = 0, successChance = 0.7, statMin = 0, statMax = 0, type = "romance", special = "meet_romance" },
+	make_friend = { minAge = 5, cost = 0, successChance = 0.8, statMin = 0, statMax = 0, type = "friend", special = "make_friend" },
+	
+	-- Gift works for all types
+	gift = { minAge = 5, cost = 50, successChance = 0.85, statMin = 8, statMax = 20, type = "any" },
+}
+
+-- Random name generator
+local FirstNames = {
+	male = {"James", "John", "Michael", "David", "Chris", "Alex", "Ryan", "Daniel", "Tyler", "Jake", "Ethan", "Noah", "Liam", "Mason", "Lucas"},
+	female = {"Emma", "Olivia", "Sophia", "Isabella", "Mia", "Charlotte", "Amelia", "Harper", "Evelyn", "Luna", "Chloe", "Lily", "Zoe", "Grace", "Ella"},
+}
+
+local function getRandomName(gender)
+	local names = gender == "male" and FirstNames.male or FirstNames.female
+	return names[math.random(#names)]
+end
+
+DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId)
+	print("[LifeRemoteHandlers] DoInteraction called:", actionId, relationType, personId)
+	
+	local age = getAge(player)
+	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
+	
+	local action = AllRelationshipActions[actionId]
+	if not action then
+		print("[LifeRemoteHandlers] Unknown action:", actionId)
+		return { success = false, message = "Unknown action: " .. tostring(actionId) }
+	end
+	
+	-- Check age
+	if age < action.minAge then
+		return { success = false, message = "You must be at least " .. action.minAge .. " years old." }
+	end
+	
+	-- Check cost
+	local cost = action.cost or 0
+	if cost > 0 and not canAfford(player, cost) then
+		return { success = false, message = "You can't afford this! Cost: $" .. cost }
+	end
+	
+	-- Deduct cost
+	if cost > 0 then
+		deductMoney(player, cost)
+	end
+	
+	-- Handle special actions
+	if action.special == "meet_romance" then
+		-- Generate a new romantic interest
+		local partnerGender = math.random() > 0.5 and "male" or "female"
+		local partnerName = getRandomName(partnerGender)
+		local partnerAge = math.max(18, age + math.random(-5, 5))
+		
+		-- Add to relationships
+		if lifeState then
+			lifeState.Relationships = lifeState.Relationships or {}
+			local id = "partner_" .. os.time()
+			lifeState.Relationships[id] = {
+				type = "romance",
+				name = partnerName,
+				role = "Dating",
+				age = partnerAge,
+				relationship = 50 + math.random(0, 20),
+				alive = true,
+				gender = partnerGender,
+			}
+		end
+		
+		syncStateToClient(player)
+		return { 
+			success = true, 
+			message = "You met " .. partnerName .. " (" .. partnerAge .. ") and hit it off! You're now dating."
+		}
+		
+	elseif action.special == "make_friend" then
+		-- Generate a new friend
+		local friendGender = math.random() > 0.5 and "male" or "female"
+		local friendName = getRandomName(friendGender)
+		local friendAge = math.max(5, age + math.random(-3, 3))
+		
+		-- Add to relationships
+		if lifeState then
+			lifeState.Relationships = lifeState.Relationships or {}
+			local id = "friend_" .. os.time()
+			lifeState.Relationships[id] = {
+				type = "friend",
+				name = friendName,
+				role = "Friend",
+				age = friendAge,
+				relationship = 50 + math.random(0, 30),
+				alive = true,
+				gender = friendGender,
+			}
+		end
+		
+		syncStateToClient(player)
+		return { 
+			success = true, 
+			message = "You made a new friend! " .. friendName .. " seems cool."
+		}
+		
+	elseif action.giveMoney then
+		-- Ask for money action
+		local success = math.random(100) <= 60
+		if success then
+			local amount = math.random(25, 200)
+			addMoney(player, amount)
+			return { success = true, message = "They gave you $" .. amount .. "!", amount = amount }
+		else
+			return { success = false, message = "They said no this time." }
+		end
+		
+	elseif action.special == "propose" then
+		local success = math.random(100) <= 50
+		if success then
+			-- Marriage!
+			if lifeState then
+				lifeState:SetFlag("married")
+			end
+			modifyStat(player, "Happiness", 30)
+			syncStateToClient(player)
+			return { success = true, message = "They said YES! You're engaged! 💍" }
+		else
+			modifyStat(player, "Happiness", -15)
+			syncStateToClient(player)
+			return { success = false, message = "They said no... The rejection hurts." }
+		end
+		
+	elseif action.special == "breakup" then
+		modifyStat(player, "Happiness", -20)
+		syncStateToClient(player)
+		return { success = true, message = "You ended the relationship. It's over." }
+		
+	elseif action.special == "fight" then
+		local won = math.random(100) <= 50
+		if won then
+			modifyStat(player, "Happiness", 5)
+			return { success = true, message = "You won the fight! They'll think twice before messing with you." }
+		else
+			modifyStat(player, "Health", -10)
+			modifyStat(player, "Happiness", -5)
+			syncStateToClient(player)
+			return { success = false, message = "You lost the fight and got hurt. Maybe fighting isn't your thing." }
+		end
+		
+	elseif action.special == "forgive" then
+		local accepted = math.random(100) <= 60
+		if accepted then
+			-- Convert enemy to friend
+			modifyStat(player, "Happiness", 10)
+			syncStateToClient(player)
+			return { success = true, message = "They accepted your forgiveness. Maybe you can be friends now." }
+		else
+			return { success = false, message = "They're not ready to forgive. Give it time." }
+		end
+	end
+	
+	-- Standard interaction - roll for success
+	local isSuccess = math.random(100) <= (action.successChance * 100)
+	local statChange = 0
+	
+	if isSuccess then
+		statChange = math.random(math.max(1, action.statMin), math.max(1, action.statMax))
+		modifyStat(player, "Happiness", math.floor(statChange / 2))
+	else
+		statChange = math.random(math.min(-1, action.statMin), math.min(-1, action.statMax))
+		modifyStat(player, "Happiness", math.floor(statChange / 3))
+	end
+	
+	syncStateToClient(player)
+	
+	-- Generate result message
+	local messages = {
+		hug = isSuccess and "The hug was warm and comforting!" or "They seemed distant...",
+		talk = isSuccess and "You had a great conversation!" or "The conversation was a bit awkward.",
+		argue = isSuccess and "You made your point but things got heated." or "The argument went badly.",
+		apologize = isSuccess and "They accepted your apology!" or "They're not ready to forgive yet.",
+		gift = isSuccess and "They loved the gift!" or "The gift didn't go over as well as you hoped.",
+		date = isSuccess and "The date was amazing!" or "The date was a bit awkward.",
+		kiss = isSuccess and "A magical moment!" or "Maybe not the right time...",
+		flirt = isSuccess and "They're definitely interested!" or "That was embarrassing...",
+		compliment = isSuccess and "They appreciated the kind words!" or "They seemed uncomfortable.",
+		hangout = isSuccess and "You had a blast hanging out!" or "Things were a bit awkward.",
+		support = isSuccess and "They really appreciated your support!" or "You tried your best.",
+		party = isSuccess and "The party was epic!" or "The party was kind of lame.",
+		insult = isSuccess and "That was harsh but felt good." or "They didn't even react.",
+		prank = isSuccess and "The prank was hilarious!" or "The prank backfired.",
+		ignore = "You ignored them successfully.",
+		vacation = isSuccess and "The vacation was incredible! Great bonding time." or "The vacation had some rough moments.",
+	}
+	
+	local message = messages[actionId] or (isSuccess and "It went well!" or "It didn't go as planned...")
+	
+	return { 
+		success = isSuccess, 
+		message = message,
+		statChange = statChange
+	}
+end
+
+----------------------------------------------------------------
 -- ACTIVITY HANDLERS
 ----------------------------------------------------------------
 
@@ -961,20 +1201,37 @@ end
 local DoPrisonAction = getRemote("DoPrisonAction", true)
 
 DoPrisonAction.OnServerInvoke = function(player, actionId)
+	print("[LifeRemoteHandlers] DoPrisonAction called:", actionId, "for", player.Name)
+	
 	local extState = getExtendedState(player)
 	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
 	
-	-- Must be in jail
-	if not extState.InJail then
+	-- Must be in jail (except for escape_failed which is just a penalty)
+	if not extState.InJail and actionId ~= "prison_escape_failed" then
+		print("[LifeRemoteHandlers] Player not in prison!")
 		return { success = false, message = "You're not in prison!" }
 	end
 	
-	-- Prison Escape
+	-- Prison Escape Failed (minigame failure)
+	if actionId == "prison_escape_failed" then
+		print("[LifeRemoteHandlers] Escape minigame failed - adding time")
+		extState.JailYearsLeft = (extState.JailYearsLeft or 0) + math.random(2, 5)
+		if life then
+			life.Stats.Health = math.max(1, (life.Stats.Health or 50) - 10)
+		end
+		syncStateToClient(player)
+		return { success = false, message = "Caught trying to escape! More years added." }
+	end
+	
+	-- Prison Escape (player beat the minigame - high success rate!)
 	if actionId == "prison_escape" then
-		-- 10% base chance, improved with smarts
+		print("[LifeRemoteHandlers] Prison escape attempt (minigame success)")
+		-- Player beat the minigame, so much higher escape chance (70% base)
 		local smarts = life and life.Stats and life.Stats.Smarts or 50
-		local escapeChance = 10 + math.floor(smarts / 10)
+		local escapeChance = 70 + math.floor(smarts / 10) -- 70-80% chance
 		local success = math.random(100) <= escapeChance
+		
+		print("[LifeRemoteHandlers] Escape chance:", escapeChance, "Roll success:", success)
 		
 		if success then
 			extState.InJail = false
@@ -982,25 +1239,28 @@ DoPrisonAction.OnServerInvoke = function(player, actionId)
 			extState.EscapedPrison = true
 			extState.WantedLevel = (extState.WantedLevel or 0) + 3
 			
-			if life and life.SetFlag then
-				life:SetFlag("escaped_prison")
-				life:SetFlag("fugitive")
+			if life then
+				if life.SetFlag then
+					life:SetFlag("escaped_prison")
+					life:SetFlag("fugitive")
+				end
+				life.Stats.Happiness = math.min(100, (life.Stats.Happiness or 50) + 30)
 			end
 			
 			syncStateToClient(player)
+			print("[LifeRemoteHandlers] Escape successful!")
 			return { 
 				success = true, 
-				message = "You escaped prison! You're now a fugitive and must lay low...",
-				triggerMinigame = "prison_escape"
+				message = "You escaped prison! 🎉 You're now a fugitive and must lay low..."
 			}
 		else
-			-- Caught! Add time to sentence
-			extState.JailYearsLeft = extState.JailYearsLeft + math.random(2, 5)
+			-- Even with minigame success, there's a small chance of getting caught
+			extState.JailYearsLeft = (extState.JailYearsLeft or 0) + math.random(1, 3)
 			syncStateToClient(player)
+			print("[LifeRemoteHandlers] Escape failed despite minigame win")
 			return { 
 				success = false, 
-				message = "You got caught trying to escape! Years added to your sentence.",
-				yearsAdded = true
+				message = "A guard spotted you at the last moment! More time added."
 			}
 		end
 	
