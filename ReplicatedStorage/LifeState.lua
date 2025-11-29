@@ -1,6 +1,6 @@
 -- LifeState.lua
--- Server-side representation of a player's life state.
--- Enhanced with relationships, education, assets, health conditions, achievements, and more.
+-- Server-side representation of a player's life state with BitLife-style systems
+-- Extended with career paths, relationships, assets, and proper helpers
 
 local LifeState = {}
 LifeState.__index = LifeState
@@ -15,30 +15,32 @@ local function clamp(n, minVal, maxVal)
 	end
 end
 
+local function pickRandom(list)
+	if not list or #list == 0 then return nil end
+	return list[math.random(1, #list)]
+end
+
+----------------------------------------------------------------------
+-- CONSTRUCTOR
+----------------------------------------------------------------------
+
 function LifeState.new(player)
 	local self = setmetatable({}, LifeState)
 
 	self.PlayerId = player.UserId
 
-	-- Basic Info
+	-- Basic info
 	self.Name = nil
 	self.Gender = nil
-	self.Sexuality = nil -- "Straight", "Gay", "Bisexual", etc.
-	self.BirthCountry = "United States"
-	self.CurrentCountry = "United States"
 
 	-- Time
 	self.Age = 0
 	self.Year = 2025
-	self.BirthYear = 2025
 
-	-- Finances
+	-- Economy
 	self.Money = 0
-	self.BankBalance = 0
-	self.Debt = 0
-	self.NetWorth = 0
 
-	-- Core Stats
+	-- Core stats
 	self.Stats = {
 		Happiness = 80,
 		Health = 80,
@@ -46,575 +48,665 @@ function LifeState.new(player)
 		Smarts = 70,
 	}
 
-	-- Additional Stats
-	self.Karma = 50 -- 0-100, affects random events
-	self.Willpower = 50 -- Affects resisting addictions, temptations
-	self.Fame = 0 -- 0-100, public recognition
-	self.Craziness = 20 -- Affects wild event outcomes
-	self.Fertility = 100 -- Ability to have children
+	-- For backwards compatibility, expose stats at top level too
+	self.Happiness = 80
+	self.Health = 80
+	self.Looks = 70
+	self.Smarts = 70
 
-	-- Feed/History
-	self.Feed = {}
-	self.LifeHistory = {} -- Important life milestones
+	-- Story Flags (for branching narrative)
+	self.Flags = {}
 
-	-- Job System
-	self.Job = nil -- { id, title, company, salary, emoji, yearsWorked, performance }
-	self.JobHistory = {} -- Past jobs
-	self.TotalEarnings = 0
-	self.YearsEmployed = 0
+	-- Relationships (BitLife-style organized by category)
+	self.Relationships = {
+		family = {},      -- parents, siblings, children, spouse
+		friends = {},     -- friends, best friends
+		lovers = {},      -- romantic interests, partners
+		coworkers = {},   -- work colleagues
+		classmates = {},  -- school/university classmates
+		enemies = {},     -- people who hate you
+	}
+
+	-- Career & Job System
+	self.Career = {
+		path = nil,         -- "teacher", "president", "racer", "artist", "hacker", "criminal", etc.
+		jobTitle = nil,     -- Current job title
+		employer = nil,     -- Current employer name
+		salary = 0,         -- Annual salary
+		experience = 0,     -- Years of experience
+		performance = 50,   -- Job performance rating 0-100
+		promotions = 0,     -- Number of promotions received
+	}
+
+	-- Legacy job fields (for backwards compatibility)
+	self.Job = nil
+	self.JobTitle = nil
+	self.JobSalary = 0
 
 	-- Education System
 	self.Education = {
-		CurrentSchool = nil, -- { type, name, yearsCompleted, gpa }
-		HighSchoolGraduate = false,
-		HighSchoolGPA = 0,
-		College = nil, -- { name, major, yearsCompleted, gpa }
-		CollegeGraduate = false,
-		CollegeDegree = nil,
-		GraduateSchool = nil,
-		GraduateDegree = nil,
-		Certifications = {},
-		DriversLicense = false,
-		PilotsLicense = false,
-		BoatingLicense = false,
+		level = "none",     -- "none", "elementary", "middle", "highschool", "university", "graduate", "doctorate"
+		schoolName = nil,
+		university = nil,
+		major = nil,
+		gpa = 0,
+		scholarship = nil,  -- "athletic", "academic", "music", "art", etc.
+		graduated = false,
+		degrees = {},       -- List of earned degrees
 	}
 
-	-- Relationships
-	self.Relationships = {
-		-- Family
-		Father = nil, -- { name, age, relationship, alive, health }
-		Mother = nil,
-		Siblings = {},
-		Children = {},
-		
-		-- Romantic
-		Partner = nil, -- { name, age, relationship, yearsTogether, married }
-		ExPartners = {},
-		
-		-- Social
-		Friends = {},
-		Enemies = {},
-		
-		-- Counts
-		TotalRelationships = 0,
-		TotalMarriages = 0,
-		TotalDivorces = 0,
-	}
+	-- Legacy field
+	self.EducationLevel = nil
 
-	-- Crime System
-	self.InJail = false
-	self.JailYearsLeft = 0
-	self.CrimeRecord = 0
-	self.CrimesCommitted = {} -- { crimeId, year, caught }
-	self.TotalTimeServed = 0
-	self.OnProbation = false
-	self.ProbationYearsLeft = 0
-	self.Notoriety = 0 -- Criminal reputation
-
-	-- Health System
-	self.HealthConditions = {} -- { condition, severity, yearsHad, treatable }
-	self.Addictions = {} -- { substance, severity, yearsAddicted }
-	self.MentalHealth = {
-		Depression = false,
-		Anxiety = false,
-		Stress = 0,
-	}
-	self.PhysicalFitness = 50
-	self.Diet = "Normal" -- "Healthy", "Normal", "Unhealthy", "Vegan", etc.
-	self.SleepQuality = 70
-	self.DoctorVisitsThisYear = 0
-	self.Surgeries = {}
-
-	-- Assets & Property
+	-- Assets (BitLife-style)
 	self.Assets = {
-		Vehicles = {}, -- { type, make, model, year, value, condition }
-		Properties = {}, -- { type, location, value, mortgage }
-		Jewelry = {},
-		Collections = {},
-		Investments = {}, -- { type, value, returns }
-	}
-	self.TotalAssetValue = 0
-	self.RentExpense = 0
-	self.LivingSituation = "With Parents" -- "With Parents", "Renting", "Own Home", "Homeless"
-
-	-- Achievements & Milestones
-	self.Achievements = {}
-	self.Milestones = {
-		FirstKiss = false,
-		FirstDate = false,
-		FirstJob = false,
-		FirstCar = false,
-		FirstHome = false,
-		LostVirginity = false,
-		GotMarried = false,
-		HadChildren = false,
-		Retired = false,
+		cash = 0,           -- Alias for Money
+		houses = {},        -- { id, name, value, equity, mortgage, monthlyPayment }
+		cars = {},          -- { id, make, model, year, value, condition }
+		businesses = {},    -- { id, name, type, value, profitPerYear }
+		pets = {},          -- { id, name, type, age, happiness, health }
+		investments = {},   -- { id, type, value, shares }
 	}
 
-	-- Flags for event tracking
-	self.Flags = {}
-	
-	-- Story progress tracking
-	self.StoryProgress = {
-		PresidentPath = 0,
-		CriminalPath = 0,
-		CelebrityPath = 0,
-		AthletePath = 0,
-		BusinessPath = 0,
-	}
+	-- Criminal/Legal status
+	self.InJail = false
+	self.JailTime = 0
+	self.JailSentence = 0
+	self.CriminalRecord = {}
+	self.WantedLevel = 0
+	self.Notoriety = 0  -- Criminal reputation
 
-	-- Skills & Talents
-	self.Skills = {
-		Cooking = 0,
-		Music = 0,
-		Art = 0,
-		Writing = 0,
-		Martial_Arts = 0,
-		Dancing = 0,
-		Public_Speaking = 0,
-		Programming = 0,
-		Photography = 0,
-		Gaming = 0,
-		Acting = 0,
-		Fitness = 0,
-	}
+	-- Health tracking
+	self.HealthConditions = {}  -- List of health issues
+	self.Addictions = {}        -- Addictions (alcohol, drugs, etc.)
+	self.Fitness = 50           -- Fitness level 0-100
 
-	-- Military Service
-	self.Military = {
-		Enlisted = false,
-		Branch = nil,
-		Rank = nil,
-		YearsServed = 0,
-		Deployed = false,
-		Veteran = false,
-		Discharged = false,
-		DischargeType = nil,
-	}
-
-	-- Social Media & Fame
+	-- Social
+	self.Fame = 0               -- 0-100 fame level
 	self.SocialMedia = {
-		Followers = 0,
-		Posts = 0,
-		Verified = false,
-		Platform = nil,
+		followers = 0,
+		platform = nil,
+		verified = false,
 	}
 
-	-- Gambling & Lottery
-	self.GamblingStats = {
-		TotalWagered = 0,
-		TotalWon = 0,
-		TotalLost = 0,
-		BiggestWin = 0,
-		CasinoVisits = 0,
+	-- Event History (for one-time events, cooldowns, milestones)
+	self.EventHistory = {
+		seenEvents = {},      -- { [eventId] = true }
+		lastOccurrence = {},  -- { [eventId] = age }
+		milestonesFired = {}, -- { [eventId] = true }
+		choicesMade = {},     -- { [eventId] = choiceIndex }
 	}
 
-	-- Legacy
-	self.Legacy = {
-		Will = nil,
-		Inheritance = 0,
-		InheritanceReceived = 0,
-		Generations = 1,
-	}
-
-	-- Activity counters for this year
-	self.YearlyActivities = {
-		GymVisits = 0,
-		LibraryVisits = 0,
-		PartyAttendances = 0,
-		DatesThisYear = 0,
-		CrimesThisYear = 0,
-	}
+	-- Feed log
+	self.Feed = {}
 
 	return self
 end
 
-----------------------------------------------------------------
--- FEED METHODS
-----------------------------------------------------------------
-
-function LifeState:AddFeed(text)
-	table.insert(self.Feed, text)
-	
-	-- Keep feed manageable
-	if #self.Feed > 100 then
-		table.remove(self.Feed, 1)
-	end
-end
-
-function LifeState:AddMilestone(text)
-	table.insert(self.LifeHistory, {
-		year = self.Year,
-		age = self.Age,
-		text = text,
-	})
-end
-
-----------------------------------------------------------------
--- STAT METHODS
-----------------------------------------------------------------
+----------------------------------------------------------------------
+-- STAT MANAGEMENT
+----------------------------------------------------------------------
 
 function LifeState:ClampStats()
 	for key, value in pairs(self.Stats) do
 		self.Stats[key] = clamp(math.floor(value), 0, 100)
 	end
-	
-	-- Clamp additional stats
-	self.Karma = clamp(self.Karma, 0, 100)
-	self.Willpower = clamp(self.Willpower, 0, 100)
-	self.Fame = clamp(self.Fame, 0, 100)
-	self.Craziness = clamp(self.Craziness, 0, 100)
-	self.Fertility = clamp(self.Fertility, 0, 100)
-	self.PhysicalFitness = clamp(self.PhysicalFitness, 0, 100)
-	self.SleepQuality = clamp(self.SleepQuality, 0, 100)
-	self.Notoriety = clamp(self.Notoriety, 0, 100)
-end
-
-function LifeState:ModifyStat(statName, amount)
-	if self.Stats[statName] ~= nil then
-		self.Stats[statName] = self.Stats[statName] + amount
-		self:ClampStats()
-		return true
-	end
-	return false
+	-- Sync to top-level for backwards compatibility
+	self.Happiness = self.Stats.Happiness
+	self.Health = self.Stats.Health
+	self.Looks = self.Stats.Looks
+	self.Smarts = self.Stats.Smarts
 end
 
 function LifeState:GetStat(statName)
 	return self.Stats[statName] or 0
 end
 
-----------------------------------------------------------------
--- FLAG METHODS
-----------------------------------------------------------------
-
-function LifeState:SetFlag(flagName, value)
-	self.Flags[flagName] = value
+function LifeState:SetStat(statName, value)
+	if self.Stats[statName] ~= nil then
+		self.Stats[statName] = clamp(value, 0, 100)
+		self[statName] = self.Stats[statName]
+	end
 end
 
-function LifeState:GetFlag(flagName)
-	return self.Flags[flagName]
+function LifeState:ModifyStat(statName, delta)
+	if self.Stats[statName] ~= nil then
+		self.Stats[statName] = clamp((self.Stats[statName] or 50) + delta, 0, 100)
+		self[statName] = self.Stats[statName]
+	end
 end
 
-function LifeState:HasFlag(flagName)
-	return self.Flags[flagName] ~= nil and self.Flags[flagName] == true
+-- Apply multiple stat effects at once
+function LifeState:ApplyEffects(effects)
+	if not effects then return end
+
+	for stat, delta in pairs(effects) do
+		if type(delta) == "number" then
+			if stat == "Money" or stat == "Cash" then
+				self:AddMoney(delta)
+			elseif self.Stats[stat] ~= nil then
+				self:ModifyStat(stat, delta)
+			end
+		end
+	end
+
+	self:ClampStats()
 end
 
-----------------------------------------------------------------
--- MONEY METHODS
-----------------------------------------------------------------
+----------------------------------------------------------------------
+-- FLAG MANAGEMENT
+----------------------------------------------------------------------
+
+function LifeState:SetFlag(flag, value)
+	self.Flags = self.Flags or {}
+	self.Flags[flag] = value ~= false
+end
+
+function LifeState:ClearFlag(flag)
+	if self.Flags then
+		self.Flags[flag] = nil
+	end
+end
+
+function LifeState:HasFlag(flag)
+	return self.Flags and self.Flags[flag] == true
+end
+
+function LifeState:SetFlags(flagList)
+	if not flagList then return end
+	for _, flag in ipairs(flagList) do
+		self:SetFlag(flag)
+	end
+end
+
+function LifeState:ClearFlags(flagList)
+	if not flagList then return end
+	for _, flag in ipairs(flagList) do
+		self:ClearFlag(flag)
+	end
+end
+
+function LifeState:GetAllFlags()
+	return self.Flags or {}
+end
+
+----------------------------------------------------------------------
+-- MONEY MANAGEMENT
+----------------------------------------------------------------------
 
 function LifeState:AddMoney(amount)
-	self.Money = self.Money + amount
-	if amount > 0 then
-		self.TotalEarnings = self.TotalEarnings + amount
+	self.Money = math.max(0, (self.Money or 0) + amount)
+	self.Assets.cash = self.Money
+end
+
+function LifeState:RemoveMoney(amount)
+	self.Money = math.max(0, (self.Money or 0) - amount)
+	self.Assets.cash = self.Money
+	return self.Money >= 0
+end
+
+function LifeState:HasMoney(amount)
+	return (self.Money or 0) >= amount
+end
+
+function LifeState:GetNetWorth()
+	local total = self.Money or 0
+
+	-- Add house equity
+	for _, house in ipairs(self.Assets.houses or {}) do
+		total = total + (house.equity or house.value or 0)
 	end
-	self:UpdateNetWorth()
+
+	-- Add car values
+	for _, car in ipairs(self.Assets.cars or {}) do
+		total = total + (car.value or 0)
+	end
+
+	-- Add business values
+	for _, biz in ipairs(self.Assets.businesses or {}) do
+		total = total + (biz.value or 0)
+	end
+
+	-- Add investments
+	for _, inv in ipairs(self.Assets.investments or {}) do
+		total = total + (inv.value or 0)
+	end
+
+	return total
 end
 
-function LifeState:SubtractMoney(amount)
-	self.Money = self.Money - amount
-	self:UpdateNetWorth()
-end
-
-function LifeState:UpdateNetWorth()
-	self.NetWorth = self.Money + self.BankBalance - self.Debt + self.TotalAssetValue
-end
-
-function LifeState:CanAfford(amount)
-	return self.Money >= amount
-end
-
-----------------------------------------------------------------
--- RELATIONSHIP METHODS
-----------------------------------------------------------------
+----------------------------------------------------------------------
+-- RELATIONSHIP MANAGEMENT
+----------------------------------------------------------------------
 
 function LifeState:AddRelationship(category, person)
-	if category == "Friend" then
-		table.insert(self.Relationships.Friends, person)
-	elseif category == "Enemy" then
-		table.insert(self.Relationships.Enemies, person)
-	elseif category == "Child" then
-		table.insert(self.Relationships.Children, person)
-	elseif category == "Sibling" then
-		table.insert(self.Relationships.Siblings, person)
-	elseif category == "ExPartner" then
-		table.insert(self.Relationships.ExPartners, person)
+	if not self.Relationships[category] then
+		self.Relationships[category] = {}
 	end
-	self.Relationships.TotalRelationships = self.Relationships.TotalRelationships + 1
+
+	-- Generate ID if not present
+	if not person.id then
+		person.id = category .. "_" .. #self.Relationships[category] + 1 .. "_" .. tick()
+	end
+
+	-- Set defaults
+	person.relationship = person.relationship or 50
+	person.met = person.met or self.Age
+	person.alive = person.alive ~= false
+
+	table.insert(self.Relationships[category], person)
+	return person
 end
 
-function LifeState:GetPartner()
-	return self.Relationships.Partner
+function LifeState:GetRelationship(category, personId)
+	if not self.Relationships[category] then return nil end
+
+	for _, person in ipairs(self.Relationships[category]) do
+		if person.id == personId then
+			return person
+		end
+	end
+	return nil
 end
 
-function LifeState:IsMarried()
-	return self.Relationships.Partner ~= nil and self.Relationships.Partner.married == true
+function LifeState:ModifyRelationship(category, personId, delta)
+	local person = self:GetRelationship(category, personId)
+	if person then
+		person.relationship = clamp((person.relationship or 50) + delta, 0, 100)
+		return person.relationship
+	end
+	return nil
 end
 
-function LifeState:GetChildCount()
-	return #self.Relationships.Children
+function LifeState:GetRandomRelationship(category)
+	if not self.Relationships[category] then return nil end
+	local alive = {}
+	for _, person in ipairs(self.Relationships[category]) do
+		if person.alive ~= false then
+			table.insert(alive, person)
+		end
+	end
+	return pickRandom(alive)
 end
 
-----------------------------------------------------------------
--- EDUCATION METHODS
-----------------------------------------------------------------
+function LifeState:GetAllRelationships()
+	local all = {}
+	for category, people in pairs(self.Relationships) do
+		for _, person in ipairs(people) do
+			table.insert(all, { category = category, person = person })
+		end
+	end
+	return all
+end
 
-function LifeState:IsInSchool()
-	return self.Education.CurrentSchool ~= nil
+----------------------------------------------------------------------
+-- CAREER MANAGEMENT
+----------------------------------------------------------------------
+
+function LifeState:SetCareer(path, title, employer, salary)
+	self.Career.path = path
+	self.Career.jobTitle = title
+	self.Career.employer = employer
+	self.Career.salary = salary or 0
+
+	-- Backwards compatibility
+	self.Job = employer
+	self.JobTitle = title
+	self.JobSalary = salary or 0
+end
+
+function LifeState:ClearCareer()
+	self.Career = {
+		path = nil,
+		jobTitle = nil,
+		employer = nil,
+		salary = 0,
+		experience = self.Career.experience or 0,
+		performance = 50,
+		promotions = 0,
+	}
+	self.Job = nil
+	self.JobTitle = nil
+	self.JobSalary = 0
+end
+
+function LifeState:HasJob()
+	return self.Career.jobTitle ~= nil or self.Job ~= nil
+end
+
+function LifeState:GetAnnualIncome()
+	local income = self.Career.salary or self.JobSalary or 0
+
+	-- Add business profits
+	for _, biz in ipairs(self.Assets.businesses or {}) do
+		income = income + (biz.profitPerYear or 0)
+	end
+
+	return income
+end
+
+----------------------------------------------------------------------
+-- EDUCATION MANAGEMENT
+----------------------------------------------------------------------
+
+function LifeState:SetEducation(level, schoolName, major)
+	self.Education.level = level
+	self.Education.schoolName = schoolName
+	self.Education.major = major
+	self.EducationLevel = level  -- Backwards compatibility
+end
+
+function LifeState:Graduate(degree)
+	self.Education.graduated = true
+	if degree then
+		table.insert(self.Education.degrees, {
+			name = degree,
+			year = self.Year,
+			major = self.Education.major,
+		})
+	end
 end
 
 function LifeState:HasDegree(degreeType)
-	if degreeType == "HighSchool" then
-		return self.Education.HighSchoolGraduate
-	elseif degreeType == "College" then
-		return self.Education.CollegeGraduate
-	elseif degreeType == "Graduate" then
-		return self.Education.GraduateDegree ~= nil
+	for _, degree in ipairs(self.Education.degrees or {}) do
+		if degree.name == degreeType then
+			return true
+		end
 	end
 	return false
 end
 
-function LifeState:GetEducationLevel()
-	if self.Education.GraduateDegree then
-		return "Graduate"
-	elseif self.Education.CollegeGraduate then
-		return "College"
-	elseif self.Education.HighSchoolGraduate then
-		return "High School"
-	elseif self.Age >= 5 then
-		return "In School"
-	else
-		return "None"
+----------------------------------------------------------------------
+-- ASSET MANAGEMENT
+----------------------------------------------------------------------
+
+function LifeState:AddAsset(assetType, asset)
+	if not self.Assets[assetType] then
+		self.Assets[assetType] = {}
 	end
+
+	asset.id = asset.id or assetType .. "_" .. #self.Assets[assetType] + 1 .. "_" .. tick()
+	asset.purchaseYear = asset.purchaseYear or self.Year
+
+	table.insert(self.Assets[assetType], asset)
+	return asset
 end
 
-----------------------------------------------------------------
--- HEALTH METHODS
-----------------------------------------------------------------
+function LifeState:RemoveAsset(assetType, assetId)
+	if not self.Assets[assetType] then return false end
 
-function LifeState:AddHealthCondition(condition, severity, treatable)
-	table.insert(self.HealthConditions, {
-		condition = condition,
-		severity = severity or "Mild",
-		yearsHad = 0,
-		treatable = treatable ~= false,
-		treated = false,
+	for i, asset in ipairs(self.Assets[assetType]) do
+		if asset.id == assetId then
+			table.remove(self.Assets[assetType], i)
+			return true
+		end
+	end
+	return false
+end
+
+function LifeState:GetAssets(assetType)
+	return self.Assets[assetType] or {}
+end
+
+----------------------------------------------------------------------
+-- CRIMINAL RECORD
+----------------------------------------------------------------------
+
+function LifeState:AddCrime(crime)
+	table.insert(self.CriminalRecord, {
+		crime = crime,
+		year = self.Year,
+		age = self.Age,
 	})
 end
 
-function LifeState:HasCondition(conditionName)
-	for _, cond in ipairs(self.HealthConditions) do
-		if cond.condition == conditionName then
-			return true
-		end
+function LifeState:HasCriminalRecord()
+	return #self.CriminalRecord > 0
+end
+
+function LifeState:GoToJail(years)
+	self.InJail = true
+	self.JailSentence = years
+	self.JailTime = years
+	self:SetFlag("in_prison")
+end
+
+function LifeState:ServeTime(years)
+	years = years or 1
+	self.JailTime = math.max(0, (self.JailTime or 0) - years)
+
+	if self.JailTime <= 0 then
+		self.InJail = false
+		self.JailTime = 0
+		self:ClearFlag("in_prison")
+		self:SetFlag("ex_con")
+		return true  -- Released
 	end
 	return false
 end
 
-function LifeState:AddAddiction(substance, severity)
-	self.Addictions[substance] = {
-		severity = severity or 1,
-		yearsAddicted = 0,
-	}
-end
+----------------------------------------------------------------------
+-- STORY PROGRESS
+----------------------------------------------------------------------
 
-function LifeState:HasAddiction(substance)
-	return self.Addictions[substance] ~= nil
-end
+function LifeState:GetStoryProgress(path)
+	if path == "political" then
+		if self.Flags.president then return 100
+		elseif self.Flags.us_senator then return 85
+		elseif self.Flags.congressman then return 70
+		elseif self.Flags.state_senator then return 50
+		elseif self.Flags.elected_official then return 30
+		elseif self.Flags.political_experience then return 15
+		elseif self.Flags.political_interest then return 5
+		else return 0 end
 
-function LifeState:RemoveAddiction(substance)
-	self.Addictions[substance] = nil
-end
+	elseif path == "criminal" then
+		if self.Flags.kingpin then return 100
+		elseif self.Flags.crime_boss then return 90
+		elseif self.Flags.underboss then return 75
+		elseif self.Flags.gang_captain then return 60
+		elseif self.Flags.gang_member and self.Flags.war_veteran then return 50
+		elseif self.Flags.gang_member then return 35
+		elseif self.Flags.car_thief then return 20
+		elseif self.Flags.criminal_tendencies then return 10
+		else return 0 end
 
-----------------------------------------------------------------
--- ASSET METHODS
-----------------------------------------------------------------
+	elseif path == "teacher" then
+		if self.Flags.superintendent then return 100
+		elseif self.Flags.principal then return 75
+		elseif self.Flags.department_head then return 50
+		elseif self.Flags.teacher then return 30
+		elseif self.Flags.teaching_interest then return 10
+		else return 0 end
 
-function LifeState:AddVehicle(vehicle)
-	table.insert(self.Assets.Vehicles, vehicle)
-	self:RecalculateAssetValue()
-end
+	elseif path == "racer" then
+		if self.Flags.racing_legend then return 100
+		elseif self.Flags.world_champion then return 85
+		elseif self.Flags.f1_driver then return 65
+		elseif self.Flags.junior_formula then return 40
+		elseif self.Flags.karting_champion then return 20
+		elseif self.Flags.racing_interest then return 5
+		else return 0 end
 
-function LifeState:AddProperty(property)
-	table.insert(self.Assets.Properties, property)
-	self:RecalculateAssetValue()
-end
+	elseif path == "artist" then
+		if self.Flags.art_celebrity then return 100
+		elseif self.Flags.museum_piece then return 80
+		elseif self.Flags.gallery_show then return 55
+		elseif self.Flags.art_school then return 30
+		elseif self.Flags.art_interest then return 10
+		else return 0 end
 
-function LifeState:RecalculateAssetValue()
-	local total = 0
-	
-	for _, v in ipairs(self.Assets.Vehicles) do
-		total = total + (v.value or 0)
+	elseif path == "hacker" then
+		if self.Flags.elite_hacker then return 100
+		elseif self.Flags.hacker_group then return 70
+		elseif self.Flags.hacker_career then return 45
+		elseif self.Flags.black_hat then return 25
+		elseif self.Flags.computer_interest then return 10
+		else return 0 end
 	end
-	
-	for _, p in ipairs(self.Assets.Properties) do
-		total = total + (p.value or 0) - (p.mortgage or 0)
-	end
-	
-	for _, inv in ipairs(self.Assets.Investments) do
-		total = total + (inv.value or 0)
-	end
-	
-	self.TotalAssetValue = total
-	self:UpdateNetWorth()
-end
 
-function LifeState:GetVehicleCount()
-	return #self.Assets.Vehicles
-end
-
-function LifeState:GetPropertyCount()
-	return #self.Assets.Properties
-end
-
-function LifeState:OwnsHome()
-	for _, p in ipairs(self.Assets.Properties) do
-		if p.type == "House" or p.type == "Condo" or p.type == "Mansion" then
-			return true
-		end
-	end
-	return false
-end
-
-----------------------------------------------------------------
--- SKILL METHODS
-----------------------------------------------------------------
-
-function LifeState:ImproveSkill(skillName, amount)
-	if self.Skills[skillName] ~= nil then
-		self.Skills[skillName] = clamp(self.Skills[skillName] + amount, 0, 100)
-		return true
-	end
-	return false
-end
-
-function LifeState:GetSkill(skillName)
-	return self.Skills[skillName] or 0
-end
-
-----------------------------------------------------------------
--- ACHIEVEMENT METHODS
-----------------------------------------------------------------
-
-function LifeState:UnlockAchievement(achievementId, title, description)
-	if not self.Achievements[achievementId] then
-		self.Achievements[achievementId] = {
-			title = title,
-			description = description,
-			unlockedYear = self.Year,
-			unlockedAge = self.Age,
-		}
-		return true
-	end
-	return false
-end
-
-function LifeState:HasAchievement(achievementId)
-	return self.Achievements[achievementId] ~= nil
-end
-
-----------------------------------------------------------------
--- STORY PROGRESS METHODS
-----------------------------------------------------------------
-
-function LifeState:AdvanceStoryPath(pathName, amount)
-	if self.StoryProgress[pathName] ~= nil then
-		self.StoryProgress[pathName] = self.StoryProgress[pathName] + (amount or 1)
-		return self.StoryProgress[pathName]
-	end
 	return 0
 end
 
-function LifeState:GetStoryProgress(pathName)
-	return self.StoryProgress[pathName] or 0
+function LifeState:GetStoryTitle(path)
+	if path == "political" then
+		if self.Flags.president then return "President"
+		elseif self.Flags.us_senator then return "U.S. Senator"
+		elseif self.Flags.congressman then return "Congressman"
+		elseif self.Flags.state_senator then return "State Senator"
+		elseif self.Flags.elected_official then return "City Council"
+		elseif self.Flags.political_experience then return "Political Intern"
+		elseif self.Flags.political_interest then return "Interested"
+		else return "Citizen" end
+
+	elseif path == "criminal" then
+		if self.Flags.kingpin then return "Kingpin"
+		elseif self.Flags.crime_boss then return "Crime Boss"
+		elseif self.Flags.underboss then return "Underboss"
+		elseif self.Flags.gang_captain then return "Gang Captain"
+		elseif self.Flags.gang_member and self.Flags.war_veteran then return "Made Member"
+		elseif self.Flags.gang_member then return "Gang Member"
+		elseif self.Flags.car_thief then return "Car Thief"
+		elseif self.Flags.criminal_tendencies then return "Petty Criminal"
+		else return "Law-Abiding" end
+
+	elseif path == "teacher" then
+		if self.Flags.superintendent then return "Superintendent"
+		elseif self.Flags.principal then return "Principal"
+		elseif self.Flags.department_head then return "Department Head"
+		elseif self.Flags.teacher then return "Teacher"
+		else return "Student" end
+
+	elseif path == "racer" then
+		if self.Flags.racing_legend then return "Racing Legend"
+		elseif self.Flags.world_champion then return "World Champion"
+		elseif self.Flags.f1_driver then return "F1 Driver"
+		elseif self.Flags.junior_formula then return "Junior Driver"
+		elseif self.Flags.karting_champion then return "Karting Champ"
+		else return "Aspiring Racer" end
+
+	elseif path == "artist" then
+		if self.Flags.art_celebrity then return "Art Celebrity"
+		elseif self.Flags.museum_piece then return "Famous Artist"
+		elseif self.Flags.gallery_show then return "Exhibited Artist"
+		elseif self.Flags.art_school then return "Art Student"
+		else return "Aspiring Artist" end
+
+	elseif path == "hacker" then
+		if self.Flags.elite_hacker then return "Elite Hacker"
+		elseif self.Flags.hacker_group then return "Hacker Collective"
+		elseif self.Flags.hacker_career then return "Pro Hacker"
+		elseif self.Flags.black_hat then return "Black Hat"
+		else return "Script Kiddie" end
+	end
+
+	return "Unknown"
 end
 
-function LifeState:IsOnPath(pathName, minProgress)
-	return (self.StoryProgress[pathName] or 0) >= (minProgress or 1)
+function LifeState:GetActiveCareerPath()
+	-- Check which career path is active based on flags
+	local paths = {"political", "criminal", "teacher", "racer", "artist", "hacker"}
+	local highestProgress = 0
+	local activePath = nil
+
+	for _, path in ipairs(paths) do
+		local progress = self:GetStoryProgress(path)
+		if progress > highestProgress then
+			highestProgress = progress
+			activePath = path
+		end
+	end
+
+	return activePath, highestProgress
 end
 
-----------------------------------------------------------------
--- UTILITY METHODS
-----------------------------------------------------------------
+----------------------------------------------------------------------
+-- FEED
+----------------------------------------------------------------------
 
-function LifeState:GetAgeCategory()
-	local age = self.Age
-	if age < 3 then
-		return "Baby"
-	elseif age < 5 then
-		return "Toddler"
-	elseif age < 13 then
-		return "Child"
-	elseif age < 18 then
-		return "Teen"
-	elseif age < 30 then
-		return "Young Adult"
-	elseif age < 50 then
-		return "Adult"
-	elseif age < 65 then
-		return "Middle Aged"
-	else
-		return "Senior"
+function LifeState:AddFeed(text)
+	if text and text ~= "" then
+		table.insert(self.Feed, {
+			text = text,
+			year = self.Year,
+			age = self.Age,
+		})
 	end
 end
 
-function LifeState:IsAdult()
-	return self.Age >= 18
+function LifeState:GetRecentFeed(count)
+	count = count or 10
+	local recent = {}
+	local start = math.max(1, #self.Feed - count + 1)
+	for i = start, #self.Feed do
+		table.insert(recent, self.Feed[i])
+	end
+	return recent
 end
 
-function LifeState:IsMinor()
-	return self.Age < 18
+----------------------------------------------------------------------
+-- LIFE STAGE
+----------------------------------------------------------------------
+
+function LifeState:GetLifeStage()
+	local age = self.Age or 0
+	if age <= 1 then return "baby"
+	elseif age <= 4 then return "toddler"
+	elseif age <= 9 then return "early_childhood"
+	elseif age <= 12 then return "childhood"
+	elseif age <= 15 then return "tween"
+	elseif age <= 19 then return "teenage"
+	elseif age <= 35 then return "young_adult"
+	elseif age <= 60 then return "adult"
+	elseif age <= 80 then return "senior"
+	else return "elderly"
+	end
 end
 
 function LifeState:CanWork()
-	return self.Age >= 14 and not self.InJail
+	return self.Age >= 16 and not self.InJail
 end
 
 function LifeState:CanDrive()
-	return self.Age >= 16 and self.Education.DriversLicense
-end
-
-function LifeState:CanDrink()
-	return self.Age >= 21
+	return self.Age >= 16
 end
 
 function LifeState:CanVote()
 	return self.Age >= 18
 end
 
-function LifeState:CanGamble()
+function LifeState:CanDrink()
 	return self.Age >= 21
 end
 
-function LifeState:IsRetired()
-	return self.Milestones.Retired
+function LifeState:IsAdult()
+	return self.Age >= 18
 end
 
-function LifeState:GetLifeQuality()
-	local stats = self.Stats
-	local average = (stats.Happiness + stats.Health + stats.Looks + stats.Smarts) / 4
-	
-	if average >= 80 then
-		return "Excellent"
-	elseif average >= 60 then
-		return "Good"
-	elseif average >= 40 then
-		return "Fair"
-	elseif average >= 20 then
-		return "Poor"
-	else
-		return "Critical"
-	end
-end
+----------------------------------------------------------------------
+-- SERIALIZATION
+----------------------------------------------------------------------
 
-function LifeState:ResetYearlyCounters()
-	self.YearlyActivities = {
-		GymVisits = 0,
-		LibraryVisits = 0,
-		PartyAttendances = 0,
-		DatesThisYear = 0,
-		CrimesThisYear = 0,
+function LifeState:Serialize()
+	return {
+		PlayerId = self.PlayerId,
+		Name = self.Name,
+		Gender = self.Gender,
+		Age = self.Age,
+		Year = self.Year,
+		Money = self.Money,
+		Stats = self.Stats,
+		Happiness = self.Stats.Happiness,
+		Health = self.Stats.Health,
+		Looks = self.Stats.Looks,
+		Smarts = self.Stats.Smarts,
+		Flags = self.Flags,
+		Career = self.Career,
+		Education = self.Education,
+		InJail = self.InJail,
+		JailTime = self.JailTime,
+		Fame = self.Fame,
 	}
-	self.DoctorVisitsThisYear = 0
 end
 
 return LifeState
