@@ -363,18 +363,28 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
 	local moneyDelta = (state.Money or 0) - beforeMoney
 	
-	-- Build result data for popup
-	local resultData = {
-		showPopup = true,
-		emoji = eventDef.emoji or choiceDef.emoji or "📋",
-		title = choiceDef.resultTitle or eventDef.title or "Result",
-		body = feedText,
-		happiness = happinessDelta ~= 0 and happinessDelta or nil,
-		health = healthDelta ~= 0 and healthDelta or nil,
-		smarts = smartsDelta ~= 0 and smartsDelta or nil,
-		looks = looksDelta ~= 0 and looksDelta or nil,
-		money = moneyDelta ~= 0 and moneyDelta or nil,
-	}
+	-- Only show popup for SIGNIFICANT events (milestone, big changes, or flags set)
+	local isSignificant = eventDef.milestone 
+		or eventDef.showResultPopup
+		or math.abs(happinessDelta) >= 15
+		or math.abs(healthDelta) >= 15
+		or math.abs(moneyDelta) >= 5000
+		or (#(results.flagsSet or {}) > 0)
+	
+	local resultData = nil
+	if isSignificant then
+		resultData = {
+			showPopup = true,
+			emoji = eventDef.emoji or "📋",
+			title = eventDef.title or "Result",
+			body = feedText,
+			happiness = happinessDelta ~= 0 and happinessDelta or nil,
+			health = healthDelta ~= 0 and healthDelta or nil,
+			smarts = smartsDelta ~= 0 and smartsDelta or nil,
+			looks = looksDelta ~= 0 and looksDelta or nil,
+			money = moneyDelta ~= 0 and moneyDelta or nil,
+		}
+	end
 	
 	pushState(player, state, feedText, resultData)
 end)
@@ -444,11 +454,11 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	local healthDelta = (state.Stats.Health or 100) - beforeHealth
 	local moneyDelta = (state.Money or 0) - beforeMoney
 	
-	-- Build result popup
+	-- Minigames always show result popup (they're special)
 	local resultData = {
 		showPopup = true,
 		emoji = minigameSuccess and "🏆" or "😞",
-		title = minigameSuccess and "Minigame Won!" or "Minigame Lost",
+		title = minigameSuccess and "Success!" or "Failed",
 		body = feedText,
 		happiness = happinessDelta ~= 0 and happinessDelta or nil,
 		health = healthDelta ~= 0 and healthDelta or nil,
