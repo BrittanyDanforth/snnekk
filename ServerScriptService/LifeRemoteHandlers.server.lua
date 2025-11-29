@@ -919,6 +919,7 @@ end
 
 BuyCrypto.OnServerInvoke = function(player, cryptoId, amount)
 	local state = getPlayerState(player)
+	local extState = getExtendedState(player)
 	
 	if state.Age < 18 then
 		return { success = false, message = "You must be 18+ to trade crypto." }
@@ -932,10 +933,72 @@ BuyCrypto.OnServerInvoke = function(player, cryptoId, amount)
 	end
 	
 	deductMoney(player, cost)
-	table.insert(state.OwnedCrypto, { id = cryptoId, invested = cost })
+	table.insert(extState.OwnedCrypto, { id = cryptoId, invested = cost })
 	syncStateToClient(player)
 	
 	return { success = true, message = "Crypto purchased!" }
+end
+
+----------------------------------------------------------------
+-- SELL ASSET HANDLER
+----------------------------------------------------------------
+
+SellAsset.OnServerInvoke = function(player, assetId, assetType)
+	print("[LifeRemoteHandlers] SellAsset called - Asset:", assetId, "Type:", assetType)
+	
+	local extState = getExtendedState(player)
+	
+	-- Find and remove the asset, return the value
+	local assetList = nil
+	local saleValue = 0
+	local assetName = "Asset"
+	
+	if assetType == "property" then
+		assetList = extState.OwnedProperties
+	elseif assetType == "vehicle" then
+		assetList = extState.OwnedVehicles
+	elseif assetType == "item" then
+		assetList = extState.OwnedItems
+	elseif assetType == "crypto" then
+		assetList = extState.OwnedCrypto
+	end
+	
+	if not assetList then
+		print("[LifeRemoteHandlers] Invalid asset type:", assetType)
+		return { success = false, message = "Invalid asset type." }
+	end
+	
+	-- Find the asset
+	local foundIndex = nil
+	for i, asset in ipairs(assetList) do
+		if asset.id == assetId then
+			foundIndex = i
+			saleValue = asset.value or asset.invested or 0
+			assetName = asset.name or assetId
+			break
+		end
+	end
+	
+	if not foundIndex then
+		print("[LifeRemoteHandlers] Asset not found:", assetId)
+		return { success = false, message = "You don't own this asset." }
+	end
+	
+	-- Sell for 70-90% of value
+	local sellPercent = math.random(70, 90) / 100
+	local sellPrice = math.floor(saleValue * sellPercent)
+	
+	-- Remove asset and add money
+	table.remove(assetList, foundIndex)
+	addMoney(player, sellPrice)
+	
+	print("[LifeRemoteHandlers] Sold", assetName, "for $", sellPrice)
+	
+	return { 
+		success = true, 
+		message = "Sold " .. assetName .. " for $" .. sellPrice .. "!",
+		amount = sellPrice
+	}
 end
 
 ----------------------------------------------------------------

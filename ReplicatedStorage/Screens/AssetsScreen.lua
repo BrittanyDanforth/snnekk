@@ -93,7 +93,62 @@ end
 function AssetsScreen:getAssets()
 	local state = self.playerState
 	if not state then return {} end
-	return state.Assets or {}
+	
+	-- Assets is now structured: { Properties = [...], Vehicles = [...], Items = [...] }
+	-- Flatten into a lookup table by id for easy checking
+	local assets = state.Assets or {}
+	local flatAssets = {}
+	
+	-- Flatten Properties
+	if assets.Properties then
+		for _, prop in ipairs(assets.Properties) do
+			flatAssets[prop.id] = prop
+			log("Found owned property:", prop.id, prop.name or "")
+		end
+	end
+	
+	-- Flatten Vehicles
+	if assets.Vehicles then
+		for _, veh in ipairs(assets.Vehicles) do
+			flatAssets[veh.id] = veh
+			log("Found owned vehicle:", veh.id, veh.name or "")
+		end
+	end
+	
+	-- Flatten Items
+	if assets.Items then
+		for _, itm in ipairs(assets.Items) do
+			flatAssets[itm.id] = itm
+			log("Found owned item:", itm.id, itm.name or "")
+		end
+	end
+	
+	-- Flatten Crypto
+	if assets.Crypto then
+		for _, crypto in ipairs(assets.Crypto) do
+			flatAssets[crypto.id] = crypto
+		end
+	end
+	
+	log("Total owned assets:", #flatAssets)
+	return flatAssets
+end
+
+function AssetsScreen:getOwnedList(assetType)
+	local state = self.playerState
+	if not state or not state.Assets then return {} end
+	
+	local assets = state.Assets
+	if assetType == "property" then
+		return assets.Properties or {}
+	elseif assetType == "vehicle" then
+		return assets.Vehicles or {}
+	elseif assetType == "item" then
+		return assets.Items or {}
+	elseif assetType == "crypto" then
+		return assets.Crypto or {}
+	end
+	return {}
 end
 
 function AssetsScreen:createUI()
@@ -482,6 +537,85 @@ end
 function AssetsScreen:populateProperty()
 	self:updateBalanceBar()
 	
+	local assets = self:getAssets()
+	local ownedProperties = {}
+	
+	-- Find owned properties
+	for _, prop in ipairs(Properties) do
+		if assets[prop.id] then
+			table.insert(ownedProperties, prop)
+		end
+	end
+	
+	log("Owned properties:", #ownedProperties, "of", #Properties)
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- MY PROPERTIES SECTION (only if owns any)
+	-- ═══════════════════════════════════════════════════════════
+	if #ownedProperties > 0 then
+		local mySection = Instance.new("Frame")
+		mySection.Name = "MyPropertiesSection"
+		mySection.Size = UDim2.new(1, 0, 0, 0)
+		mySection.AutomaticSize = Enum.AutomaticSize.Y
+		mySection.BackgroundColor3 = C.TealPale
+		mySection.LayoutOrder = 0
+		mySection.ZIndex = 82
+		mySection.Parent = self.contentScroll
+		UI.corner(mySection, 18)
+		UI.stroke(mySection, 2, 0.5, C.Teal)
+		UI.pad(mySection, 14, 14, 14, 16)
+		
+		local myLayout = Instance.new("UIListLayout")
+		myLayout.Padding = UDim.new(0, 10)
+		myLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		myLayout.Parent = mySection
+		
+		-- Header
+		local header = Instance.new("Frame")
+		header.Size = UDim2.new(1, 0, 0, 36)
+		header.BackgroundTransparency = 1
+		header.LayoutOrder = 0
+		header.ZIndex = 83
+		header.Parent = mySection
+		
+		local badge = Instance.new("Frame")
+		badge.Size = UDim2.new(0, 140, 0, 32)
+		badge.BackgroundColor3 = C.Teal
+		badge.ZIndex = 84
+		badge.Parent = header
+		UI.pill(badge)
+		
+		local badgeLabel = Instance.new("TextLabel")
+		badgeLabel.Size = UDim2.fromScale(1, 1)
+		badgeLabel.BackgroundTransparency = 1
+		badgeLabel.Font = F.Button
+		badgeLabel.TextSize = 14
+		badgeLabel.TextColor3 = C.White
+		badgeLabel.Text = "🏠 My Properties"
+		badgeLabel.ZIndex = 85
+		badgeLabel.Parent = badge
+		
+		local countLabel = Instance.new("TextLabel")
+		countLabel.Size = UDim2.new(0, 100, 1, 0)
+		countLabel.Position = UDim2.new(0, 150, 0, 0)
+		countLabel.BackgroundTransparency = 1
+		countLabel.Font = F.Medium
+		countLabel.TextSize = 13
+		countLabel.TextColor3 = C.TealDark
+		countLabel.TextXAlignment = Enum.TextXAlignment.Left
+		countLabel.Text = #ownedProperties .. " owned"
+		countLabel.ZIndex = 84
+		countLabel.Parent = header
+		
+		-- Show owned properties
+		for i, item in ipairs(ownedProperties) do
+			self:createOwnedAssetCard(mySection, item, i, "property", C.Teal, C.TealPale)
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- AVAILABLE PROPERTIES SECTION
+	-- ═══════════════════════════════════════════════════════════
 	local section = UI.createSectionCard(self.contentScroll, {
 		name = "PropertySection",
 		title = "Real Estate",
@@ -500,6 +634,85 @@ end
 function AssetsScreen:populateVehicles()
 	self:updateBalanceBar()
 	
+	local assets = self:getAssets()
+	local ownedVehicles = {}
+	
+	-- Find owned vehicles
+	for _, veh in ipairs(Vehicles) do
+		if assets[veh.id] then
+			table.insert(ownedVehicles, veh)
+		end
+	end
+	
+	log("Owned vehicles:", #ownedVehicles, "of", #Vehicles)
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- MY VEHICLES SECTION (only if owns any)
+	-- ═══════════════════════════════════════════════════════════
+	if #ownedVehicles > 0 then
+		local mySection = Instance.new("Frame")
+		mySection.Name = "MyVehiclesSection"
+		mySection.Size = UDim2.new(1, 0, 0, 0)
+		mySection.AutomaticSize = Enum.AutomaticSize.Y
+		mySection.BackgroundColor3 = C.BluePale
+		mySection.LayoutOrder = 0
+		mySection.ZIndex = 82
+		mySection.Parent = self.contentScroll
+		UI.corner(mySection, 18)
+		UI.stroke(mySection, 2, 0.5, C.Blue)
+		UI.pad(mySection, 14, 14, 14, 16)
+		
+		local myLayout = Instance.new("UIListLayout")
+		myLayout.Padding = UDim.new(0, 10)
+		myLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		myLayout.Parent = mySection
+		
+		-- Header
+		local header = Instance.new("Frame")
+		header.Size = UDim2.new(1, 0, 0, 36)
+		header.BackgroundTransparency = 1
+		header.LayoutOrder = 0
+		header.ZIndex = 83
+		header.Parent = mySection
+		
+		local badge = Instance.new("Frame")
+		badge.Size = UDim2.new(0, 130, 0, 32)
+		badge.BackgroundColor3 = C.Blue
+		badge.ZIndex = 84
+		badge.Parent = header
+		UI.pill(badge)
+		
+		local badgeLabel = Instance.new("TextLabel")
+		badgeLabel.Size = UDim2.fromScale(1, 1)
+		badgeLabel.BackgroundTransparency = 1
+		badgeLabel.Font = F.Button
+		badgeLabel.TextSize = 14
+		badgeLabel.TextColor3 = C.White
+		badgeLabel.Text = "🚗 My Garage"
+		badgeLabel.ZIndex = 85
+		badgeLabel.Parent = badge
+		
+		local countLabel = Instance.new("TextLabel")
+		countLabel.Size = UDim2.new(0, 100, 1, 0)
+		countLabel.Position = UDim2.new(0, 140, 0, 0)
+		countLabel.BackgroundTransparency = 1
+		countLabel.Font = F.Medium
+		countLabel.TextSize = 13
+		countLabel.TextColor3 = C.BlueDark
+		countLabel.TextXAlignment = Enum.TextXAlignment.Left
+		countLabel.Text = #ownedVehicles .. " owned"
+		countLabel.ZIndex = 84
+		countLabel.Parent = header
+		
+		-- Show owned vehicles
+		for i, item in ipairs(ownedVehicles) do
+			self:createOwnedAssetCard(mySection, item, i, "vehicle", C.Blue, C.BluePale)
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- AVAILABLE VEHICLES SECTION
+	-- ═══════════════════════════════════════════════════════════
 	local section = UI.createSectionCard(self.contentScroll, {
 		name = "VehiclesSection",
 		title = "Vehicles",
@@ -518,6 +731,85 @@ end
 function AssetsScreen:populateShop()
 	self:updateBalanceBar()
 	
+	local assets = self:getAssets()
+	local ownedItems = {}
+	
+	-- Find owned items
+	for _, itm in ipairs(Shop) do
+		if assets[itm.id] then
+			table.insert(ownedItems, itm)
+		end
+	end
+	
+	log("Owned items:", #ownedItems, "of", #Shop)
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- MY STUFF SECTION (only if owns any)
+	-- ═══════════════════════════════════════════════════════════
+	if #ownedItems > 0 then
+		local mySection = Instance.new("Frame")
+		mySection.Name = "MyItemsSection"
+		mySection.Size = UDim2.new(1, 0, 0, 0)
+		mySection.AutomaticSize = Enum.AutomaticSize.Y
+		mySection.BackgroundColor3 = C.PurplePale
+		mySection.LayoutOrder = 0
+		mySection.ZIndex = 82
+		mySection.Parent = self.contentScroll
+		UI.corner(mySection, 18)
+		UI.stroke(mySection, 2, 0.5, C.Purple)
+		UI.pad(mySection, 14, 14, 14, 16)
+		
+		local myLayout = Instance.new("UIListLayout")
+		myLayout.Padding = UDim.new(0, 10)
+		myLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		myLayout.Parent = mySection
+		
+		-- Header
+		local header = Instance.new("Frame")
+		header.Size = UDim2.new(1, 0, 0, 36)
+		header.BackgroundTransparency = 1
+		header.LayoutOrder = 0
+		header.ZIndex = 83
+		header.Parent = mySection
+		
+		local badge = Instance.new("Frame")
+		badge.Size = UDim2.new(0, 115, 0, 32)
+		badge.BackgroundColor3 = C.Purple
+		badge.ZIndex = 84
+		badge.Parent = header
+		UI.pill(badge)
+		
+		local badgeLabel = Instance.new("TextLabel")
+		badgeLabel.Size = UDim2.fromScale(1, 1)
+		badgeLabel.BackgroundTransparency = 1
+		badgeLabel.Font = F.Button
+		badgeLabel.TextSize = 14
+		badgeLabel.TextColor3 = C.White
+		badgeLabel.Text = "📦 My Stuff"
+		badgeLabel.ZIndex = 85
+		badgeLabel.Parent = badge
+		
+		local countLabel = Instance.new("TextLabel")
+		countLabel.Size = UDim2.new(0, 100, 1, 0)
+		countLabel.Position = UDim2.new(0, 125, 0, 0)
+		countLabel.BackgroundTransparency = 1
+		countLabel.Font = F.Medium
+		countLabel.TextSize = 13
+		countLabel.TextColor3 = C.PurpleDark
+		countLabel.TextXAlignment = Enum.TextXAlignment.Left
+		countLabel.Text = #ownedItems .. " owned"
+		countLabel.ZIndex = 84
+		countLabel.Parent = header
+		
+		-- Show owned items
+		for i, item in ipairs(ownedItems) do
+			self:createOwnedAssetCard(mySection, item, i, "item", C.Purple, C.PurplePale)
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- AVAILABLE ITEMS SECTION
+	-- ═══════════════════════════════════════════════════════════
 	local section = UI.createSectionCard(self.contentScroll, {
 		name = "ShopSection",
 		title = "Shop",
@@ -530,6 +822,131 @@ function AssetsScreen:populateShop()
 	
 	for i, item in ipairs(Shop) do
 		self:createAssetCard(section, item, i, "item", C.Purple, C.PurplePale)
+	end
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- OWNED ASSET CARD (with Sell button)
+-- ═══════════════════════════════════════════════════════════
+function AssetsScreen:createOwnedAssetCard(parent, item, order, itemType, accentColor, paleColor)
+	log("Creating owned asset card:", item.name, "type:", itemType)
+	
+	local card = Instance.new("Frame")
+	card.Name = "Owned_" .. item.id
+	card.Size = UDim2.new(1, 0, 0, 85)
+	card.BackgroundColor3 = C.White
+	card.LayoutOrder = order
+	card.ZIndex = 83
+	card.Parent = parent
+	UI.corner(card, 14)
+	UI.stroke(card, 2, 0.4, C.Green)
+	
+	-- Icon
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 55, 0, 55)
+	iconFrame.Position = UDim2.new(0, 12, 0.5, -27.5)
+	iconFrame.BackgroundColor3 = C.GreenPale
+	iconFrame.ZIndex = 84
+	iconFrame.Parent = card
+	UI.corner(iconFrame, 14)
+	
+	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Size = UDim2.fromScale(1, 1)
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 30
+	iconLabel.Text = item.emoji
+	iconLabel.ZIndex = 85
+	iconLabel.Parent = iconFrame
+	
+	-- Title
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(0.45, 0, 0, 24)
+	titleLabel.Position = UDim2.new(0, 80, 0, 14)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 15
+	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = item.name
+	titleLabel.ZIndex = 84
+	titleLabel.Parent = card
+	
+	-- Owned badge
+	local ownedBadge = Instance.new("Frame")
+	ownedBadge.Size = UDim2.new(0, 75, 0, 24)
+	ownedBadge.Position = UDim2.new(0, 80, 0, 40)
+	ownedBadge.BackgroundColor3 = C.Green
+	ownedBadge.ZIndex = 84
+	ownedBadge.Parent = card
+	UI.pill(ownedBadge)
+	
+	local ownedLabel = Instance.new("TextLabel")
+	ownedLabel.Size = UDim2.fromScale(1, 1)
+	ownedLabel.BackgroundTransparency = 1
+	ownedLabel.Font = F.Button
+	ownedLabel.TextSize = 11
+	ownedLabel.TextColor3 = C.White
+	ownedLabel.Text = "✓ OWNED"
+	ownedLabel.ZIndex = 85
+	ownedLabel.Parent = ownedBadge
+	
+	-- Value (sell price = 70% of purchase price)
+	local sellPrice = math.floor(item.price * 0.7)
+	local valueLabel = Instance.new("TextLabel")
+	valueLabel.Size = UDim2.new(0.3, 0, 0, 18)
+	valueLabel.Position = UDim2.new(0, 80, 0, 66)
+	valueLabel.BackgroundTransparency = 1
+	valueLabel.Font = F.Body
+	valueLabel.TextSize = 11
+	valueLabel.TextColor3 = C.Gray500
+	valueLabel.TextXAlignment = Enum.TextXAlignment.Left
+	valueLabel.Text = "Value: " .. UI.formatMoney(sellPrice)
+	valueLabel.ZIndex = 84
+	valueLabel.Parent = card
+	
+	-- Sell button
+	local sellBtn = Instance.new("TextButton")
+	sellBtn.Size = UDim2.new(0, 70, 0, 40)
+	sellBtn.AnchorPoint = Vector2.new(1, 0.5)
+	sellBtn.Position = UDim2.new(1, -12, 0.5, 0)
+	sellBtn.BackgroundColor3 = C.Amber
+	sellBtn.Font = F.Button
+	sellBtn.TextSize = 13
+	sellBtn.TextColor3 = C.White
+	sellBtn.Text = "💰 Sell"
+	sellBtn.AutoButtonColor = false
+	sellBtn.ZIndex = 84
+	sellBtn.Parent = card
+	UI.corner(sellBtn, 10)
+	
+	sellBtn.MouseEnter:Connect(function()
+		UI.tween(sellBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.AmberDark })
+	end)
+	sellBtn.MouseLeave:Connect(function()
+		UI.tween(sellBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Amber })
+	end)
+	sellBtn.MouseButton1Click:Connect(function()
+		log("Sell clicked for:", item.id, "type:", itemType)
+		self:sellAsset(item, itemType)
+	end)
+end
+
+function AssetsScreen:sellAsset(item, itemType)
+	log("=== SELLING ASSET ===")
+	log("Item:", item.name, "ID:", item.id, "Type:", itemType)
+	
+	if not SellAsset then
+		self:showResult(false, "Server not available", "❌")
+		return
+	end
+	
+	local result = SellAsset:InvokeServer(item.id, itemType)
+	if result then
+		log("Sell result:", result.success, result.message)
+		self:showResult(result.success, result.message, result.success and "💰" or "😔")
+	else
+		self:showResult(false, "Server error", "❌")
 	end
 end
 

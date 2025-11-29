@@ -8801,4 +8801,523 @@ end
 
 print("[EventLibrary] Added", #codingEvents + #rebelEvents + #artisticEvents + #athleticEvents + #intellectualEvents + #socialEvents + #musicalEvents, "trait-influenced events!")
 
+-- ═══════════════════════════════════════════════════════════════════
+-- EXPANDED BEGINNING OF LIFE EVENTS (Ages 0-5)
+-- More variety for early childhood!
+-- ═══════════════════════════════════════════════════════════════════
+
+local earlyLifeEvents = {
+	-- ═══════════════════════════════════════════════════════════
+	-- INFANT EVENTS (0-1)
+	-- ═══════════════════════════════════════════════════════════
+	{
+		id = "baby_hiccups",
+		minAge = 0, maxAge = 1,
+		weight = 40, cooldown = 3,
+		emoji = "🤭", title = "Hiccup Attack!",
+		category = "family",
+		text = "You got the hiccups! Everyone thinks it's adorable.",
+		choices = {
+			{ text = "😆 Giggle at it", effects = { Happiness = 4 }, resultText = "You made everyone laugh!" },
+			{ text = "😢 Start crying", effects = { Happiness = -2 }, resultText = "It was a bit scary at first." },
+		},
+	},
+	{
+		id = "baby_first_food",
+		minAge = 0, maxAge = 1,
+		weight = 55, oneTime = true,
+		emoji = "🥣", title = "First Solid Food!",
+		category = "family",
+		getDynamicData = function()
+			local foods = {"mashed carrots", "applesauce", "mashed banana", "sweet potato puree"}
+			return { food = foods[math.random(#foods)] }
+		end,
+		text = "Time to try %food%! Your first real food beyond milk!",
+		choices = {
+			{ text = "😋 Yummy!", effects = { Health = 4, Happiness = 5 }, resultText = "You loved it! A foodie is born." },
+			{ text = "🤢 Spit it out", effects = { Happiness = -2 }, resultText = "You're a picky eater already." },
+			{ text = "🤔 Examine it first", effects = { Smarts = 3 }, resultText = "You're cautious with new things." },
+		},
+	},
+	{
+		id = "baby_teething",
+		minAge = 0, maxAge = 1,
+		weight = 50, oneTime = true,
+		emoji = "🦷", title = "First Tooth!",
+		category = "family",
+		text = "Your first tooth is coming in! It's a bit painful but exciting!",
+		choices = {
+			{ text = "🦷 Chew on everything", effects = { Health = 2 }, resultText = "Teething toys became your best friends." },
+			{ text = "😭 Cry about it", effects = { Happiness = -3 }, resultText = "It hurt, but mom made it better." },
+		},
+	},
+	{
+		id = "baby_laughing_fit",
+		minAge = 0, maxAge = 1,
+		weight = 45, cooldown = 3,
+		emoji = "😂", title = "First Big Laugh!",
+		category = "family",
+		text = "Something made you burst into giggles! True belly laughs!",
+		choices = {
+			{ text = "😂 Keep laughing!", effects = { Happiness = 8, Health = 2 }, resultText = "Best day ever! Pure joy!" },
+			{ text = "🤗 Hug whoever made you laugh", effects = { Happiness = 6 }, resultText = "You bonded with your funny family." },
+		},
+	},
+	{
+		id = "baby_stranger_fear",
+		minAge = 0, maxAge = 1,
+		weight = 35, oneTime = true,
+		emoji = "😰", title = "Stranger Anxiety!",
+		category = "family",
+		getDynamicData = function()
+			local relatives = {"grandparent", "aunt", "uncle", "family friend"}
+			return { relative = relatives[math.random(#relatives)] }
+		end,
+		text = "Your %relative% tried to hold you but you didn't recognize them!",
+		choices = {
+			{ text = "😭 WAAAAH!", effects = { Happiness = -3 }, resultText = "You really didn't like strangers.", setFlag = "shy" },
+			{ text = "🤔 Warm up slowly", effects = { Smarts = 2 }, resultText = "You're cautious but adaptable." },
+			{ text = "🤗 Give them a chance", effects = { Happiness = 4 }, resultText = "You're naturally friendly!", setFlag = "outgoing" },
+		},
+	},
+
+	-- ═══════════════════════════════════════════════════════════
+	-- TODDLER EVENTS (2-4)
+	-- ═══════════════════════════════════════════════════════════
+	{
+		id = "toddler_terrible_twos",
+		minAge = 2, maxAge = 2,
+		weight = 70, oneTime = true, milestone = true,
+		emoji = "😤", title = "The Terrible Twos!",
+		category = "family",
+		text = "You've entered the 'terrible twos' phase. Your favorite word is 'NO!'",
+		choices = {
+			{ text = "🙅 Say NO to everything", effects = { Happiness = 5 }, resultText = "You asserted your independence!", setFlag = "strong_willed" },
+			{ text = "😇 Be a good baby", effects = { Happiness = 4, Smarts = 2 }, resultText = "You surprised everyone with your maturity." },
+			{ text = "😭 Tantrum time!", effects = { Happiness = 2, Health = -2 }, resultText = "You let out all your big feelings." },
+		},
+	},
+	{
+		id = "toddler_playground",
+		minAge = 2, maxAge = 5,
+		weight = 45, cooldown = 2,
+		emoji = "🛝", title = "Playground Adventure!",
+		category = "family",
+		text = "You're at the playground! So many things to explore!",
+		choices = {
+			{ text = "🪜 Climb everything!", effects = { Health = 4, Happiness = 5 }, resultText = "You're a little monkey!", setFlag = "adventurous" },
+			{ text = "🤝 Make friends", effects = { Happiness = 6 }, resultText = "You made playground buddies!" },
+			{ text = "⬇️ Go down the slide!", effects = { Happiness = 7 }, resultText = "WEEEEE!" },
+			{ text = "🧍 Watch others", effects = { Smarts = 3 }, resultText = "You learned by observing.", setFlag = "shy" },
+		},
+	},
+	{
+		id = "toddler_favorite_show",
+		minAge = 2, maxAge = 5,
+		weight = 40, cooldown = 4,
+		emoji = "📺", title = "Favorite TV Show!",
+		category = "family",
+		getDynamicData = function()
+			local shows = {"talking animals", "colorful adventures", "singing characters", "educational puppets"}
+			return { show = shows[math.random(#shows)] }
+		end,
+		text = "You found a show about %show%! You want to watch it FOREVER!",
+		choices = {
+			{ text = "📺 Watch it again!", effects = { Happiness = 5 }, resultText = "For the 100th time today..." },
+			{ text = "🎤 Sing along!", effects = { Happiness = 6, Smarts = 2 }, resultText = "You memorized all the songs!", setFlag = "musical" },
+			{ text = "📱 Something else", effects = { Smarts = 2 }, resultText = "You have varied interests." },
+		},
+	},
+	{
+		id = "toddler_picky_eater",
+		minAge = 2, maxAge = 5,
+		weight = 35,
+		emoji = "🥦", title = "Veggie Standoff!",
+		category = "family",
+		getDynamicData = function()
+			local veggies = {"broccoli", "spinach", "peas", "carrots", "green beans"}
+			return { veggie = veggies[math.random(#veggies)] }
+		end,
+		text = "Your parents want you to eat %veggie%. You're not having it.",
+		choices = {
+			{ text = "🤢 Refuse!", effects = { Happiness = 3 }, resultText = "Victory! (for now)" },
+			{ text = "😋 Actually try it", effects = { Health = 4, Smarts = 2, Happiness = 3 }, resultText = "It wasn't that bad!" },
+			{ text = "🤫 Hide it under napkin", effects = { Smarts = 4 }, resultText = "Sneaky! You're getting clever." },
+		},
+	},
+	{
+		id = "toddler_first_drawing",
+		minAge = 2, maxAge = 4,
+		weight = 50, oneTime = true,
+		emoji = "🖍️", title = "First Masterpiece!",
+		category = "family",
+		text = "You drew something with crayons! It's... abstract art, let's say.",
+		choices = {
+			{ text = "🎨 Keep drawing!", effects = { Happiness = 5, Smarts = 3 }, resultText = "You might be an artist!", setFlag = "artistic" },
+			{ text = "🖼️ Show everyone!", effects = { Happiness = 6 }, resultText = "Everyone praised your 'masterpiece'!" },
+			{ text = "✏️ Draw on walls too!", effects = { Happiness = 4, Smarts = -2 }, resultText = "You got in trouble but had fun!" },
+		},
+	},
+	{
+		id = "toddler_first_nightmare",
+		minAge = 2, maxAge = 5,
+		weight = 30, oneTime = true,
+		emoji = "😱", title = "First Nightmare!",
+		category = "family",
+		text = "You had a scary dream and woke up crying!",
+		choices = {
+			{ text = "👶 Run to parents", effects = { Happiness = 3 }, resultText = "They made you feel safe." },
+			{ text = "🧸 Hug your teddy", effects = { Happiness = 2 }, resultText = "Your teddy bear is your guardian." },
+			{ text = "💪 Face it bravely", effects = { Happiness = 2, Smarts = 3 }, resultText = "You're learning to self-soothe.", setFlag = "brave" },
+		},
+	},
+	{
+		id = "toddler_pet_encounter",
+		minAge = 2, maxAge = 5,
+		weight = 40,
+		emoji = "🐕", title = "Meeting a Dog!",
+		category = "family",
+		getDynamicData = function()
+			local dogs = {"big fluffy", "tiny yappy", "friendly", "curious"}
+			return { dogType = dogs[math.random(#dogs)] }
+		end,
+		text = "You met a %dogType% dog! It wants to say hello!",
+		choices = {
+			{ text = "🤗 Pet it!", effects = { Happiness = 8 }, resultText = "You made a new furry friend!", setFlag = "animal_lover" },
+			{ text = "😨 Too scary!", effects = { Happiness = -2 }, resultText = "Dogs seem intimidating for now." },
+			{ text = "🏃 Chase it!", effects = { Health = 3, Happiness = 5 }, resultText = "You ran around together!" },
+		},
+	},
+
+	-- ═══════════════════════════════════════════════════════════
+	-- KINDERGARTEN EVENTS (5-6)
+	-- ═══════════════════════════════════════════════════════════
+	{
+		id = "kindergarten_first_day",
+		minAge = 5, maxAge = 5,
+		weight = 90, oneTime = true, milestone = true,
+		emoji = "🎒", title = "First Day of School!",
+		category = "school",
+		text = "Today's your first day of kindergarten! Big kid territory!",
+		choices = {
+			{ text = "😊 I'm excited!", effects = { Happiness = 8, Smarts = 3 }, resultText = "You loved every minute!" },
+			{ text = "😢 I miss mom/dad", effects = { Happiness = -3 }, resultText = "It was hard at first, but you got through it." },
+			{ text = "🤝 Make friends!", effects = { Happiness = 10 }, resultText = "You're a social butterfly!", setFlag = "popular" },
+		},
+	},
+	{
+		id = "kindergarten_nap_time",
+		minAge = 5, maxAge = 6,
+		weight = 35, cooldown = 3,
+		emoji = "😴", title = "Nap Time!",
+		category = "school",
+		text = "It's nap time at school. But you're not tired at all!",
+		choices = {
+			{ text = "😴 Actually sleep", effects = { Health = 3 }, resultText = "Power nap achieved!" },
+			{ text = "🗣️ Whisper to friends", effects = { Happiness = 4 }, resultText = "Social butterfly, even at nap time!" },
+			{ text = "🤫 Pretend to sleep", effects = { Smarts = 3 }, resultText = "You fooled the teacher!" },
+		},
+	},
+	{
+		id = "kindergarten_sharing",
+		minAge = 5, maxAge = 6,
+		weight = 40, cooldown = 3,
+		emoji = "🧸", title = "Sharing Is Caring!",
+		category = "school",
+		getDynamicData = function()
+			local items = {"toy", "crayon", "snack", "book"}
+			local names = {"Tommy", "Sarah", "Alex", "Jordan"}
+			return { item = items[math.random(#items)], kid = names[math.random(#names)] }
+		end,
+		text = "%kid% wants to use your %item%. Will you share?",
+		choices = {
+			{ text = "🤝 Yes, share!", effects = { Happiness = 5, Looks = 2 }, resultText = "You made a friend!", setFlag = "generous" },
+			{ text = "🙅 It's mine!", effects = { Happiness = 2 }, resultText = "You kept your stuff. Fair enough." },
+			{ text = "🔄 Take turns", effects = { Smarts = 4, Happiness = 3 }, resultText = "Smart compromise!" },
+		},
+	},
+}
+
+-- Add early life events to main table
+for _, event in ipairs(earlyLifeEvents) do
+	table.insert(events, event)
+end
+print("[EventLibrary] Added", #earlyLifeEvents, "expanded early life events!")
+
+-- ═══════════════════════════════════════════════════════════════════
+-- EXPANDED END OF LIFE EVENTS (Ages 65+)
+-- More variety for the golden years!
+-- ═══════════════════════════════════════════════════════════════════
+
+local endOfLifeEvents = {
+	-- ═══════════════════════════════════════════════════════════
+	-- ELDERLY LIFE (65-79)
+	-- ═══════════════════════════════════════════════════════════
+	{
+		id = "elder_retirement_party",
+		minAge = 65, maxAge = 70,
+		weight = 60, oneTime = true,
+		emoji = "🎉", title = "Retirement Party!",
+		category = "work",
+		requiresAnyFlag = {"employed", "had_career"},
+		text = "Your colleagues threw you a retirement party! Decades of work celebrated!",
+		choices = {
+			{ text = "🥹 Give emotional speech", effects = { Happiness = 15 }, resultText = "Everyone was moved. What a career!" },
+			{ text = "🎂 Enjoy the cake", effects = { Happiness = 10, Health = -2 }, resultText = "Best retirement cake ever!" },
+			{ text = "🤗 Thank everyone", effects = { Happiness = 12 }, resultText = "You left on the best terms." },
+		},
+	},
+	{
+		id = "elder_first_grandchild",
+		minAge = 50, maxAge = 75,
+		weight = 40, oneTime = true,
+		emoji = "👶", title = "First Grandchild!",
+		category = "family",
+		requiresAnyFlag = {"has_children", "married", "had_kids"},
+		getDynamicData = function()
+			local names = {"Emma", "Liam", "Olivia", "Noah", "Sophia", "Lucas"}
+			return { babyName = names[math.random(#names)] }
+		end,
+		text = "Your grandchild %babyName% was just born! You're a grandparent!",
+		choices = {
+			{ text = "🤗 Rush to the hospital!", effects = { Happiness = 20 }, resultText = "The moment you held them was magical.", setFlag = "has_grandchildren" },
+			{ text = "🎁 Send gifts first", effects = { Happiness = 12, Money = -500 }, resultText = "You spoil them already!", setFlag = "has_grandchildren" },
+			{ text = "😭 Cry happy tears", effects = { Happiness = 18 }, resultText = "This is what life is about.", setFlag = "has_grandchildren" },
+		},
+	},
+	{
+		id = "elder_aarp_card",
+		minAge = 65, maxAge = 66,
+		weight = 50, oneTime = true,
+		emoji = "💳", title = "Senior Discounts!",
+		category = "life",
+		text = "You got your senior citizen card! Discounts everywhere!",
+		choices = {
+			{ text = "💰 Use every discount!", effects = { Money = 2000, Happiness = 5 }, resultText = "Saving money feels good!" },
+			{ text = "🤷 Age is just a number", effects = { Happiness = 8 }, resultText = "You don't feel old at all." },
+			{ text = "😤 I'm not THAT old!", effects = { Happiness = -3 }, resultText = "The reality hit a bit hard." },
+		},
+	},
+	{
+		id = "elder_travel_dreams",
+		minAge = 65, maxAge = 80,
+		weight = 35, cooldown = 3,
+		emoji = "✈️", title = "Dream Vacation!",
+		category = "life",
+		getDynamicData = function()
+			local places = {"Paris", "Tokyo", "the Caribbean", "Alaska", "Italy", "Australia"}
+			return { destination = places[math.random(#places)] }
+		end,
+		text = "You finally have time! Want to take that trip to %destination%?",
+		choices = {
+			{ text = "✈️ Book it now!", effects = { Happiness = 15, Money = -8000, Health = -3 }, resultText = "Trip of a lifetime!" },
+			{ text = "🏠 Stay home instead", effects = { Happiness = 5, Money = 2000 }, resultText = "Home is where the heart is." },
+			{ text = "📅 Plan for later", effects = { Smarts = 3 }, resultText = "You'll go when the time is right." },
+		},
+	},
+	{
+		id = "elder_memory_lane",
+		minAge = 65, maxAge = 90,
+		weight = 30, cooldown = 5,
+		emoji = "📷", title = "Trip Down Memory Lane",
+		category = "life",
+		text = "You found old photos from your youth. So many memories...",
+		choices = {
+			{ text = "😊 Reminisce happily", effects = { Happiness = 10 }, resultText = "The good old days never fade." },
+			{ text = "📖 Write your memoirs", effects = { Smarts = 5, Happiness = 8 }, resultText = "Your story deserves to be told." },
+			{ text = "👨‍👩‍👧‍👦 Share with family", effects = { Happiness = 12 }, resultText = "The kids loved hearing your stories." },
+		},
+	},
+	{
+		id = "elder_health_checkup",
+		minAge = 65, maxAge = 95,
+		weight = 45, cooldown = 3,
+		emoji = "🏥", title = "Annual Checkup",
+		category = "health",
+		text = "Time for your annual medical checkup. How's your health?",
+		choices = {
+			{ text = "✅ Get checked", effects = { Health = 5, Money = -500 }, resultText = "Doctor says you're doing well for your age!" },
+			{ text = "🙅 Skip it this year", effects = { Health = -10 }, resultText = "Probably should have gone..." },
+			{ text = "💊 Ask about new treatments", effects = { Health = 8, Smarts = 3, Money = -1000 }, resultText = "You're on top of your health!" },
+		},
+	},
+	{
+		id = "elder_learn_technology",
+		minAge = 65, maxAge = 85,
+		weight = 35, cooldown = 4,
+		emoji = "📱", title = "New Technology!",
+		category = "life",
+		getDynamicData = function()
+			local tech = {"smartphone", "tablet", "video calling", "social media", "smart TV"}
+			return { technology = tech[math.random(#tech)] }
+		end,
+		text = "Your family wants to teach you how to use a %technology%.",
+		choices = {
+			{ text = "📚 Learn it!", effects = { Smarts = 8, Happiness = 5 }, resultText = "You're tech-savvy now!" },
+			{ text = "🤷 Too complicated", effects = { Happiness = -3 }, resultText = "Technology these days..." },
+			{ text = "👴 Back in my day...", effects = { Happiness = 2 }, resultText = "You told them about the good old days instead." },
+		},
+	},
+	{
+		id = "elder_volunteer",
+		minAge = 65, maxAge = 85,
+		weight = 30,
+		emoji = "🤝", title = "Volunteer Opportunity",
+		category = "life",
+		getDynamicData = function()
+			local places = {"local hospital", "animal shelter", "food bank", "community center", "school tutoring"}
+			return { place = places[math.random(#places)] }
+		end,
+		text = "Would you like to volunteer at the %place%?",
+		choices = {
+			{ text = "🤝 Yes, sign me up!", effects = { Happiness = 12, Health = 3 }, resultText = "Helping others is fulfilling.", setFlag = "volunteer" },
+			{ text = "⏰ Maybe later", effects = { Happiness = 2 }, resultText = "You'll think about it." },
+		},
+	},
+
+	-- ═══════════════════════════════════════════════════════════
+	-- SENIOR SENIOR YEARS (80-99)
+	-- ═══════════════════════════════════════════════════════════
+	{
+		id = "elder_80th_birthday",
+		minAge = 80, maxAge = 80,
+		weight = 100, oneTime = true, milestone = true,
+		emoji = "🎂", title = "80th Birthday!",
+		category = "life",
+		text = "Happy 80th birthday! What an incredible milestone!",
+		choices = {
+			{ text = "🎉 Big party!", effects = { Happiness = 20, Money = -3000 }, resultText = "All your loved ones celebrated with you!" },
+			{ text = "👨‍👩‍👧‍👦 Family dinner", effects = { Happiness = 15 }, resultText = "Intimate and perfect." },
+			{ text = "🧘 Quiet reflection", effects = { Happiness = 10, Smarts = 5 }, resultText = "80 years of wisdom..." },
+		},
+	},
+	{
+		id = "elder_great_grandchild",
+		minAge = 75, maxAge = 95,
+		weight = 25, oneTime = true,
+		emoji = "👶", title = "Great-Grandchild!",
+		category = "family",
+		requiresFlag = "has_grandchildren",
+		text = "Your great-grandchild was just born! Four generations!",
+		choices = {
+			{ text = "🥹 Tears of joy", effects = { Happiness = 25 }, resultText = "Your legacy continues!", setFlag = "has_great_grandchildren" },
+			{ text = "🎁 Start the spoiling!", effects = { Happiness = 18, Money = -1000 }, resultText = "Great-grandparents get to spoil the most!", setFlag = "has_great_grandchildren" },
+		},
+	},
+	{
+		id = "elder_mobility_challenge",
+		minAge = 75, maxAge = 95,
+		weight = 40, cooldown = 3,
+		emoji = "🦽", title = "Mobility Decision",
+		category = "health",
+		text = "Getting around isn't as easy as it used to be. What to do?",
+		choices = {
+			{ text = "🚶 Keep walking daily", effects = { Health = 5, Happiness = 5 }, resultText = "Exercise keeps you young!" },
+			{ text = "🦯 Get mobility aid", effects = { Health = 3, Money = -500 }, resultText = "No shame in getting help." },
+			{ text = "🏠 Stay home more", effects = { Health = -5, Happiness = -3 }, resultText = "Being sedentary isn't great..." },
+		},
+	},
+	{
+		id = "elder_old_friend_reunion",
+		minAge = 70, maxAge = 95,
+		weight = 25, cooldown = 5,
+		emoji = "👴", title = "Old Friend Reunion!",
+		category = "life",
+		getDynamicData = function()
+			return { friendName = randomName() }
+		end,
+		text = "Your old friend %friendName% contacted you! You haven't seen them in decades!",
+		choices = {
+			{ text = "🤗 Meet up!", effects = { Happiness = 15 }, resultText = "So much catching up to do!" },
+			{ text = "📞 Long phone call", effects = { Happiness = 10 }, resultText = "Hours of reminiscing." },
+			{ text = "😢 They passed away", effects = { Happiness = -10, Health = -3 }, resultText = "You missed your chance... Rest in peace, old friend." },
+		},
+	},
+	{
+		id = "elder_legacy_decision",
+		minAge = 75, maxAge = 95,
+		weight = 30, oneTime = true,
+		emoji = "📜", title = "Your Legacy",
+		category = "life",
+		text = "What do you want to be remembered for?",
+		choices = {
+			{ text = "👨‍👩‍👧‍👦 Family legacy", effects = { Happiness = 15 }, resultText = "Your family IS your legacy." },
+			{ text = "💝 Charity donation", effects = { Happiness = 12, Money = -50000 }, resultText = "Your generosity will help many.", setFlag = "philanthropist" },
+			{ text = "📚 Write an autobiography", effects = { Smarts = 5, Happiness = 10 }, resultText = "Your story will inspire others." },
+			{ text = "🏛️ Create a scholarship", effects = { Happiness = 15, Money = -100000 }, resultText = "Future students will thank you.", setFlag = "philanthropist" },
+		},
+	},
+	{
+		id = "elder_90th_birthday",
+		minAge = 90, maxAge = 90,
+		weight = 100, oneTime = true, milestone = true,
+		emoji = "🎂", title = "90th Birthday!",
+		category = "life",
+		text = "NINETY YEARS OLD! You've seen almost a century!",
+		choices = {
+			{ text = "🎉 Celebrate big!", effects = { Happiness = 25 }, resultText = "What an achievement!" },
+			{ text = "📺 Get on local news!", effects = { Happiness = 20 }, resultText = "The community celebrated you!" },
+			{ text = "🧘 Peaceful gratitude", effects = { Happiness = 18, Smarts = 5 }, resultText = "90 years of experiences..." },
+		},
+	},
+	{
+		id = "elder_centenarian_prep",
+		minAge = 95, maxAge = 99,
+		weight = 50,
+		emoji = "💯", title = "Almost 100!",
+		category = "life",
+		text = "You're approaching 100 years old! Any goals left?",
+		choices = {
+			{ text = "💪 Make it to 100!", effects = { Health = 5, Happiness = 10 }, resultText = "You're determined!" },
+			{ text = "😌 At peace with life", effects = { Happiness = 15 }, resultText = "You've lived a full life." },
+			{ text = "📝 Share your secrets", effects = { Smarts = 3, Happiness = 8 }, resultText = "Everyone wants your longevity tips!" },
+		},
+	},
+	{
+		id = "elder_100th_birthday",
+		minAge = 100, maxAge = 100,
+		weight = 100, oneTime = true, milestone = true,
+		emoji = "🎂", title = "100 YEARS OLD!",
+		category = "life",
+		text = "ONE HUNDRED YEARS! You're a centenarian! Incredible!",
+		choices = {
+			{ text = "🎉 BIGGEST PARTY EVER!", effects = { Happiness = 50 }, resultText = "A century of life celebrated!" },
+			{ text = "📺 National news!", effects = { Happiness = 40 }, resultText = "You're famous for your longevity!" },
+			{ text = "🙏 Thank everyone who helped", effects = { Happiness = 45 }, resultText = "So many people made this possible." },
+		},
+	},
+	{
+		id = "elder_final_wishes",
+		minAge = 85, maxAge = 120,
+		weight = 20, oneTime = true,
+		emoji = "📝", title = "Final Wishes",
+		category = "life",
+		text = "It's important to plan ahead. Have you arranged your final wishes?",
+		choices = {
+			{ text = "📜 Write a will", effects = { Smarts = 5, Happiness = 5 }, resultText = "Your affairs are in order.", setFlag = "has_will" },
+			{ text = "💬 Tell family my wishes", effects = { Happiness = 8 }, resultText = "They know what you want." },
+			{ text = "⏭️ Not ready to think about it", effects = { Happiness = -5 }, resultText = "It's hard to face, but important." },
+		},
+	},
+	{
+		id = "elder_peaceful_end",
+		minAge = 90, maxAge = 120,
+		weight = 10, oneTime = true,
+		emoji = "🌅", title = "Sunset of Life",
+		category = "life",
+		text = "You feel at peace. You've lived a full life with many experiences.",
+		choices = {
+			{ text = "😌 I'm ready whenever", effects = { Happiness = 20 }, resultText = "You face the future with grace." },
+			{ text = "👨‍👩‍👧‍👦 Spend time with family", effects = { Happiness = 25 }, resultText = "Every moment is precious." },
+			{ text = "📖 Pass on wisdom", effects = { Smarts = 5, Happiness = 15 }, resultText = "Your knowledge will live on." },
+		},
+	},
+}
+
+-- Add end of life events to main table
+for _, event in ipairs(endOfLifeEvents) do
+	table.insert(events, event)
+end
+print("[EventLibrary] Added", #endOfLifeEvents, "expanded end of life events!")
+
 return EventLibrary

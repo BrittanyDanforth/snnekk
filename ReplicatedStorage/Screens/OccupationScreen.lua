@@ -98,10 +98,24 @@ function OccupationScreen:getCurrentJob()
 	local state = self.playerState
 	if not state then return nil end
 	-- Check both old and new job system
-	if state.CurrentJob and state.CurrentJob.title then
+	if state.CurrentJob and state.CurrentJob.id then
+		return state.CurrentJob.id -- Return job ID for matching
+	elseif state.CurrentJob and state.CurrentJob.title then
+		-- Fallback: try to find by title
 		return state.CurrentJob.title
 	end
 	return state.Job or (state.Career and state.Career.current)
+end
+
+function OccupationScreen:getCurrentJobData()
+	local state = self.playerState
+	if not state then return nil end
+	-- Return the full job object from server
+	if state.CurrentJob then
+		log("getCurrentJobData - Found CurrentJob from server:", state.CurrentJob.title or "No title")
+		return state.CurrentJob
+	end
+	return nil
 end
 
 function OccupationScreen:isInJail()
@@ -412,17 +426,38 @@ function OccupationScreen:populateJobs()
 		currentLayout.Padding = UDim.new(0, 10)
 		currentLayout.Parent = currentSection
 		
-		-- Find current job data
+		-- Find current job data - first try local Jobs list by ID
 		local jobData = nil
 		for _, j in ipairs(Jobs) do
 			if j.id == currentJob then
 				jobData = j
+				log("Found job in local Jobs list:", j.name)
 				break
+			end
+		end
+		
+		-- If not found in local list, use server's job data directly
+		if not jobData then
+			local serverJob = self:getCurrentJobData()
+			if serverJob then
+				log("Using server job data - ID:", serverJob.id, "Title:", serverJob.title)
+				-- Create a compatible job object from server data
+				jobData = {
+					id = serverJob.id or "unknown",
+					name = serverJob.title or "Job",
+					company = serverJob.company or "Company",
+					emoji = "💼", -- Default emoji
+					salary = serverJob.salary or 0,
+					minAge = 0,
+					requirement = nil
+				}
 			end
 		end
 		
 		if jobData then
 			self:createCurrentJobCard(currentSection, jobData)
+		else
+			log("No job data found for currentJob:", currentJob)
 		end
 	end
 	
@@ -481,50 +516,70 @@ function OccupationScreen:populateJobs()
 end
 
 function OccupationScreen:createCurrentJobCard(parent, job)
+	log("Creating current job card for:", job.name)
+	
+	-- Main container card - BIGGER and more prominent
 	local card = Instance.new("Frame")
 	card.Name = "CurrentJob"
-	card.Size = UDim2.new(1, 0, 0, 100)
+	card.Size = UDim2.new(1, 0, 0, 185)
 	card.BackgroundColor3 = C.White
 	card.LayoutOrder = 1
 	card.ZIndex = 83
 	card.Parent = parent
-	UI.corner(card, 16)
+	UI.corner(card, 18)
 	
-	-- Icon
+	-- ═══════════════════════════════════════════════════════════
+	-- TOP SECTION: Job Info with Icon
+	-- ═══════════════════════════════════════════════════════════
+	
+	-- Icon (bigger)
 	local iconFrame = Instance.new("Frame")
-	iconFrame.Size = UDim2.new(0, 64, 0, 64)
-	iconFrame.Position = UDim2.new(0, 14, 0.5, -32)
+	iconFrame.Size = UDim2.new(0, 70, 0, 70)
+	iconFrame.Position = UDim2.new(0, 16, 0, 16)
 	iconFrame.BackgroundColor3 = C.GreenPale
 	iconFrame.ZIndex = 84
 	iconFrame.Parent = card
-	UI.corner(iconFrame, 14)
+	UI.corner(iconFrame, 16)
 	
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
 	iconLabel.Font = F.Body
-	iconLabel.TextSize = 32
+	iconLabel.TextSize = 38
 	iconLabel.Text = job.emoji
 	iconLabel.ZIndex = 85
 	iconLabel.Parent = iconFrame
 	
-	-- Title
+	-- Job title
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(0.5, 0, 0, 24)
-	titleLabel.Position = UDim2.new(0, 92, 0, 16)
+	titleLabel.Size = UDim2.new(0.55, 0, 0, 28)
+	titleLabel.Position = UDim2.new(0, 100, 0, 14)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = F.Title
-	titleLabel.TextSize = 17
+	titleLabel.TextSize = 19
 	titleLabel.TextColor3 = C.Gray900
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Text = job.name
 	titleLabel.ZIndex = 84
 	titleLabel.Parent = card
 	
+	-- Company name
+	local companyLabel = Instance.new("TextLabel")
+	companyLabel.Size = UDim2.new(0.5, 0, 0, 20)
+	companyLabel.Position = UDim2.new(0, 100, 0, 42)
+	companyLabel.BackgroundTransparency = 1
+	companyLabel.Font = F.Body
+	companyLabel.TextSize = 13
+	companyLabel.TextColor3 = C.Gray500
+	companyLabel.TextXAlignment = Enum.TextXAlignment.Left
+	companyLabel.Text = "at " .. (job.company or "Unknown Company")
+	companyLabel.ZIndex = 84
+	companyLabel.Parent = card
+	
 	-- Current job badge
 	local currentBadge = Instance.new("Frame")
-	currentBadge.Size = UDim2.new(0, 95, 0, 26)
-	currentBadge.Position = UDim2.new(0, 92, 0, 44)
+	currentBadge.Size = UDim2.new(0, 105, 0, 28)
+	currentBadge.Position = UDim2.new(0, 100, 0, 64)
 	currentBadge.BackgroundColor3 = C.Green
 	currentBadge.ZIndex = 84
 	currentBadge.Parent = card
@@ -533,39 +588,126 @@ function OccupationScreen:createCurrentJobCard(parent, job)
 	local currentLabel = Instance.new("TextLabel")
 	currentLabel.Size = UDim2.fromScale(1, 1)
 	currentLabel.BackgroundTransparency = 1
-	currentLabel.Font = F.Medium
-	currentLabel.TextSize = 11
+	currentLabel.Font = F.Button
+	currentLabel.TextSize = 12
 	currentLabel.TextColor3 = C.White
-	currentLabel.Text = "Current Job"
+	currentLabel.Text = "✓ Employed"
 	currentLabel.ZIndex = 85
 	currentLabel.Parent = currentBadge
 	
-	-- Salary
+	-- ═══════════════════════════════════════════════════════════
+	-- SALARY SECTION (horizontal badges)
+	-- ═══════════════════════════════════════════════════════════
+	
+	local salaryRow = Instance.new("Frame")
+	salaryRow.Size = UDim2.new(1, -32, 0, 36)
+	salaryRow.Position = UDim2.new(0, 16, 0, 96)
+	salaryRow.BackgroundColor3 = C.Gray50
+	salaryRow.ZIndex = 84
+	salaryRow.Parent = card
+	UI.corner(salaryRow, 10)
+	
+	local salaryLayout = Instance.new("UIListLayout")
+	salaryLayout.FillDirection = Enum.FillDirection.Horizontal
+	salaryLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	salaryLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	salaryLayout.Padding = UDim.new(0, 12)
+	salaryLayout.Parent = salaryRow
+	UI.pad(salaryRow, 14, 14, 0, 0)
+	
+	-- Salary badge
+	local salaryBadge = Instance.new("Frame")
+	salaryBadge.Size = UDim2.new(0, 115, 0, 28)
+	salaryBadge.BackgroundColor3 = C.GreenPale
+	salaryBadge.LayoutOrder = 1
+	salaryBadge.ZIndex = 85
+	salaryBadge.Parent = salaryRow
+	UI.pill(salaryBadge)
+	
 	local salaryLabel = Instance.new("TextLabel")
-	salaryLabel.Size = UDim2.new(0, 100, 0, 20)
-	salaryLabel.Position = UDim2.new(0, 92, 0, 72)
+	salaryLabel.Size = UDim2.fromScale(1, 1)
 	salaryLabel.BackgroundTransparency = 1
-	salaryLabel.Font = F.Body
+	salaryLabel.Font = F.Title
 	salaryLabel.TextSize = 13
 	salaryLabel.TextColor3 = C.GreenDark
-	salaryLabel.TextXAlignment = Enum.TextXAlignment.Left
-	salaryLabel.Text = UI.formatMoney(job.salary) .. "/year"
-	salaryLabel.ZIndex = 84
-	salaryLabel.Parent = card
+	salaryLabel.Text = "💵 " .. UI.formatMoney(job.salary) .. "/yr"
+	salaryLabel.ZIndex = 86
+	salaryLabel.Parent = salaryBadge
 	
-	-- Quit button
+	-- Experience badge (if they have years at job)
+	local expBadge = Instance.new("Frame")
+	expBadge.Size = UDim2.new(0, 95, 0, 28)
+	expBadge.BackgroundColor3 = C.BluePale
+	expBadge.LayoutOrder = 2
+	expBadge.ZIndex = 85
+	expBadge.Parent = salaryRow
+	UI.pill(expBadge)
+	
+	local expLabel = Instance.new("TextLabel")
+	expLabel.Size = UDim2.fromScale(1, 1)
+	expLabel.BackgroundTransparency = 1
+	expLabel.Font = F.Medium
+	expLabel.TextSize = 12
+	expLabel.TextColor3 = C.BlueDark
+	expLabel.Text = "📈 Active"
+	expLabel.ZIndex = 86
+	expLabel.Parent = expBadge
+	
+	-- ═══════════════════════════════════════════════════════════
+	-- BUTTONS ROW: View Job Info & Quit
+	-- ═══════════════════════════════════════════════════════════
+	
+	local buttonRow = Instance.new("Frame")
+	buttonRow.Size = UDim2.new(1, -32, 0, 48)
+	buttonRow.Position = UDim2.new(0, 16, 0, 140)
+	buttonRow.BackgroundTransparency = 1
+	buttonRow.ZIndex = 84
+	buttonRow.Parent = card
+	
+	local btnLayout = Instance.new("UIListLayout")
+	btnLayout.FillDirection = Enum.FillDirection.Horizontal
+	btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	btnLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	btnLayout.Padding = UDim.new(0, 12)
+	btnLayout.Parent = buttonRow
+	
+	-- View Job Info button (BitLife-style)
+	local infoBtn = Instance.new("TextButton")
+	infoBtn.Size = UDim2.new(0.48, 0, 0, 44)
+	infoBtn.BackgroundColor3 = C.Blue
+	infoBtn.Font = F.Button
+	infoBtn.TextSize = 14
+	infoBtn.TextColor3 = C.White
+	infoBtn.Text = "📋 View Job Info"
+	infoBtn.AutoButtonColor = false
+	infoBtn.LayoutOrder = 1
+	infoBtn.ZIndex = 85
+	infoBtn.Parent = buttonRow
+	UI.corner(infoBtn, 12)
+	
+	infoBtn.MouseEnter:Connect(function()
+		UI.tween(infoBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.BlueDark })
+	end)
+	infoBtn.MouseLeave:Connect(function()
+		UI.tween(infoBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Blue })
+	end)
+	infoBtn.MouseButton1Click:Connect(function()
+		log("View Job Info clicked for:", job.name)
+		self:showJobInfoModal(job)
+	end)
+	
+	-- Quit Job button
 	local quitBtn = Instance.new("TextButton")
-	quitBtn.Size = UDim2.new(0, 72, 0, 44)
-	quitBtn.AnchorPoint = Vector2.new(1, 0.5)
-	quitBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	quitBtn.Size = UDim2.new(0.48, 0, 0, 44)
 	quitBtn.BackgroundColor3 = C.Red
 	quitBtn.Font = F.Button
 	quitBtn.TextSize = 14
 	quitBtn.TextColor3 = C.White
-	quitBtn.Text = "Quit"
+	quitBtn.Text = "🚪 Quit Job"
 	quitBtn.AutoButtonColor = false
-	quitBtn.ZIndex = 84
-	quitBtn.Parent = card
+	quitBtn.LayoutOrder = 2
+	quitBtn.ZIndex = 85
+	quitBtn.Parent = buttonRow
 	UI.corner(quitBtn, 12)
 	
 	quitBtn.MouseEnter:Connect(function()
@@ -575,7 +717,265 @@ function OccupationScreen:createCurrentJobCard(parent, job)
 		UI.tween(quitBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Red })
 	end)
 	quitBtn.MouseButton1Click:Connect(function()
+		log("Quit Job clicked")
 		self:quitJob()
+	end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- JOB INFO MODAL (BitLife-style)
+-- ═══════════════════════════════════════════════════════════
+
+function OccupationScreen:showJobInfoModal(job)
+	log("=== SHOWING JOB INFO MODAL ===")
+	log("Job:", job.name, "Company:", job.company, "Salary:", job.salary)
+	
+	-- Create modal if doesn't exist
+	if not self.jobInfoModal then
+		self:createJobInfoModal()
+	end
+	
+	-- Populate modal with job info
+	self.jobInfoEmoji.Text = job.emoji or "💼"
+	self.jobInfoTitle.Text = job.name or "Your Job"
+	self.jobInfoCompany.Text = "at " .. (job.company or "Unknown Company")
+	self.jobInfoSalary.Text = "💵 " .. UI.formatMoney(job.salary or 0) .. "/year"
+	
+	-- Education requirement
+	local eduText = "📚 Requires: "
+	if job.requirement then
+		eduText = eduText .. job.requirement:gsub("_", " "):gsub("^%l", string.upper)
+	else
+		eduText = eduText .. "No specific education"
+	end
+	self.jobInfoEdu.Text = eduText
+	
+	-- Min age
+	self.jobInfoAge.Text = "🎂 Minimum Age: " .. (job.minAge or 14)
+	
+	-- Description
+	self.jobInfoDesc.Text = job.desc or "You work here as a " .. job.name .. "."
+	
+	-- Show modal
+	self.jobInfoOverlay.Visible = true
+	self.jobInfoCard.Position = UDim2.new(0.5, 0, 0.5, 50)
+	self.jobInfoCard.BackgroundTransparency = 1
+	
+	UI.tween(self.jobInfoCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0
+	})
+end
+
+function OccupationScreen:createJobInfoModal()
+	log("Creating job info modal...")
+	
+	self.jobInfoOverlay = Instance.new("Frame")
+	self.jobInfoOverlay.Size = UDim2.fromScale(1, 1)
+	self.jobInfoOverlay.BackgroundColor3 = C.Black
+	self.jobInfoOverlay.BackgroundTransparency = 0.4
+	self.jobInfoOverlay.Visible = false
+	self.jobInfoOverlay.ZIndex = 96
+	self.jobInfoOverlay.Parent = self.screenGui
+	
+	-- Close on tap outside
+	local closeArea = Instance.new("TextButton")
+	closeArea.Size = UDim2.fromScale(1, 1)
+	closeArea.BackgroundTransparency = 1
+	closeArea.Text = ""
+	closeArea.ZIndex = 96
+	closeArea.Parent = self.jobInfoOverlay
+	closeArea.MouseButton1Click:Connect(function()
+		self:hideJobInfoModal()
+	end)
+	
+	-- Card
+	self.jobInfoCard = Instance.new("Frame")
+	self.jobInfoCard.Size = UDim2.new(0.9, 0, 0, 380)
+	self.jobInfoCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.jobInfoCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.jobInfoCard.BackgroundColor3 = C.White
+	self.jobInfoCard.ZIndex = 97
+	self.jobInfoCard.Parent = self.jobInfoOverlay
+	UI.corner(self.jobInfoCard, 24)
+	
+	-- Header (blue gradient)
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 85)
+	header.BackgroundColor3 = C.Blue
+	header.ZIndex = 98
+	header.Parent = self.jobInfoCard
+	UI.corner(header, 24)
+	
+	local headerFix = Instance.new("Frame")
+	headerFix.Size = UDim2.new(1, 0, 0, 40)
+	headerFix.Position = UDim2.new(0, 0, 1, -30)
+	headerFix.BackgroundColor3 = C.BlueDark
+	headerFix.ZIndex = 98
+	headerFix.Parent = header
+	
+	-- Close button
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 36, 0, 36)
+	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.Position = UDim2.new(1, -12, 0, 12)
+	closeBtn.BackgroundColor3 = C.White
+	closeBtn.BackgroundTransparency = 0.15
+	closeBtn.Font = F.Title
+	closeBtn.TextSize = 16
+	closeBtn.TextColor3 = C.BlueDark
+	closeBtn.Text = "✕"
+	closeBtn.AutoButtonColor = false
+	closeBtn.ZIndex = 100
+	closeBtn.Parent = header
+	UI.corner(closeBtn, 18)
+	
+	closeBtn.MouseButton1Click:Connect(function()
+		self:hideJobInfoModal()
+	end)
+	
+	-- Title
+	local headerTitle = Instance.new("TextLabel")
+	headerTitle.Size = UDim2.new(1, 0, 1, 0)
+	headerTitle.Position = UDim2.new(0, 0, 0, 0)
+	headerTitle.BackgroundTransparency = 1
+	headerTitle.Font = F.Title
+	headerTitle.TextSize = 22
+	headerTitle.TextColor3 = C.White
+	headerTitle.Text = "📋 Job Information"
+	headerTitle.ZIndex = 99
+	headerTitle.Parent = header
+	
+	-- Content
+	local content = Instance.new("Frame")
+	content.Size = UDim2.new(1, -32, 1, -105)
+	content.Position = UDim2.new(0, 16, 0, 95)
+	content.BackgroundTransparency = 1
+	content.ZIndex = 98
+	content.Parent = self.jobInfoCard
+	
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.Padding = UDim.new(0, 12)
+	contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	contentLayout.Parent = content
+	
+	-- Emoji
+	self.jobInfoEmoji = Instance.new("TextLabel")
+	self.jobInfoEmoji.Size = UDim2.new(0, 70, 0, 70)
+	self.jobInfoEmoji.BackgroundTransparency = 1
+	self.jobInfoEmoji.Font = F.Body
+	self.jobInfoEmoji.TextSize = 55
+	self.jobInfoEmoji.Text = "💼"
+	self.jobInfoEmoji.LayoutOrder = 1
+	self.jobInfoEmoji.ZIndex = 99
+	self.jobInfoEmoji.Parent = content
+	
+	-- Job title
+	self.jobInfoTitle = Instance.new("TextLabel")
+	self.jobInfoTitle.Size = UDim2.new(1, 0, 0, 30)
+	self.jobInfoTitle.BackgroundTransparency = 1
+	self.jobInfoTitle.Font = F.Title
+	self.jobInfoTitle.TextSize = 22
+	self.jobInfoTitle.TextColor3 = C.Gray900
+	self.jobInfoTitle.Text = "Job Title"
+	self.jobInfoTitle.LayoutOrder = 2
+	self.jobInfoTitle.ZIndex = 99
+	self.jobInfoTitle.Parent = content
+	
+	-- Company
+	self.jobInfoCompany = Instance.new("TextLabel")
+	self.jobInfoCompany.Size = UDim2.new(1, 0, 0, 22)
+	self.jobInfoCompany.BackgroundTransparency = 1
+	self.jobInfoCompany.Font = F.Body
+	self.jobInfoCompany.TextSize = 14
+	self.jobInfoCompany.TextColor3 = C.Gray500
+	self.jobInfoCompany.Text = "at Company Name"
+	self.jobInfoCompany.LayoutOrder = 3
+	self.jobInfoCompany.ZIndex = 99
+	self.jobInfoCompany.Parent = content
+	
+	-- Info badges container
+	local badgeContainer = Instance.new("Frame")
+	badgeContainer.Size = UDim2.new(1, 0, 0, 85)
+	badgeContainer.BackgroundColor3 = C.Gray50
+	badgeContainer.LayoutOrder = 4
+	badgeContainer.ZIndex = 98
+	badgeContainer.Parent = content
+	UI.corner(badgeContainer, 14)
+	UI.pad(badgeContainer, 14, 14, 12, 12)
+	
+	local badgeLayout = Instance.new("UIListLayout")
+	badgeLayout.Padding = UDim.new(0, 8)
+	badgeLayout.Parent = badgeContainer
+	
+	-- Salary
+	self.jobInfoSalary = Instance.new("TextLabel")
+	self.jobInfoSalary.Size = UDim2.new(1, 0, 0, 22)
+	self.jobInfoSalary.BackgroundTransparency = 1
+	self.jobInfoSalary.Font = F.Title
+	self.jobInfoSalary.TextSize = 16
+	self.jobInfoSalary.TextColor3 = C.GreenDark
+	self.jobInfoSalary.TextXAlignment = Enum.TextXAlignment.Left
+	self.jobInfoSalary.Text = "💵 $50,000/year"
+	self.jobInfoSalary.LayoutOrder = 1
+	self.jobInfoSalary.ZIndex = 99
+	self.jobInfoSalary.Parent = badgeContainer
+	
+	-- Education
+	self.jobInfoEdu = Instance.new("TextLabel")
+	self.jobInfoEdu.Size = UDim2.new(1, 0, 0, 20)
+	self.jobInfoEdu.BackgroundTransparency = 1
+	self.jobInfoEdu.Font = F.Body
+	self.jobInfoEdu.TextSize = 13
+	self.jobInfoEdu.TextColor3 = C.Gray600
+	self.jobInfoEdu.TextXAlignment = Enum.TextXAlignment.Left
+	self.jobInfoEdu.Text = "📚 Requires: High School"
+	self.jobInfoEdu.LayoutOrder = 2
+	self.jobInfoEdu.ZIndex = 99
+	self.jobInfoEdu.Parent = badgeContainer
+	
+	-- Min age
+	self.jobInfoAge = Instance.new("TextLabel")
+	self.jobInfoAge.Size = UDim2.new(1, 0, 0, 20)
+	self.jobInfoAge.BackgroundTransparency = 1
+	self.jobInfoAge.Font = F.Body
+	self.jobInfoAge.TextSize = 13
+	self.jobInfoAge.TextColor3 = C.Gray600
+	self.jobInfoAge.TextXAlignment = Enum.TextXAlignment.Left
+	self.jobInfoAge.Text = "🎂 Minimum Age: 16"
+	self.jobInfoAge.LayoutOrder = 3
+	self.jobInfoAge.ZIndex = 99
+	self.jobInfoAge.Parent = badgeContainer
+	
+	-- Description
+	self.jobInfoDesc = Instance.new("TextLabel")
+	self.jobInfoDesc.Size = UDim2.new(1, 0, 0, 40)
+	self.jobInfoDesc.BackgroundTransparency = 1
+	self.jobInfoDesc.Font = F.Body
+	self.jobInfoDesc.TextSize = 13
+	self.jobInfoDesc.TextColor3 = C.Gray500
+	self.jobInfoDesc.TextWrapped = true
+	self.jobInfoDesc.Text = "Description..."
+	self.jobInfoDesc.LayoutOrder = 5
+	self.jobInfoDesc.ZIndex = 99
+	self.jobInfoDesc.Parent = content
+	
+	log("Job info modal created successfully")
+end
+
+function OccupationScreen:hideJobInfoModal()
+	if not self.jobInfoOverlay then return end
+	log("Hiding job info modal")
+	
+	UI.tween(self.jobInfoCard, TweenInfo.new(0.2), {
+		Position = UDim2.new(0.5, 0, 0.5, 50),
+		BackgroundTransparency = 1
+	})
+	
+	task.delay(0.2, function()
+		if self.jobInfoOverlay then
+			self.jobInfoOverlay.Visible = false
+		end
 	end)
 end
 

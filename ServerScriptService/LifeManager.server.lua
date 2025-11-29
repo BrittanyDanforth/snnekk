@@ -121,6 +121,13 @@ local function serializeState(state, player)
 		JailYearsLeft = extState.JailYearsLeft or 0,
 		CurrentJob = extState.CurrentJob,
 		Education = extState.Education or "None",
+		-- Owned assets (properties, vehicles, items)
+		Assets = {
+			Properties = extState.OwnedProperties or {},
+			Vehicles = extState.OwnedVehicles or {},
+			Items = extState.OwnedItems or {},
+			Crypto = extState.OwnedCrypto or {},
+		},
 		-- Relationships (family, friends, etc.)
 		Relationships = state.Relationships or {},
 	}

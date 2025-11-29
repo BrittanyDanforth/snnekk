@@ -92,21 +92,49 @@ end
 
 function ActivitiesScreen:updateState(newState)
 	log("Updating state...")
-	local wasInJail = self.playerState and self.playerState.InJail
+	
+	-- Store previous jail status using the SAME logic as isInJail()
+	local wasInJail = false
+	if self.playerState then
+		-- Priority: InJail (ExtendedState) > Flags.in_prison > Flags.incarcerated
+		if self.playerState.InJail == true then
+			wasInJail = true
+		elseif self.playerState.InJail == false then
+			wasInJail = false -- Explicit false from server means NOT in jail
+		elseif self.playerState.Flags then
+			wasInJail = self.playerState.Flags.in_prison == true or self.playerState.Flags.incarcerated == true
+		end
+	end
 	
 	if newState then 
 		self.playerState = newState 
-		log("State updated - Age:", self:getAge(), "Money:", self:getMoney(), "InJail:", self:isInJail(), "JailYearsLeft:", self:getJailYearsLeft())
 		
-		-- Check if jail status changed - need to rebuild tabs
+		-- Check if jail status changed using consistent logic
 		local nowInJail = self:isInJail()
+		
+		log("State updated - Age:", self:getAge(), "Money:", self:getMoney())
+		log("  InJail (ExtendedState):", newState.InJail)
+		log("  Flags.in_prison:", newState.Flags and newState.Flags.in_prison)
+		log("  Flags.incarcerated:", newState.Flags and newState.Flags.incarcerated)
+		log("  JailYearsLeft:", self:getJailYearsLeft())
+		log("  wasInJail:", wasInJail, "nowInJail:", nowInJail)
+		
 		if wasInJail ~= nowInJail then
-			log("Jail status changed! Was:", wasInJail, "Now:", nowInJail)
-			-- Only rebuild if visible to avoid unnecessary work
+			log("🔄 JAIL STATUS CHANGED! Was:", wasInJail, "Now:", nowInJail)
+			-- Always rebuild tabs when jail status changes
+			log("Rebuilding tabs due to jail status change")
+			self:rebuildTabs()
+			self:updateInfoBar()
+			
+			-- Switch to appropriate tab
+			if nowInJail then
+				self.currentTab = "prison"
+			elseif self.currentTab == "prison" then
+				self.currentTab = "mindbody" -- Switch away from prison tab
+			end
+			
+			-- Only switch tab content if visible
 			if self.isVisible then
-				log("Rebuilding tabs due to jail status change")
-				self:rebuildTabs()
-				self:updateInfoBar()
 				self:switchTab(self.currentTab)
 			end
 		end
@@ -128,13 +156,27 @@ end
 function ActivitiesScreen:isInJail()
 	local state = self.playerState
 	if not state then return false end
-	-- Check multiple sources for jail status
-	local inJail = state.InJail == true 
-		or (state.Flags and state.Flags.in_prison) 
-		or (state.Flags and state.Flags.incarcerated)
-		or false
-	log("Checking jail status - InJail:", state.InJail, "Flags.in_prison:", state.Flags and state.Flags.in_prison, "Result:", inJail)
-	return inJail
+	
+	-- PRIORITY ORDER:
+	-- 1. ExtendedState.InJail (server authoritative - synced by _G.SyncPrisonStateFromFlags)
+	-- 2. Flags.in_prison (fallback)
+	-- 3. Flags.incarcerated (secondary fallback)
+	
+	-- If InJail is explicitly set (true or false), use that as authoritative
+	if state.InJail == true then
+		log("isInJail: TRUE (from ExtendedState.InJail)")
+		return true
+	elseif state.InJail == false then
+		log("isInJail: FALSE (from ExtendedState.InJail)")
+		return false
+	end
+	
+	-- Fallback to flags only if InJail is nil (not synced yet)
+	local flagsInJail = (state.Flags and state.Flags.in_prison == true) 
+		or (state.Flags and state.Flags.incarcerated == true)
+	
+	log("isInJail:", flagsInJail, "(from Flags - InJail was nil)")
+	return flagsInJail
 end
 
 function ActivitiesScreen:getJailYearsLeft()
