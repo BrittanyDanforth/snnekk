@@ -178,12 +178,13 @@ local function tween(o, i, p)
 end
 
 local function formatMoney(n)
+	if not n then return "$0" end
 	if n >= 1000000 then
 		return string.format("$%.1fM", n/1000000)
 	elseif n >= 1000 then
 		return string.format("$%.1fK", n/1000)
 	else
-		return "$"..n
+		return "$"..math.floor(n)
 	end
 end
 
@@ -241,6 +242,345 @@ mainContainer.BackgroundColor3 = C.Gray100
 mainContainer.BorderSizePixel = 0
 mainContainer.ZIndex = 1
 mainContainer.Parent = screenGui
+
+----------------------------------------------------------------
+-- SCREEN SHAKE EFFECT (for negative outcomes like BitLife)
+----------------------------------------------------------------
+
+local shakeActive = false
+
+local function shakeScreen(intensity, duration)
+	if shakeActive then return end
+	shakeActive = true
+	
+	local originalPos = mainContainer.Position
+	local elapsed = 0
+	local shakeIntensity = intensity or 8
+	
+	task.spawn(function()
+		while elapsed < (duration or 0.4) do
+			local offsetX = math.random(-shakeIntensity, shakeIntensity)
+			local offsetY = math.random(-shakeIntensity, shakeIntensity)
+			mainContainer.Position = UDim2.new(
+				originalPos.X.Scale, originalPos.X.Offset + offsetX,
+				originalPos.Y.Scale, originalPos.Y.Offset + offsetY
+			)
+			task.wait(0.02)
+			elapsed = elapsed + 0.02
+			shakeIntensity = math.max(1, shakeIntensity - 0.5)
+		end
+		mainContainer.Position = originalPos
+		shakeActive = false
+	end)
+end
+
+----------------------------------------------------------------
+-- FLASH OVERLAY (red for damage, green for good)
+----------------------------------------------------------------
+
+local flashOverlay = Instance.new("Frame")
+flashOverlay.Size = UDim2.fromScale(1, 1)
+flashOverlay.BackgroundColor3 = C.Red
+flashOverlay.BackgroundTransparency = 1
+flashOverlay.ZIndex = 100
+flashOverlay.Name = "FlashOverlay"
+flashOverlay.Parent = screenGui
+
+local function flashScreen(color, intensity, duration)
+	flashOverlay.BackgroundColor3 = color or C.Red
+	flashOverlay.BackgroundTransparency = intensity or 0.7
+	tween(flashOverlay, TweenInfo.new(duration or 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 1
+	})
+end
+
+----------------------------------------------------------------
+-- RESULT POPUP CARD (shows after every decision - BitLife style)
+----------------------------------------------------------------
+
+local resultOverlay, resultCard, resultEmoji, resultTitle, resultBody, resultOkBtn
+local resultAccentBar, resultAccentFix, resultStatsPreview
+local resultVisible = false
+local resultCallback = nil
+
+local function createResultPopup()
+	resultOverlay = Instance.new("Frame")
+	resultOverlay.Name = "ResultOverlay"
+	resultOverlay.Size = UDim2.fromScale(1, 1)
+	resultOverlay.BackgroundColor3 = C.Black
+	resultOverlay.BackgroundTransparency = 0.5
+	resultOverlay.Visible = false
+	resultOverlay.ZIndex = 80
+	resultOverlay.Parent = screenGui
+	
+	resultCard = Instance.new("Frame")
+	resultCard.Name = "ResultCard"
+	resultCard.Size = UDim2.new(0.92, 0, 0, 0)
+	resultCard.AutomaticSize = Enum.AutomaticSize.Y
+	resultCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	resultCard.Position = UDim2.fromScale(0.5, 0.5)
+	resultCard.BackgroundColor3 = C.White
+	resultCard.ZIndex = 81
+	resultCard.Parent = resultOverlay
+	corner(resultCard, 24)
+	createShadow(resultCard, 6, 24, C.Black, 0.85)
+	
+	resultAccentBar = Instance.new("Frame")
+	resultAccentBar.Name = "AccentBar"
+	resultAccentBar.Size = UDim2.new(1, 0, 0, 8)
+	resultAccentBar.BackgroundColor3 = C.Green
+	resultAccentBar.ZIndex = 82
+	resultAccentBar.Parent = resultCard
+	corner(resultAccentBar, 24)
+	
+	resultAccentFix = Instance.new("Frame")
+	resultAccentFix.Size = UDim2.new(1, 0, 0, 10)
+	resultAccentFix.Position = UDim2.new(0, 0, 0, 4)
+	resultAccentFix.BackgroundColor3 = C.Green
+	resultAccentFix.ZIndex = 82
+	resultAccentFix.Parent = resultAccentBar
+	
+	local content = Instance.new("Frame")
+	content.Size = UDim2.new(1, 0, 0, 0)
+	content.AutomaticSize = Enum.AutomaticSize.Y
+	content.Position = UDim2.new(0, 0, 0, 8)
+	content.BackgroundTransparency = 1
+	content.ZIndex = 82
+	content.Parent = resultCard
+	
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	contentLayout.Padding = UDim.new(0, 14)
+	contentLayout.Parent = content
+	pad(content, 24, 24, 20, 24)
+	
+	resultEmoji = Instance.new("TextLabel")
+	resultEmoji.Size = UDim2.new(0, 90, 0, 90)
+	resultEmoji.BackgroundTransparency = 1
+	resultEmoji.Font = F.Body
+	resultEmoji.TextSize = 72  -- BIG emoji
+	resultEmoji.Text = "✨"
+	resultEmoji.LayoutOrder = 1
+	resultEmoji.ZIndex = 83
+	resultEmoji.Parent = content
+	
+	resultTitle = Instance.new("TextLabel")
+	resultTitle.Size = UDim2.new(1, 0, 0, 44)
+	resultTitle.BackgroundTransparency = 1
+	resultTitle.Font = F.Title
+	resultTitle.TextSize = 32  -- 20% bigger (was 26)
+	resultTitle.TextColor3 = C.Gray900
+	resultTitle.Text = "Result"
+	resultTitle.TextWrapped = true
+	resultTitle.LayoutOrder = 2
+	resultTitle.ZIndex = 83
+	resultTitle.Parent = content
+	
+	resultBody = Instance.new("TextLabel")
+	resultBody.Size = UDim2.new(1, 0, 0, 0)
+	resultBody.AutomaticSize = Enum.AutomaticSize.Y
+	resultBody.BackgroundTransparency = 1
+	resultBody.Font = F.Body
+	resultBody.TextSize = 20  -- 20% bigger (was 16)
+	resultBody.TextColor3 = C.Gray600
+	resultBody.TextWrapped = true
+	resultBody.TextXAlignment = Enum.TextXAlignment.Center
+	resultBody.LineHeight = 1.5
+	resultBody.RichText = true
+	resultBody.Text = ""
+	resultBody.LayoutOrder = 3
+	resultBody.ZIndex = 83
+	resultBody.Parent = content
+	
+	resultStatsPreview = Instance.new("Frame")
+	resultStatsPreview.Name = "StatsPreview"
+	resultStatsPreview.Size = UDim2.new(1, 0, 0, 0)
+	resultStatsPreview.AutomaticSize = Enum.AutomaticSize.Y
+	resultStatsPreview.BackgroundTransparency = 1
+	resultStatsPreview.LayoutOrder = 4
+	resultStatsPreview.ZIndex = 83
+	resultStatsPreview.Parent = content
+	
+	local statsLayout = Instance.new("UIListLayout")
+	statsLayout.Padding = UDim.new(0, 8)
+	statsLayout.Parent = resultStatsPreview
+	
+	resultOkBtn = Instance.new("TextButton")
+	resultOkBtn.Size = UDim2.new(0.85, 0, 0, 60)
+	resultOkBtn.BackgroundColor3 = C.Green
+	resultOkBtn.Font = F.Title
+	resultOkBtn.TextSize = 24  -- Bigger button text
+	resultOkBtn.TextColor3 = C.White
+	resultOkBtn.Text = "Continue"
+	resultOkBtn.AutoButtonColor = false
+	resultOkBtn.LayoutOrder = 5
+	resultOkBtn.ZIndex = 83
+	resultOkBtn.Parent = content
+	corner(resultOkBtn, 30)
+	stroke(resultOkBtn, 2, 0.5, C.GreenDark)
+	
+	resultOkBtn.MouseEnter:Connect(function()
+		tween(resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.GreenDark })
+	end)
+	resultOkBtn.MouseLeave:Connect(function()
+		tween(resultOkBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.Green })
+	end)
+	
+	resultOkBtn.MouseButton1Click:Connect(function()
+		hideResultPopup()
+		if resultCallback then
+			resultCallback()
+			resultCallback = nil
+		end
+	end)
+end
+
+local function showResultPopup(data, callback)
+	if not resultOverlay then createResultPopup() end
+	
+	resultCallback = callback
+	
+	local isPositive = (data.happiness or 0) >= 0 and (data.health or 0) >= 0
+	local accentColor = isPositive and C.Green or C.Red
+	
+	resultAccentBar.BackgroundColor3 = accentColor
+	resultAccentFix.BackgroundColor3 = accentColor
+	resultOkBtn.BackgroundColor3 = accentColor
+	
+	resultEmoji.Text = data.emoji or (isPositive and "✨" or "😢")
+	resultTitle.Text = data.title or "What Happened"
+	resultBody.Text = data.body or "Life goes on..."
+	
+	-- Clear old stat previews
+	for _, child in ipairs(resultStatsPreview:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+	
+	-- Add stat change indicators
+	local statChanges = {
+		{ key = "Happiness", icon = "😀", delta = data.happiness },
+		{ key = "Health", icon = "❤️", delta = data.health },
+		{ key = "Smarts", icon = "🧠", delta = data.smarts },
+		{ key = "Looks", icon = "💄", delta = data.looks },
+	}
+	
+	for _, stat in ipairs(statChanges) do
+		if stat.delta and stat.delta ~= 0 then
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, 0, 0, 32)
+			row.BackgroundTransparency = 1
+			row.ZIndex = 84
+			row.Parent = resultStatsPreview
+			
+			local icon = Instance.new("TextLabel")
+			icon.Size = UDim2.new(0, 32, 0, 32)
+			icon.BackgroundTransparency = 1
+			icon.Font = F.Body
+			icon.TextSize = 22
+			icon.Text = stat.icon
+			icon.ZIndex = 85
+			icon.Parent = row
+			
+			local label = Instance.new("TextLabel")
+			label.Size = UDim2.new(0, 100, 1, 0)
+			label.Position = UDim2.new(0, 36, 0, 0)
+			label.BackgroundTransparency = 1
+			label.Font = F.Medium
+			label.TextSize = 18
+			label.TextColor3 = C.Gray700
+			label.TextXAlignment = Enum.TextXAlignment.Left
+			label.Text = stat.key
+			label.ZIndex = 85
+			label.Parent = row
+			
+			local change = Instance.new("TextLabel")
+			change.Size = UDim2.new(0, 70, 1, 0)
+			change.AnchorPoint = Vector2.new(1, 0)
+			change.Position = UDim2.new(1, 0, 0, 0)
+			change.BackgroundTransparency = 1
+			change.Font = F.Title
+			change.TextSize = 20
+			change.TextColor3 = stat.delta > 0 and C.Green or C.Red
+			change.TextXAlignment = Enum.TextXAlignment.Right
+			change.Text = (stat.delta > 0 and "+" or "") .. stat.delta .. "%"
+			change.ZIndex = 85
+			change.Parent = row
+		end
+	end
+	
+	-- Money change
+	if data.money and data.money ~= 0 then
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 32)
+		row.BackgroundTransparency = 1
+		row.ZIndex = 84
+		row.Parent = resultStatsPreview
+		
+		local icon = Instance.new("TextLabel")
+		icon.Size = UDim2.new(0, 32, 0, 32)
+		icon.BackgroundTransparency = 1
+		icon.Font = F.Body
+		icon.TextSize = 22
+		icon.Text = "💵"
+		icon.ZIndex = 85
+		icon.Parent = row
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0, 100, 1, 0)
+		label.Position = UDim2.new(0, 36, 0, 0)
+		label.BackgroundTransparency = 1
+		label.Font = F.Medium
+		label.TextSize = 18
+		label.TextColor3 = C.Gray700
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Text = "Money"
+		label.ZIndex = 85
+		label.Parent = row
+		
+		local change = Instance.new("TextLabel")
+		change.Size = UDim2.new(0, 90, 1, 0)
+		change.AnchorPoint = Vector2.new(1, 0)
+		change.Position = UDim2.new(1, 0, 0, 0)
+		change.BackgroundTransparency = 1
+		change.Font = F.Title
+		change.TextSize = 20
+		change.TextColor3 = data.money > 0 and C.Green or C.Red
+		change.TextXAlignment = Enum.TextXAlignment.Right
+		change.Text = (data.money > 0 and "+" or "") .. formatMoney(data.money)
+		change.ZIndex = 85
+		change.Parent = row
+	end
+	
+	resultOverlay.Visible = true
+	resultCard.Position = UDim2.new(0.5, 0, 0.5, 80)
+	resultCard.BackgroundTransparency = 1
+	
+	tween(resultCard, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0,
+	})
+	
+	if not isPositive then
+		shakeScreen(12, 0.35)
+		flashScreen(C.Red, 0.5, 0.4)
+	else
+		flashScreen(C.Green, 0.75, 0.25)
+	end
+	
+	resultVisible = true
+end
+
+local function hideResultPopup()
+	if not resultOverlay then return end
+	resultVisible = false
+	
+	tween(resultCard, TweenInfo.new(0.2), {
+		Position = UDim2.new(0.5, 0, 0.5, 50),
+		BackgroundTransparency = 1,
+	}).Completed:Connect(function()
+		resultOverlay.Visible = false
+	end)
+end
 
 ----------------------------------------------------------------
 -- HEADER BAR (Offset to avoid Roblox logo)
@@ -923,22 +1263,23 @@ titleLayout.Padding = UDim.new(0, 8)
 titleLayout.Parent = titleSection
 
 local eventEmoji = Instance.new("TextLabel")
-eventEmoji.Size = UDim2.new(0, 56, 0, 56)
+eventEmoji.Size = UDim2.new(0, 72, 0, 72)
 eventEmoji.BackgroundTransparency = 1
 eventEmoji.Font = F.Body
-eventEmoji.TextSize = 48
+eventEmoji.TextSize = 60  -- BIGGER emoji
 eventEmoji.Text = "🙂"
 eventEmoji.LayoutOrder = 1
 eventEmoji.ZIndex = 65
 eventEmoji.Parent = titleSection
 
 local eventTitle = Instance.new("TextLabel")
-eventTitle.Size = UDim2.new(0.9, 0, 0, 30)
+eventTitle.Size = UDim2.new(0.95, 0, 0, 38)
 eventTitle.BackgroundTransparency = 1
 eventTitle.Font = F.Title
-eventTitle.TextSize = 26
+eventTitle.TextSize = 32  -- 20% BIGGER (was 26)
 eventTitle.TextColor3 = C.Gray900
 eventTitle.Text = "Life Event"
+eventTitle.TextWrapped = true
 eventTitle.LayoutOrder = 2
 eventTitle.ZIndex = 65
 eventTitle.Parent = titleSection
@@ -964,11 +1305,11 @@ eventBody.Size = UDim2.new(1, 0, 0, 0)
 eventBody.AutomaticSize = Enum.AutomaticSize.Y
 eventBody.BackgroundTransparency = 1
 eventBody.Font = F.Body
-eventBody.TextSize = 16
+eventBody.TextSize = 20  -- 20% BIGGER (was 16)
 eventBody.TextColor3 = C.Gray600
 eventBody.TextWrapped = true
 eventBody.TextXAlignment = Enum.TextXAlignment.Center
-eventBody.LineHeight = 1.4
+eventBody.LineHeight = 1.5
 eventBody.RichText = true
 eventBody.Text = ""
 eventBody.LayoutOrder = 1
@@ -977,10 +1318,10 @@ eventBody.Parent = bodySection
 
 local eventQuestion = Instance.new("TextLabel")
 eventQuestion.Name = "EventQuestion"
-eventQuestion.Size = UDim2.new(1, 0, 0, 22)
+eventQuestion.Size = UDim2.new(1, 0, 0, 28)
 eventQuestion.BackgroundTransparency = 1
-eventQuestion.Font = F.Medium
-eventQuestion.TextSize = 15
+eventQuestion.Font = F.Title
+eventQuestion.TextSize = 18  -- BIGGER (was 15)
 eventQuestion.TextColor3 = C.Gray800
 eventQuestion.Text = "What will you do?"
 eventQuestion.TextXAlignment = Enum.TextXAlignment.Center
@@ -1065,10 +1406,10 @@ showEvent = function(payload)
 
 	for i, choice in ipairs(payload.choices or {}) do
 		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1, 0, 0, 52)
+		btn.Size = UDim2.new(1, 0, 0, 58)  -- BIGGER buttons
 		btn.BackgroundColor3 = C.Blue
 		btn.Font = F.Button
-		btn.TextSize = 15
+		btn.TextSize = 18  -- BIGGER text (was 15)
 		btn.TextColor3 = C.White
 		btn.Text = choice.text
 		btn.AutoButtonColor = false
@@ -1076,19 +1417,18 @@ showEvent = function(payload)
 		btn.ZIndex = 65
 		btn.Parent = choicesSection
 
-		-- rectangular buttons, not pills
-		corner(btn, 10)
-		stroke(btn, 2, 0.7, C.BlueLight)
+		corner(btn, 14)
+		stroke(btn, 2, 0.5, C.BlueLight)
 
 		if choice.minigame then
 			btn.Text = "🎮 " .. choice.text
 		end
 
 		btn.MouseEnter:Connect(function()
-			tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.BlueDark })
+			tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.BlueDark, Size = UDim2.new(1, 0, 0, 62) })
 		end)
 		btn.MouseLeave:Connect(function()
-			tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.Blue })
+			tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.Blue, Size = UDim2.new(1, 0, 0, 58) })
 		end)
 
 		local choiceIndex = choice.index or i
@@ -1368,24 +1708,69 @@ end
 -- REMOTE HANDLERS
 ----------------------------------------------------------------
 
-SyncState.OnClientEvent:Connect(function(state, lastFeedText)
+-- Track previous state for change detection
+local previousState = {}
+
+SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 	if state then
+		-- Calculate deltas for result popup
+		local deltas = {}
+		if previousState.Happiness and state.Happiness then
+			deltas.happiness = state.Happiness - previousState.Happiness
+		end
+		if previousState.Health and state.Health then
+			deltas.health = state.Health - previousState.Health
+		end
+		if previousState.Smarts and state.Smarts then
+			deltas.smarts = state.Smarts - previousState.Smarts
+		end
+		if previousState.Looks and state.Looks then
+			deltas.looks = state.Looks - previousState.Looks
+		end
+		if previousState.Money and state.Money then
+			deltas.money = state.Money - previousState.Money
+		end
+		
+		-- Update current state
 		for k, v in pairs(state) do
 			currentState[k] = v
+			previousState[k] = v
 		end
 		if state.Stats then
 			for k, v in pairs(state.Stats) do
 				currentState[k] = v
+				previousState[k] = v
 			end
 		end
 
 		if storyPathsScreenInstance and storyPathsScreenInstance.visible then
 			storyPathsScreenInstance:updateUI()
 		end
+		
+		-- Show result popup if we have result data from server
+		if resultData and resultData.showPopup then
+			showResultPopup({
+				emoji = resultData.emoji or "📋",
+				title = resultData.title or "Result",
+				body = resultData.body or lastFeedText or "Life continues...",
+				happiness = resultData.happiness or deltas.happiness,
+				health = resultData.health or deltas.health,
+				smarts = resultData.smarts or deltas.smarts,
+				looks = resultData.looks or deltas.looks,
+				money = resultData.money or deltas.money,
+			})
+		elseif deltas.health and deltas.health < -10 then
+			-- Auto-show popup for significant negative health
+			shakeScreen(8, 0.3)
+			flashScreen(C.Red, 0.6, 0.3)
+		elseif deltas.money and deltas.money > 10000 then
+			-- Flash green for big money gains
+			flashScreen(C.Green, 0.7, 0.3)
+		end
 	end
 
 	updateFromState()
-	if lastFeedText then
+	if lastFeedText and not (resultData and resultData.showPopup) then
 		addFeedEntry(lastFeedText)
 	end
 
@@ -1396,11 +1781,37 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText)
 	end
 end)
 
+-- New: ShowResult remote for explicit result popups
+local ShowResult = remotesFolder:FindFirstChild("ShowResult")
+if ShowResult then
+	ShowResult.OnClientEvent:Connect(function(data)
+		showResultPopup({
+			emoji = data.emoji or "📋",
+			title = data.title or "Result",
+			body = data.body or "Something happened...",
+			happiness = data.happiness,
+			health = data.health,
+			smarts = data.smarts,
+			looks = data.looks,
+			money = data.money,
+		}, function()
+			-- Callback when popup closed
+			if data.feedText then
+				addFeedEntry(data.feedText)
+			end
+		end)
+	end)
+end
+
 PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
 	hideTutorial()
 	if ageFeedText then
 		addFeedEntry(ageFeedText)
 	end
+	
+	-- Flash effect when event appears
+	flashScreen(C.Blue, 0.85, 0.2)
+	
 	showEvent({
 		id               = eventData.id,
 		text             = eventData.text,
@@ -1410,7 +1821,7 @@ PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
 		showRelationship = eventData.showRelationship or false,
 		relationName     = eventData.relationName,
 		relationship     = eventData.relationship,
-		question         = eventData.question, -- optional, falls back to "What will you do?"
+		question         = eventData.question,
 	})
 end)
 

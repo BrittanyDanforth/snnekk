@@ -1,6 +1,6 @@
 # BloxLife - BitLife Clone for Roblox
 
-A comprehensive BitLife-style life simulation game with **4,700+ lines** of narrative content, 6 deep story paths, 4 minigames, and premium UI.
+A comprehensive BitLife-style life simulation game with **5,000+ lines** of narrative content, 6 deep story paths, 4 minigames, **result popups with stat displays**, **screen shake effects**, and premium AAA-quality UI.
 
 ## 🎮 Features
 
@@ -290,6 +290,29 @@ Example: Job offer won't appear if:
 - **Stats Row**: Split LEFT/RIGHT avoiding center Age button
 - **Nav Bar**: Split LEFT/RIGHT with centered Age button
 - **Event Modals**: Animated slide-in with rich narrative text
+
+### 🆕 Result Popup System (BitLife-Style!)
+Every decision now triggers a detailed popup showing:
+- **Big emoji** (72px) - visual feedback
+- **Large title** (32px) - what happened
+- **Detailed description** (20px) - the story
+- **Stat change indicators** - see +/- for each stat
+- **Money change** - formatted with colors
+- **Continue button** - dismiss the popup
+
+### 🆕 Visual Feedback Effects
+- **Screen Shake**: Negative outcomes shake the screen (like real BitLife!)
+- **Red Flash**: Damage/loss events flash red
+- **Green Flash**: Good outcomes flash green  
+- **Blue Flash**: New events pop in with blue flash
+
+### 🆕 Bigger Text Everywhere
+All event cards now have 20% larger text:
+- Event emoji: 60px (was 48px)
+- Event title: 32px (was 26px)
+- Event body: 20px (was 16px)
+- Question text: 18px (was 15px)
+- Choice buttons: 58px height with 18px text
 
 ### Navigation Layout
 ```

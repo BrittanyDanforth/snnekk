@@ -69,6 +69,7 @@ local SubmitChoice = getRemote("SubmitChoice")
 local SyncState = getRemote("SyncState")
 local SetLifeInfo = getRemote("SetLifeInfo")
 local MinigameResult = getRemote("MinigameResult")
+local ShowResult = getRemote("ShowResult")  -- New: for result popups
 local GetStoryPaths = getRemoteFunction("GetStoryPaths")
 local GetSpecialActions = getRemoteFunction("GetSpecialActions")
 
@@ -120,16 +121,25 @@ _G.GetPlayerLife = function(player)
 end
 
 -- Expose state push function for LifeRemoteHandlers
-_G.PushPlayerState = function(player, lastFeedText)
+_G.PushPlayerState = function(player, lastFeedText, resultData)
 	local state = playerLives[player]
 	if state then
-		SyncState:FireClient(player, serializeState(state), lastFeedText)
+		SyncState:FireClient(player, serializeState(state), lastFeedText, resultData)
 	end
 end
 
-local function pushState(player, state, lastFeedText)
-	SyncState:FireClient(player, serializeState(state), lastFeedText)
+-- Push state with optional result data for popup
+local function pushState(player, state, lastFeedText, resultData)
+	SyncState:FireClient(player, serializeState(state), lastFeedText, resultData)
 end
+
+-- Show a result popup to the player
+local function showResultPopup(player, data)
+	ShowResult:FireClient(player, data)
+end
+
+-- Expose for other scripts
+_G.ShowResultPopup = showResultPopup
 
 local function getLife(player)
 	local state = playerLives[player]
@@ -325,6 +335,13 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		return
 	end
 	
+	-- Store state before applying choice for delta calculation
+	local beforeHappiness = state.Stats.Happiness or 50
+	local beforeHealth = state.Stats.Health or 100
+	local beforeSmarts = state.Stats.Smarts or 50
+	local beforeLooks = state.Stats.Looks or 50
+	local beforeMoney = state.Money or 0
+	
 	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
 	
 	if err then
@@ -338,14 +355,35 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 
 	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
-	pushState(player, state, feedText)
+	
+	-- Calculate actual deltas
+	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
+	local healthDelta = (state.Stats.Health or 100) - beforeHealth
+	local smartsDelta = (state.Stats.Smarts or 50) - beforeSmarts
+	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
+	local moneyDelta = (state.Money or 0) - beforeMoney
+	
+	-- Build result data for popup
+	local resultData = {
+		showPopup = true,
+		emoji = eventDef.emoji or choiceDef.emoji or "📋",
+		title = choiceDef.resultTitle or eventDef.title or "Result",
+		body = feedText,
+		happiness = happinessDelta ~= 0 and happinessDelta or nil,
+		health = healthDelta ~= 0 and healthDelta or nil,
+		smarts = smartsDelta ~= 0 and smartsDelta or nil,
+		looks = looksDelta ~= 0 and looksDelta or nil,
+		money = moneyDelta ~= 0 and moneyDelta or nil,
+	}
+	
+	pushState(player, state, feedText, resultData)
 end)
 
 ----------------------------------------------------------------
 -- MINIGAME RESULT HANDLING
 ----------------------------------------------------------------
 
-MinigameResult.OnServerEvent:Connect(function(player, success, minigameData)
+MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameData)
 	local state = getLife(player)
 	if not state.Name then
 		return
@@ -360,6 +398,11 @@ MinigameResult.OnServerEvent:Connect(function(player, success, minigameData)
 	local eventDef = pending.eventDef
 	local choiceIndex = pending.choiceIndex
 	local dynamicData = pending.dynamicData or {}
+	
+	-- Store state before
+	local beforeHappiness = state.Stats.Happiness or 50
+	local beforeHealth = state.Stats.Health or 100
+	local beforeMoney = state.Money or 0
 
 	-- Apply choice with minigame bonus if won
 	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
@@ -372,28 +415,47 @@ MinigameResult.OnServerEvent:Connect(function(player, success, minigameData)
 
 	-- Modify results based on minigame success
 	local feedText = results.resultText or "Something happened..."
+	local bonusMoney = 0
+	local bonusHappiness = 0
 	
-	if success then
+	if minigameSuccess then
 		-- Bonus for winning minigame
-		if results.effects.Money then
-			local bonus = math.floor(math.abs(results.effects.Money) * 0.5)
-			state.Money = (state.Money or 0) + bonus
-			feedText = feedText .. " (Minigame bonus: +" .. tostring(bonus) .. ")"
+		if results.effects and results.effects.Money then
+			bonusMoney = math.floor(math.abs(results.effects.Money) * 0.5)
+			state.Money = (state.Money or 0) + bonusMoney
 		end
-		if results.effects.Happiness then
-			state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 10, 0, 100)
-		end
+		bonusHappiness = 10
+		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + bonusHappiness, 0, 100)
+		feedText = feedText .. " 🎮 Minigame mastered!"
 	else
 		-- Penalty for losing minigame
-		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) - 10, 0, 100)
-		feedText = feedText .. " (Minigame failed - morale down)"
+		bonusHappiness = -10
+		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + bonusHappiness, 0, 100)
+		feedText = feedText .. " 🎮 Minigame failed..."
 	end
 
 	-- Clear pending event
 	pendingEvents[player] = nil
 
 	state:AddFeed(feedText)
-	pushState(player, state, feedText)
+	
+	-- Calculate total deltas
+	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
+	local healthDelta = (state.Stats.Health or 100) - beforeHealth
+	local moneyDelta = (state.Money or 0) - beforeMoney
+	
+	-- Build result popup
+	local resultData = {
+		showPopup = true,
+		emoji = minigameSuccess and "🏆" or "😞",
+		title = minigameSuccess and "Minigame Won!" or "Minigame Lost",
+		body = feedText,
+		happiness = happinessDelta ~= 0 and happinessDelta or nil,
+		health = healthDelta ~= 0 and healthDelta or nil,
+		money = moneyDelta ~= 0 and moneyDelta or nil,
+	}
+	
+	pushState(player, state, feedText, resultData)
 end)
 
 ----------------------------------------------------------------
@@ -439,20 +501,35 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 	-- Presidential actions
 	if actionId == "executive_order" and state.Flags.president then
 		local orders = {
-			"You signed an executive order on infrastructure!",
-			"You issued an order protecting national parks!",
-			"You signed an order boosting education funding!",
+			{ text = "You signed an executive order on infrastructure!", emoji = "🏗️" },
+			{ text = "You issued an order protecting national parks!", emoji = "🌲" },
+			{ text = "You signed an order boosting education funding!", emoji = "📚" },
 		}
-		local msg = orders[math.random(#orders)]
-		state:AddFeed(msg)
+		local chosen = orders[math.random(#orders)]
+		state:AddFeed(chosen.text)
 		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 15, 0, 100)
-		pushState(player, state, msg)
-		return { success = true, message = msg }
+		
+		-- Show popup
+		showResultPopup(player, {
+			emoji = chosen.emoji,
+			title = "Executive Order Signed!",
+			body = chosen.text,
+			happiness = 15,
+		})
+		pushState(player, state, chosen.text)
+		return { success = true, message = chosen.text }
 		
 	elseif actionId == "address_nation" and state.Flags.president then
-		local msg = "You addressed the nation. Approval rating +5%!"
+		local msg = "You addressed the nation in a televised speech. Approval rating up!"
 		state:AddFeed(msg)
 		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + 10, 0, 100)
+		
+		showResultPopup(player, {
+			emoji = "📺",
+			title = "Address to the Nation",
+			body = msg,
+			happiness = 10,
+		})
 		pushState(player, state, msg)
 		return { success = true, message = msg }
 	end
@@ -463,14 +540,28 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 		if success then
 			local amount = math.random(5000, 20000)
 			state.Money = (state.Money or 0) + amount
-			local msg = "You collected $" .. amount .. " in debts."
+			local msg = "You collected $" .. amount .. " in debts. They paid up without much trouble."
 			state:AddFeed(msg)
+			
+			showResultPopup(player, {
+				emoji = "💰",
+				title = "Debt Collection",
+				body = msg,
+				money = amount,
+			})
 			pushState(player, state, msg)
 			return { success = true, message = msg }
 		else
-			local msg = "The debtor fought back! You got nothing."
+			local msg = "The debtor fought back! You got roughed up and got nothing."
 			state:AddFeed(msg)
 			state.Stats.Health = math.clamp((state.Stats.Health or 50) - 10, 0, 100)
+			
+			showResultPopup(player, {
+				emoji = "🤕",
+				title = "Debt Collection Failed",
+				body = msg,
+				health = -10,
+			})
 			pushState(player, state, msg)
 			return { success = false, message = msg }
 		end
@@ -478,15 +569,29 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 	elseif actionId == "launder_money" and (state.Flags.underboss or state.Flags.crime_boss) then
 		local amount = math.random(10000, 50000)
 		state.Money = (state.Money or 0) + amount
-		local msg = "You laundered $" .. amount .. " through shell companies."
+		local msg = "You successfully laundered $" .. amount .. " through shell companies."
 		state:AddFeed(msg)
+		
+		showResultPopup(player, {
+			emoji = "🏦",
+			title = "Money Laundering",
+			body = msg,
+			money = amount,
+		})
 		pushState(player, state, msg)
 		return { success = true, message = msg }
 		
 	elseif actionId == "order_hit" and (state.Flags.underboss or state.Flags.crime_boss) then
-		local msg = "The hit was carried out successfully. Your rivals fear you."
+		local msg = "The hit was carried out successfully. Your rivals will think twice before crossing you again."
 		state:AddFeed(msg)
 		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) - 5, 0, 100)
+		
+		showResultPopup(player, {
+			emoji = "🎯",
+			title = "Hit Ordered",
+			body = msg,
+			happiness = -5,
+		})
 		pushState(player, state, msg)
 		return { success = true, message = msg }
 	end
