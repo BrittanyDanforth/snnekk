@@ -18,52 +18,36 @@ local ApplyForJob = remotesFolder and remotesFolder:WaitForChild("ApplyForJob", 
 local QuitJob = remotesFolder and remotesFolder:WaitForChild("QuitJob", 15)
 local EnrollEducation = remotesFolder and remotesFolder:WaitForChild("EnrollEducation", 15)
 
--- Job Data - Full list of available jobs
+-- Job Data - Must match server's JobListings IDs exactly!
 local Jobs = {
 	-- Entry Level (No Requirements)
-	{ id = "fast_food", name = "Fast Food Worker", emoji = "🍔", salary = 18000, minAge = 16, requirement = nil },
-	{ id = "retail", name = "Retail Associate", emoji = "🛒", salary = 20000, minAge = 16, requirement = nil },
-	{ id = "janitor", name = "Janitor", emoji = "🧹", salary = 22000, minAge = 18, requirement = nil },
-	{ id = "warehouse", name = "Warehouse Worker", emoji = "📦", salary = 28000, minAge = 18, requirement = nil },
-	{ id = "cashier", name = "Cashier", emoji = "💵", salary = 19000, minAge = 16, requirement = nil },
-	{ id = "server", name = "Restaurant Server", emoji = "🍽️", salary = 25000, minAge = 18, requirement = nil },
+	{ id = "fastfood", name = "Fast Food Worker", company = "Burger Palace", emoji = "🍔", salary = 22000, minAge = 14, requirement = nil },
+	{ id = "retail", name = "Retail Associate", company = "MegaMart", emoji = "🛒", salary = 26000, minAge = 16, requirement = nil },
+	{ id = "janitor", name = "Janitor", company = "CleanCo Services", emoji = "🧹", salary = 28000, minAge = 18, requirement = nil },
 	
-	-- Skilled Labor (High School)
-	{ id = "mechanic", name = "Auto Mechanic", emoji = "🔧", salary = 45000, minAge = 18, requirement = "high_school" },
-	{ id = "electrician", name = "Electrician", emoji = "⚡", salary = 55000, minAge = 18, requirement = "high_school" },
-	{ id = "plumber", name = "Plumber", emoji = "🔩", salary = 52000, minAge = 18, requirement = "high_school" },
-	{ id = "construction", name = "Construction Worker", emoji = "🏗️", salary = 40000, minAge = 18, requirement = "high_school" },
-	{ id = "firefighter", name = "Firefighter", emoji = "🚒", salary = 48000, minAge = 21, requirement = "high_school" },
-	{ id = "police", name = "Police Officer", emoji = "👮", salary = 52000, minAge = 21, requirement = "high_school" },
+	-- Office Jobs (High School)
+	{ id = "receptionist", name = "Receptionist", company = "Corporate Office", emoji = "📞", salary = 32000, minAge = 18, requirement = "high_school" },
+	{ id = "office", name = "Office Assistant", company = "Business Solutions", emoji = "📋", salary = 35000, minAge = 18, requirement = "high_school" },
 	
-	-- Professional (University)
-	{ id = "teacher", name = "Teacher", emoji = "👨‍🏫", salary = 55000, minAge = 22, requirement = "university" },
-	{ id = "nurse", name = "Nurse", emoji = "👨‍⚕️", salary = 65000, minAge = 22, requirement = "university" },
-	{ id = "accountant", name = "Accountant", emoji = "📊", salary = 70000, minAge = 22, requirement = "university" },
-	{ id = "engineer", name = "Engineer", emoji = "⚙️", salary = 85000, minAge = 22, requirement = "university" },
-	{ id = "lawyer", name = "Lawyer", emoji = "⚖️", salary = 120000, minAge = 25, requirement = "law_school" },
-	{ id = "doctor", name = "Doctor", emoji = "🩺", salary = 200000, minAge = 28, requirement = "medical_school" },
+	-- Professional (Bachelor's)
+	{ id = "accountant_jr", name = "Junior Accountant", company = "Financial Services", emoji = "📊", salary = 48000, minAge = 22, requirement = "bachelor" },
+	{ id = "marketing", name = "Marketing Associate", company = "AdVenture Agency", emoji = "📈", salary = 52000, minAge = 22, requirement = "bachelor" },
+	{ id = "developer", name = "Software Developer", company = "TechStart Inc", emoji = "💻", salary = 85000, minAge = 22, requirement = "bachelor" },
+	{ id = "senior_dev", name = "Senior Developer", company = "BigTech Corp", emoji = "🖥️", salary = 140000, minAge = 26, requirement = "bachelor" },
 	
-	-- Business
-	{ id = "sales", name = "Sales Rep", emoji = "📞", salary = 50000, minAge = 18, requirement = nil },
-	{ id = "marketing", name = "Marketing Manager", emoji = "📈", salary = 75000, minAge = 22, requirement = "university" },
-	{ id = "ceo", name = "CEO", emoji = "👔", salary = 500000, minAge = 35, requirement = "mba" },
-	
-	-- Creative
-	{ id = "artist", name = "Artist", emoji = "🎨", salary = 35000, minAge = 18, requirement = nil },
-	{ id = "writer", name = "Writer", emoji = "✍️", salary = 40000, minAge = 18, requirement = nil },
-	{ id = "musician", name = "Musician", emoji = "🎸", salary = 30000, minAge = 16, requirement = nil },
-	{ id = "actor", name = "Actor", emoji = "🎭", salary = 45000, minAge = 18, requirement = nil },
+	-- Advanced Degrees
+	{ id = "doctor", name = "Doctor", company = "City Hospital", emoji = "🩺", salary = 250000, minAge = 30, requirement = "medical" },
+	{ id = "lawyer", name = "Lawyer", company = "Smith & Associates", emoji = "⚖️", salary = 180000, minAge = 28, requirement = "law" },
 }
 
--- Education Data
+-- Education Data - Must match server's EducationOptions IDs!
 local Education = {
-	{ id = "community_college", name = "Community College", emoji = "🏫", duration = 2, cost = 5000, minAge = 18, requirement = "high_school" },
-	{ id = "university", name = "University", emoji = "🎓", duration = 4, cost = 40000, minAge = 18, requirement = "high_school" },
-	{ id = "graduate_school", name = "Graduate School", emoji = "📚", duration = 2, cost = 60000, minAge = 22, requirement = "university" },
-	{ id = "law_school", name = "Law School", emoji = "⚖️", duration = 3, cost = 150000, minAge = 22, requirement = "university" },
-	{ id = "medical_school", name = "Medical School", emoji = "🏥", duration = 4, cost = 200000, minAge = 22, requirement = "university" },
-	{ id = "mba", name = "Business School (MBA)", emoji = "💼", duration = 2, cost = 100000, minAge = 24, requirement = "university" },
+	{ id = "community", name = "Community College", emoji = "🏫", duration = 2, cost = 15000, minAge = 18, requirement = "high_school" },
+	{ id = "bachelor", name = "Bachelor's Degree", emoji = "🎓", duration = 4, cost = 80000, minAge = 18, requirement = "high_school" },
+	{ id = "master", name = "Master's Degree", emoji = "📚", duration = 2, cost = 60000, minAge = 22, requirement = "bachelor" },
+	{ id = "law", name = "Law School", emoji = "⚖️", duration = 3, cost = 150000, minAge = 22, requirement = "bachelor" },
+	{ id = "medical", name = "Medical School", emoji = "🏥", duration = 4, cost = 200000, minAge = 22, requirement = "bachelor" },
+	{ id = "phd", name = "PhD Program", emoji = "🎓", duration = 5, cost = 100000, minAge = 24, requirement = "master" },
 }
 
 function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)

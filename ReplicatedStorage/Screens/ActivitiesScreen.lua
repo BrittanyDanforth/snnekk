@@ -18,56 +18,52 @@ local DoActivity = remotesFolder and remotesFolder:WaitForChild("DoActivity", 15
 local CommitCrime = remotesFolder and remotesFolder:WaitForChild("CommitCrime", 15)
 local DoPrisonAction = remotesFolder and remotesFolder:WaitForChild("DoPrisonAction", 15)
 
--- Activity Data
+-- Activity Data - Must match server's Activities IDs!
 local MindBody = {
-	{ id = "gym", name = "Hit the Gym", emoji = "Gym", effect = "+Health +Looks", minAge = 12, cost = 0, hasMinigame = true },
-	{ id = "meditate", name = "Meditate", emoji = "Zen", effect = "+Happiness +Health", minAge = 10, cost = 0 },
-	{ id = "study", name = "Study Hard", emoji = "Book", effect = "+Smarts", minAge = 6, cost = 0, hasMinigame = true },
-	{ id = "spa", name = "Spa Day", emoji = "Spa", effect = "+Looks +Happiness", minAge = 16, cost = 200 },
-	{ id = "walk", name = "Go for Walk", emoji = "Walk", effect = "+Health +Happiness", minAge = 5, cost = 0 },
-	{ id = "martial_arts", name = "Martial Arts", emoji = "Karate", effect = "+Health +Smarts", minAge = 8, cost = 100 },
-	{ id = "yoga", name = "Yoga Class", emoji = "Yoga", effect = "+Health +Looks", minAge = 14, cost = 50 },
-	{ id = "read", name = "Read a Book", emoji = "Read", effect = "+Smarts +Happiness", minAge = 6, cost = 0 },
+	{ id = "read", name = "Read a Book", emoji = "📖", effect = "+Smarts +Happiness", minAge = 5, cost = 0 },
+	{ id = "study", name = "Study", emoji = "📚", effect = "+Smarts", minAge = 5, cost = 0, hasMinigame = true },
+	{ id = "meditate", name = "Meditate", emoji = "🧘", effect = "+Happiness +Health", minAge = 8, cost = 0 },
+	{ id = "gym", name = "Go to the Gym", emoji = "💪", effect = "+Health +Looks", minAge = 14, cost = 0, hasMinigame = true },
+	{ id = "run", name = "Go for a Run", emoji = "🏃", effect = "+Health +Happiness", minAge = 6, cost = 0 },
+	{ id = "yoga", name = "Yoga", emoji = "🧘‍♀️", effect = "+Health +Happiness", minAge = 10, cost = 0 },
+	{ id = "spa", name = "Spa Day", emoji = "💆", effect = "+Looks +Happiness", minAge = 16, cost = 200 },
+	{ id = "salon", name = "Salon Visit", emoji = "💇", effect = "+Looks +Happiness", minAge = 12, cost = 80 },
 }
 
 local Social = {
-	{ id = "party", name = "Go to Party", emoji = "Party", effect = "+Happiness", minAge = 16, cost = 0 },
-	{ id = "date", name = "Go on Date", emoji = "Date", effect = "+Happiness", minAge = 16, cost = 100 },
-	{ id = "club", name = "Night Club", emoji = "Club", effect = "+Happiness -Health", minAge = 21, cost = 150 },
-	{ id = "hangout", name = "Hang with Friends", emoji = "Friends", effect = "+Happiness", minAge = 5, cost = 0 },
-	{ id = "volunteer", name = "Volunteer", emoji = "Help", effect = "+Happiness +Smarts", minAge = 12, cost = 0 },
-	{ id = "networking", name = "Networking Event", emoji = "Network", effect = "+Smarts", minAge = 18, cost = 50 },
+	{ id = "party", name = "Go to a Party", emoji = "🎉", effect = "+Happiness", minAge = 14, cost = 0 },
+	{ id = "hangout", name = "Hang Out", emoji = "👥", effect = "+Happiness", minAge = 5, cost = 0 },
+	{ id = "nightclub", name = "Nightclub", emoji = "🕺", effect = "+Happiness -Health", minAge = 21, cost = 50 },
+	{ id = "host_party", name = "Host a Party", emoji = "🎊", effect = "+Happiness", minAge = 16, cost = 300 },
 }
 
 local Entertainment = {
-	{ id = "movie", name = "Watch Movie", emoji = "Movie", effect = "+Happiness", minAge = 5, cost = 20 },
-	{ id = "concert", name = "Go to Concert", emoji = "Music", effect = "+Happiness", minAge = 12, cost = 100 },
-	{ id = "vacation", name = "Take Vacation", emoji = "Travel", effect = "+Happiness +Health", minAge = 10, cost = 2000 },
-	{ id = "gaming", name = "Play Games", emoji = "Game", effect = "+Happiness", minAge = 5, cost = 0 },
-	{ id = "camping", name = "Go Camping", emoji = "Camp", effect = "+Happiness +Health", minAge = 8, cost = 300 },
-	{ id = "museum", name = "Visit Museum", emoji = "Museum", effect = "+Smarts", minAge = 6, cost = 25 },
-	{ id = "theme_park", name = "Theme Park", emoji = "Ride", effect = "+Happiness", minAge = 8, cost = 150 },
+	{ id = "tv", name = "Watch TV", emoji = "📺", effect = "+Happiness", minAge = 2, cost = 0 },
+	{ id = "games", name = "Play Video Games", emoji = "🎮", effect = "+Happiness +Smarts", minAge = 5, cost = 0 },
+	{ id = "movies", name = "Go to Movies", emoji = "🎬", effect = "+Happiness", minAge = 5, cost = 20 },
+	{ id = "concert", name = "Concert", emoji = "🎤", effect = "+Happiness", minAge = 12, cost = 150 },
+	{ id = "vacation", name = "Vacation", emoji = "✈️", effect = "+Happiness +Health", minAge = 5, cost = 2000 },
 }
 
 local Crimes = {
-	{ id = "shoplift", name = "Shoplift", emoji = "Steal", risk = 30, reward = "$50-$200", minAge = 10 },
-	{ id = "pickpocket", name = "Pickpocket", emoji = "Wallet", risk = 45, reward = "$100-$500", minAge = 12 },
-	{ id = "burglary", name = "Burglary", emoji = "House", risk = 60, reward = "$500-$5K", minAge = 16 },
-	{ id = "robbery", name = "Armed Robbery", emoji = "Gun", risk = 80, reward = "$5K-$50K", minAge = 18 },
-	{ id = "car_theft", name = "Grand Theft Auto", emoji = "Car", risk = 65, reward = "$5K-$25K", minAge = 16 },
-	{ id = "drug_deal", name = "Drug Deal", emoji = "Pills", risk = 55, reward = "$1K-$10K", minAge = 16 },
-	{ id = "bank_heist", name = "Bank Heist", emoji = "Bank", risk = 95, reward = "$50K-$500K", minAge = 21, hasMinigame = true },
+	{ id = "shoplift", name = "Shoplift", emoji = "🛒", risk = 30, reward = "$50-$200", minAge = 10 },
+	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", risk = 45, reward = "$100-$500", minAge = 12 },
+	{ id = "burglary", name = "Burglary", emoji = "🏠", risk = 60, reward = "$500-$5K", minAge = 16 },
+	{ id = "robbery", name = "Armed Robbery", emoji = "🔫", risk = 80, reward = "$5K-$50K", minAge = 18 },
+	{ id = "car_theft", name = "Grand Theft Auto", emoji = "🚗", risk = 65, reward = "$5K-$25K", minAge = 16 },
+	{ id = "drug_deal", name = "Drug Deal", emoji = "💊", risk = 55, reward = "$1K-$10K", minAge = 16 },
+	{ id = "bank_heist", name = "Bank Heist", emoji = "🏦", risk = 95, reward = "$50K-$500K", minAge = 21, hasMinigame = true },
 }
 
 local PrisonActivities = {
-	{ id = "prison_escape", name = "Escape Prison", emoji = "Key", effect = "Freedom!", minAge = 0, risk = 90, hasMinigame = true },
-	{ id = "prison_workout", name = "Yard Workout", emoji = "Strong", effect = "+Health +Looks", minAge = 0 },
-	{ id = "prison_study", name = "Get GED", emoji = "Study", effect = "+Smarts", minAge = 0 },
-	{ id = "prison_gang", name = "Join Prison Gang", emoji = "Gang", effect = "+Respect -Health", minAge = 0 },
-	{ id = "prison_riot", name = "Start Riot", emoji = "Fire", effect = "Dangerous!", minAge = 0, risk = 85 },
-	{ id = "prison_snitch", name = "Snitch", emoji = "Rat", effect = "-Sentence +Risk", minAge = 0 },
-	{ id = "prison_appeal", name = "Appeal Sentence", emoji = "Law", effect = "Legal Help", minAge = 0, cost = 5000 },
-	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "Good", effect = "-Sentence Time", minAge = 0 },
+	{ id = "prison_escape", name = "Escape Prison", emoji = "🔓", effect = "Freedom!", minAge = 0, risk = 90, hasMinigame = true },
+	{ id = "prison_workout", name = "Yard Workout", emoji = "💪", effect = "+Health +Looks", minAge = 0 },
+	{ id = "prison_study", name = "Get GED", emoji = "📚", effect = "+Smarts", minAge = 0 },
+	{ id = "prison_gang", name = "Join Prison Gang", emoji = "⛓️", effect = "+Respect -Health", minAge = 0 },
+	{ id = "prison_riot", name = "Start Riot", emoji = "🔥", effect = "Dangerous!", minAge = 0, risk = 85 },
+	{ id = "prison_snitch", name = "Snitch", emoji = "🐀", effect = "-Sentence +Risk", minAge = 0 },
+	{ id = "prison_appeal", name = "Appeal Sentence", emoji = "⚖️", effect = "Legal Help", minAge = 0, cost = 5000 },
+	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "😇", effect = "-Sentence Time", minAge = 0 },
 }
 
 function ActivitiesScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)
@@ -687,7 +683,7 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	UI.corner(card, 14)
 	UI.stroke(card, 1, canDo and 0.7 or 0.88, canDo and accentColor or C.Gray200)
 	
-	-- Icon frame
+	-- Icon frame with emoji
 	local iconFrame = Instance.new("Frame")
 	iconFrame.Size = UDim2.new(0, 54, 0, 54)
 	iconFrame.Position = UDim2.new(0, 12, 0.5, -27)
@@ -699,8 +695,8 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Font = F.Medium
-	iconLabel.TextSize = 11
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 28
 	iconLabel.TextColor3 = accentColor
 	iconLabel.Text = item.emoji
 	iconLabel.ZIndex = 85
@@ -801,7 +797,7 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	UI.corner(card, 14)
 	UI.stroke(card, canDo and 1 or 1, canDo and 0.7 or 0.88, canDo and C.Red or C.Gray200)
 	
-	-- Icon
+	-- Icon with emoji
 	local iconFrame = Instance.new("Frame")
 	iconFrame.Size = UDim2.new(0, 56, 0, 56)
 	iconFrame.Position = UDim2.new(0, 12, 0.5, -28)
@@ -813,8 +809,8 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Font = F.Medium
-	iconLabel.TextSize = 11
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 28
 	iconLabel.TextColor3 = C.Red
 	iconLabel.Text = item.emoji
 	iconLabel.ZIndex = 85
@@ -913,7 +909,7 @@ function ActivitiesScreen:createPrisonCard(parent, item, order)
 	UI.corner(card, 14)
 	UI.stroke(card, 1, 0.88, C.Gray200)
 	
-	-- Icon
+	-- Icon with emoji
 	local iconFrame = Instance.new("Frame")
 	iconFrame.Size = UDim2.new(0, 56, 0, 56)
 	iconFrame.Position = UDim2.new(0, 12, 0.5, -28)
@@ -925,8 +921,8 @@ function ActivitiesScreen:createPrisonCard(parent, item, order)
 	local iconLabel = Instance.new("TextLabel")
 	iconLabel.Size = UDim2.fromScale(1, 1)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Font = F.Medium
-	iconLabel.TextSize = 11
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 28
 	iconLabel.TextColor3 = item.risk and C.Red or C.Gray600
 	iconLabel.Text = item.emoji
 	iconLabel.ZIndex = 85

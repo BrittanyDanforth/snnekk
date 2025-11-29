@@ -272,6 +272,39 @@ function RelationshipsScreen:switchTab(tabId)
 	elseif tabId == "enemies" then self:populateEnemies() end
 end
 
+-- Family emoji mapping
+local FamilyEmojis = {
+	mother = "👩",
+	father = "👨", 
+	grandmother = "👵",
+	grandfather = "👴",
+	brother = "👦",
+	sister = "👧",
+	son = "👦",
+	daughter = "👧",
+	baby = "👶",
+	spouse = "💑",
+	wife = "👩",
+	husband = "👨",
+}
+
+function RelationshipsScreen:getFamilyEmoji(role)
+	local lowerRole = role:lower()
+	if lowerRole:find("mother") or lowerRole:find("mom") then return "👩" end
+	if lowerRole:find("father") or lowerRole:find("dad") then return "👨" end
+	if lowerRole:find("grandmother") or lowerRole:find("grandma") then return "👵" end
+	if lowerRole:find("grandfather") or lowerRole:find("grandpa") then return "👴" end
+	if lowerRole:find("brother") then return "👦" end
+	if lowerRole:find("sister") then return "👧" end
+	if lowerRole:find("son") then return "👦" end
+	if lowerRole:find("daughter") then return "👧" end
+	if lowerRole:find("baby") then return "👶" end
+	if lowerRole:find("wife") then return "👩" end
+	if lowerRole:find("husband") then return "👨" end
+	if lowerRole:find("spouse") then return "💑" end
+	return "👤"
+end
+
 function RelationshipsScreen:getFamily()
 	local rels = self:getRelationships()
 	local age = self:getAge()
@@ -284,6 +317,7 @@ function RelationshipsScreen:getFamily()
 				id = id,
 				name = rel.name,
 				role = rel.role or "Family",
+				emoji = self:getFamilyEmoji(rel.role or ""),
 				relationship = rel.relationship or 75,
 				age = rel.age or age,
 				alive = rel.alive ~= false
@@ -297,32 +331,84 @@ function RelationshipsScreen:getFamily()
 		local fatherAge = math.max(age + 25, 25)
 		
 		family = {
-			{ id = "mother", name = "Mom", role = "Mother", relationship = 80, age = motherAge, alive = motherAge < 90 },
-			{ id = "father", name = "Dad", role = "Father", relationship = 75, age = fatherAge, alive = fatherAge < 85 },
+			{ id = "mother", name = "Mom", role = "Mother", emoji = "👩", relationship = 80, age = motherAge, alive = motherAge < 90 },
+			{ id = "father", name = "Dad", role = "Father", emoji = "👨", relationship = 75, age = fatherAge, alive = fatherAge < 85 },
 		}
 		
-		-- Add siblings based on random chance (seeded by age)
-		if age > 0 then
-			local hasSibling = (age % 3 == 0)
-			if hasSibling then
-				local sibAge = math.max(age + math.random(-5, 5), 1)
-				local sibRole = sibAge > age and "Older " or "Younger "
-				sibRole = sibRole .. (math.random() > 0.5 and "Brother" or "Sister")
+		-- Add siblings based on age pattern
+		if age > 5 then
+			local hasBrother = (age % 4 == 0) or (age % 7 == 1)
+			local hasSister = (age % 5 == 0) or (age % 6 == 2)
+			
+			if hasBrother then
+				local sibAge = math.max(age + (age % 2 == 0 and -3 or 2), 1)
+				local sibRole = sibAge > age and "Older Brother" or "Younger Brother"
 				table.insert(family, {
-					id = "sibling1",
-					name = sibRole == "Older Brother" and "Big Bro" or sibRole == "Younger Brother" and "Lil Bro" or sibRole == "Older Sister" and "Big Sis" or "Lil Sis",
+					id = "brother",
+					name = sibAge > age and "Big Bro" or "Lil Bro",
 					role = sibRole,
+					emoji = "👦",
 					relationship = 65,
+					age = sibAge,
+					alive = true
+				})
+			end
+			
+			if hasSister then
+				local sibAge = math.max(age + (age % 3 == 0 and 2 or -2), 1)
+				local sibRole = sibAge > age and "Older Sister" or "Younger Sister"
+				table.insert(family, {
+					id = "sister",
+					name = sibAge > age and "Big Sis" or "Lil Sis",
+					role = sibRole,
+					emoji = "👧",
+					relationship = 68,
 					age = sibAge,
 					alive = true
 				})
 			end
 		end
 		
-		-- Add grandparents if young
-		if age < 25 then
-			table.insert(family, { id = "grandma", name = "Grandma", role = "Grandmother", relationship = 70, age = motherAge + 25, alive = motherAge + 25 < 85 })
-			table.insert(family, { id = "grandpa", name = "Grandpa", role = "Grandfather", relationship = 65, age = fatherAge + 28, alive = fatherAge + 28 < 82 })
+		-- Add grandparents if young enough for them to be alive
+		if age < 30 then
+			local grandmaAge = motherAge + 25
+			local grandpaAge = fatherAge + 28
+			table.insert(family, { 
+				id = "grandma", 
+				name = "Grandma", 
+				role = "Grandmother", 
+				emoji = "👵",
+				relationship = 70, 
+				age = grandmaAge, 
+				alive = grandmaAge < 88 
+			})
+			table.insert(family, { 
+				id = "grandpa", 
+				name = "Grandpa", 
+				role = "Grandfather", 
+				emoji = "👴",
+				relationship = 65, 
+				age = grandpaAge, 
+				alive = grandpaAge < 85 
+			})
+		end
+		
+		-- Add children if old enough (married with kids scenario)
+		if age >= 25 then
+			local hasKid = (age % 3 == 0) or (age >= 30)
+			if hasKid then
+				local kidAge = math.max(age - 25, 1)
+				local isBoy = age % 2 == 0
+				table.insert(family, {
+					id = "child1",
+					name = isBoy and "Son" or "Daughter",
+					role = isBoy and "Son" or "Daughter",
+					emoji = kidAge < 3 and "👶" or (isBoy and "👦" or "👧"),
+					relationship = 85,
+					age = kidAge,
+					alive = true
+				})
+			end
 		end
 	end
 	
@@ -464,10 +550,10 @@ function RelationshipsScreen:populateRomance()
 	meetIcon.Size = UDim2.new(0, 50, 0, 50)
 	meetIcon.Position = UDim2.new(0, 14, 0.5, -25)
 	meetIcon.BackgroundTransparency = 1
-	meetIcon.Font = F.Title
-	meetIcon.TextSize = 20
+	meetIcon.Font = F.Body
+	meetIcon.TextSize = 32
 	meetIcon.TextColor3 = C.Pink
-	meetIcon.Text = "LOVE"
+	meetIcon.Text = "💕"
 	meetIcon.ZIndex = 83
 	meetIcon.Parent = meetCard
 	
@@ -609,10 +695,10 @@ function RelationshipsScreen:populateFriends()
 	makeIcon.Size = UDim2.new(0, 50, 0, 50)
 	makeIcon.Position = UDim2.new(0, 14, 0.5, -25)
 	makeIcon.BackgroundTransparency = 1
-	makeIcon.Font = F.Title
-	makeIcon.TextSize = 20
+	makeIcon.Font = F.Body
+	makeIcon.TextSize = 32
 	makeIcon.TextColor3 = C.Purple
-	makeIcon.Text = "BFF"
+	makeIcon.Text = "🤝"
 	makeIcon.ZIndex = 83
 	makeIcon.Parent = makeCard
 	
@@ -832,7 +918,7 @@ function RelationshipsScreen:createPersonCard(parent, person, order, accentColor
 	UI.corner(card, 16)
 	UI.stroke(card, 1, 0.7, accentColor)
 	
-	-- Avatar
+	-- Avatar with emoji
 	local avatarFrame = Instance.new("Frame")
 	avatarFrame.Size = UDim2.new(0, 60, 0, 60)
 	avatarFrame.Position = UDim2.new(0, 14, 0.5, -30)
@@ -841,13 +927,16 @@ function RelationshipsScreen:createPersonCard(parent, person, order, accentColor
 	avatarFrame.Parent = card
 	UI.corner(avatarFrame, 14)
 	
+	-- Use emoji if available, otherwise generate from role
+	local emoji = person.emoji or self:getFamilyEmoji(person.role or "")
+	
 	local avatarLabel = Instance.new("TextLabel")
 	avatarLabel.Size = UDim2.fromScale(1, 1)
 	avatarLabel.BackgroundTransparency = 1
-	avatarLabel.Font = F.Title
-	avatarLabel.TextSize = 16
+	avatarLabel.Font = F.Body
+	avatarLabel.TextSize = 32
 	avatarLabel.TextColor3 = accentColor
-	avatarLabel.Text = person.name:sub(1, 2):upper()
+	avatarLabel.Text = emoji
 	avatarLabel.ZIndex = 85
 	avatarLabel.Parent = avatarFrame
 	
@@ -1142,17 +1231,18 @@ end
 function RelationshipsScreen:createActionButton(action, order, accentColor, paleColor, person)
 	local money = self:getMoney()
 	local cost = action.cost or 0
-	local canAfford = money >= cost
+	-- Free actions (cost = 0) are always available!
+	local canAfford = (cost == 0) or (money >= cost)
 	
 	local card = Instance.new("Frame")
 	card.Name = action.id
 	card.Size = UDim2.new(1, 0, 0, 62)
-	card.BackgroundColor3 = canAfford and C.White or C.Gray100
+	card.BackgroundColor3 = C.White
 	card.LayoutOrder = order
 	card.ZIndex = 97
 	card.Parent = self.actionsScroll
 	UI.corner(card, 14)
-	UI.stroke(card, 1, 0.88, C.Gray200)
+	UI.stroke(card, 1, canAfford and 0.7 or 0.88, canAfford and accentColor or C.Gray200)
 	
 	-- Name
 	local nameLabel = Instance.new("TextLabel")
@@ -1161,18 +1251,31 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = F.Title
 	nameLabel.TextSize = 15
-	nameLabel.TextColor3 = canAfford and C.Gray900 or C.Gray500
+	nameLabel.TextColor3 = C.Gray900
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.Text = action.name
 	nameLabel.ZIndex = 98
 	nameLabel.Parent = card
 	
-	-- Effect badge
-	local effectText = action.effect .. (cost > 0 and " | $" .. cost or "")
+	-- Effect badge - show FREE for no-cost actions
+	local effectText = action.effect
+	local badgeBg = paleColor
+	local badgeTextColor = accentColor
+	
+	if cost > 0 then
+		effectText = action.effect .. " | $" .. cost
+		badgeBg = canAfford and C.AmberPale or C.RedPale
+		badgeTextColor = canAfford and C.AmberDark or C.RedDark
+	else
+		effectText = action.effect .. " | FREE"
+		badgeBg = C.GreenPale
+		badgeTextColor = C.GreenDark
+	end
+	
 	local effectBadge = Instance.new("Frame")
-	effectBadge.Size = UDim2.new(0, math.clamp(#effectText * 7 + 20, 90, 170), 0, 24)
+	effectBadge.Size = UDim2.new(0, math.clamp(#effectText * 7 + 20, 100, 180), 0, 24)
 	effectBadge.Position = UDim2.new(0, 16, 0, 34)
-	effectBadge.BackgroundColor3 = cost > 0 and C.AmberPale or paleColor
+	effectBadge.BackgroundColor3 = badgeBg
 	effectBadge.ZIndex = 98
 	effectBadge.Parent = card
 	UI.pill(effectBadge)
@@ -1182,7 +1285,7 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	effectLabel.BackgroundTransparency = 1
 	effectLabel.Font = F.Medium
 	effectLabel.TextSize = 11
-	effectLabel.TextColor3 = cost > 0 and C.AmberDark or accentColor
+	effectLabel.TextColor3 = badgeTextColor
 	effectLabel.Text = effectText
 	effectLabel.ZIndex = 99
 	effectLabel.Parent = effectBadge
@@ -1196,7 +1299,7 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	btn.Font = F.Button
 	btn.TextSize = 13
 	btn.TextColor3 = canAfford and C.White or C.Gray500
-	btn.Text = canAfford and "Do" or "No $"
+	btn.Text = canAfford and "Do" or "Need $"
 	btn.AutoButtonColor = false
 	btn.ZIndex = 98
 	btn.Parent = card
