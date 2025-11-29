@@ -1357,6 +1357,22 @@ function ActivitiesScreen:movePlayer(direction)
 		return
 	end
 	
+	-- Wall check - can't walk through walls!
+	if self:isWall(newRow, newCol) then
+		log("Move blocked - wall at", newRow, newCol)
+		-- Flash the wall red briefly to indicate collision
+		local wallCell = self.gridCells[newRow][newCol]
+		if wallCell then
+			UI.tween(wallCell, TweenInfo.new(0.1), { BackgroundColor3 = C.Red })
+			task.delay(0.15, function()
+				if wallCell and wallCell.Parent then
+					UI.tween(wallCell, TweenInfo.new(0.1), { BackgroundColor3 = C.Gray900 })
+				end
+			end)
+		end
+		return
+	end
+	
 	-- Move player
 	self.playerPos.row, self.playerPos.col = newRow, newCol
 	self:setGridPosition(self.playerCell, newRow, newCol)
@@ -1394,34 +1410,191 @@ function ActivitiesScreen:movePlayer(direction)
 end
 
 function ActivitiesScreen:moveCop()
-	-- Cop moves toward player (simple chase AI)
+	-- Cop moves toward player using simple pathfinding that respects walls
 	local dRow = self.playerPos.row - self.copPos.row
 	local dCol = self.playerPos.col - self.copPos.col
 	
-	log("Cop moving - dRow:", dRow, "dCol:", dCol)
+	log("Cop AI - dRow:", dRow, "dCol:", dCol, "from", self.copPos.row, self.copPos.col)
 	
-	-- Move in direction with greatest difference
+	-- Try to move in the direction with greatest difference first
+	local moved = false
+	local tryMoves = {}
+	
+	-- Prioritize directions based on distance to player
 	if math.abs(dRow) >= math.abs(dCol) then
+		-- Prefer vertical movement
 		if dRow > 0 then
-			self.copPos.row = self.copPos.row + 1
+			table.insert(tryMoves, { row = 1, col = 0 }) -- down
 		elseif dRow < 0 then
-			self.copPos.row = self.copPos.row - 1
+			table.insert(tryMoves, { row = -1, col = 0 }) -- up
+		end
+		if dCol > 0 then
+			table.insert(tryMoves, { row = 0, col = 1 }) -- right
+		elseif dCol < 0 then
+			table.insert(tryMoves, { row = 0, col = -1 }) -- left
 		end
 	else
+		-- Prefer horizontal movement
 		if dCol > 0 then
-			self.copPos.col = self.copPos.col + 1
+			table.insert(tryMoves, { row = 0, col = 1 }) -- right
 		elseif dCol < 0 then
-			self.copPos.col = self.copPos.col - 1
+			table.insert(tryMoves, { row = 0, col = -1 }) -- left
+		end
+		if dRow > 0 then
+			table.insert(tryMoves, { row = 1, col = 0 }) -- down
+		elseif dRow < 0 then
+			table.insert(tryMoves, { row = -1, col = 0 }) -- up
 		end
 	end
 	
-	-- Boundary check
-	self.copPos.row = math.clamp(self.copPos.row, 1, self.gridSize)
-	self.copPos.col = math.clamp(self.copPos.col, 1, self.gridSize)
+	-- Try each move in order of priority
+	for _, move in ipairs(tryMoves) do
+		local newRow = self.copPos.row + move.row
+		local newCol = self.copPos.col + move.col
+		
+		-- Check bounds and walls
+		if newRow >= 1 and newRow <= self.gridSize and
+		   newCol >= 1 and newCol <= self.gridSize and
+		   not self:isWall(newRow, newCol) then
+			self.copPos.row = newRow
+			self.copPos.col = newCol
+			moved = true
+			log("Cop moved to:", newRow, newCol)
+			break
+		end
+	end
 	
-	log("Cop pos after:", self.copPos.row, self.copPos.col)
+	-- If no direct move worked, try random adjacent cells (cop is stuck)
+	if not moved then
+		local randomMoves = {
+			{ row = -1, col = 0 }, { row = 1, col = 0 },
+			{ row = 0, col = -1 }, { row = 0, col = 1 },
+		}
+		-- Shuffle
+		for i = #randomMoves, 2, -1 do
+			local j = math.random(i)
+			randomMoves[i], randomMoves[j] = randomMoves[j], randomMoves[i]
+		end
+		
+		for _, move in ipairs(randomMoves) do
+			local newRow = self.copPos.row + move.row
+			local newCol = self.copPos.col + move.col
+			if newRow >= 1 and newRow <= self.gridSize and
+			   newCol >= 1 and newCol <= self.gridSize and
+			   not self:isWall(newRow, newCol) then
+				self.copPos.row = newRow
+				self.copPos.col = newCol
+				log("Cop randomly moved to:", newRow, newCol)
+				break
+			end
+		end
+	end
 	
 	self:setGridPosition(self.copCell, self.copPos.row, self.copPos.col)
+end
+
+-- Generate a maze with walls that create corridors
+function ActivitiesScreen:generateMaze()
+	log("=== GENERATING MAZE ===")
+	
+	-- Initialize all cells as passable (false = no wall)
+	self.walls = {}
+	for row = 1, self.gridSize do
+		self.walls[row] = {}
+		for col = 1, self.gridSize do
+			self.walls[row][col] = false
+		end
+	end
+	
+	-- Create maze patterns - several predefined layouts that are challenging but fair
+	local mazePatterns = {
+		-- Pattern 1: Classic L-shapes
+		{
+			{0,0,0,0,0,0,0,0},
+			{0,1,1,0,1,1,1,0},
+			{0,0,0,0,0,0,1,0},
+			{0,1,1,1,1,0,0,0},
+			{0,0,0,0,1,0,1,1},
+			{1,1,1,0,0,0,0,0},
+			{0,0,0,0,1,1,0,1},
+			{0,0,1,0,0,0,0,0},
+		},
+		-- Pattern 2: Zigzag corridors
+		{
+			{0,0,0,1,0,0,0,0},
+			{1,1,0,1,0,1,1,0},
+			{0,0,0,0,0,0,1,0},
+			{0,1,1,1,1,0,0,0},
+			{0,0,0,0,0,1,1,0},
+			{0,1,1,0,0,0,0,0},
+			{0,0,0,0,1,1,1,0},
+			{0,1,0,0,0,0,0,0},
+		},
+		-- Pattern 3: Center maze
+		{
+			{0,0,0,0,0,0,0,0},
+			{0,1,1,1,1,1,1,0},
+			{0,1,0,0,0,0,1,0},
+			{0,0,0,1,1,0,0,0},
+			{0,1,0,0,1,0,1,0},
+			{0,1,0,0,0,0,1,0},
+			{0,1,1,1,0,1,1,0},
+			{0,0,0,0,0,0,0,0},
+		},
+		-- Pattern 4: Prison block style
+		{
+			{0,0,0,0,1,0,0,0},
+			{0,1,0,0,1,0,1,0},
+			{0,1,0,1,1,0,1,0},
+			{0,0,0,0,0,0,0,0},
+			{1,1,0,1,0,1,1,0},
+			{0,0,0,1,0,0,0,0},
+			{0,1,0,1,0,1,0,1},
+			{0,0,0,0,0,0,0,0},
+		},
+		-- Pattern 5: Spiral approach
+		{
+			{0,0,0,0,0,0,0,0},
+			{1,1,1,1,1,1,0,0},
+			{0,0,0,0,0,0,0,1},
+			{0,1,1,1,1,1,0,0},
+			{0,0,0,0,0,1,0,1},
+			{1,1,0,1,0,0,0,0},
+			{0,0,0,1,0,1,1,0},
+			{0,0,0,0,0,0,0,0},
+		},
+	}
+	
+	-- Pick a random maze pattern
+	local pattern = mazePatterns[math.random(#mazePatterns)]
+	
+	-- Apply pattern to walls
+	for row = 1, self.gridSize do
+		for col = 1, self.gridSize do
+			self.walls[row][col] = (pattern[row][col] == 1)
+		end
+	end
+	
+	-- Always ensure start and exit are clear
+	self.walls[1][4] = false -- Player start
+	self.walls[8][1] = false -- Exit
+	self.walls[8][5] = false -- Cop start
+	
+	-- Clear path around exit
+	self.walls[7][1] = false
+	self.walls[8][2] = false
+	
+	log("Maze generated with pattern")
+	
+	return self.walls
+end
+
+-- Check if a position is blocked by a wall
+function ActivitiesScreen:isWall(row, col)
+	if row < 1 or row > self.gridSize or col < 1 or col > self.gridSize then
+		return true -- Out of bounds = wall
+	end
+	return self.walls and self.walls[row] and self.walls[row][col] == true
 end
 
 function ActivitiesScreen:showEscapeMinigame()
@@ -1438,27 +1611,57 @@ function ActivitiesScreen:showEscapeMinigame()
 	self.escapeGrid.Visible = true
 	self.dirButtons.Visible = true
 	
+	-- Generate maze with walls
+	self:generateMaze()
+	
 	-- Reset positions
 	self.playerPos = { row = 1, col = 4 }
 	self.copPos = { row = 8, col = 5 }
 	self.exitPos = { row = 8, col = 1 }
-	self.movesLeft = 25
+	self.movesLeft = 30 -- More moves due to maze
 	
 	self:setGridPosition(self.playerCell, self.playerPos.row, self.playerPos.col)
 	self:setGridPosition(self.copCell, self.copPos.row, self.copPos.col)
 	self:setGridPosition(self.exitCell, self.exitPos.row, self.exitPos.col)
 	
-	-- Mark exit cell visually
+	-- Update grid visuals - walls are dark brick, passable are gray, exit is yellow
 	for row = 1, self.gridSize do
 		for col = 1, self.gridSize do
-			self.gridCells[row][col].BackgroundColor3 = C.Gray700
+			local cell = self.gridCells[row][col]
+			
+			-- Clear any existing wall label
+			local existingLabel = cell:FindFirstChild("WallLabel")
+			if existingLabel then existingLabel:Destroy() end
+			
+			if self:isWall(row, col) then
+				-- Wall cell - brick color with brick emoji
+				cell.BackgroundColor3 = Color3.fromRGB(80, 50, 30) -- Brown brick color
+				cell.BorderSizePixel = 0
+				
+				-- Add brick emoji
+				local brickLabel = Instance.new("TextLabel")
+				brickLabel.Name = "WallLabel"
+				brickLabel.Size = UDim2.new(1, 0, 1, 0)
+				brickLabel.Position = UDim2.new(0, 0, 0, 0)
+				brickLabel.BackgroundTransparency = 1
+				brickLabel.Font = Enum.Font.SourceSans
+				brickLabel.TextSize = 18
+				brickLabel.Text = "🧱"
+				brickLabel.ZIndex = 99
+				brickLabel.Parent = cell
+			elseif row == self.exitPos.row and col == self.exitPos.col then
+				-- Exit cell - highlighted with green glow
+				cell.BackgroundColor3 = Color3.fromRGB(50, 120, 50) -- Green for exit
+			else
+				-- Normal passable cell - floor tile look
+				cell.BackgroundColor3 = Color3.fromRGB(60, 65, 70) -- Dark floor
+			end
 		end
 	end
-	self.gridCells[self.exitPos.row][self.exitPos.col].BackgroundColor3 = C.AmberPale
 	
 	self.minigameTitle.Text = "🔓 ESCAPE PRISON!"
 	self.tapCounter.Text = "Moves: " .. self.movesLeft
-	self.minigameInstructions.Text = "Reach the 🚪 door before the 👮 cop catches you!"
+	self.minigameInstructions.Text = "Navigate the maze! Reach the 🚪 door before the 👮 cop catches you!"
 	
 	-- Show modal
 	self.minigameOverlay.Visible = true
@@ -1470,7 +1673,18 @@ function ActivitiesScreen:showEscapeMinigame()
 		BackgroundTransparency = 0
 	})
 	
-	log("Escape minigame started - Player:", self.playerPos.row, self.playerPos.col, "Cop:", self.copPos.row, self.copPos.col, "Exit:", self.exitPos.row, self.exitPos.col)
+	log("Escape minigame started with maze - Player:", self.playerPos.row, self.playerPos.col, "Cop:", self.copPos.row, self.copPos.col, "Exit:", self.exitPos.row, self.exitPos.col)
+	log("Wall count:", self:countWalls())
+end
+
+function ActivitiesScreen:countWalls()
+	local count = 0
+	for row = 1, self.gridSize do
+		for col = 1, self.gridSize do
+			if self:isWall(row, col) then count = count + 1 end
+		end
+	end
+	return count
 end
 
 function ActivitiesScreen:showMinigame(item, accentColor)

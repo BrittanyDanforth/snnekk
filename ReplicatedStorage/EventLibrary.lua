@@ -7135,6 +7135,664 @@ local events = {
 			{ text = "🤷 Just a dream", effects = { Happiness = 3 }, resultText = "Brains are weird." },
 		},
 	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- PRISON EVENTS - Only fire when player has in_prison flag
+	-- These events provide depth and immersion to the prison experience
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "prison_first_day",
+		minAge = 14, maxAge = 100,
+		weight = 100, milestone = true, oneTime = true,
+		emoji = "⛓️", title = "First Day in Prison",
+		category = "prison",
+		requiresFlag = "in_prison",
+		blockIfFlag = "survived_first_day",
+		text = "The cell door slams behind you. You're now an inmate. Other prisoners size you up.",
+		choices = {
+			{ text = "💪 Look tough", effects = { Health = -5, Happiness = -10 }, resultText = "You tried to look intimidating. Most left you alone.", setFlag = "prison_tough" },
+			{ text = "😔 Keep head down", effects = { Happiness = -15 }, resultText = "You avoided eye contact. Time to survive.", setFlag = "prison_quiet" },
+			{ text = "🤝 Find allies", effects = { Happiness = -5, Smarts = 3 }, resultText = "You started looking for friendly faces.", setFlag = "prison_social" },
+		},
+	},
+	
+	{
+		id = "prison_cellmate_intro",
+		minAge = 14, maxAge = 100,
+		weight = 60, oneTime = true,
+		emoji = "👤", title = "Your Cellmate",
+		category = "prison",
+		requiresFlag = "in_prison",
+		blockIfFlag = "met_cellmate",
+		getDynamicData = function()
+			local types = {"a massive guy covered in tattoos", "a quiet old man who's been here decades", "a nervous young first-timer like you", "a friendly guy who knows the ropes", "a scary-looking dude who doesn't talk"}
+			return { cellmate = types[math.random(#types)] }
+		end,
+		text = "Your cellmate is %cellmate%. They watch you unpack your stuff.",
+		choices = {
+			{ text = "👋 Introduce yourself", effects = { Happiness = 5, Smarts = 3 }, resultText = "They nodded. A small but important first step.", setFlag = "met_cellmate" },
+			{ text = "🤐 Stay quiet", effects = { Happiness = -3 }, resultText = "The silence was uncomfortable.", setFlag = "met_cellmate" },
+			{ text = "💪 Assert dominance", effects = { Health = -10, Happiness = -5 }, resultText = "Bad idea. You learned your place quickly.", setFlag = "met_cellmate" },
+		},
+	},
+	
+	{
+		id = "prison_yard_time",
+		minAge = 14, maxAge = 100,
+		weight = 40, cooldown = 2,
+		emoji = "☀️", title = "Yard Time",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "It's yard time. The sun feels good after being in that cell.",
+		choices = {
+			{ text = "🏋️ Hit the weights", effects = { Health = 10, Looks = 3 }, resultText = "You pumped iron. Getting stronger every day." },
+			{ text = "🏃 Walk laps", effects = { Health = 5, Happiness = 5 }, resultText = "Some cardio and fresh air." },
+			{ text = "👥 Socialize", effects = { Happiness = 5, Smarts = 3 }, resultText = "You learned some valuable info from other inmates." },
+			{ text = "🧘 Meditate", effects = { Happiness = 8, Smarts = 5 }, resultText = "You found inner peace despite the chaos." },
+		},
+	},
+	
+	{
+		id = "prison_gang_approach",
+		minAge = 16, maxAge = 70,
+		weight = 30, cooldown = 10,
+		emoji = "😈", title = "Gang Recruitment",
+		category = "prison",
+		requiresFlag = "in_prison",
+		blockIfFlag = "prison_gang_member",
+		getDynamicData = function()
+			local gangs = {"The Brotherhood", "Los Carnales", "Black Hand", "The Aryan Nation", "MS-13"}
+			return { gang = gangs[math.random(#gangs)] }
+		end,
+		text = "A member of %gang% approaches you. 'You looking for protection in here?'",
+		choices = {
+			{ text = "✅ Join them", effects = { Happiness = -5, Health = 5 }, resultText = "You're protected now, but at what cost?", setFlags = {"prison_gang_member", "gang_affiliated"} },
+			{ text = "❌ Decline politely", effects = { Happiness = 5 }, resultText = "They nodded and walked away. For now." },
+			{ text = "🖕 Tell them off", effects = { Health = -20, Happiness = -15 }, resultText = "Bad move. You got jumped that night.", setFlag = "gang_enemy" },
+		},
+	},
+	
+	{
+		id = "prison_fight",
+		minAge = 14, maxAge = 80,
+		weight = 25, cooldown = 3,
+		emoji = "👊", title = "Prison Fight!",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local reasons = {"looked at you wrong", "took your seat in the cafeteria", "insulted you", "bumped into you", "stole from you"}
+			return { reason = reasons[math.random(#reasons)] }
+		end,
+		text = "An inmate %reason%. They're squaring up. Guards aren't watching.",
+		choices = {
+			{ text = "👊 Fight!", effects = { Health = -15, Happiness = -10 }, resultText = "You threw hands. Win or lose, you earned some respect.", setFlag = "prison_fighter" },
+			{ text = "🏃 Walk away", effects = { Happiness = -5, Health = -5 }, resultText = "They sucker punched you as you left. Coward rep grows." },
+			{ text = "🗣️ De-escalate", effects = { Smarts = 5, Happiness = 3 }, resultText = "Your words defused the situation. Smart move." },
+		},
+	},
+	
+	{
+		id = "prison_solitary",
+		minAge = 14, maxAge = 100,
+		weight = 15, cooldown = 10,
+		emoji = "🚪", title = "Solitary Confinement",
+		category = "prison",
+		requiresFlag = "in_prison",
+		requiresFlag2 = "prison_fighter",
+		getDynamicData = function()
+			local days = math.random(3, 14)
+			return { days = days }
+		end,
+		text = "You're being sent to solitary for %days% days. The hole.",
+		choices = {
+			{ text = "😔 Endure it", effects = { Happiness = -25, Smarts = 5 }, resultText = "Alone with your thoughts. You barely kept it together." },
+			{ text = "😠 Rage", effects = { Health = -10, Happiness = -20 }, resultText = "You screamed and beat the walls. They extended your stay." },
+			{ text = "🧘 Meditate", effects = { Happiness = -10, Smarts = 10 }, resultText = "You used the time for inner reflection. Emerged stronger mentally." },
+		},
+	},
+	
+	{
+		id = "prison_visitor",
+		minAge = 14, maxAge = 100,
+		weight = 35, cooldown = 5,
+		emoji = "👨‍👩‍👧", title = "Visitor!",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local visitors = {"your mother", "your father", "your sibling", "an old friend", "your significant other", "a family member"}
+			return { visitor = visitors[math.random(#visitors)] }
+		end,
+		text = "You have a visitor! It's %visitor%. They look worried but happy to see you.",
+		choices = {
+			{ text = "💕 Tearful reunion", effects = { Happiness = 25 }, resultText = "Seeing them made everything feel better, even if briefly." },
+			{ text = "😔 Apologize", effects = { Happiness = 15, Smarts = 3 }, resultText = "You told them how sorry you are. Tears were shed." },
+			{ text = "😠 Tell them not to come", effects = { Happiness = -10 }, resultText = "You pushed them away. You don't deserve visitors.", setFlag = "isolated" },
+		},
+	},
+	
+	{
+		id = "prison_good_behavior",
+		minAge = 14, maxAge = 100,
+		weight = 25, cooldown = 8,
+		emoji = "⭐", title = "Good Behavior Notice",
+		category = "prison",
+		requiresFlag = "in_prison",
+		blockIfFlag = "prison_fighter",
+		blockIfFlag2 = "prison_troublemaker",
+		text = "The warden noticed your good behavior. You might get privileges.",
+		choices = {
+			{ text = "😊 Thank them", effects = { Happiness = 15 }, resultText = "You got extra yard time and better food.", setFlag = "good_behavior" },
+			{ text = "🤔 Ask about early release", effects = { Smarts = 5 }, resultText = "They said they'll consider it. Hope rises." },
+		},
+	},
+	
+	{
+		id = "prison_contraband_offer",
+		minAge = 16, maxAge = 80,
+		weight = 20, cooldown = 5,
+		emoji = "📦", title = "Contraband Offer",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local items = {"a phone", "drugs", "a weapon", "cigarettes", "alcohol"}
+			return { item = items[math.random(#items)] }
+		end,
+		text = "Another inmate whispers: 'Want %item%? I can hook you up.'",
+		choices = {
+			{ text = "✅ Accept", effects = { Happiness = 10, Health = -5 }, resultText = "You got the goods. High risk, but feels good.", setFlag = "has_contraband" },
+			{ text = "❌ Decline", effects = { Happiness = 3 }, resultText = "You stayed clean. Smart choice." },
+			{ text = "🚔 Report them", effects = { Happiness = -5, Health = -10 }, resultText = "You snitched. Now you have enemies.", setFlag = "prison_snitch" },
+		},
+	},
+	
+	{
+		id = "prison_library",
+		minAge = 14, maxAge = 100,
+		weight = 30, cooldown = 3,
+		emoji = "📚", title = "Prison Library",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "You got access to the prison library. A small escape from reality.",
+		choices = {
+			{ text = "📖 Read books", effects = { Smarts = 10, Happiness = 8 }, resultText = "You devoured books. Knowledge is power." },
+			{ text = "⚖️ Study law", effects = { Smarts = 15 }, resultText = "You started understanding your legal situation better.", setFlag = "prison_lawyer" },
+			{ text = "✍️ Write", effects = { Happiness = 10, Smarts = 5 }, resultText = "You started journaling. Good therapy." },
+		},
+	},
+	
+	{
+		id = "prison_work_detail",
+		minAge = 16, maxAge = 70,
+		weight = 35, cooldown = 5,
+		emoji = "🧹", title = "Work Assignment",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local jobs = {"kitchen duty", "laundry service", "janitorial work", "license plate making", "groundskeeping"}
+			return { job = jobs[math.random(#jobs)] }
+		end,
+		text = "You've been assigned %job%. It's not glamorous, but it passes the time.",
+		choices = {
+			{ text = "💪 Work hard", effects = { Health = 5, Happiness = 5, Money = 50 }, resultText = "Good work. You earned some commissary money.", setFlag = "prison_worker" },
+			{ text = "😒 Do minimum", effects = { Happiness = -3 }, resultText = "You did just enough. The time dragged." },
+			{ text = "😴 Slack off", effects = { Happiness = -10 }, resultText = "You got caught and lost privileges.", setFlag = "prison_troublemaker" },
+		},
+	},
+	
+	{
+		id = "prison_food",
+		minAge = 14, maxAge = 100,
+		weight = 25, cooldown = 3,
+		emoji = "🍽️", title = "Cafeteria Incident",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local incidents = {"Someone tried to take your food", "The food today is especially bad", "You found a bug in your tray", "Someone spilled their tray on you", "A fight broke out nearby"}
+			return { incident = incidents[math.random(#incidents)] }
+		end,
+		text = "%incident%. Prison meals are never pleasant.",
+		choices = {
+			{ text = "😤 Deal with it", effects = { Happiness = -5, Health = -3 }, resultText = "Just another day in here." },
+			{ text = "🤷 Ignore", effects = { Happiness = -3 }, resultText = "You kept your head down and finished eating." },
+		},
+	},
+	
+	{
+		id = "prison_health_issue",
+		minAge = 14, maxAge = 100,
+		weight = 20, cooldown = 8,
+		emoji = "🤒", title = "Prison Health Issues",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local issues = {"caught a cold", "got an infection", "developed back pain", "have dental problems", "feel depressed"}
+			return { issue = issues[math.random(#issues)] }
+		end,
+		text = "You've %issue%. Prison medical isn't great, but it's something.",
+		choices = {
+			{ text = "🏥 See prison doctor", effects = { Health = 5, Happiness = 3 }, resultText = "They gave you some treatment. Better than nothing." },
+			{ text = "💪 Tough it out", effects = { Health = -10, Happiness = -5 }, resultText = "You refused to show weakness. But you're suffering." },
+		},
+	},
+	
+	{
+		id = "prison_letter",
+		minAge = 14, maxAge = 100,
+		weight = 30, cooldown = 4,
+		emoji = "✉️", title = "You Got Mail",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local senders = {"your mom", "an old friend", "your ex", "a family member", "someone you don't recognize"}
+			return { sender = senders[math.random(#senders)] }
+		end,
+		text = "A letter arrived from %sender%. Your heart races opening it.",
+		choices = {
+			{ text = "📖 Read it", effects = { Happiness = 15 }, resultText = "News from the outside. It hurt and healed at the same time." },
+			{ text = "✍️ Write back", effects = { Happiness = 10, Smarts = 3 }, resultText = "You poured your heart out on paper." },
+			{ text = "🗑️ Throw it away", effects = { Happiness = -5 }, resultText = "You couldn't face what they wrote.", setFlag = "isolated" },
+		},
+	},
+	
+	{
+		id = "prison_parole_hearing",
+		minAge = 18, maxAge = 100,
+		weight = 20, cooldown = 20, oneTime = false,
+		emoji = "⚖️", title = "Parole Hearing!",
+		category = "prison",
+		requiresFlag = "in_prison",
+		requiresFlag2 = "good_behavior",
+		text = "You have a parole hearing! This could be your ticket out.",
+		choices = {
+			{ text = "😢 Show remorse", effects = { Happiness = 10, Smarts = 5 }, resultText = "The board seemed moved. They'll consider your case." },
+			{ text = "💪 Promise change", effects = { Happiness = 5 }, resultText = "You laid out your plans for reform." },
+			{ text = "😤 Stay defiant", effects = { Happiness = -10 }, resultText = "Bad choice. They denied your parole.", clearFlag = "good_behavior" },
+		},
+	},
+	
+	{
+		id = "prison_commissary",
+		minAge = 14, maxAge = 100,
+		weight = 25, cooldown = 5,
+		emoji = "🛒", title = "Commissary Day",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "It's commissary day. You can buy snacks, toiletries, and small comforts.",
+		choices = {
+			{ text = "🍫 Buy snacks", effects = { Happiness = 10, Money = -30 }, resultText = "Ramen and candy bars. Small pleasures matter." },
+			{ text = "📱 Buy phone time", effects = { Happiness = 15, Money = -50 }, resultText = "You called someone from the outside. Worth every penny." },
+			{ text = "💰 Save your money", effects = { Smarts = 3 }, resultText = "You're being smart with your funds." },
+		},
+	},
+	
+	{
+		id = "prison_religion",
+		minAge = 14, maxAge = 100,
+		weight = 20, cooldown = 10,
+		emoji = "🙏", title = "Religious Services",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "There's a religious service today. Many inmates find comfort in faith.",
+		choices = {
+			{ text = "🙏 Attend", effects = { Happiness = 12, Smarts = 3 }, resultText = "You found some peace and community.", setFlag = "prison_faithful" },
+			{ text = "❌ Skip", effects = { Happiness = -3 }, resultText = "Not your thing. You stayed in your cell." },
+		},
+	},
+	
+	{
+		id = "prison_riot",
+		minAge = 16, maxAge = 80,
+		weight = 8, cooldown = 30,
+		emoji = "🔥", title = "Prison Riot!",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "A riot breaks out! Alarms are blaring, smoke is everywhere. Chaos!",
+		choices = {
+			{ text = "🏠 Hide in cell", effects = { Health = 5, Happiness = -15 }, resultText = "You stayed safe but the sounds were terrifying." },
+			{ text = "🔥 Join the riot", effects = { Health = -25, Happiness = 10 }, resultText = "You let out some rage. But you got hurt.", setFlag = "prison_troublemaker" },
+			{ text = "🆘 Help guards", effects = { Health = -10, Happiness = 5 }, resultText = "Risky, but guards remember who helped.", setFlag = "good_behavior" },
+		},
+	},
+	
+	{
+		id = "prison_transfer",
+		minAge = 14, maxAge = 100,
+		weight = 10, cooldown = 30, oneTime = true,
+		emoji = "🚐", title = "Prison Transfer",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local prisons = {"a maximum security facility", "a minimum security camp", "a prison closer to home", "a more dangerous facility", "a newer prison"}
+			return { prison = prisons[math.random(#prisons)] }
+		end,
+		text = "You're being transferred to %prison%. New beginnings, new dangers.",
+		choices = {
+			{ text = "😬 Nervous", effects = { Happiness = -10 }, resultText = "Change is scary, especially in here." },
+			{ text = "🤞 Hopeful", effects = { Happiness = 5 }, resultText = "Maybe this will be better. Fresh start." },
+		},
+	},
+	
+	{
+		id = "prison_education",
+		minAge = 16, maxAge = 60,
+		weight = 20, cooldown = 15,
+		emoji = "🎓", title = "Prison Education Program",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "The prison offers education programs. You could get a GED or learn a trade.",
+		choices = {
+			{ text = "📚 Get GED", effects = { Smarts = 20, Happiness = 15 }, resultText = "You earned your GED! This will help when you get out.", setFlag = "has_ged" },
+			{ text = "🔧 Learn a trade", effects = { Smarts = 15, Happiness = 10 }, resultText = "You learned valuable skills for the real world.", setFlag = "has_trade_skill" },
+			{ text = "❌ Not interested", effects = { Happiness = -5 }, resultText = "You passed up a good opportunity." },
+		},
+	},
+	
+	{
+		id = "prison_nightmare",
+		minAge = 14, maxAge = 100,
+		weight = 30, cooldown = 3,
+		emoji = "😱", title = "Prison Nightmares",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "You wake up screaming. The nightmares are getting worse.",
+		choices = {
+			{ text = "😔 Try to sleep", effects = { Happiness = -10, Health = -5 }, resultText = "Sleep didn't come easy that night." },
+			{ text = "🧘 Breathe and calm", effects = { Happiness = -5, Smarts = 3 }, resultText = "You centered yourself. It helped a little." },
+		},
+	},
+	
+	{
+		id = "prison_birthday",
+		minAge = 14, maxAge = 100,
+		weight = 40, cooldown = 20,
+		emoji = "🎂", title = "Birthday Behind Bars",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "It's your birthday. Celebrating in prison hits different.",
+		choices = {
+			{ text = "😔 Feel sad", effects = { Happiness = -15 }, resultText = "Another year older, still locked up." },
+			{ text = "🎂 Make the best of it", effects = { Happiness = 5 }, resultText = "Some inmates wished you well. Small comforts." },
+		},
+	},
+	
+	{
+		id = "prison_lockdown",
+		minAge = 14, maxAge = 100,
+		weight = 20, cooldown = 10,
+		emoji = "🚨", title = "Prison Lockdown",
+		category = "prison",
+		requiresFlag = "in_prison",
+		getDynamicData = function()
+			local reasons = {"a stabbing in D-block", "contraband discovery", "an escape attempt", "suspicious activity", "a credible threat"}
+			return { reason = reasons[math.random(#reasons)] }
+		end,
+		text = "Full lockdown! Everyone in cells. Word is there was %reason%.",
+		choices = {
+			{ text = "😴 Sleep through it", effects = { Health = 3 }, resultText = "Might as well rest." },
+			{ text = "👂 Listen for info", effects = { Smarts = 3 }, resultText = "You picked up some gossip through the walls." },
+		},
+	},
+	
+	{
+		id = "prison_shakedown",
+		minAge = 14, maxAge = 100,
+		weight = 25, cooldown = 8,
+		emoji = "🔍", title = "Cell Shakedown",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "Guards are searching cells! They're looking for contraband.",
+		choices = {
+			{ text = "😰 Sweat it out", effects = { Happiness = -8 }, resultText = "Your cell was clean. You're safe.", clearFlag = "has_contraband" },
+			{ text = "😎 Stay cool", effects = { Smarts = 3 }, resultText = "You kept your composure. Nothing found." },
+		},
+	},
+	
+	{
+		id = "prison_respect_earned",
+		minAge = 14, maxAge = 100,
+		weight = 15, cooldown = 15,
+		emoji = "🤝", title = "Earned Respect",
+		category = "prison",
+		requiresFlag = "in_prison",
+		requiresAnyFlag = {"prison_tough", "prison_fighter", "prison_worker"},
+		text = "Other inmates have started respecting you. You've earned your place.",
+		choices = {
+			{ text = "😌 Feel proud", effects = { Happiness = 15 }, resultText = "In here, respect means everything.", setFlag = "prison_respected" },
+			{ text = "🤝 Build alliances", effects = { Happiness = 10, Smarts = 5 }, resultText = "You started making real connections." },
+		},
+	},
+	
+	{
+		id = "prison_depression",
+		minAge = 14, maxAge = 100,
+		weight = 30, cooldown = 5,
+		emoji = "😢", title = "Prison Depression",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "The weight of incarceration is crushing. You feel hopeless.",
+		choices = {
+			{ text = "😢 Let it out", effects = { Happiness = -5 }, resultText = "You cried. Sometimes you need to." },
+			{ text = "💪 Stay strong", effects = { Health = -5, Smarts = 3 }, resultText = "You pushed through. But it's wearing you down." },
+			{ text = "🗣️ Talk to someone", effects = { Happiness = 10 }, resultText = "Opening up helped. You're not alone." },
+		},
+	},
+	
+	{
+		id = "prison_anniversary",
+		minAge = 14, maxAge = 100,
+		weight = 20, cooldown = 15,
+		emoji = "📅", title = "Prison Anniversary",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "It's been a year since you arrived. Time moves strangely in here.",
+		choices = {
+			{ text = "😔 Reflect", effects = { Smarts = 5, Happiness = -10 }, resultText = "A year gone. How many more?" },
+			{ text = "💪 Stay focused", effects = { Happiness = 3 }, resultText = "Keep your eye on release day." },
+		},
+	},
+	
+	{
+		id = "prison_release_day",
+		minAge = 14, maxAge = 100,
+		weight = 60, milestone = true,
+		emoji = "🔓", title = "RELEASE DAY!",
+		category = "prison",
+		requiresFlag = "in_prison",
+		requiresFlag2 = "sentence_complete",
+		text = "The day has finally come. You're getting out. Freedom awaits.",
+		choices = {
+			{ text = "🎉 Overjoyed!", effects = { Happiness = 50 }, resultText = "You walked out those gates a free person!", clearFlags = {"in_prison", "sentence_complete", "prison_gang_member", "has_contraband"}, setFlag = "ex_convict" },
+			{ text = "😬 Nervous", effects = { Happiness = 30, Smarts = 5 }, resultText = "The outside world feels different. But you're free.", clearFlags = {"in_prison", "sentence_complete", "prison_gang_member", "has_contraband"}, setFlag = "ex_convict" },
+		},
+	},
+	
+	{
+		id = "prison_attack_on_you",
+		minAge = 14, maxAge = 80,
+		weight = 12, cooldown = 10,
+		emoji = "🔪", title = "Attacked!",
+		category = "prison",
+		requiresFlag = "in_prison",
+		requiresAnyFlag = {"prison_snitch", "gang_enemy"},
+		text = "You got jumped in the shower. They came for revenge.",
+		choices = {
+			{ text = "💪 Fight back", effects = { Health = -30, Happiness = -20 }, resultText = "You fought hard. Battered but alive." },
+			{ text = "🆘 Call for guards", effects = { Health = -20, Happiness = -15 }, resultText = "Guards intervened. But you're now marked as weak." },
+		},
+	},
+	
+	{
+		id = "prison_hope",
+		minAge = 14, maxAge = 100,
+		weight = 25, cooldown = 10,
+		emoji = "🌅", title = "A Moment of Hope",
+		category = "prison",
+		requiresFlag = "in_prison",
+		text = "Watching the sunrise through the bars, you felt something. Hope.",
+		choices = {
+			{ text = "🌅 Embrace it", effects = { Happiness = 15, Smarts = 3 }, resultText = "This won't last forever. Better days are coming." },
+			{ text = "😔 Push it away", effects = { Happiness = -5 }, resultText = "Hope can be dangerous in here." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- FUGITIVE EVENTS - Only fire when player has fugitive flag (escaped prison)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "fugitive_close_call",
+		minAge = 16, maxAge = 80,
+		weight = 40, cooldown = 3,
+		emoji = "🚨", title = "Close Call!",
+		category = "social",
+		requiresFlag = "fugitive",
+		text = "You spotted a police officer nearby. Your heart pounds. Did they recognize you?",
+		choices = {
+			{ text = "🏃 Run!", effects = { Happiness = -10, Health = -5 }, resultText = "You bolted. Probably looked suspicious." },
+			{ text = "😎 Stay calm", effects = { Smarts = 5, Happiness = 5 }, resultText = "You kept your cool. They walked right past." },
+			{ text = "🧢 Hide your face", effects = { Happiness = -3 }, resultText = "You ducked behind a newspaper. Safe for now." },
+		},
+	},
+	
+	{
+		id = "fugitive_paranoia",
+		minAge = 16, maxAge = 100,
+		weight = 35, cooldown = 5,
+		emoji = "😰", title = "Paranoia Sets In",
+		category = "health",
+		requiresFlag = "fugitive",
+		text = "Every siren makes you jump. Every stranger could be an undercover cop. The paranoia is overwhelming.",
+		choices = {
+			{ text = "😰 Can't take it", effects = { Happiness = -15, Health = -5 }, resultText = "Living on the run is taking its toll." },
+			{ text = "💪 Stay strong", effects = { Smarts = 3, Happiness = -5 }, resultText = "You've survived this long. Keep going." },
+		},
+	},
+	
+	{
+		id = "fugitive_new_identity",
+		minAge = 18, maxAge = 70,
+		weight = 20, cooldown = 30, oneTime = true,
+		emoji = "🪪", title = "New Identity",
+		category = "social",
+		requiresFlag = "fugitive",
+		getDynamicData = function()
+			local names = {"John Smith", "Jane Doe", "Mike Johnson", "Sarah Williams", "Chris Brown"}
+			return { name = names[math.random(#names)] }
+		end,
+		text = "A shady contact offers to get you a new identity for a price. '%name%' could be your new life.",
+		choices = {
+			{ text = "💵 Buy it ($5000)", effects = { Money = -5000, Happiness = 15 }, resultText = "You have a new name, new documents. A fresh start.", setFlag = "new_identity" },
+			{ text = "❌ Too risky", effects = { Happiness = -5 }, resultText = "You couldn't trust them. Still on the run." },
+		},
+	},
+	
+	{
+		id = "fugitive_recaptured",
+		minAge = 16, maxAge = 100,
+		weight = 15, cooldown = 10,
+		emoji = "🔒", title = "RECAPTURED!",
+		category = "crime",
+		requiresFlag = "fugitive",
+		blockIfFlag = "new_identity",
+		text = "They found you. Police storm in, weapons drawn. 'You're under arrest!'",
+		choices = {
+			{ text = "🙌 Surrender", effects = { Happiness = -30 }, resultText = "You're going back to prison with extra time.", clearFlag = "fugitive", setFlags = {"in_prison", "incarcerated", "escape_recaptured"} },
+			{ text = "🏃 Try to run", effects = { Health = -20, Happiness = -20 }, resultText = "They caught you anyway. Now you're hurt AND going back.", clearFlag = "fugitive", setFlags = {"in_prison", "incarcerated", "escape_recaptured"} },
+		},
+	},
+	
+	{
+		id = "fugitive_safe_for_now",
+		minAge = 16, maxAge = 100,
+		weight = 25, cooldown = 10,
+		emoji = "🏠", title = "Safe House",
+		category = "social",
+		requiresFlag = "fugitive",
+		text = "An old friend agrees to let you lay low at their place. For now, you're safe.",
+		choices = {
+			{ text = "🙏 Thank them", effects = { Happiness = 20 }, resultText = "True friends are rare. This one came through." },
+			{ text = "😔 Feel guilty", effects = { Happiness = 5, Smarts = 3 }, resultText = "You're putting them at risk. But you're grateful." },
+		},
+	},
+	
+	{
+		id = "fugitive_news_story",
+		minAge = 16, maxAge = 100,
+		weight = 20, cooldown = 15,
+		emoji = "📺", title = "On the News",
+		category = "social",
+		requiresFlag = "fugitive",
+		text = "Your face is on the news. 'Police searching for escaped convict...' Your heart stops.",
+		choices = {
+			{ text = "😱 Panic", effects = { Happiness = -15, Health = -5 }, resultText = "The whole city is looking for you now." },
+			{ text = "✂️ Change appearance", effects = { Looks = -10, Money = -100 }, resultText = "New hair, new look. Hopefully it's enough." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- EX-CONVICT EVENTS - After serving time or being released
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "excon_job_hunt",
+		minAge = 18, maxAge = 70,
+		weight = 40, cooldown = 5,
+		emoji = "💼", title = "Job Hunt Struggles",
+		category = "work",
+		requiresFlag = "ex_convict",
+		blockIfFlag = "in_prison",
+		text = "Another job rejection. 'We don't hire people with criminal records.' It's hard out here.",
+		choices = {
+			{ text = "😔 Keep trying", effects = { Happiness = -10, Smarts = 3 }, resultText = "You'll find someone willing to give you a chance." },
+			{ text = "😤 Get angry", effects = { Happiness = -5, Health = -3 }, resultText = "The system is rigged against people like you." },
+		},
+	},
+	
+	{
+		id = "excon_redemption",
+		minAge = 18, maxAge = 100,
+		weight = 30, cooldown = 10,
+		emoji = "🌟", title = "Second Chance",
+		category = "work",
+		requiresFlag = "ex_convict",
+		blockIfFlag = "in_prison",
+		text = "A company that hires ex-convicts wants to interview you. This could be your fresh start.",
+		choices = {
+			{ text = "✅ Accept interview", effects = { Happiness = 20, Smarts = 5 }, resultText = "You got the job! Someone believed in you.", setFlag = "second_chance" },
+			{ text = "😒 Too good to be true", effects = { Happiness = -5 }, resultText = "You passed up a real opportunity." },
+		},
+	},
+	
+	{
+		id = "excon_old_friends",
+		minAge = 18, maxAge = 80,
+		weight = 25, cooldown = 8,
+		emoji = "👥", title = "Old Associates",
+		category = "crime",
+		requiresFlag = "ex_convict",
+		blockIfFlag = "in_prison",
+		text = "Some old 'friends' from your criminal past reach out. They have a 'job' for you.",
+		choices = {
+			{ text = "❌ Stay straight", effects = { Happiness = 10, Smarts = 5 }, resultText = "You've changed. That life is behind you.", setFlag = "reformed" },
+			{ text = "🤔 Hear them out", effects = { Happiness = -5, Money = 500 }, resultText = "Old habits die hard. Easy money is tempting.", setFlag = "criminal_tendencies" },
+		},
+	},
+	
+	{
+		id = "excon_stigma",
+		minAge = 18, maxAge = 100,
+		weight = 30, cooldown = 5,
+		emoji = "😞", title = "The Stigma",
+		category = "social",
+		requiresFlag = "ex_convict",
+		blockIfFlag = "in_prison",
+		text = "People treat you differently when they learn about your past. The judgment hurts.",
+		choices = {
+			{ text = "😔 Accept it", effects = { Happiness = -10 }, resultText = "Society doesn't easily forgive." },
+			{ text = "💪 Prove them wrong", effects = { Happiness = 5, Smarts = 5 }, resultText = "You'll show them you've changed.", setFlag = "determined" },
+		},
+	},
 }
 
 ----------------------------------------------------------------------

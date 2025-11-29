@@ -347,11 +347,23 @@ function EventRunner.pickRandomEvent(state, events)
 end
 
 function EventRunner.pickEvent(state, events)
+	print("[EventRunner] === PICKING EVENT ===")
+	print("[EventRunner] Age:", state.Age, "InJail:", state.Flags and state.Flags.in_prison or false)
+	print("[EventRunner] Total events pool:", #events)
+	
 	local milestone = EventRunner.getMilestoneEvent(state, events)
 	if milestone then
+		print("[EventRunner] Found milestone event:", milestone.id)
 		return milestone
 	end
-	return EventRunner.pickRandomEvent(state, events)
+	
+	local selected = EventRunner.pickRandomEvent(state, events)
+	if selected then
+		print("[EventRunner] Selected random event:", selected.id, "category:", selected.category or "none")
+	else
+		print("[EventRunner] No valid event found!")
+	end
+	return selected
 end
 
 -- Check for life stage transition and return transition event if applicable

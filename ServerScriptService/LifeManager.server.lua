@@ -411,6 +411,10 @@ local function ageUp(player)
 	state.Year = state.Year + 1
 	local newAge = state.Age
 
+	print("[LifeManager] === AGE UP ===")
+	print("[LifeManager] Player:", player.Name, "Old Age:", oldAge, "New Age:", newAge)
+	print("[LifeManager] Flags in_prison:", state.Flags and state.Flags.in_prison or false)
+
 	local ageText
 	if state.Age == 1 then
 		ageText = "You are now 1 year old."
@@ -422,6 +426,7 @@ local function ageUp(player)
 	
 	-- Reduce jail time if in jail (integration with LifeRemoteHandlers)
 	if _G.ReduceJailTime then
+		print("[LifeManager] Calling ReduceJailTime...")
 		_G.ReduceJailTime(player, 1)
 	end
 	

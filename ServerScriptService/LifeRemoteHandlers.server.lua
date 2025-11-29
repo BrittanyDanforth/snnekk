@@ -1146,9 +1146,21 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 		extState.InJail = true
 		extState.JailYearsLeft = jailTime
 		extState.CurrentJob = nil -- Lose job
+		
+		-- Also set the in_prison flag in player's Flags for event system
+		local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
+		if life then
+			life.Flags = life.Flags or {}
+			life.Flags.in_prison = true
+			life.Flags.incarcerated = true
+			life.Flags.arrested = true
+			print("[LifeRemoteHandlers] Set prison flags in life state")
+		end
+		
 		syncStateToClient(player)
 		
 		local jailText = jailTime < 1 and string.format("%.0f months", jailTime * 12) or string.format("%.1f years", jailTime)
+		print("[LifeRemoteHandlers] Player caught! Jailed for", jailText)
 		return { 
 			success = false, 
 			caught = true,
@@ -1240,15 +1252,21 @@ DoPrisonAction.OnServerInvoke = function(player, actionId)
 			extState.WantedLevel = (extState.WantedLevel or 0) + 3
 			
 			if life then
-				if life.SetFlag then
-					life:SetFlag("escaped_prison")
-					life:SetFlag("fugitive")
-				end
+				-- Set escaped/fugitive flags
+				life.Flags = life.Flags or {}
+				life.Flags.escaped_prison = true
+				life.Flags.fugitive = true
+				life.Flags.ex_convict = true
+				-- Clear prison flags
+				life.Flags.in_prison = nil
+				life.Flags.incarcerated = nil
+				
+				life.Stats = life.Stats or {}
 				life.Stats.Happiness = math.min(100, (life.Stats.Happiness or 50) + 30)
 			end
 			
 			syncStateToClient(player)
-			print("[LifeRemoteHandlers] Escape successful!")
+			print("[LifeRemoteHandlers] Escape successful! Cleared prison flags.")
 			return { 
 				success = true, 
 				message = "You escaped prison! 🎉 You're now a fugitive and must lay low..."
@@ -1416,17 +1434,32 @@ end)
 -- Called from LifeManager when age increases
 _G.ReduceJailTime = function(player, years)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	
 	-- Update auto-education based on new age
 	updateAutoEducation(player)
 	
 	-- Handle jail time
 	if extState.InJail then
+		print("[LifeRemoteHandlers] Reducing jail time by", years, "years. Current:", extState.JailYearsLeft)
 		extState.JailYearsLeft = extState.JailYearsLeft - years
 		if extState.JailYearsLeft <= 0 then
 			extState.InJail = false
 			extState.JailYearsLeft = 0
-			print("[LifeRemoteHandlers]", player.Name, "released from jail!")
+			
+			-- Clear prison flags in life state for event system
+			if life then
+				life.Flags = life.Flags or {}
+				life.Flags.in_prison = nil
+				life.Flags.incarcerated = nil
+				life.Flags.ex_convict = true
+				life.Flags.sentence_complete = true -- For release day event
+				print("[LifeRemoteHandlers] Cleared prison flags for", player.Name)
+			end
+			
+			print("[LifeRemoteHandlers] ✅", player.Name, "released from jail! Served their time.")
+		else
+			print("[LifeRemoteHandlers]", player.Name, "has", extState.JailYearsLeft, "years left in jail")
 		end
 		syncStateToClient(player)
 	end

@@ -469,6 +469,12 @@ function LifeStageSystem.validateEvent(eventDef, state)
 	local stage = LifeStageSystem.getStage(age)
 	local caps = LifeStageSystem.getCapabilities(state)
 	
+	-- Debug print for prison events
+	if eventDef.category == "prison" then
+		print("[LifeStageSystem] Validating prison event:", eventDef.id)
+		print("[LifeStageSystem] - InJail:", caps.inPrison, "Flag in_prison:", flags.in_prison)
+	end
+	
 	-- 1. Check age range
 	if eventDef.minAge and age < eventDef.minAge then
 		validationResult.valid = false
@@ -488,18 +494,24 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 	
-	-- 3. Check if category is allowed in current stage
+	-- 3. Check if category is allowed in current stage (but PRISON events bypass stage restrictions when in prison)
 	if eventDef.category and stage.eventCategories then
-		local categoryAllowed = false
-		for _, cat in ipairs(stage.eventCategories) do
-			if cat == "all" or cat == eventDef.category then
-				categoryAllowed = true
-				break
+		-- Prison events always allowed when in prison, regardless of stage
+		local isPrisonEvent = eventDef.category == "prison"
+		local isInPrison = caps.inPrison or flags.in_prison or flags.incarcerated
+		
+		if not (isPrisonEvent and isInPrison) then
+			local categoryAllowed = false
+			for _, cat in ipairs(stage.eventCategories) do
+				if cat == "all" or cat == eventDef.category then
+					categoryAllowed = true
+					break
+				end
 			end
-		end
-		if not categoryAllowed then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Event category not available in " .. stage.name .. " stage")
+			if not categoryAllowed then
+				validationResult.valid = false
+				table.insert(validationResult.reasons, "Event category not available in " .. stage.name .. " stage")
+			end
 		end
 	end
 	
@@ -533,20 +545,79 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 	
-	-- 7. Check prison-specific
-	if eventDef.category == "prison" and not caps.inPrison then
-		validationResult.valid = false
-		table.insert(validationResult.reasons, "Not in prison")
+	-- 7. Check requiresFlag (single required flag)
+	if eventDef.requiresFlag then
+		if not flags[eventDef.requiresFlag] then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Missing required flag: " .. eventDef.requiresFlag)
+		end
 	end
 	
-	-- 8. Check work events when in prison
-	if eventDef.category == "work" and caps.inPrison then
-		validationResult.valid = false
-		table.insert(validationResult.reasons, "Can't do work events while in prison")
+	-- 8. Check requiresFlag2 (second required flag)
+	if eventDef.requiresFlag2 then
+		if not flags[eventDef.requiresFlag2] then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Missing required flag: " .. eventDef.requiresFlag2)
+		end
 	end
 	
-	-- 9. Check school events
-	if eventDef.category == "school" then
+	-- 9. Check requiresAnyFlag (any of these flags must be present)
+	if eventDef.requiresAnyFlag and type(eventDef.requiresAnyFlag) == "table" then
+		local hasAny = false
+		for _, flagName in ipairs(eventDef.requiresAnyFlag) do
+			if flags[flagName] then
+				hasAny = true
+				break
+			end
+		end
+		if not hasAny then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Missing any required flag from: " .. table.concat(eventDef.requiresAnyFlag, ", "))
+		end
+	end
+	
+	-- 10. Check blockIfFlag (event blocked if this flag exists)
+	if eventDef.blockIfFlag then
+		if flags[eventDef.blockIfFlag] then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Blocked by flag: " .. eventDef.blockIfFlag)
+		end
+	end
+	
+	-- 11. Check blockIfFlag2 (second blocking flag)
+	if eventDef.blockIfFlag2 then
+		if flags[eventDef.blockIfFlag2] then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Blocked by flag: " .. eventDef.blockIfFlag2)
+		end
+	end
+	
+	-- 12. Check prison-specific (event requires being in prison)
+	if eventDef.category == "prison" then
+		local isInPrison = caps.inPrison or flags.in_prison or flags.incarcerated
+		if not isInPrison then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Not in prison")
+		end
+	end
+	
+	-- 13. Block NON-prison events when IN prison (except family, health, milestone)
+	local isInPrison = caps.inPrison or flags.in_prison or flags.incarcerated
+	if isInPrison and eventDef.category then
+		local allowedInPrison = {
+			prison = true,
+			family = true,    -- Can still have family events
+			health = true,    -- Health events still happen
+			milestone = true, -- Milestones still occur
+		}
+		if not allowedInPrison[eventDef.category] then
+			validationResult.valid = false
+			table.insert(validationResult.reasons, "Event category '" .. eventDef.category .. "' blocked while in prison")
+		end
+	end
+	
+	-- 14. Check school events
+	if eventDef.category == "school" and not isInPrison then
 		local inSchool = caps.inSchool or (age >= 5 and age <= 18)
 		if not inSchool and not flags.college_student then
 			validationResult.valid = false
