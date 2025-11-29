@@ -9,11 +9,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Wait for LifeState module
 local LifeState = require(ReplicatedStorage:WaitForChild("LifeState"))
 
--- Wait for remotes folder
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
+-- Create or get remotes folder (don't just wait - create if needed!)
+local REMOTES_FOLDER_NAME = "LifeRemotes"
+local remotesFolder = ReplicatedStorage:FindFirstChild(REMOTES_FOLDER_NAME)
 if not remotesFolder then
-	warn("[LifeRemoteHandlers] Could not find LifeRemotes folder!")
-	return
+	-- Wait a bit for LifeManager to create it
+	remotesFolder = ReplicatedStorage:WaitForChild(REMOTES_FOLDER_NAME, 5)
+end
+if not remotesFolder then
+	-- Still doesn't exist, create it ourselves
+	remotesFolder = Instance.new("Folder")
+	remotesFolder.Name = REMOTES_FOLDER_NAME
+	remotesFolder.Parent = ReplicatedStorage
+	print("[LifeRemoteHandlers] Created LifeRemotes folder")
 end
 
 -- Reference to LifeManager's playerLives (set via _G for inter-script communication)
@@ -77,7 +85,17 @@ local DoActivity = getRemote("DoActivity", true)
 local CommitCrime = getRemote("CommitCrime", true)
 local Gamble = getRemote("Gamble", true)
 
-local SyncState = remotesFolder:WaitForChild("SyncState")
+-- SyncState is created by LifeManager, wait for it or create it
+local SyncState = remotesFolder:FindFirstChild("SyncState")
+if not SyncState then
+	SyncState = remotesFolder:WaitForChild("SyncState", 10)
+end
+if not SyncState then
+	SyncState = Instance.new("RemoteEvent")
+	SyncState.Name = "SyncState"
+	SyncState.Parent = remotesFolder
+	print("[LifeRemoteHandlers] Created SyncState remote")
+end
 
 ----------------------------------------------------------------
 -- PLAYER STATE ACCESS (Uses LifeManager's state)
@@ -101,6 +119,41 @@ local function getExtendedState(player)
 		}
 	end
 	return ExtendedStates[player.UserId]
+end
+
+-- Auto-progress education based on age (elementary/middle/high school are automatic)
+local function updateAutoEducation(player)
+	local lifeState = getLifeManagerState(player)
+	local extState = getExtendedState(player)
+	local age = lifeState and lifeState.Age or 0
+	
+	-- Only auto-progress if they don't already have higher education
+	local currentEdu = extState.Education or "None"
+	
+	-- Education hierarchy for checking
+	local eduLevels = {
+		["None"] = 0,
+		["Elementary"] = 1,
+		["Middle School"] = 2,
+		["High School"] = 3,
+		["Community College"] = 4,
+		["Bachelor's"] = 5,
+		["Master's"] = 6,
+		["Medical School"] = 7,
+		["Law School"] = 7,
+		["PhD"] = 8,
+	}
+	
+	local currentLevel = eduLevels[currentEdu] or 0
+	
+	-- Auto-assign education based on age (only if they don't have something higher)
+	if age >= 18 and currentLevel < 3 then
+		extState.Education = "High School"
+	elseif age >= 14 and currentLevel < 2 then
+		extState.Education = "Middle School"
+	elseif age >= 5 and currentLevel < 1 then
+		extState.Education = "Elementary"
+	end
 end
 
 -- Get unified player state (combines LifeManager state + extended state)
@@ -204,19 +257,26 @@ local function getAge(player)
 end
 
 local function hasEducation(player, required)
+	-- Update auto-education first
+	updateAutoEducation(player)
+	
 	local extState = getExtendedState(player)
 	local eduLevels = {
 		["None"] = 0,
-		["High School"] = 1,
-		["Community College"] = 2,
-		["Bachelor's"] = 3,
-		["Master's"] = 4,
-		["Medical School"] = 5,
-		["Law School"] = 5,
-		["PhD"] = 6,
+		["Elementary"] = 1,
+		["Middle School"] = 2,
+		["High School"] = 3,
+		["Community College"] = 4,
+		["Bachelor's"] = 5,
+		["Master's"] = 6,
+		["Medical School"] = 7,
+		["Law School"] = 7,
+		["PhD"] = 8,
 	}
 	local playerLevel = eduLevels[extState.Education] or 0
 	local requiredLevel = eduLevels[required] or 0
+	
+	print("[LifeRemoteHandlers] hasEducation check:", extState.Education, "vs required:", required, "->", playerLevel >= requiredLevel)
 	return playerLevel >= requiredLevel
 end
 
@@ -245,8 +305,9 @@ local JobListings = {
 	{ id = "lawyer", title = "Lawyer", company = "Smith & Associates", salary = 180000, education = "Law School", minAge = 28, exp = 5, acceptance = 25 },
 }
 
+-- Education options for MANUAL enrollment (College+)
+-- Elementary/Middle/High School are AUTOMATIC based on age
 local EducationOptions = {
-	{ id = "highschool", name = "High School Diploma", minAge = 14, maxAge = 18, cost = 0, requirement = "None", grants = "High School", duration = 4 },
 	{ id = "community", name = "Community College", minAge = 18, maxAge = 99, cost = 15000, requirement = "High School", grants = "Community College", duration = 2 },
 	{ id = "bachelor", name = "Bachelor's Degree", minAge = 18, maxAge = 99, cost = 80000, requirement = "High School", grants = "Bachelor's", duration = 4 },
 	{ id = "master", name = "Master's Degree", minAge = 22, maxAge = 99, cost = 60000, requirement = "Bachelor's", grants = "Master's", duration = 2 },
@@ -354,8 +415,13 @@ local RelationshipActions = {
 ----------------------------------------------------------------
 
 ApplyForJob.OnServerInvoke = function(player, jobId)
+	print("[LifeRemoteHandlers] ApplyForJob called with jobId:", jobId)
+	
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	
+	-- Update auto-education first (high school etc. based on age)
+	updateAutoEducation(player)
 	
 	-- Find job
 	local job = nil
@@ -367,8 +433,11 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	end
 	
 	if not job then
-		return { success = false, message = "Job not found." }
+		print("[LifeRemoteHandlers] Job not found:", jobId)
+		return { success = false, message = "Job not found: " .. tostring(jobId) }
 	end
+	
+	print("[LifeRemoteHandlers] Found job:", job.title, "for player age:", age)
 	
 	-- Already have a job?
 	if extState.CurrentJob then
@@ -1087,6 +1156,11 @@ end)
 -- Called from LifeManager when age increases
 _G.ReduceJailTime = function(player, years)
 	local extState = getExtendedState(player)
+	
+	-- Update auto-education based on new age
+	updateAutoEducation(player)
+	
+	-- Handle jail time
 	if extState.InJail then
 		extState.JailYearsLeft = extState.JailYearsLeft - years
 		if extState.JailYearsLeft <= 0 then
@@ -1096,6 +1170,16 @@ _G.ReduceJailTime = function(player, years)
 		end
 		syncStateToClient(player)
 	end
+end
+
+-- Hook for yearly updates (called from LifeManager)
+_G.OnPlayerAgeUp = function(player)
+	updateAutoEducation(player)
+end
+
+-- Get extended state for external access
+_G.GetExtendedState = function(player)
+	return getExtendedState(player)
 end
 
 print("[LifeRemoteHandlers] ✅ All remote handlers initialized!")

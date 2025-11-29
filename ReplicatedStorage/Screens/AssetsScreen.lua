@@ -7,13 +7,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AssetsScreen = {}
 AssetsScreen.__index = AssetsScreen
 
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
-local BuyProperty = remotesFolder and remotesFolder:WaitForChild("BuyProperty", 5)
-local BuyVehicle = remotesFolder and remotesFolder:WaitForChild("BuyVehicle", 5)
-local BuyItem = remotesFolder and remotesFolder:WaitForChild("BuyItem", 5)
-local BuyCrypto = remotesFolder and remotesFolder:WaitForChild("BuyCrypto", 5)
-local SellAsset = remotesFolder and remotesFolder:WaitForChild("SellAsset", 5)
-local Gamble = remotesFolder and remotesFolder:WaitForChild("Gamble", 5)
+local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
+local BuyProperty = remotesFolder and remotesFolder:WaitForChild("BuyProperty", 15)
+local BuyVehicle = remotesFolder and remotesFolder:WaitForChild("BuyVehicle", 15)
+local BuyItem = remotesFolder and remotesFolder:WaitForChild("BuyItem", 15)
+local BuyCrypto = remotesFolder and remotesFolder:WaitForChild("BuyCrypto", 15)
+local SellAsset = remotesFolder and remotesFolder:WaitForChild("SellAsset", 15)
+local Gamble = remotesFolder and remotesFolder:WaitForChild("Gamble", 15)
+
+print("[AssetsScreen] Remotes loaded:", BuyProperty and "✓" or "✗", Gamble and "✓" or "✗")
 
 -- Premium Colors
 local C = {

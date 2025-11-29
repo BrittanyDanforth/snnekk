@@ -7,9 +7,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RelationshipsScreen = {}
 RelationshipsScreen.__index = RelationshipsScreen
 
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
-local InteractPerson = remotesFolder and remotesFolder:WaitForChild("InteractPerson", 5)
-local GiveMoney = remotesFolder and remotesFolder:WaitForChild("GiveMoney", 5)
+local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
+local InteractPerson = remotesFolder and remotesFolder:WaitForChild("InteractPerson", 15)
+local GiveMoney = remotesFolder and remotesFolder:WaitForChild("GiveMoney", 15)
+
+print("[RelationshipsScreen] Remotes loaded:", InteractPerson and "✓" or "✗")
 
 -- Premium Color Palette
 local C = {

@@ -7,11 +7,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ActivitiesScreen = {}
 ActivitiesScreen.__index = ActivitiesScreen
 
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
-local DoActivity = remotesFolder and remotesFolder:WaitForChild("DoActivity", 5)
-local CommitCrime = remotesFolder and remotesFolder:WaitForChild("CommitCrime", 5)
-local Gamble = remotesFolder and remotesFolder:WaitForChild("Gamble", 5)
-local DoPrisonAction = remotesFolder and remotesFolder:WaitForChild("DoPrisonAction", 5)
+local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
+local DoActivity = remotesFolder and remotesFolder:WaitForChild("DoActivity", 15)
+local CommitCrime = remotesFolder and remotesFolder:WaitForChild("CommitCrime", 15)
+local Gamble = remotesFolder and remotesFolder:WaitForChild("Gamble", 15)
+local DoPrisonAction = remotesFolder and remotesFolder:WaitForChild("DoPrisonAction", 15)
+
+print("[ActivitiesScreen] Remotes loaded:", DoActivity and "✓" or "✗", CommitCrime and "✓" or "✗")
 
 -- Premium Colors
 local C = {

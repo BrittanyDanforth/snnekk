@@ -7,12 +7,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local OccupationScreen = {}
 OccupationScreen.__index = OccupationScreen
 
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 10)
-local ApplyForJob = remotesFolder and remotesFolder:WaitForChild("ApplyForJob", 5)
-local EnrollEducation = remotesFolder and remotesFolder:WaitForChild("EnrollEducation", 5)
-local QuitJob = remotesFolder and remotesFolder:WaitForChild("QuitJob", 5)
-local DoWork = remotesFolder and remotesFolder:WaitForChild("DoWork", 5)
-local DoFreelance = remotesFolder and remotesFolder:WaitForChild("DoFreelance", 5)
+local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
+local ApplyForJob = remotesFolder and remotesFolder:WaitForChild("ApplyForJob", 15)
+local EnrollEducation = remotesFolder and remotesFolder:WaitForChild("EnrollEducation", 15)
+local QuitJob = remotesFolder and remotesFolder:WaitForChild("QuitJob", 15)
+local DoWork = remotesFolder and remotesFolder:WaitForChild("DoWork", 15)
+local DoFreelance = remotesFolder and remotesFolder:WaitForChild("DoFreelance", 15)
+
+print("[OccupationScreen] Remotes loaded:", ApplyForJob and "✓" or "✗", EnrollEducation and "✓" or "✗")
 
 -- Premium Colors
 local C = {
@@ -52,27 +54,30 @@ local C = {
 
 local F = { Title = Enum.Font.GothamBold, Body = Enum.Font.Gotham, Medium = Enum.Font.GothamMedium, Button = Enum.Font.GothamBold }
 
--- Job Data
+-- Job Data (IDs must match LifeRemoteHandlers)
 local Jobs = {
-	{ id = "fastfood", name = "Fast Food Worker", emoji = "🍔", salary = 800, minAge = 14, requirement = nil },
-	{ id = "retail", name = "Retail Associate", emoji = "🛒", salary = 1200, minAge = 16, requirement = nil },
-	{ id = "waiter", name = "Waiter/Waitress", emoji = "🍽️", salary = 1400, minAge = 16, requirement = nil },
-	{ id = "lifeguard", name = "Lifeguard", emoji = "🏊", salary = 1600, minAge = 16, requirement = nil },
-	{ id = "tutor", name = "Tutor", emoji = "📚", salary = 2000, minAge = 16, requirement = "High School" },
-	{ id = "office", name = "Office Assistant", emoji = "💼", salary = 2500, minAge = 18, requirement = "High School" },
-	{ id = "developer", name = "Software Developer", emoji = "💻", salary = 8000, minAge = 22, requirement = "College" },
-	{ id = "doctor", name = "Doctor", emoji = "👨‍⚕️", salary = 15000, minAge = 28, requirement = "Medical School" },
-	{ id = "lawyer", name = "Lawyer", emoji = "⚖️", salary = 12000, minAge = 26, requirement = "Law School" },
+	{ id = "fastfood", name = "Fast Food Worker", emoji = "🍔", salary = 22000, minAge = 14, requirement = nil },
+	{ id = "retail", name = "Retail Associate", emoji = "🛒", salary = 26000, minAge = 16, requirement = nil },
+	{ id = "janitor", name = "Janitor", emoji = "🧹", salary = 28000, minAge = 18, requirement = nil },
+	{ id = "receptionist", name = "Receptionist", emoji = "📞", salary = 32000, minAge = 18, requirement = "High School" },
+	{ id = "office", name = "Office Assistant", emoji = "💼", salary = 35000, minAge = 18, requirement = "High School" },
+	{ id = "accountant_jr", name = "Junior Accountant", emoji = "📊", salary = 48000, minAge = 22, requirement = "Bachelor's" },
+	{ id = "marketing", name = "Marketing Associate", emoji = "📢", salary = 52000, minAge = 22, requirement = "Bachelor's" },
+	{ id = "developer", name = "Software Developer", emoji = "💻", salary = 85000, minAge = 22, requirement = "Bachelor's" },
+	{ id = "senior_dev", name = "Senior Developer", emoji = "👨‍💻", salary = 140000, minAge = 26, requirement = "Bachelor's" },
+	{ id = "doctor", name = "Doctor", emoji = "👨‍⚕️", salary = 250000, minAge = 30, requirement = "Medical School" },
+	{ id = "lawyer", name = "Lawyer", emoji = "⚖️", salary = 180000, minAge = 28, requirement = "Law School" },
 }
 
+-- Education Options (IDs must match LifeRemoteHandlers)
+-- NOTE: Elementary/Middle/High school are AUTOMATIC - only college+ needs enrollment
 local Education = {
-	{ id = "elementary", name = "Elementary School", emoji = "🏫", cost = 0, minAge = 5, maxAge = 11, duration = "6 years" },
-	{ id = "middle", name = "Middle School", emoji = "📖", cost = 0, minAge = 11, maxAge = 14, duration = "3 years" },
-	{ id = "high", name = "High School", emoji = "🎓", cost = 0, minAge = 14, maxAge = 18, duration = "4 years" },
-	{ id = "college", name = "College", emoji = "🎓", cost = 50000, minAge = 18, maxAge = 30, duration = "4 years" },
-	{ id = "medical", name = "Medical School", emoji = "🏥", cost = 200000, minAge = 22, maxAge = 35, duration = "4 years", prereq = "College" },
-	{ id = "law", name = "Law School", emoji = "⚖️", cost = 150000, minAge = 22, maxAge = 35, duration = "3 years", prereq = "College" },
-	{ id = "business", name = "Business School (MBA)", emoji = "📊", cost = 120000, minAge = 22, maxAge = 40, duration = "2 years", prereq = "College" },
+	{ id = "community", name = "Community College", emoji = "🏫", cost = 15000, minAge = 18, maxAge = 99, duration = "2 years", requirement = "High School" },
+	{ id = "bachelor", name = "Bachelor's Degree", emoji = "🎓", cost = 80000, minAge = 18, maxAge = 99, duration = "4 years", requirement = "High School" },
+	{ id = "master", name = "Master's Degree", emoji = "📜", cost = 60000, minAge = 22, maxAge = 99, duration = "2 years", requirement = "Bachelor's" },
+	{ id = "medical", name = "Medical School", emoji = "🏥", cost = 200000, minAge = 22, maxAge = 45, duration = "4 years", requirement = "Bachelor's" },
+	{ id = "law", name = "Law School", emoji = "⚖️", cost = 150000, minAge = 22, maxAge = 50, duration = "3 years", requirement = "Bachelor's" },
+	{ id = "phd", name = "PhD Program", emoji = "🎓", cost = 100000, minAge = 24, maxAge = 99, duration = "5 years", requirement = "Master's" },
 }
 
 -- Helpers

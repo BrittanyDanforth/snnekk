@@ -382,10 +382,18 @@ local function ageUp(player)
 	if _G.ReduceJailTime then
 		_G.ReduceJailTime(player, 1)
 	end
+	
+	-- Update extended state (auto-education, etc.)
+	if _G.OnPlayerAgeUp then
+		_G.OnPlayerAgeUp(player)
+	end
 
-	-- Add job income if has job
-	if state.Job and state.JobSalary then
-		state.Money = (state.Money or 0) + math.floor(state.JobSalary / 12) -- Monthly income
+	-- Add job income if has job (check both old and new job system)
+	local extState = _G.GetExtendedState and _G.GetExtendedState(player)
+	if extState and extState.CurrentJob then
+		state.Money = (state.Money or 0) + math.floor(extState.CurrentJob.salary / 12)
+	elseif state.Job and state.JobSalary then
+		state.Money = (state.Money or 0) + math.floor(state.JobSalary / 12)
 	end
 
 	-- Initialize event history if needed
