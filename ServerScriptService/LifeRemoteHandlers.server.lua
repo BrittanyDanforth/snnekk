@@ -835,9 +835,7 @@ end
 ----------------------------------------------------------------
 -- PRISON ACTIONS
 ----------------------------------------------------------------
-local DoPrisonAction = Instance.new("RemoteFunction")
-DoPrisonAction.Name = "DoPrisonAction"
-DoPrisonAction.Parent = ReplicatedStorage:WaitForChild("Remotes")
+local DoPrisonAction = getRemote("DoPrisonAction", true)
 
 DoPrisonAction.OnServerInvoke = function(player, actionId)
 	local extState = getExtendedState(player)
