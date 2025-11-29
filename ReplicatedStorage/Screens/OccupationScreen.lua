@@ -301,14 +301,28 @@ function OccupationScreen:updateInfoBar()
 	self.moneyChip.text.Text = UI.formatMoney(money)
 	
 	if job then
-		-- Find job name
-		local jobName = "Employed"
+		-- Find job name - first check local Jobs list, then server data
+		local jobName = nil
+		
+		-- Check local Jobs list
 		for _, j in ipairs(Jobs) do
 			if j.id == job then
 				jobName = j.name
 				break
 			end
 		end
+		
+		-- If not found in local list, use server's job title (story-acquired jobs)
+		if not jobName then
+			local serverJob = self:getCurrentJobData()
+			if serverJob and serverJob.title then
+				jobName = serverJob.title
+				log("Using server job title:", jobName)
+			else
+				jobName = "Employed"
+			end
+		end
+		
 		self.jobChip.text.Text = jobName
 		self.jobChip.chip.BackgroundColor3 = C.GreenPale
 		self.jobChip.text.TextColor3 = C.GreenDark

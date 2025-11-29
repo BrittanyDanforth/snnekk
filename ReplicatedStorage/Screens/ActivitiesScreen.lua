@@ -185,6 +185,131 @@ function ActivitiesScreen:getJailYearsLeft()
 	return state.JailYearsLeft or 0
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- ADVANCED STAT HELPERS (for skill-based activity modifiers)
+-- ═══════════════════════════════════════════════════════════
+
+function ActivitiesScreen:getHappiness()
+	local state = self.playerState
+	if not state then return 50 end
+	return state.Happiness or (state.Stats and state.Stats.Happiness) or 50
+end
+
+function ActivitiesScreen:getSmarts()
+	local state = self.playerState
+	if not state then return 50 end
+	return state.Smarts or (state.Stats and state.Stats.Smarts) or 50
+end
+
+function ActivitiesScreen:getHealth()
+	local state = self.playerState
+	if not state then return 50 end
+	return state.Health or (state.Stats and state.Stats.Health) or 50
+end
+
+function ActivitiesScreen:getFlags()
+	local state = self.playerState
+	if not state then return {} end
+	return state.Flags or {}
+end
+
+-- Calculate effectiveness preview for an activity
+function ActivitiesScreen:getActivityEffectiveness(activityId)
+	local happiness = self:getHappiness()
+	local smarts = self:getSmarts()
+	local health = self:getHealth()
+	local flags = self:getFlags()
+	
+	-- Mood bonus
+	local moodBonus = 1.0
+	if happiness >= 80 then moodBonus = 1.3
+	elseif happiness >= 60 then moodBonus = 1.15
+	elseif happiness <= 20 then moodBonus = 0.7
+	elseif happiness <= 40 then moodBonus = 0.85
+	end
+	
+	-- Smarts bonus for learning activities
+	local smartsBonus = 1.0
+	if activityId == "study" or activityId == "read" then
+		smartsBonus = 0.8 + (smarts / 100) * 0.5
+	end
+	
+	-- Health bonus for physical activities
+	local healthBonus = 1.0
+	if activityId == "gym" or activityId == "run" or activityId == "yoga" then
+		healthBonus = 0.8 + (health / 100) * 0.5
+	end
+	
+	-- Athletic background bonus
+	local athleticBonus = 1.0
+	if flags.athletic_child and (activityId == "gym" or activityId == "run" or activityId == "yoga") then
+		athleticBonus = 1.2
+	end
+	
+	return moodBonus * smartsBonus * healthBonus * athleticBonus
+end
+
+-- Get effectiveness text/emoji for display
+function ActivitiesScreen:getEffectivenessIndicator(activityId)
+	local effectiveness = self:getActivityEffectiveness(activityId)
+	
+	if effectiveness >= 1.3 then
+		return "🔥", C.Green -- Super effective
+	elseif effectiveness >= 1.1 then
+		return "⬆️", C.Blue -- Boosted
+	elseif effectiveness <= 0.7 then
+		return "⬇️", C.Red -- Reduced
+	elseif effectiveness <= 0.85 then
+		return "😔", C.Amber -- Struggling
+	else
+		return nil, nil -- Normal
+	end
+end
+
+-- Calculate crime risk modifier for preview
+function ActivitiesScreen:getCrimeRiskModifier(crimeId)
+	local smarts = self:getSmarts()
+	local happiness = self:getHappiness()
+	local flags = self:getFlags()
+	
+	local riskModifier = 0
+	
+	-- Smarts reduces risk
+	local smartsReduction = math.floor((smarts - 50) / 50 * 15)
+	riskModifier = riskModifier - smartsReduction
+	
+	-- Criminal experience reduces risk
+	if flags.criminal_tendencies then riskModifier = riskModifier - 5 end
+	if flags.petty_thief or flags.shoplifter then riskModifier = riskModifier - 5 end
+	if flags.car_thief or flags.burglar then riskModifier = riskModifier - 8 end
+	if flags.gang_member then riskModifier = riskModifier - 10 end
+	if flags.underboss or flags.crime_boss then riskModifier = riskModifier - 15 end
+	
+	-- Low happiness increases risk
+	if happiness <= 20 then riskModifier = riskModifier + 10
+	elseif happiness <= 40 then riskModifier = riskModifier + 5
+	end
+	
+	return riskModifier
+end
+
+-- Get crime risk indicator for display
+function ActivitiesScreen:getCrimeRiskIndicator()
+	local modifier = self:getCrimeRiskModifier()
+	
+	if modifier <= -15 then
+		return "🎯", C.Green -- Expert criminal
+	elseif modifier <= -8 then
+		return "👌", C.Blue -- Experienced
+	elseif modifier >= 10 then
+		return "⚠️", C.Red -- Risky state
+	elseif modifier >= 5 then
+		return "😰", C.Amber -- Careless
+	else
+		return nil, nil -- Normal
+	end
+end
+
 function ActivitiesScreen:createUI()
 	-- Main overlay
 	self.overlay = Instance.new("Frame")
@@ -877,6 +1002,31 @@ function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, p
 		miniLabel.Parent = card
 	end
 	
+	-- Effectiveness indicator (shows how your stats affect this activity)
+	if canDo then
+		local effectEmoji, effectColor = self:getEffectivenessIndicator(item.id)
+		if effectEmoji and effectColor then
+			local effectIndicator = Instance.new("Frame")
+			effectIndicator.Size = UDim2.new(0, 28, 0, 28)
+			effectIndicator.Position = UDim2.new(1, -90, 0, 10)
+			effectIndicator.BackgroundColor3 = effectColor
+			effectIndicator.BackgroundTransparency = 0.85
+			effectIndicator.ZIndex = 84
+			effectIndicator.Parent = card
+			UI.corner(effectIndicator, 14)
+			
+			local effectLabel = Instance.new("TextLabel")
+			effectLabel.Size = UDim2.fromScale(1, 1)
+			effectLabel.BackgroundTransparency = 1
+			effectLabel.Font = F.Body
+			effectLabel.TextSize = 14
+			effectLabel.TextColor3 = effectColor
+			effectLabel.Text = effectEmoji
+			effectLabel.ZIndex = 85
+			effectLabel.Parent = effectIndicator
+		end
+	end
+	
 	-- Action button
 	local actionBtn = Instance.new("TextButton")
 	actionBtn.Size = UDim2.new(0, 68, 0, 42)
@@ -991,6 +1141,31 @@ function ActivitiesScreen:createCrimeCard(parent, item, order)
 	rewardLabel.Text = "Reward: " .. item.reward
 	rewardLabel.ZIndex = 84
 	rewardLabel.Parent = card
+	
+	-- Skill modifier indicator (shows how your stats affect this crime)
+	if canDo then
+		local crimeEmoji, crimeColor = self:getCrimeRiskIndicator()
+		if crimeEmoji and crimeColor then
+			local skillIndicator = Instance.new("Frame")
+			skillIndicator.Size = UDim2.new(0, 28, 0, 28)
+			skillIndicator.Position = UDim2.new(1, -100, 0, 10)
+			skillIndicator.BackgroundColor3 = crimeColor
+			skillIndicator.BackgroundTransparency = 0.85
+			skillIndicator.ZIndex = 84
+			skillIndicator.Parent = card
+			UI.corner(skillIndicator, 14)
+			
+			local skillLabel = Instance.new("TextLabel")
+			skillLabel.Size = UDim2.fromScale(1, 1)
+			skillLabel.BackgroundTransparency = 1
+			skillLabel.Font = F.Body
+			skillLabel.TextSize = 14
+			skillLabel.TextColor3 = crimeColor
+			skillLabel.Text = crimeEmoji
+			skillLabel.ZIndex = 85
+			skillLabel.Parent = skillIndicator
+		end
+	end
 	
 	-- Action button
 	local actionBtn = Instance.new("TextButton")

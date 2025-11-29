@@ -1325,6 +1325,7 @@ end
 DoActivity.OnServerInvoke = function(player, activityId)
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
 	
 	local activity = nil
 	for _, a in ipairs(Activities) do
@@ -1354,28 +1355,127 @@ DoActivity.OnServerInvoke = function(player, activityId)
 		deductMoney(player, activity.cost)
 	end
 	
-	-- Apply stat effects using the helper function
+	-- ═══════════════════════════════════════════════════════════
+	-- ADVANCED SKILL-BASED MODIFIERS (Triple AAA Polish)
+	-- ═══════════════════════════════════════════════════════════
+	
+	-- Get player stats and flags for advanced modifiers
+	local happiness = life and life.Stats and life.Stats.Happiness or 50
+	local smarts = life and life.Stats and life.Stats.Smarts or 50
+	local health = life and life.Stats and life.Stats.Health or 50
+	local flags = life and life.Flags or {}
+	
+	-- Calculate effectiveness multiplier based on current stats
+	-- Happiness affects motivation (0.7x to 1.3x)
+	local moodBonus = 1.0
+	if happiness >= 80 then
+		moodBonus = 1.3  -- Very happy = super effective
+	elseif happiness >= 60 then
+		moodBonus = 1.15 -- Happy = more effective
+	elseif happiness <= 20 then
+		moodBonus = 0.7  -- Depressed = less effective
+	elseif happiness <= 40 then
+		moodBonus = 0.85 -- Sad = somewhat less effective
+	end
+	
+	-- Smarts affects learning activities (study, read)
+	local smartsBonus = 1.0
+	if activityId == "study" or activityId == "read" then
+		smartsBonus = 0.8 + (smarts / 100) * 0.5 -- 0.8x to 1.3x based on Smarts
+		print("[LifeRemoteHandlers] Learning activity - Smarts bonus:", smartsBonus)
+	end
+	
+	-- Health affects physical activities (gym, run, yoga)
+	local healthBonus = 1.0
+	if activityId == "gym" or activityId == "run" or activityId == "yoga" then
+		healthBonus = 0.8 + (health / 100) * 0.5 -- 0.8x to 1.3x based on Health
+		print("[LifeRemoteHandlers] Physical activity - Health bonus:", healthBonus)
+	end
+	
+	-- Athletic flag bonus (from childhood sports focus)
+	local athleticBonus = 1.0
+	if flags.athletic_child and (activityId == "gym" or activityId == "run" or activityId == "yoga") then
+		athleticBonus = 1.2
+		print("[LifeRemoteHandlers] Athletic background bonus applied!")
+	end
+	
+	-- Calculate combined effectiveness
+	local effectivenessMultiplier = moodBonus * smartsBonus * healthBonus * athleticBonus
+	print("[LifeRemoteHandlers] Activity effectiveness:", effectivenessMultiplier, "mood:", moodBonus, "smarts:", smartsBonus, "health:", healthBonus)
+	
+	-- Chance to fail if very unhappy or low health
+	local failChance = 0
+	if happiness <= 15 then
+		failChance = 30 -- 30% chance to fail if severely depressed
+	elseif health <= 15 then
+		failChance = 20 -- 20% chance to fail if very unhealthy
+	end
+	
+	if failChance > 0 and math.random(100) <= failChance then
+		local failMessages = {
+			"You couldn't focus and gave up halfway through.",
+			"You're feeling too down to finish this today.",
+			"Your body isn't cooperating. Maybe rest first?",
+			"You started but lost motivation quickly.",
+		}
+		return {
+			success = false,
+			message = failMessages[math.random(#failMessages)]
+		}
+	end
+	
+	-- Apply stat effects with modifiers
 	local statChanges = {}
+	local resultMessages = {}
+	
 	if activity.effects then
 		for stat, range in pairs(activity.effects) do
-			local change = math.random(range[1], range[2])
-			modifyStat(player, stat, change)
-			statChanges[stat] = change
+			-- Calculate base change
+			local baseChange = math.random(range[1], range[2])
+			
+			-- Apply multiplier for positive changes
+			local finalChange = baseChange
+			if baseChange > 0 then
+				finalChange = math.floor(baseChange * effectivenessMultiplier + 0.5)
+			end
+			
+			-- Exceptional performance bonus (10% chance if all stats high)
+			if happiness >= 70 and health >= 70 and math.random(100) <= 10 then
+				finalChange = math.floor(finalChange * 1.5)
+				table.insert(resultMessages, "Exceptional performance!")
+			end
+			
+			modifyStat(player, stat, finalChange)
+			statChanges[stat] = finalChange
 		end
 	end
 	
 	syncStateToClient(player)
 	
+	-- Build result message
+	local baseMessage = "You did " .. activity.name .. "!"
+	if effectivenessMultiplier >= 1.2 then
+		baseMessage = "You crushed " .. activity.name .. "! Great job!"
+	elseif effectivenessMultiplier <= 0.8 then
+		baseMessage = "You did " .. activity.name .. ", but it was tough today."
+	end
+	
+	if #resultMessages > 0 then
+		baseMessage = baseMessage .. " " .. table.concat(resultMessages, " ")
+	end
+	
 	return { 
 		success = true, 
-		message = "You did " .. activity.name .. "!",
-		statChanges = statChanges
+		message = baseMessage,
+		statChanges = statChanges,
+		effectivenessMultiplier = effectivenessMultiplier
 	}
 end
 
 CommitCrime.OnServerInvoke = function(player, crimeId)
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
 	
 	local crime = nil
 	for _, c in ipairs(Crimes) do
@@ -1397,8 +1497,51 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 		return { success = false, message = "You must be at least " .. crime.minAge .. " to attempt this crime." }
 	end
 	
+	-- ═══════════════════════════════════════════════════════════
+	-- ADVANCED CRIME SKILL MODIFIERS (Triple AAA Polish)
+	-- ═══════════════════════════════════════════════════════════
+	
+	local smarts = life and life.Stats and life.Stats.Smarts or 50
+	local looks = life and life.Stats and life.Stats.Looks or 50
+	local happiness = life and life.Stats and life.Stats.Happiness or 50
+	local flags = life and life.Flags or {}
+	
+	-- Calculate risk modifier based on stats and experience
+	local riskModifier = 0
+	
+	-- Smarts reduces catch risk (better planning)
+	-- High smarts = up to -15% catch risk
+	local smartsReduction = math.floor((smarts - 50) / 50 * 15)
+	riskModifier = riskModifier - smartsReduction
+	
+	-- Criminal experience reduces risk
+	if flags.criminal_tendencies then riskModifier = riskModifier - 5 end
+	if flags.petty_thief or flags.shoplifter then riskModifier = riskModifier - 5 end
+	if flags.car_thief or flags.burglar then riskModifier = riskModifier - 8 end
+	if flags.gang_member then riskModifier = riskModifier - 10 end
+	if flags.gang_captain then riskModifier = riskModifier - 12 end
+	if flags.underboss or flags.crime_boss then riskModifier = riskModifier - 15 end
+	
+	-- Low happiness increases carelessness (more risk)
+	if happiness <= 20 then
+		riskModifier = riskModifier + 10 -- Depressed = sloppy
+	elseif happiness <= 40 then
+		riskModifier = riskModifier + 5
+	end
+	
+	-- Looks can help with certain crimes (pickpocket, con games)
+	if crimeId == "pickpocket" and looks >= 70 then
+		riskModifier = riskModifier - 5 -- Charming appearance = less suspicious
+	end
+	
+	-- Calculate final catch chance
+	local baseCatchChance = crime.risk
+	local finalCatchChance = math.clamp(baseCatchChance + riskModifier, 5, 95)
+	
+	print("[LifeRemoteHandlers] Crime:", crimeId, "Base risk:", baseCatchChance, "Modifier:", riskModifier, "Final:", finalCatchChance)
+	
 	-- Roll for getting caught
-	local caught = math.random(100) <= crime.risk
+	local caught = math.random(100) <= finalCatchChance
 	
 	if caught then
 		-- GO TO JAIL
@@ -1432,14 +1575,52 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 			jailTime = jailTime
 		}
 	else
-		-- SUCCESS
-		local reward = math.random(crime.rewardMin, crime.rewardMax)
-		addMoney(player, reward)
+		-- SUCCESS - Apply skill-based reward modifiers
+		local baseReward = math.random(crime.rewardMin, crime.rewardMax)
+		
+		-- Smarts bonus for reward (better planning = bigger haul)
+		local rewardMultiplier = 1.0
+		if smarts >= 80 then
+			rewardMultiplier = 1.4  -- Very smart = much bigger haul
+		elseif smarts >= 60 then
+			rewardMultiplier = 1.2
+		end
+		
+		-- Criminal experience bonus
+		if flags.gang_member then rewardMultiplier = rewardMultiplier * 1.15 end
+		if flags.underboss or flags.crime_boss then rewardMultiplier = rewardMultiplier * 1.3 end
+		
+		local finalReward = math.floor(baseReward * rewardMultiplier)
+		addMoney(player, finalReward)
+		
+		-- Set criminal tendencies flag if not already
+		if life and not flags.criminal_tendencies then
+			life.Flags = life.Flags or {}
+			life.Flags.criminal_tendencies = true
+		end
+		
+		-- Track specific crimes for experience bonuses
+		if life and crimeId == "shoplift" and not flags.shoplifter then
+			life.Flags.shoplifter = true
+		elseif life and crimeId == "pickpocket" and not flags.petty_thief then
+			life.Flags.petty_thief = true
+		elseif life and crimeId == "gta" and not flags.car_thief then
+			life.Flags.car_thief = true
+		elseif life and crimeId == "burglary" and not flags.burglar then
+			life.Flags.burglar = true
+		end
+		
+		-- Build success message
+		local successMessage = "You got away with it! You earned $" .. finalReward
+		if rewardMultiplier > 1.2 then
+			successMessage = "Clean getaway! Your experience paid off - $" .. finalReward
+		end
 		
 		return { 
 			success = true, 
-			message = "You got away with it! You earned $" .. reward,
-			reward = reward
+			message = successMessage,
+			reward = finalReward,
+			rewardMultiplier = rewardMultiplier
 		}
 	end
 end
@@ -1868,6 +2049,54 @@ _G.SendToJail = function(player, years)
 	
 	syncStateToClient(player)
 	print("[LifeRemoteHandlers] Player sent to jail for", years, "years")
+end
+
+-- Set player job from event choice (callable from LifeManager when event includes setJob)
+_G.SetPlayerJob = function(player, jobData)
+	if not jobData then
+		print("[LifeRemoteHandlers] SetPlayerJob - No job data provided")
+		return false
+	end
+	
+	local extState = getExtendedState(player)
+	print("[LifeRemoteHandlers] SetPlayerJob - Setting job for:", player.Name)
+	print("[LifeRemoteHandlers] Job:", jobData.id or "unknown", jobData.title or "unknown")
+	
+	-- Create job entry in ExtendedState
+	extState.CurrentJob = {
+		id = jobData.id or "story_job",
+		title = jobData.title or "Employee",
+		company = jobData.company or "Company",
+		salary = jobData.salary or 30000,
+		requirement = jobData.requirement or nil,
+		-- Track that this job came from a story event
+		fromStory = true,
+		storyFlag = jobData.storyFlag or nil, -- e.g., "teacher", "hacker_career"
+	}
+	
+	print("[LifeRemoteHandlers] Job set:", extState.CurrentJob.title, "at", extState.CurrentJob.company, "- Salary:", extState.CurrentJob.salary)
+	
+	syncStateToClient(player)
+	return true
+end
+
+-- Quit player job (callable from scripts)
+_G.QuitPlayerJob = function(player)
+	local extState = getExtendedState(player)
+	if extState.CurrentJob then
+		local oldJob = extState.CurrentJob.title or "job"
+		extState.CurrentJob = nil
+		print("[LifeRemoteHandlers] Player quit job:", oldJob)
+		syncStateToClient(player)
+		return true
+	end
+	return false
+end
+
+-- Get player's current job (for other scripts to check)
+_G.GetPlayerJob = function(player)
+	local extState = getExtendedState(player)
+	return extState.CurrentJob
 end
 
 print("[LifeRemoteHandlers] ✅ All remote handlers initialized!")
