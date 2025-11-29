@@ -216,7 +216,7 @@ function UIComponents.createModalCard(parent, config)
 	overlay.Name = config.name or "ModalOverlay"
 	overlay.Size = UDim2.fromScale(1, 1)
 	overlay.BackgroundColor3 = C.Black
-	overlay.BackgroundTransparency = 0.5
+	overlay.BackgroundTransparency = 0.4
 	overlay.Visible = false
 	overlay.ZIndex = config.zIndex or 96
 	overlay.Parent = parent
@@ -229,21 +229,34 @@ function UIComponents.createModalCard(parent, config)
 	closeArea.ZIndex = config.zIndex or 96
 	closeArea.Parent = overlay
 	
-	-- Outer colored shell (BitLife signature)
+	-- Shadow frame (BitLife-style soft shadow)
+	local shadowFrame = Instance.new("Frame")
+	shadowFrame.Name = "ShadowFrame"
+	shadowFrame.Size = UDim2.new(0.82, 0, 0, 0)
+	shadowFrame.AutomaticSize = Enum.AutomaticSize.Y
+	shadowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadowFrame.Position = UDim2.fromScale(0.5, 0.5)
+	shadowFrame.BackgroundColor3 = C.Black
+	shadowFrame.BackgroundTransparency = 0.88
+	shadowFrame.ZIndex = (config.zIndex or 96) + 1
+	shadowFrame.Parent = overlay
+	UIComponents.corner(shadowFrame, 30)
+	
+	-- Outer colored shell (BitLife signature red outline style)
 	local shell = Instance.new("Frame")
 	shell.Name = "Shell"
-	shell.Size = UDim2.new(0.88, 0, 0, 0)
+	shell.Size = UDim2.new(1, -8, 0, 0)
 	shell.AutomaticSize = Enum.AutomaticSize.Y
 	shell.AnchorPoint = Vector2.new(0.5, 0.5)
-	shell.Position = UDim2.fromScale(0.5, 0.5)
+	shell.Position = UDim2.new(0.5, 0, 0.5, -4)
 	shell.BackgroundColor3 = config.accentColor or C.Green
-	shell.ZIndex = (config.zIndex or 96) + 1
-	shell.Parent = overlay
-	UIComponents.corner(shell, 24)
+	shell.ZIndex = (config.zIndex or 96) + 2
+	shell.Parent = shadowFrame
+	UIComponents.corner(shell, 26)
+	UIComponents.stroke(shell, 2, 0.3, config.accentDark or C.GreenDark)
 	
-	local shellStroke = UIComponents.stroke(shell, 3, 0, config.accentDark or C.GreenDark)
-	UIComponents.pad(shell, 5, 5, 5, 5)
-	UIComponents.createShadow(shell, 6, 20, C.Black, 0.88)
+	-- Inner padding frame
+	UIComponents.pad(shell, 4, 4, 4, 4)
 	
 	-- Inner white card
 	local card = Instance.new("Frame")
@@ -251,9 +264,9 @@ function UIComponents.createModalCard(parent, config)
 	card.Size = UDim2.new(1, 0, 0, 0)
 	card.AutomaticSize = Enum.AutomaticSize.Y
 	card.BackgroundColor3 = C.White
-	card.ZIndex = (config.zIndex or 96) + 2
+	card.ZIndex = (config.zIndex or 96) + 3
 	card.Parent = shell
-	UIComponents.corner(card, 20)
+	UIComponents.corner(card, 22)
 	
 	-- Content container
 	local content = Instance.new("Frame")
@@ -261,90 +274,90 @@ function UIComponents.createModalCard(parent, config)
 	content.Size = UDim2.new(1, 0, 0, 0)
 	content.AutomaticSize = Enum.AutomaticSize.Y
 	content.BackgroundTransparency = 1
-	content.ZIndex = (config.zIndex or 96) + 3
+	content.ZIndex = (config.zIndex or 96) + 4
 	content.Parent = card
-	UIComponents.pad(content, 24, 24, 28, 24)
+	UIComponents.pad(content, 20, 20, 24, 20)
 	
 	local layout = Instance.new("UIListLayout")
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 14)
+	layout.Padding = UDim.new(0, 10)
 	layout.Parent = content
 	
-	-- Emoji circle
+	-- Emoji circle (BitLife-style prominent)
 	local emojiFrame = Instance.new("Frame")
 	emojiFrame.Name = "EmojiFrame"
-	emojiFrame.Size = UDim2.new(0, 72, 0, 72)
+	emojiFrame.Size = UDim2.new(0, 64, 0, 64)
 	emojiFrame.BackgroundColor3 = config.accentPale or C.GreenPale
 	emojiFrame.LayoutOrder = 1
-	emojiFrame.ZIndex = (config.zIndex or 96) + 4
+	emojiFrame.ZIndex = (config.zIndex or 96) + 5
 	emojiFrame.Parent = content
-	UIComponents.corner(emojiFrame, 36)
+	UIComponents.corner(emojiFrame, 32)
 	
 	local emojiLabel = Instance.new("TextLabel")
 	emojiLabel.Name = "Emoji"
 	emojiLabel.Size = UDim2.fromScale(1, 1)
 	emojiLabel.BackgroundTransparency = 1
 	emojiLabel.Font = F.Body
-	emojiLabel.TextSize = 38
+	emojiLabel.TextSize = 34
 	emojiLabel.Text = config.emoji or "✨"
-	emojiLabel.ZIndex = (config.zIndex or 96) + 5
+	emojiLabel.ZIndex = (config.zIndex or 96) + 6
 	emojiLabel.Parent = emojiFrame
 	
-	-- Title
+	-- Title (BitLife-style bold)
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
-	titleLabel.Size = UDim2.new(1, 0, 0, 28)
+	titleLabel.Size = UDim2.new(1, 0, 0, 26)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Font = F.Title
-	titleLabel.TextSize = 22
+	titleLabel.TextSize = 20
 	titleLabel.TextColor3 = C.Gray900
 	titleLabel.Text = config.title or "Result"
 	titleLabel.LayoutOrder = 2
-	titleLabel.ZIndex = (config.zIndex or 96) + 4
+	titleLabel.ZIndex = (config.zIndex or 96) + 5
 	titleLabel.Parent = content
 	
-	-- Message
+	-- Message (centered text)
 	local messageLabel = Instance.new("TextLabel")
 	messageLabel.Name = "Message"
 	messageLabel.Size = UDim2.new(1, 0, 0, 0)
 	messageLabel.AutomaticSize = Enum.AutomaticSize.Y
 	messageLabel.BackgroundTransparency = 1
 	messageLabel.Font = F.Body
-	messageLabel.TextSize = 15
+	messageLabel.TextSize = 14
 	messageLabel.TextColor3 = C.Gray600
 	messageLabel.TextWrapped = true
-	messageLabel.LineHeight = 1.4
+	messageLabel.LineHeight = 1.35
 	messageLabel.Text = config.message or ""
 	messageLabel.LayoutOrder = 3
-	messageLabel.ZIndex = (config.zIndex or 96) + 4
+	messageLabel.ZIndex = (config.zIndex or 96) + 5
 	messageLabel.Parent = content
 	
 	-- Spacer
 	local spacer = Instance.new("Frame")
-	spacer.Size = UDim2.new(1, 0, 0, 6)
+	spacer.Size = UDim2.new(1, 0, 0, 4)
 	spacer.BackgroundTransparency = 1
 	spacer.LayoutOrder = 4
 	spacer.Parent = content
 	
-	-- OK Button
+	-- OK Button (BitLife-style rounded)
 	local okBtn = Instance.new("TextButton")
 	okBtn.Name = "OkButton"
-	okBtn.Size = UDim2.new(1, 0, 0, 52)
+	okBtn.Size = UDim2.new(1, 0, 0, 46)
 	okBtn.BackgroundColor3 = config.accentColor or C.Green
 	okBtn.Font = F.Button
-	okBtn.TextSize = 17
+	okBtn.TextSize = 16
 	okBtn.TextColor3 = C.White
 	okBtn.Text = config.buttonText or "Continue"
 	okBtn.AutoButtonColor = false
 	okBtn.LayoutOrder = 5
-	okBtn.ZIndex = (config.zIndex or 96) + 4
+	okBtn.ZIndex = (config.zIndex or 96) + 5
 	okBtn.Parent = content
-	UIComponents.corner(okBtn, 14)
+	UIComponents.corner(okBtn, 12)
 	
 	return {
 		overlay = overlay,
+		shadowFrame = shadowFrame,
 		shell = shell,
-		shellStroke = shellStroke,
 		card = card,
 		content = content,
 		emojiFrame = emojiFrame,
@@ -813,24 +826,34 @@ end
 function UIComponents.showModal(modal, startY)
 	startY = startY or 40
 	modal.overlay.Visible = true
-	modal.shell.Position = UDim2.new(0.5, 0, 0.5, startY)
+	
+	-- Use shadowFrame if available, otherwise fall back to shell
+	local mainFrame = modal.shadowFrame or modal.shell
+	mainFrame.Position = UDim2.new(0.5, 0, 0.5, startY)
+	mainFrame.BackgroundTransparency = 1
 	modal.shell.BackgroundTransparency = 1
 	modal.card.BackgroundTransparency = 1
 	
-	UIComponents.tween(modal.shell, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	UIComponents.tween(mainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0.88
+	})
+	UIComponents.tween(modal.shell, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 0
 	})
-	UIComponents.tween(modal.card, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	UIComponents.tween(modal.card, TweenInfo.new(0.25), {
 		BackgroundTransparency = 0
 	})
 end
 
 function UIComponents.hideModal(modal, callback)
-	local t = UIComponents.tween(modal.shell, TweenInfo.new(0.2), {
+	local mainFrame = modal.shadowFrame or modal.shell
+	
+	local t = UIComponents.tween(mainFrame, TweenInfo.new(0.2), {
 		Position = UDim2.new(0.5, 0, 0.5, 40),
 		BackgroundTransparency = 1
 	})
+	UIComponents.tween(modal.shell, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
 	UIComponents.tween(modal.card, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
 	
 	t.Completed:Connect(function()

@@ -29,30 +29,37 @@ local BuyItem = remotesFolder and remotesFolder:WaitForChild("BuyItem", 15)
 local SellAsset = remotesFolder and remotesFolder:WaitForChild("SellAsset", 15)
 local Gamble = remotesFolder and remotesFolder:WaitForChild("Gamble", 15)
 
--- Asset Data
+-- Asset Data - MUST match server IDs in LifeRemoteHandlers!
 local Properties = {
-	{ id = "apartment", name = "Small Apartment", emoji = "🏢", price = 50000, income = 500, desc = "Cozy studio" },
-	{ id = "house", name = "Suburban House", emoji = "🏠", price = 250000, income = 1500, desc = "3 bed, 2 bath" },
-	{ id = "mansion", name = "Luxury Mansion", emoji = "🏰", price = 2000000, income = 8000, desc = "Dream home" },
-	{ id = "penthouse", name = "City Penthouse", emoji = "🌆", price = 5000000, income = 15000, desc = "Top floor" },
+	{ id = "studio", name = "Studio Apartment", emoji = "🏢", price = 85000, income = 500, desc = "Cozy studio", minAge = 18 },
+	{ id = "1br_condo", name = "1BR Condo", emoji = "🏬", price = 175000, income = 1000, desc = "Modern condo", minAge = 18 },
+	{ id = "family_house", name = "Family House", emoji = "🏠", price = 350000, income = 2000, desc = "3 bed, 2 bath", minAge = 18 },
+	{ id = "beach_house", name = "Beach House", emoji = "🏖️", price = 1200000, income = 5000, desc = "Ocean views", minAge = 21 },
+	{ id = "penthouse", name = "Luxury Penthouse", emoji = "🌆", price = 2500000, income = 10000, desc = "Top floor luxury", minAge = 21 },
+	{ id = "mansion", name = "Mansion", emoji = "🏰", price = 8500000, income = 25000, desc = "Dream home", minAge = 21 },
 }
 
 local Vehicles = {
-	{ id = "bicycle", name = "Bicycle", emoji = "🚲", price = 500, minAge = 5 },
-	{ id = "scooter", name = "Motor Scooter", emoji = "🛵", price = 3000, minAge = 16 },
-	{ id = "sedan", name = "Family Sedan", emoji = "🚗", price = 25000, minAge = 16 },
-	{ id = "sports", name = "Sports Car", emoji = "🏎️", price = 150000, minAge = 18 },
-	{ id = "luxury", name = "Luxury SUV", emoji = "🚙", price = 80000, minAge = 18 },
-	{ id = "supercar", name = "Supercar", emoji = "🚘", price = 500000, minAge = 21 },
+	{ id = "used_civic", name = "Used Honda Civic", emoji = "🚗", price = 8000, minAge = 16 },
+	{ id = "camry", name = "Toyota Camry", emoji = "🚙", price = 28000, minAge = 16 },
+	{ id = "bmw", name = "BMW 3 Series", emoji = "🚘", price = 55000, minAge = 18 },
+	{ id = "tesla", name = "Tesla Model S", emoji = "⚡", price = 95000, minAge = 18 },
+	{ id = "porsche", name = "Porsche 911", emoji = "🏎️", price = 180000, minAge = 21 },
+	{ id = "lambo", name = "Lamborghini", emoji = "🦁", price = 300000, minAge = 21 },
+	{ id = "ferrari", name = "Ferrari F8", emoji = "🐎", price = 350000, minAge = 21 },
 	{ id = "yacht", name = "Yacht", emoji = "🛥️", price = 2000000, minAge = 25 },
+	{ id = "jet", name = "Private Jet", emoji = "✈️", price = 15000000, minAge = 25 },
 }
 
 local Shop = {
-	{ id = "phone", name = "Smartphone", emoji = "📱", price = 1200 },
-	{ id = "laptop", name = "Laptop", emoji = "💻", price = 2000 },
-	{ id = "watch", name = "Luxury Watch", emoji = "⌚", price = 15000 },
-	{ id = "jewelry", name = "Diamond Jewelry", emoji = "💎", price = 50000 },
-	{ id = "pet", name = "Pet Dog", emoji = "🐕", price = 3000 },
+	{ id = "sneakers", name = "Sneakers", emoji = "👟", price = 350, minAge = 10 },
+	{ id = "iphone", name = "iPhone", emoji = "📱", price = 1200, minAge = 10 },
+	{ id = "bag", name = "Designer Bag", emoji = "👜", price = 2500, minAge = 14 },
+	{ id = "gaming_pc", name = "Gaming PC", emoji = "🖥️", price = 3000, minAge = 10 },
+	{ id = "necklace", name = "Gold Necklace", emoji = "📿", price = 3500, minAge = 16 },
+	{ id = "watch", name = "Designer Watch", emoji = "⌚", price = 5000, minAge = 16 },
+	{ id = "ring", name = "Diamond Ring", emoji = "💍", price = 15000, minAge = 18 },
+	{ id = "piano", name = "Grand Piano", emoji = "🎹", price = 50000, minAge = 18 },
 }
 
 function AssetsScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc, playerState)

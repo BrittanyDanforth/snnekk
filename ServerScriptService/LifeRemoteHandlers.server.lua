@@ -816,7 +816,9 @@ end
 ----------------------------------------------------------------
 
 BuyProperty.OnServerInvoke = function(player, propertyId)
+	print("[LifeRemoteHandlers] BuyProperty called for:", propertyId)
 	local state = getPlayerState(player)
+	local extState = getExtendedState(player)
 	local age = state.Age
 	
 	local prop = nil
@@ -828,6 +830,7 @@ BuyProperty.OnServerInvoke = function(player, propertyId)
 	end
 	
 	if not prop then
+		print("[LifeRemoteHandlers] Property not found:", propertyId)
 		return { success = false, message = "Property not found." }
 	end
 	
@@ -840,7 +843,9 @@ BuyProperty.OnServerInvoke = function(player, propertyId)
 	end
 	
 	deductMoney(player, prop.price)
-	table.insert(state.OwnedProperties, { id = prop.id, name = prop.name, value = prop.price })
+	extState.OwnedProperties = extState.OwnedProperties or {}
+	table.insert(extState.OwnedProperties, { id = prop.id, name = prop.name, value = prop.price })
+	print("[LifeRemoteHandlers] Bought property:", prop.name, "Total owned:", #extState.OwnedProperties)
 	syncStateToClient(player)
 	
 	return { 
@@ -850,7 +855,9 @@ BuyProperty.OnServerInvoke = function(player, propertyId)
 end
 
 BuyVehicle.OnServerInvoke = function(player, vehicleId)
+	print("[LifeRemoteHandlers] BuyVehicle called for:", vehicleId)
 	local state = getPlayerState(player)
+	local extState = getExtendedState(player)
 	local age = state.Age
 	
 	local vehicle = nil
@@ -862,6 +869,7 @@ BuyVehicle.OnServerInvoke = function(player, vehicleId)
 	end
 	
 	if not vehicle then
+		print("[LifeRemoteHandlers] Vehicle not found:", vehicleId)
 		return { success = false, message = "Vehicle not found." }
 	end
 	
@@ -874,7 +882,9 @@ BuyVehicle.OnServerInvoke = function(player, vehicleId)
 	end
 	
 	deductMoney(player, vehicle.price)
-	table.insert(state.OwnedVehicles, { id = vehicle.id, name = vehicle.name, value = vehicle.price })
+	extState.OwnedVehicles = extState.OwnedVehicles or {}
+	table.insert(extState.OwnedVehicles, { id = vehicle.id, name = vehicle.name, value = vehicle.price })
+	print("[LifeRemoteHandlers] Bought vehicle:", vehicle.name, "Total owned:", #extState.OwnedVehicles)
 	syncStateToClient(player)
 	
 	return { 
@@ -884,7 +894,9 @@ BuyVehicle.OnServerInvoke = function(player, vehicleId)
 end
 
 BuyItem.OnServerInvoke = function(player, itemId)
+	print("[LifeRemoteHandlers] BuyItem called for:", itemId)
 	local state = getPlayerState(player)
+	local extState = getExtendedState(player)
 	local age = state.Age
 	
 	local item = nil
@@ -896,6 +908,7 @@ BuyItem.OnServerInvoke = function(player, itemId)
 	end
 	
 	if not item then
+		print("[LifeRemoteHandlers] Item not found:", itemId)
 		return { success = false, message = "Item not found." }
 	end
 	
@@ -908,7 +921,9 @@ BuyItem.OnServerInvoke = function(player, itemId)
 	end
 	
 	deductMoney(player, item.price)
-	table.insert(state.OwnedItems, { id = item.id, name = item.name, value = item.price })
+	extState.OwnedItems = extState.OwnedItems or {}
+	table.insert(extState.OwnedItems, { id = item.id, name = item.name, value = item.price })
+	print("[LifeRemoteHandlers] Bought item:", item.name, "Total owned:", #extState.OwnedItems)
 	syncStateToClient(player)
 	
 	return { 
@@ -1787,6 +1802,43 @@ _G.SyncPrisonStateFromFlags = function(player)
 	
 	-- CASE 3: Both states agree - nothing to do
 	-- (in_prison and InJail both true, or both false)
+end
+
+-- Add asset from event (callable from LifeManager when event choice includes addAsset)
+_G.AddAssetFromEvent = function(player, assetData)
+	if not assetData or not assetData.type or not assetData.id then
+		print("[LifeRemoteHandlers] AddAssetFromEvent - Invalid asset data")
+		return false
+	end
+	
+	local extState = getExtendedState(player)
+	print("[LifeRemoteHandlers] AddAssetFromEvent - Adding", assetData.id, "type:", assetData.type)
+	
+	local asset = {
+		id = assetData.id,
+		name = assetData.name or assetData.id,
+		value = assetData.value or 0,
+	}
+	
+	if assetData.type == "vehicle" then
+		extState.OwnedVehicles = extState.OwnedVehicles or {}
+		table.insert(extState.OwnedVehicles, asset)
+		print("[LifeRemoteHandlers] Added vehicle:", asset.name)
+	elseif assetData.type == "property" then
+		extState.OwnedProperties = extState.OwnedProperties or {}
+		table.insert(extState.OwnedProperties, asset)
+		print("[LifeRemoteHandlers] Added property:", asset.name)
+	elseif assetData.type == "item" then
+		extState.OwnedItems = extState.OwnedItems or {}
+		table.insert(extState.OwnedItems, asset)
+		print("[LifeRemoteHandlers] Added item:", asset.name)
+	else
+		print("[LifeRemoteHandlers] Unknown asset type:", assetData.type)
+		return false
+	end
+	
+	syncStateToClient(player)
+	return true
 end
 
 -- Send player to jail (callable from other scripts)

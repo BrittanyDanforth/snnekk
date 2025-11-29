@@ -662,6 +662,17 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
 	
+	-- Handle asset additions from events (e.g., midlife crisis sports car)
+	local choiceDef = eventDef.choices[choiceIndex]
+	if choiceDef and choiceDef.addAsset then
+		local assetData = choiceDef.addAsset
+		print("[LifeManager] Adding asset from event:", assetData.id, "type:", assetData.type)
+		
+		if _G.AddAssetFromEvent then
+			_G.AddAssetFromEvent(player, assetData)
+		end
+	end
+	
 	-- Sync prison state from flags (handles recapture, release, etc.)
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
