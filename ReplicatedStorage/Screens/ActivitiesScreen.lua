@@ -55,23 +55,32 @@ local F = { Title = Enum.Font.GothamBold, Body = Enum.Font.Gotham, Medium = Enum
 -- Activity Data
 local MindBody = {
 	{ id = "gym", name = "Hit the Gym", emoji = "🏋️", effect = "+Health +Looks", minAge = 12, cost = 0, hasMinigame = true },
-	{ id = "meditate", name = "Meditate", emoji = "🧘", effect = "+Happiness", minAge = 10, cost = 0 },
+	{ id = "meditate", name = "Meditate", emoji = "🧘", effect = "+Happiness +Health", minAge = 10, cost = 0 },
 	{ id = "study", name = "Study Hard", emoji = "📚", effect = "+Smarts", minAge = 6, cost = 0, hasMinigame = true },
 	{ id = "spa", name = "Spa Day", emoji = "💆", effect = "+Looks +Happiness", minAge = 16, cost = 200 },
+	{ id = "walk", name = "Go for Walk", emoji = "🚶", effect = "+Health +Happiness", minAge = 5, cost = 0 },
+	{ id = "martial_arts", name = "Martial Arts", emoji = "🥋", effect = "+Health +Smarts", minAge = 8, cost = 100 },
+	{ id = "yoga", name = "Yoga Class", emoji = "🧘‍♀️", effect = "+Health +Looks", minAge = 14, cost = 50 },
+	{ id = "read", name = "Read a Book", emoji = "📖", effect = "+Smarts +Happiness", minAge = 6, cost = 0 },
 }
 
 local Social = {
 	{ id = "party", name = "Go to Party", emoji = "🎉", effect = "+Happiness", minAge = 16, cost = 0 },
 	{ id = "date", name = "Go on Date", emoji = "💕", effect = "+Happiness", minAge = 16, cost = 100 },
-	{ id = "club", name = "Night Club", emoji = "🕺", effect = "+Happiness", minAge = 21, cost = 150 },
+	{ id = "club", name = "Night Club", emoji = "🕺", effect = "+Happiness -Health", minAge = 21, cost = 150 },
 	{ id = "hangout", name = "Hang with Friends", emoji = "👥", effect = "+Happiness", minAge = 5, cost = 0 },
+	{ id = "volunteer", name = "Volunteer", emoji = "🤝", effect = "+Happiness +Smarts", minAge = 12, cost = 0 },
+	{ id = "networking", name = "Networking Event", emoji = "🤵", effect = "+Smarts", minAge = 18, cost = 50 },
 }
 
 local Entertainment = {
 	{ id = "movie", name = "Watch Movie", emoji = "🎬", effect = "+Happiness", minAge = 5, cost = 20 },
 	{ id = "concert", name = "Go to Concert", emoji = "🎤", effect = "+Happiness", minAge = 12, cost = 100 },
-	{ id = "vacation", name = "Take Vacation", emoji = "✈️", effect = "+Happiness", minAge = 10, cost = 2000 },
+	{ id = "vacation", name = "Take Vacation", emoji = "✈️", effect = "+Happiness +Health", minAge = 10, cost = 2000 },
 	{ id = "gaming", name = "Play Games", emoji = "🎮", effect = "+Happiness", minAge = 5, cost = 0 },
+	{ id = "camping", name = "Go Camping", emoji = "🏕️", effect = "+Happiness +Health", minAge = 8, cost = 300 },
+	{ id = "museum", name = "Visit Museum", emoji = "🏛️", effect = "+Smarts", minAge = 6, cost = 25 },
+	{ id = "theme_park", name = "Theme Park", emoji = "🎢", effect = "+Happiness", minAge = 8, cost = 150 },
 }
 
 local Crimes = {
@@ -79,6 +88,21 @@ local Crimes = {
 	{ id = "pickpocket", name = "Pickpocket", emoji = "👛", risk = 45, reward = "$100-$500", minAge = 12 },
 	{ id = "burglary", name = "Burglary", emoji = "🏠", risk = 60, reward = "$500-$5K", minAge = 16 },
 	{ id = "robbery", name = "Armed Robbery", emoji = "🔫", risk = 80, reward = "$5K-$50K", minAge = 18 },
+	{ id = "car_theft", name = "Grand Theft Auto", emoji = "🚗", risk = 65, reward = "$5K-$25K", minAge = 16 },
+	{ id = "drug_deal", name = "Drug Deal", emoji = "💊", risk = 55, reward = "$1K-$10K", minAge = 16 },
+	{ id = "bank_heist", name = "Bank Heist", emoji = "🏦", risk = 95, reward = "$50K-$500K", minAge = 21, hasMinigame = true },
+}
+
+-- PRISON ACTIVITIES (shown when in jail)
+local PrisonActivities = {
+	{ id = "prison_escape", name = "Escape Prison", emoji = "🔐", effect = "Freedom!", minAge = 0, risk = 90, hasMinigame = true },
+	{ id = "prison_workout", name = "Yard Workout", emoji = "💪", effect = "+Health +Looks", minAge = 0 },
+	{ id = "prison_study", name = "Get GED", emoji = "📚", effect = "+Smarts", minAge = 0 },
+	{ id = "prison_gang", name = "Join Prison Gang", emoji = "⛓️", effect = "+Respect -Health", minAge = 0 },
+	{ id = "prison_riot", name = "Start Riot", emoji = "🔥", effect = "Dangerous!", minAge = 0, risk = 85 },
+	{ id = "prison_snitch", name = "Snitch", emoji = "🐀", effect = "-Sentence +Risk", minAge = 0 },
+	{ id = "prison_appeal", name = "Appeal Sentence", emoji = "⚖️", effect = "Legal Help", minAge = 0, cost = 5000 },
+	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "😇", effect = "-Sentence Time", minAge = 0 },
 }
 
 -- Helpers
@@ -209,25 +233,51 @@ function ActivitiesScreen:createUI()
 	tabLayout.Parent = tabBar
 	
 	self.tabBtns = {}
-	local tabs = {
-		{ id = "mindbody", text = "🧘 Mind & Body", color = C.Cyan },
-		{ id = "social", text = "🎉 Social", color = C.Pink },
-		{ id = "fun", text = "🎬 Fun", color = C.Purple },
-		{ id = "crime", text = "💀 Crime", color = C.Red },
-	}
+	self.tabBar = tabBar  -- Store reference for dynamic updates
+	
+	self:rebuildTabs()
+end
+
+function ActivitiesScreen:rebuildTabs()
+	-- Clear existing tabs
+	for _, child in ipairs(self.tabBar:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
+	end
+	self.tabBtns = {}
+	
+	local inJail = self:isInJail()
+	local tabs
+	
+	if inJail then
+		-- Show Prison tab prominently when in jail
+		tabs = {
+			{ id = "prison", text = "⛓️ Prison", color = C.Gray700 },
+			{ id = "mindbody", text = "💪 Exercise", color = C.Cyan },
+		}
+		self.currentTab = "prison"
+	else
+		tabs = {
+			{ id = "mindbody", text = "🧘 Mind", color = C.Cyan },
+			{ id = "social", text = "🎉 Social", color = C.Pink },
+			{ id = "fun", text = "🎬 Fun", color = C.Purple },
+			{ id = "crime", text = "💀 Crime", color = C.Red },
+		}
+	end
+	
+	local tabWidth = 1 / #tabs - 0.01
 	
 	for i, tab in ipairs(tabs) do
 		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0.235, 0, 1, 0)
+		btn.Size = UDim2.new(tabWidth, 0, 1, 0)
 		btn.BackgroundColor3 = i == 1 and tab.color or C.White
 		btn.Font = F.Button
-		btn.TextSize = 10
+		btn.TextSize = 11
 		btn.TextColor3 = i == 1 and C.White or C.Gray600
 		btn.Text = tab.text
 		btn.AutoButtonColor = false
 		btn.LayoutOrder = i
 		btn.ZIndex = 85
-		btn.Parent = tabBar
+		btn.Parent = self.tabBar
 		corner(btn, 10)
 		
 		self.tabBtns[tab.id] = { btn = btn, color = tab.color }
@@ -319,10 +369,219 @@ function ActivitiesScreen:switchTab(tabId)
 		if child:IsA("Frame") then child:Destroy() end
 	end
 	
-	if tabId == "mindbody" then self:populateMindBody()
+	if tabId == "prison" then self:populatePrison()
+	elseif tabId == "mindbody" then self:populateMindBody()
 	elseif tabId == "social" then self:populateSocial()
 	elseif tabId == "fun" then self:populateFun()
-	else self:populateCrime() end
+	elseif tabId == "crime" then self:populateCrime() end
+end
+
+-- PRISON ACTIVITIES TAB
+function ActivitiesScreen:populatePrison()
+	-- Prison status header
+	local headerCard = Instance.new("Frame")
+	headerCard.Size = UDim2.new(1, 0, 0, 80)
+	headerCard.BackgroundColor3 = C.Gray800
+	headerCard.LayoutOrder = 0
+	headerCard.ZIndex = 82
+	headerCard.Parent = self.contentScroll
+	corner(headerCard, 16)
+	
+	local headerIcon = Instance.new("TextLabel")
+	headerIcon.Size = UDim2.new(0, 50, 0, 50)
+	headerIcon.Position = UDim2.new(0, 14, 0.5, -25)
+	headerIcon.BackgroundTransparency = 1
+	headerIcon.Font = F.Body
+	headerIcon.TextSize = 36
+	headerIcon.Text = "⛓️"
+	headerIcon.ZIndex = 83
+	headerIcon.Parent = headerCard
+	
+	local headerText = Instance.new("TextLabel")
+	headerText.Size = UDim2.new(1, -80, 0, 24)
+	headerText.Position = UDim2.new(0, 70, 0, 14)
+	headerText.BackgroundTransparency = 1
+	headerText.Font = F.Title
+	headerText.TextSize = 18
+	headerText.TextColor3 = C.White
+	headerText.TextXAlignment = Enum.TextXAlignment.Left
+	headerText.Text = "You're in Prison"
+	headerText.ZIndex = 83
+	headerText.Parent = headerCard
+	
+	local headerSub = Instance.new("TextLabel")
+	headerSub.Size = UDim2.new(1, -80, 0, 20)
+	headerSub.Position = UDim2.new(0, 70, 0, 40)
+	headerSub.BackgroundTransparency = 1
+	headerSub.Font = F.Body
+	headerSub.TextSize = 13
+	headerSub.TextColor3 = C.Gray400
+	headerSub.TextXAlignment = Enum.TextXAlignment.Left
+	headerSub.Text = "Choose your actions wisely..."
+	headerSub.ZIndex = 83
+	headerSub.Parent = headerCard
+	
+	-- Prison activities
+	for i, item in ipairs(PrisonActivities) do
+		self:createPrisonCard(self.contentScroll, item, i)
+	end
+end
+
+function ActivitiesScreen:createPrisonCard(parent, item, order)
+	local money = self:getMoney()
+	local cost = item.cost or 0
+	local canDo = money >= cost
+	
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, 0, 0, 88)
+	card.BackgroundColor3 = C.White
+	card.LayoutOrder = order
+	card.ZIndex = 82
+	card.Parent = parent
+	corner(card, 16)
+	stroke(card, 1, 0.92, C.Gray200)
+	
+	-- Icon
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 54, 0, 54)
+	iconFrame.Position = UDim2.new(0, 14, 0.5, -27)
+	iconFrame.BackgroundColor3 = item.risk and C.RedPale or C.Gray100
+	iconFrame.ZIndex = 83
+	iconFrame.Parent = card
+	corner(iconFrame, 14)
+	
+	local iconLbl = Instance.new("TextLabel")
+	iconLbl.Size = UDim2.fromScale(1, 1)
+	iconLbl.BackgroundTransparency = 1
+	iconLbl.Font = F.Body
+	iconLbl.TextSize = 28
+	iconLbl.Text = item.emoji
+	iconLbl.ZIndex = 84
+	iconLbl.Parent = iconFrame
+	
+	-- Name
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0.5, 0, 0, 24)
+	nameLbl.Position = UDim2.new(0, 78, 0, 14)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Font = F.Title
+	nameLbl.TextSize = 16
+	nameLbl.TextColor3 = C.Gray900
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Text = item.name
+	nameLbl.ZIndex = 83
+	nameLbl.Parent = card
+	
+	-- Effect/Risk badge
+	local badgeText = item.risk and ("Risk: " .. item.risk .. "%") or item.effect
+	local badgeBg = item.risk and C.RedPale or C.GreenPale
+	local badgeColor = item.risk and C.RedDark or C.GreenDark
+	
+	local effectBadge = Instance.new("Frame")
+	effectBadge.Size = UDim2.new(0, 110, 0, 24)
+	effectBadge.Position = UDim2.new(0, 78, 0, 42)
+	effectBadge.BackgroundColor3 = badgeBg
+	effectBadge.ZIndex = 83
+	effectBadge.Parent = card
+	pill(effectBadge)
+	
+	local effectLbl = Instance.new("TextLabel")
+	effectLbl.Size = UDim2.fromScale(1, 1)
+	effectLbl.BackgroundTransparency = 1
+	effectLbl.Font = F.Medium
+	effectLbl.TextSize = 11
+	effectLbl.TextColor3 = badgeColor
+	effectLbl.Text = badgeText .. (cost > 0 and " • $" .. cost or "")
+	effectLbl.ZIndex = 84
+	effectLbl.Parent = effectBadge
+	
+	-- Minigame indicator
+	if item.hasMinigame then
+		local miniLabel = Instance.new("TextLabel")
+		miniLabel.Size = UDim2.new(0, 80, 0, 16)
+		miniLabel.Position = UDim2.new(0, 78, 0, 68)
+		miniLabel.BackgroundTransparency = 1
+		miniLabel.Font = F.Body
+		miniLabel.TextSize = 10
+		miniLabel.TextColor3 = C.Purple
+		miniLabel.TextXAlignment = Enum.TextXAlignment.Left
+		miniLabel.Text = "🎮 Minigame"
+		miniLabel.ZIndex = 83
+		miniLabel.Parent = card
+	end
+	
+	-- Action button
+	local btnText = "Go!"
+	local btnColor = item.risk and C.Red or C.Amber
+	
+	if cost > 0 and not canDo then
+		btnText = "Need $"
+		btnColor = C.Gray300
+	end
+	
+	local doBtn = Instance.new("TextButton")
+	doBtn.Size = UDim2.new(0, 68, 0, 40)
+	doBtn.AnchorPoint = Vector2.new(1, 0.5)
+	doBtn.Position = UDim2.new(1, -14, 0.5, 0)
+	doBtn.BackgroundColor3 = canDo and btnColor or C.Gray300
+	doBtn.Font = F.Button
+	doBtn.TextSize = 13
+	doBtn.TextColor3 = canDo and C.White or C.Gray500
+	doBtn.Text = canDo and btnText or "Need $"
+	doBtn.AutoButtonColor = false
+	doBtn.ZIndex = 83
+	doBtn.Parent = card
+	pill(doBtn)
+	
+	if canDo then
+		doBtn.MouseEnter:Connect(function() 
+			tween(doBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 74, 0, 44) })
+		end)
+		doBtn.MouseLeave:Connect(function() 
+			tween(doBtn, TweenInfo.new(0.1), { Size = UDim2.new(0, 68, 0, 40) })
+		end)
+		doBtn.MouseButton1Click:Connect(function()
+			self:doPrisonActivity(item)
+		end)
+	end
+end
+
+function ActivitiesScreen:doPrisonActivity(item)
+	if item.hasMinigame and item.id == "prison_escape" then
+		-- Trigger prison escape minigame through client
+		local MinigameResult = remotesFolder and remotesFolder:FindFirstChild("MinigameResult")
+		local DoPrisonAction = remotesFolder and remotesFolder:FindFirstChild("DoPrisonAction")
+		
+		if DoPrisonAction then
+			-- The minigame will be handled by the client's minigames module
+			-- For now, just call the server action which may trigger the minigame
+			local result = DoPrisonAction:InvokeServer(item.id)
+			if result then
+				local emoji = result.success and "🔓" or "🚔"
+				self:showResult(result.success, result.message, emoji)
+			else
+				self:showResult(false, "Prison escape failed!", "🚔")
+			end
+		else
+			self:showResult(false, "Action not available", "❌")
+		end
+	else
+		-- Regular prison activity
+		local DoPrisonAction = remotesFolder and remotesFolder:FindFirstChild("DoPrisonAction")
+		if DoPrisonAction then
+			local result = DoPrisonAction:InvokeServer(item.id)
+			if result then
+				local emoji = result.success and "✅" or "❌"
+				if item.id == "prison_riot" then emoji = result.success and "🔥" or "🚔" end
+				if item.id == "prison_gang" then emoji = result.success and "⛓️" or "😵" end
+				self:showResult(result.success, result.message, emoji)
+			else
+				self:showResult(false, "Server error", "❌")
+			end
+		else
+			self:showResult(false, "Action not available", "❌")
+		end
+	end
 end
 
 function ActivitiesScreen:createActivityCard(parent, item, order, accentColor, bgColor)
@@ -933,6 +1192,7 @@ function ActivitiesScreen:show()
 	self.overlay.Visible = true
 	self.overlay.Position = UDim2.new(1, 0, 0, 0)
 	self:updateInfoBar()
+	self:rebuildTabs()  -- Rebuild tabs based on jail status
 	self:switchTab(self.currentTab)
 	tween(self.overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { 
 		Position = UDim2.fromScale(0, 0) 

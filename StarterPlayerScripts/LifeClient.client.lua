@@ -986,11 +986,11 @@ local function createNavButton(info, parent, order)
 	return btn
 end
 
-createNavButton({ icon = "💼", text = "Work",   screen = "occupation"   }, navLeft,  1)
-createNavButton({ icon = "🏠", text = "Assets", screen = "assets"       }, navLeft,  2)
-createNavButton({ icon = "❤️", text = "People", screen = "relationships"}, navRight, 1)
-createNavButton({ icon = "🎭", text = "Fun",    screen = "activities"   }, navRight, 2)
-createNavButton({ icon = "⭐", text = "Story",  screen = "storypaths"   }, navRight, 3)
+-- BitLife-style nav: Jobs, Assets, Relationships, Activities
+createNavButton({ icon = "💼", text = "Jobs",       screen = "occupation"   }, navLeft,  1)
+createNavButton({ icon = "🏠", text = "Assets",     screen = "assets"       }, navLeft,  2)
+createNavButton({ icon = "👥", text = "Relations",  screen = "relationships"}, navRight, 1)
+createNavButton({ icon = "⚡", text = "Activities", screen = "activities"   }, navRight, 2)
 
 ----------------------------------------------------------------
 -- AGE BUTTON

@@ -833,6 +833,190 @@ Gamble.OnServerInvoke = function(player, amount)
 end
 
 ----------------------------------------------------------------
+-- PRISON ACTIONS
+----------------------------------------------------------------
+local DoPrisonAction = Instance.new("RemoteFunction")
+DoPrisonAction.Name = "DoPrisonAction"
+DoPrisonAction.Parent = ReplicatedStorage:WaitForChild("Remotes")
+
+DoPrisonAction.OnServerInvoke = function(player, actionId)
+	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
+	
+	-- Must be in jail
+	if not extState.InJail then
+		return { success = false, message = "You're not in prison!" }
+	end
+	
+	-- Prison Escape
+	if actionId == "prison_escape" then
+		-- 10% base chance, improved with smarts
+		local smarts = life and life.Stats and life.Stats.Smarts or 50
+		local escapeChance = 10 + math.floor(smarts / 10)
+		local success = math.random(100) <= escapeChance
+		
+		if success then
+			extState.InJail = false
+			extState.JailYearsLeft = 0
+			extState.EscapedPrison = true
+			extState.WantedLevel = (extState.WantedLevel or 0) + 3
+			
+			if life and life.SetFlag then
+				life:SetFlag("escaped_prison")
+				life:SetFlag("fugitive")
+			end
+			
+			syncStateToClient(player)
+			return { 
+				success = true, 
+				message = "You escaped prison! You're now a fugitive and must lay low...",
+				triggerMinigame = "prison_escape"
+			}
+		else
+			-- Caught! Add time to sentence
+			extState.JailYearsLeft = extState.JailYearsLeft + math.random(2, 5)
+			syncStateToClient(player)
+			return { 
+				success = false, 
+				message = "You got caught trying to escape! Years added to your sentence.",
+				yearsAdded = true
+			}
+		end
+	
+	-- Yard Workout
+	elseif actionId == "prison_workout" then
+		if life then
+			life.Stats.Health = math.min(100, (life.Stats.Health or 50) + 5)
+			life.Stats.Looks = math.min(100, (life.Stats.Looks or 50) + 2)
+		end
+		syncStateToClient(player)
+		return { success = true, message = "You pumped iron in the yard. Getting jacked!" }
+	
+	-- Get GED
+	elseif actionId == "prison_study" then
+		if extState.PrisonGED then
+			return { success = false, message = "You already have your GED." }
+		end
+		if life then
+			life.Stats.Smarts = math.min(100, (life.Stats.Smarts or 50) + 8)
+		end
+		extState.PrisonGED = true
+		if life and life.SetFlag then
+			life:SetFlag("prison_educated")
+		end
+		syncStateToClient(player)
+		return { success = true, message = "You studied hard and earned your GED! You feel smarter." }
+	
+	-- Join Prison Gang
+	elseif actionId == "prison_gang" then
+		if extState.PrisonGang then
+			return { success = false, message = "You're already in a prison gang." }
+		end
+		local gangNames = {"The Aryans", "MS-13", "The Bloods", "Latin Kings", "Crips"}
+		local gang = gangNames[math.random(#gangNames)]
+		extState.PrisonGang = gang
+		if life and life.SetFlag then
+			life:SetFlag("prison_gang_member")
+		end
+		-- Risk of getting hurt during initiation
+		local hurt = math.random(100) <= 30
+		if hurt and life then
+			life.Stats.Health = math.max(1, (life.Stats.Health or 50) - 15)
+		end
+		syncStateToClient(player)
+		if hurt then
+			return { success = true, message = "You joined " .. gang .. ". The initiation was brutal but you're protected now." }
+		else
+			return { success = true, message = "You joined " .. gang .. ". You now have protection in the yard." }
+		end
+	
+	-- Start Riot
+	elseif actionId == "prison_riot" then
+		local success = math.random(100) <= 15 -- Very risky
+		if success then
+			-- Chaos might reduce sentence or get you transferred
+			extState.JailYearsLeft = math.max(0, extState.JailYearsLeft - math.random(1, 3))
+			if extState.JailYearsLeft <= 0 then
+				extState.InJail = false
+			end
+			syncStateToClient(player)
+			return { success = true, message = "In the chaos, you managed to get transferred and your case was lost in paperwork!" }
+		else
+			-- Caught! Solitary and more time
+			extState.JailYearsLeft = extState.JailYearsLeft + math.random(3, 8)
+			if life then
+				life.Stats.Happiness = math.max(0, (life.Stats.Happiness or 50) - 20)
+				life.Stats.Health = math.max(1, (life.Stats.Health or 50) - 10)
+			end
+			syncStateToClient(player)
+			return { success = false, message = "The riot was crushed. You got beat up and sent to solitary. More years added." }
+		end
+	
+	-- Snitch
+	elseif actionId == "prison_snitch" then
+		local success = math.random(100) <= 60 -- Usually works but dangerous
+		if success then
+			extState.JailYearsLeft = math.max(0, extState.JailYearsLeft - math.random(1, 2))
+			if extState.JailYearsLeft <= 0 then
+				extState.InJail = false
+			end
+			syncStateToClient(player)
+			return { success = true, message = "Your info was valuable. Time reduced, but watch your back..." }
+		else
+			-- Other inmates found out
+			if life then
+				life.Stats.Health = math.max(1, (life.Stats.Health or 50) - 25)
+			end
+			syncStateToClient(player)
+			return { success = false, message = "Word got out that you're a snitch. You got jumped in the yard." }
+		end
+	
+	-- Appeal Sentence
+	elseif actionId == "prison_appeal" then
+		if not canAfford(player, 5000) then
+			return { success = false, message = "You can't afford a lawyer. Need $5,000." }
+		end
+		deductMoney(player, 5000)
+		
+		local smarts = life and life.Stats and life.Stats.Smarts or 50
+		local success = math.random(100) <= (20 + math.floor(smarts / 5))
+		
+		if success then
+			local yearsRemoved = math.random(2, 5)
+			extState.JailYearsLeft = math.max(0, extState.JailYearsLeft - yearsRemoved)
+			if extState.JailYearsLeft <= 0 then
+				extState.InJail = false
+			end
+			syncStateToClient(player)
+			return { success = true, message = "Your appeal was successful! " .. yearsRemoved .. " years removed from your sentence." }
+		else
+			syncStateToClient(player)
+			return { success = false, message = "Appeal denied. $5,000 wasted on lawyer fees." }
+		end
+	
+	-- Good Behavior
+	elseif actionId == "prison_goodbehavior" then
+		local success = math.random(100) <= 70
+		if success then
+			extState.JailYearsLeft = math.max(0, extState.JailYearsLeft - 1)
+			if extState.JailYearsLeft <= 0 then
+				extState.InJail = false
+			end
+			if life then
+				life.Stats.Happiness = math.min(100, (life.Stats.Happiness or 50) + 3)
+			end
+			syncStateToClient(player)
+			return { success = true, message = "Your good behavior was noted. Time reduced!" }
+		else
+			syncStateToClient(player)
+			return { success = false, message = "You tried to be good but got caught up in yard drama." }
+		end
+	end
+	
+	return { success = false, message = "Unknown prison action." }
+end
+
+----------------------------------------------------------------
 -- LIFECYCLE AND INTEGRATION
 ----------------------------------------------------------------
 

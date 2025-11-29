@@ -289,14 +289,48 @@ UIManager.Colors.Social     -- Purple
 5. Add to `cancel()` function
 6. Add to `getAvailableGames()` list
 
+## ⛓️ Prison System
+
+When in jail, the Activities screen transforms to show prison-specific options:
+
+| Activity | Effect | Risk |
+|----------|--------|------|
+| 🔐 Escape Prison | Freedom (minigame) | Very High |
+| 💪 Yard Workout | +Health +Looks | None |
+| 📚 Get GED | +Smarts | None |
+| ⛓️ Join Prison Gang | +Protection -Health | Medium |
+| 🔥 Start Riot | Chaos! | Very High |
+| 🐀 Snitch | -Sentence +Danger | High |
+| ⚖️ Appeal Sentence | Legal help ($5K) | None |
+| 😇 Good Behavior | -Sentence | Low |
+
+### Prison Event Path
+
+The criminal story path includes deep prison events:
+- **Prison Life** - Daily choices and survival
+- **Yard Confrontation** - Handle conflicts
+- **Contraband** - Risk vs reward
+- **Cellmate Stories** - Learn from other inmates
+- **Parole Hearing** - Early release chances
+- **Prison Riot** - Chaos opportunities
+- **Escape Route** - Plan your breakout
+
+### Fugitive Path (After Escape)
+
+If you escape prison, new events unlock:
+- **Finding Shelter** - Where to hide
+- **Close Call** - Avoid police
+- **New Identity** - Start over ($10K)
+- **Recapture Risk** - Stay hidden or get caught
+
 ## 📊 Statistics
 
-- **Events**: 300+ unique events
+- **Events**: 200+ unique events (including prison path)
 - **Career Paths**: 6 deep progression paths
 - **Minigames**: 6 interactive minigames
 - **Relationships**: Family, Friends, Lovers, Enemies
 - **Assets**: Houses, Cars, Businesses, Pets
-- **Activities**: Mind & Body, Social, Entertainment, Crime
+- **Activities**: Mind & Body, Social, Entertainment, Crime, Prison
 
 ## 🔧 Configuration
 

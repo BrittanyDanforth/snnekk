@@ -2551,6 +2551,213 @@ local events = {
 		},
 	},
 	
+	-- ═══════════════════════════════════════════════════════════════
+	-- DEEP PRISON PATH EVENTS (While In Prison)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "prison_yard_fight",
+		minAge = 16, maxAge = 70,
+		weight = 12, cooldown = 2,
+		emoji = "🥊", title = "Yard Confrontation",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison or f.did_time
+		end,
+		getDynamicData = function() return { inmateName = randomName() } end,
+		text = "%inmateName% is looking for trouble. They've been eyeing you all week.",
+		choices = {
+			{ text = "🥊 Fight back", effects = { Health = -10, Happiness = 5 }, resultText = "You held your own. Earned some respect." },
+			{ text = "🏃 Walk away", effects = { Happiness = -5 }, resultText = "You walked away. Some call it smart, others call it weak." },
+			{ text = "🗣️ De-escalate", effects = { Smarts = 5, Happiness = 2 }, resultText = "You talked your way out. Brains over brawn." },
+		},
+	},
+	
+	{
+		id = "prison_contraband",
+		minAge = 18, maxAge = 70,
+		weight = 10, cooldown = 3,
+		emoji = "📦", title = "Contraband Opportunity",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison or f.did_time
+		end,
+		getDynamicData = function() return { itemType = ({"phone","cigarettes","drugs","alcohol"})[math.random(4)] } end,
+		text = "A guard offers to smuggle %itemType% to you... for a price.",
+		choices = {
+			{ text = "💵 Pay up", effects = { Money = -500, Happiness = 10 }, resultText = "You got the goods. Life in prison just got easier." },
+			{ text = "🚫 Too risky", effects = { Happiness = -3 }, resultText = "You passed. Safer that way." },
+			{ text = "🐀 Report him", effects = { Smarts = 3, Happiness = -5 }, resultText = "The guard got fired. Now everyone thinks you're a snitch." },
+		},
+	},
+	
+	{
+		id = "prison_cellmate_story",
+		minAge = 18, maxAge = 70,
+		weight = 8, oneTime = true,
+		emoji = "🛏️", title = "New Cellmate",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison or f.did_time
+		end,
+		getDynamicData = function() return { cellmateName = randomName() } end,
+		text = "Your new cellmate %cellmateName% is a former bank robber. They offer to teach you their trade.",
+		choices = {
+			{ text = "📚 Learn from them", effects = { Smarts = 10, Happiness = 5 }, resultText = "You learned a lot about the criminal underworld.", setFlag = "prison_mentor" },
+			{ text = "🙅 Keep to yourself", effects = { Happiness = -2 }, resultText = "You minded your own business. Probably safer." },
+		},
+	},
+	
+	{
+		id = "prison_escape_opportunity",
+		minAge = 18, maxAge = 70,
+		weight = 5, oneTime = true,
+		emoji = "🔓", title = "Escape Route",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return (f.in_prison or f.did_time) and f.prison_mentor and not f.attempted_escape
+		end,
+		text = "Your mentor found a weakness in the fence. Tonight might be your chance.",
+		choices = {
+			{ text = "🏃 Make a break for it", effects = { Happiness = 15, Health = -5 }, resultText = "You escaped! You're now a fugitive.", setFlags = {"escaped_prison", "fugitive"}, clearFlag = "in_prison", minigame = "prison_escape" },
+			{ text = "⏰ Not yet", effects = { Smarts = 3 }, resultText = "You decided to wait for a better opportunity.", setFlag = "attempted_escape" },
+		},
+	},
+	
+	{
+		id = "prison_parole_hearing",
+		minAge = 18, maxAge = 70,
+		weight = 15, cooldown = 2,
+		emoji = "⚖️", title = "Parole Hearing",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison or f.did_time
+		end,
+		text = "Your parole hearing is today. This could be your chance.",
+		choices = {
+			{ text = "😊 Show remorse", effects = { Smarts = 3, Happiness = 10 }, resultText = "The board saw genuine change. Early release granted!" },
+			{ text = "😤 Defend yourself", effects = { Happiness = -5 }, resultText = "Your attitude didn't help. Parole denied." },
+			{ text = "🤷 Be honest", effects = { Smarts = 5, Happiness = 3 }, resultText = "Your honesty was refreshing. They'll reconsider next time." },
+		},
+	},
+	
+	{
+		id = "prison_riot_survive",
+		minAge = 18, maxAge = 70,
+		weight = 4, oneTime = true,
+		emoji = "🔥", title = "Prison Riot!",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.in_prison or f.did_time
+		end,
+		text = "A riot breaks out! Inmates are fighting guards. Chaos everywhere.",
+		choices = {
+			{ text = "🔥 Join the chaos", effects = { Health = -15, Happiness = 10 }, resultText = "You fought alongside the inmates. You're now marked as a troublemaker." },
+			{ text = "🏃 Find cover", effects = { Smarts = 5 }, resultText = "You hid until it was over. Smart move." },
+			{ text = "🚪 Use it to escape", effects = { Health = -10, Happiness = 20 }, resultText = "In the chaos, you slipped away!", setFlags = {"escaped_prison", "fugitive"}, clearFlag = "in_prison", minigame = "getaway" },
+		},
+	},
+	
+	{
+		id = "prison_release",
+		minAge = 18, maxAge = 70,
+		weight = 20, oneTime = true,
+		emoji = "🚪", title = "Release Day!",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.did_time and not f.released_from_prison
+		end,
+		text = "After years behind bars, you're finally free. What now?",
+		choices = {
+			{ text = "🔄 Go straight", effects = { Happiness = 10, Smarts = 5 }, resultText = "You decided to turn your life around.", setFlags = {"released_from_prison", "reformed"} },
+			{ text = "😈 Back to crime", effects = { Happiness = 5 }, resultText = "Old habits die hard. You know what you're good at.", setFlags = {"released_from_prison", "career_criminal"} },
+			{ text = "🏠 Lay low", effects = { Happiness = 3 }, resultText = "You kept a low profile. Time to figure things out.", setFlag = "released_from_prison" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- FUGITIVE PATH (After Escaping Prison)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "fugitive_hideout",
+		minAge = 18, maxAge = 70,
+		weight = 20, oneTime = true,
+		emoji = "🏚️", title = "Finding Shelter",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.fugitive and not f.found_hideout
+		end,
+		getDynamicData = function() return { contactName = randomName() } end,
+		text = "You need a place to hide. %contactName% might help... for a price.",
+		choices = {
+			{ text = "💵 Pay for safety", effects = { Money = -2000, Happiness = 5 }, resultText = "You found a safe house. For now.", setFlag = "found_hideout" },
+			{ text = "🏕️ Live rough", effects = { Health = -10, Smarts = 3 }, resultText = "You've been living in abandoned buildings. It's hard but you're free.", setFlag = "found_hideout" },
+			{ text = "🚗 Keep moving", effects = { Health = -5, Happiness = -5 }, resultText = "You never stay in one place too long.", setFlag = "found_hideout" },
+		},
+	},
+	
+	{
+		id = "fugitive_close_call",
+		minAge = 18, maxAge = 70,
+		weight = 15, cooldown = 2,
+		emoji = "🚔", title = "Close Call!",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.fugitive
+		end,
+		text = "A cop car just pulled up. They're running plates. Your heart is pounding.",
+		choices = {
+			{ text = "😎 Stay cool", effects = { Smarts = 5, Happiness = 3 }, resultText = "You acted natural. They drove away." },
+			{ text = "🏃 Run for it", effects = { Health = -10, Happiness = -10 }, resultText = "You bolted. They chased. You barely got away.", minigame = "getaway" },
+			{ text = "🙋 Turn yourself in", effects = { Happiness = -15 }, resultText = "The running is over. Back to prison.", clearFlag = "fugitive", setFlags = {"recaptured", "in_prison"} },
+		},
+	},
+	
+	{
+		id = "fugitive_new_identity",
+		minAge = 18, maxAge = 70,
+		weight = 8, oneTime = true,
+		emoji = "🪪", title = "New Identity",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.fugitive and f.found_hideout
+		end,
+		getDynamicData = function() return { newName = randomName(), forgerName = randomName() } end,
+		text = "%forgerName% can create a new identity for you. Become %newName% forever?",
+		choices = {
+			{ text = "💵 Buy new papers", effects = { Money = -10000, Happiness = 15 }, resultText = "You're now %newName%. Your old life is gone forever.", setFlags = {"new_identity"}, clearFlag = "fugitive" },
+			{ text = "🚫 Too expensive", effects = { Happiness = -5 }, resultText = "You can't afford it. You'll stay on the run." },
+		},
+	},
+	
+	{
+		id = "fugitive_recaptured",
+		minAge = 18, maxAge = 70,
+		weight = 6, oneTime = true,
+		emoji = "🚨", title = "Busted Again!",
+		category = "crime",
+		requires = function(state)
+			local f = state.Flags or {}
+			return f.fugitive and not f.new_identity
+		end,
+		text = "A manhunt led authorities right to your door. There's no escape this time.",
+		choices = {
+			{ text = "🙋 Surrender", effects = { Health = -5, Happiness = -20 }, resultText = "Back to prison with extra time for escaping.", clearFlag = "fugitive", setFlags = {"recaptured", "in_prison"} },
+			{ text = "🥊 Go down fighting", effects = { Health = -30, Happiness = 5 }, resultText = "You fought until you couldn't anymore. Solitary confinement.", clearFlag = "fugitive", setFlags = {"recaptured", "in_prison", "violent_offender"} },
+		},
+	},
+	
 	{
 		id = "money_laundering",
 		minAge = 25, maxAge = 60,
@@ -3064,6 +3271,247 @@ local events = {
 		choices = {
 			{ text = "😔 Accept it", effects = { Happiness = -15, Money = -3000 }, resultText = "It stings, but you'll bounce back." },
 			{ text = "😤 Fight it", effects = { Happiness = -10, Money = 5000 }, resultText = "You negotiated a severance package." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- MORE EVERYDAY RANDOM EVENTS (Age Variety)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "random_kindness",
+		minAge = 8, maxAge = 80,
+		weight = 10, cooldown = 4,
+		emoji = "😊", title = "Random Act of Kindness",
+		category = "social",
+		getDynamicData = function() return { strangerName = randomName() } end,
+		text = "A stranger named %strangerName% helped you out of nowhere!",
+		choices = {
+			{ text = "😊 Pay it forward", effects = { Happiness = 10, Smarts = 2 }, resultText = "You helped someone else too. The world is good." },
+			{ text = "🙏 Just say thanks", effects = { Happiness = 5 }, resultText = "You were grateful for the kindness." },
+		},
+	},
+	
+	{
+		id = "found_money",
+		minAge = 6, maxAge = 80,
+		weight = 8, cooldown = 5,
+		emoji = "💵", title = "Found Money!",
+		category = "money",
+		getDynamicData = function() return { amount = math.random(20, 200) } end,
+		text = "You found $%amount% on the ground!",
+		choices = {
+			{ text = "💵 Keep it", effects = { Money = 100, Happiness = 8 }, resultText = "Finders keepers!" },
+			{ text = "🤝 Try to find owner", effects = { Smarts = 3, Happiness = 5 }, resultText = "You tried but nobody claimed it. You kept it guilt-free." },
+		},
+	},
+	
+	{
+		id = "traffic_ticket",
+		minAge = 16, maxAge = 80,
+		weight = 8, cooldown = 3,
+		emoji = "🚔", title = "Traffic Stop",
+		category = "money",
+		requires = function(state) return state.Flags and state.Flags.has_license end,
+		text = "You got pulled over for speeding!",
+		choices = {
+			{ text = "😇 Be polite", effects = { Money = -100, Happiness = -3 }, resultText = "The officer let you off with a warning." },
+			{ text = "😤 Argue", effects = { Money = -300, Happiness = -10 }, resultText = "You made it worse. Full ticket." },
+			{ text = "😢 Cry", effects = { Money = -150, Happiness = 5 }, resultText = "The officer felt bad. Reduced fine." },
+		},
+	},
+	
+	{
+		id = "new_hobby",
+		minAge = 10, maxAge = 70,
+		weight = 10, cooldown = 5,
+		emoji = "🎯", title = "New Hobby",
+		category = "social",
+		getDynamicData = function()
+			local hobbies = {"gardening", "cooking", "photography", "hiking", "collecting stamps", "woodworking", "painting", "bird watching"}
+			return { hobby = hobbies[math.random(#hobbies)] }
+		end,
+		text = "You discovered %hobby% and really enjoy it!",
+		choices = {
+			{ text = "🎯 Dive in deep", effects = { Happiness = 12, Smarts = 5 }, resultText = "Your new hobby brings you joy every day." },
+			{ text = "🤷 Casual interest", effects = { Happiness = 5 }, resultText = "It's a nice occasional activity." },
+		},
+	},
+	
+	{
+		id = "health_checkup",
+		minAge = 20, maxAge = 80,
+		weight = 8, cooldown = 4,
+		emoji = "🏥", title = "Annual Checkup",
+		category = "health",
+		text = "Time for your annual health checkup!",
+		choices = {
+			{ text = "🏥 Go to doctor", effects = { Health = 10, Money = -200 }, resultText = "You're in good health! The doctor gave some helpful advice." },
+			{ text = "🙅 Skip it", effects = { Happiness = 3 }, resultText = "You put off the appointment. Hopefully nothing's wrong." },
+		},
+	},
+	
+	{
+		id = "food_poisoning",
+		minAge = 10, maxAge = 80,
+		weight = 5, cooldown = 5,
+		emoji = "🤢", title = "Food Poisoning",
+		category = "health",
+		getDynamicData = function()
+			local foods = {"gas station sushi", "street tacos", "leftover pizza", "questionable buffet", "sketchy food truck"}
+			return { food = foods[math.random(#foods)] }
+		end,
+		text = "You got food poisoning from %food%!",
+		choices = {
+			{ text = "🏥 Go to hospital", effects = { Health = -5, Money = -500 }, resultText = "You recovered quickly with medical help." },
+			{ text = "🏠 Tough it out", effects = { Health = -15, Happiness = -10 }, resultText = "That was a rough few days..." },
+		},
+	},
+	
+	{
+		id = "viral_video",
+		minAge = 13, maxAge = 50,
+		weight = 4, oneTime = true,
+		emoji = "📱", title = "Viral Video!",
+		category = "social",
+		text = "A video of you went viral! Millions of people have seen it.",
+		choices = {
+			{ text = "😎 Embrace the fame", effects = { Happiness = 15, Money = 5000 }, resultText = "You became an internet celebrity!", setFlag = "internet_famous" },
+			{ text = "😰 Try to hide", effects = { Happiness = -5 }, resultText = "The attention faded eventually." },
+		},
+	},
+	
+	{
+		id = "bad_haircut",
+		minAge = 8, maxAge = 60,
+		weight = 8, cooldown = 5,
+		emoji = "✂️", title = "Bad Haircut",
+		category = "looks",
+		text = "Your barber really messed up your haircut!",
+		choices = {
+			{ text = "😭 Be upset", effects = { Happiness = -10, Looks = -5 }, resultText = "It'll grow back... eventually." },
+			{ text = "😂 Laugh it off", effects = { Happiness = 3, Smarts = 2 }, resultText = "Hair grows back! You owned it." },
+			{ text = "🎩 Wear a hat", effects = { Happiness = -3 }, resultText = "Hat season it is." },
+		},
+	},
+	
+	{
+		id = "neighbor_dispute",
+		minAge = 18, maxAge = 80,
+		weight = 6, cooldown = 4,
+		emoji = "🏠", title = "Neighbor Problems",
+		category = "social",
+		getDynamicData = function() return { neighborName = randomName() } end,
+		text = "Your neighbor %neighborName% is playing loud music at 2 AM!",
+		choices = {
+			{ text = "🗣️ Talk to them", effects = { Smarts = 3, Happiness = 5 }, resultText = "They apologized and turned it down." },
+			{ text = "🔊 Retaliate louder", effects = { Happiness = 5, Smarts = -3 }, resultText = "Petty but satisfying. The noise war continues." },
+			{ text = "📞 Call police", effects = { Happiness = 3 }, resultText = "The cops told them to quiet down." },
+		},
+	},
+	
+	{
+		id = "strange_dream",
+		minAge = 6, maxAge = 80,
+		weight = 8, cooldown = 5,
+		emoji = "💭", title = "Strange Dream",
+		category = "social",
+		text = "You had an incredibly vivid and strange dream that felt meaningful.",
+		choices = {
+			{ text = "🔮 Look up meaning", effects = { Smarts = 3, Happiness = 3 }, resultText = "Dream interpretation is fascinating!" },
+			{ text = "📓 Journal about it", effects = { Smarts = 5 }, resultText = "Writing it down helped you process it." },
+			{ text = "🤷 Forget it", effects = {}, resultText = "Just a dream, nothing more." },
+		},
+	},
+	
+	{
+		id = "find_pet",
+		minAge = 8, maxAge = 70,
+		weight = 5, oneTime = true,
+		emoji = "🐕", title = "Stray Pet",
+		category = "social",
+		getDynamicData = function()
+			local pets = {"dog", "cat", "kitten", "puppy"}
+			return { petType = pets[math.random(#pets)] }
+		end,
+		text = "A friendly stray %petType% followed you home!",
+		choices = {
+			{ text = "🏠 Keep it!", effects = { Happiness = 15, Money = -200 }, resultText = "You have a new best friend!", setFlag = "pet_owner" },
+			{ text = "🏥 Take to shelter", effects = { Happiness = 5, Smarts = 3 }, resultText = "You did the responsible thing. Hope they find a home." },
+			{ text = "🤷 Shoo it away", effects = { Happiness = -3 }, resultText = "You felt a little guilty." },
+		},
+	},
+	
+	{
+		id = "surprise_gift",
+		minAge = 10, maxAge = 80,
+		weight = 7, cooldown = 4,
+		emoji = "🎁", title = "Surprise Gift",
+		category = "social",
+		getDynamicData = function() return { senderName = randomName() } end,
+		text = "You received an unexpected gift from %senderName%!",
+		choices = {
+			{ text = "🎁 Open immediately", effects = { Happiness = 12 }, resultText = "It was exactly what you wanted!" },
+			{ text = "🤔 What's the catch?", effects = { Smarts = 3, Happiness = 5 }, resultText = "No catch! Just a thoughtful person." },
+		},
+	},
+	
+	{
+		id = "minor_accident",
+		minAge = 16, maxAge = 80,
+		weight = 5, cooldown = 4,
+		emoji = "🚗", title = "Fender Bender",
+		category = "money",
+		requires = function(state) return state.Flags and state.Flags.has_license end,
+		text = "You got into a minor car accident in a parking lot.",
+		choices = {
+			{ text = "📋 Exchange info", effects = { Money = -500, Happiness = -5 }, resultText = "Insurance handled it. Annoying but sorted." },
+			{ text = "🏃 Drive away", effects = { Happiness = -10, Smarts = -5 }, resultText = "You hope nobody saw. Guilt lingers." },
+		},
+	},
+	
+	{
+		id = "volunteer_opportunity",
+		minAge = 14, maxAge = 80,
+		weight = 8, cooldown = 3,
+		emoji = "🤝", title = "Volunteer Opportunity",
+		category = "social",
+		getDynamicData = function()
+			local causes = {"animal shelter", "food bank", "elderly home", "beach cleanup", "homeless shelter"}
+			return { cause = causes[math.random(#causes)] }
+		end,
+		text = "There's an opportunity to volunteer at the local %cause%.",
+		choices = {
+			{ text = "🤝 Sign up!", effects = { Happiness = 12, Smarts = 5 }, resultText = "You made a real difference today!" },
+			{ text = "⏰ Too busy", effects = { Happiness = -2 }, resultText = "Maybe next time." },
+		},
+	},
+	
+	{
+		id = "rainy_day",
+		minAge = 5, maxAge = 80,
+		weight = 10, cooldown = 3,
+		emoji = "🌧️", title = "Rainy Day",
+		category = "social",
+		text = "It's a gloomy rainy day with nothing planned.",
+		choices = {
+			{ text = "📺 Movie marathon", effects = { Happiness = 8 }, resultText = "A cozy day watching your favorite movies!" },
+			{ text = "📚 Read a book", effects = { Smarts = 8, Happiness = 5 }, resultText = "You finished that book you've been meaning to read." },
+			{ text = "🌧️ Go out anyway", effects = { Health = 3, Happiness = 5 }, resultText = "Dancing in the rain is underrated!" },
+		},
+	},
+	
+	{
+		id = "insomnia",
+		minAge = 15, maxAge = 80,
+		weight = 6, cooldown = 4,
+		emoji = "😴", title = "Can't Sleep",
+		category = "health",
+		text = "You've been having trouble sleeping lately.",
+		choices = {
+			{ text = "☕ More coffee", effects = { Health = -5, Smarts = 3 }, resultText = "You powered through but felt terrible." },
+			{ text = "🧘 Try meditation", effects = { Health = 5, Happiness = 5 }, resultText = "Meditation helped calm your mind." },
+			{ text = "💊 Sleep aids", effects = { Health = 3 }, resultText = "It helped but probably shouldn't become a habit." },
 		},
 	},
 }
