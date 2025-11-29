@@ -1,333 +1,324 @@
 # BloxLife - BitLife Clone for Roblox
 
-A comprehensive BitLife-style life simulation game with **5,000+ lines** of narrative content, 6 deep story paths, 4 minigames, **result popups with stat displays**, **screen shake effects**, and premium AAA-quality UI.
+A comprehensive BitLife-style life simulation game built for Roblox with polished AAA-quality UI, deep story paths, interactive minigames, and complete server-side validation.
 
 ## 🎮 Features
 
-### Core Gameplay
-- **Life Simulation**: Age up year by year, making choices that shape your life
-- **Stats System**: Happiness, Health, Smarts, and Looks (with rich narrative feedback)
-- **Money & Economy**: Earn, spend, gamble, and invest
-- **Relationships**: Family, friends, enemies, romance
-- **Occupations**: Jobs and education paths
-- **Activities**: Mind & body, social, entertainment, and crime
-- **Assets**: Property, vehicles, and shop items
+### Core Systems
 
-## 📚 MASSIVE Content System
+- **Complete Life Simulation** - Birth to death with age-based events
+- **6 Deep Career Paths** - President, Criminal, Teacher, Racer, Artist, Hacker
+- **Dynamic Events** - 300+ unique events with branching choices
+- **BitLife-Style UI** - Premium cards, modals, and animations
+- **Server-Side Validation** - All actions validated on server
+- **Minigames** - Debate, Heist, Getaway, QTE, Prison Escape, Mash
 
-### EventLibrary.lua (3,000+ lines, 150+ Unique Events)
+### Career Paths
 
-#### 6 Deep Career Paths
-
-| Path | Events | Requirements | Final Goal |
-|------|--------|--------------|------------|
-| **🏛️ President** | 18 milestone events | Political interest + clean record | President of the USA |
-| **🔫 Criminal** | 20 milestone events | Criminal tendencies | Crime Boss / Kingpin |
-| **👨‍🏫 Teacher** | 15 milestone events | Teaching interest | Superintendent |
-| **🏎️ Racer** | 18 milestone events | Racing interest | F1 World Champion / Legend |
-| **🎨 Artist** | 15 milestone events | Art interest | Art Legend / Museum |
-| **💻 Hacker** | 18 milestone events | Computer interest | Elite Hacker / Tech Billionaire |
-
-#### Life Stage Events
-| Stage | Age Range | Event Types |
-|-------|-----------|-------------|
-| Baby/Toddler | 0-4 | Birth, first words, first steps, preschool |
-| Childhood | 5-12 | School start, bullying, talent discovery |
-| Teen | 13-18 | High school, driving, prom, graduation |
-| Young Adult | 18-35 | College, first job, apartment, dating |
-| Adult | 35-60 | Business, family, midlife, career peak |
-| Senior | 60+ | Retirement, legacy, reflection |
-
-#### Universal Life Events (50+ events)
-- Romance: first crush, dating, proposal, wedding, breakup
-- Family: divorce, sibling rivalry, pet adoption, baby born
-- Health: illness, broken bone, addiction, recovery
-- Social: talent show, charity, travel, celebrity encounter
-- Money: lottery, investment, scam, windfall, lawsuit
-
-### NarrativeContent.lua (900+ lines)
-Rich BitLife-style text variations for immersive storytelling:
-
-#### Stat Narratives (320+ variations)
-- **Happiness**: 80 variations (up/down × magnitude)
-- **Health**: 80 variations
-- **Smarts**: 80 variations  
-- **Looks**: 80 variations
-
-#### Flag Descriptions (120+ life flags)
-All career paths, life events, and achievements have unique descriptions.
-
-#### Year Recap Templates
-- 9 life stage recaps (baby → elderly)
-- 9 special path recaps (criminal, political, teacher, racer, artist, hacker, romantic, wealthy, struggling)
-
-### EventRunner.lua (800+ lines)
-The event engine that prevents repetition and builds rich narratives:
-- **Smart Flag Checking**: Events check `requires` functions before firing
-- **One-Time Events**: Major milestones only happen once
-- **Cooldowns**: Repeatable events have minimum year gaps
-- **Dynamic Data**: Names, companies, cities generated per event
-- **Narrative Builder**: Composes clean prose from stat changes
-
-## 🌟 Deep Story Paths
-
-### 🏛️ Presidential Career Path
-Rise from ordinary citizen to the most powerful position!
-
-**Progression (18 events):**
-1. Political Interest → Learn about government
-2. Political Intern → Work in an office
-3. Campaign Volunteer → Learn campaigns
-4. School Board → First election win
-5. City Council → Local decisions
-6. Mayor → Lead your city
-7. State Representative → State capitol
-8. State Senator → Upper chamber
-9. Governor → Executive experience
-10. Congressman → Washington DC
-11. US Senator → National stage
-12. Presidential Primary → Enter the race
-13. Presidential Debate → Face opponents (minigame!)
-14. Presidential Election → Win the vote
-15. Inauguration → Take the oath
-16. Presidential Crisis → Handle emergencies
-17. Executive Order → Use your power
-18. Cabinet/Summit events → Lead the nation
-
-### 🔫 Criminal Empire Path
-Build your criminal organization from scratch!
-
-**Progression (20 events):**
-1. Temptation → Resist or give in
-2. Shoplifting → Start small
-3. Getting Bolder → Bigger targets
-4. Car Theft → Grand theft auto (minigame!)
-5. First Arrest → Get caught
-6. Prison Time → Do your time
-7. Gang Recruitment → Get noticed
-8. Gang Initiation → Prove yourself
-9. Drug Dealing → Move product
-10. Turf War → Fight for territory (minigame!)
-11. Gang Captain → Lead soldiers
-12. Heist Opportunity → Big score (minigame!)
-13. Underboss → Second in command
-14. Power Grab → Take over
-15. Criminal Empire → Build your organization
-16. FBI Investigation → Evade the feds
-17. Money Laundering → Clean the cash
-18. Empire Expansion → Grow your reach
-
-### 👨‍🏫 Teacher Path
-Shape young minds and rise through education!
-
-**Progression:**
-1. Teaching Interest → Discover passion
-2. Education Degree → Study teaching
-3. Student Teaching → Practice in classroom
-4. First Teaching Job → Become a teacher
-5. Difficult Student → Handle challenges
-6. Inspiring Moment → Change lives
-7. Teacher of the Year → Win awards
-8. Department Head → Lead teachers
-9. Vice Principal → Administration
-10. Principal → Run a school
-11. Superintendent → Lead the district
-
-### 🏎️ Racer Path
-From go-karts to Formula 1 glory!
-
-**Progression:**
-1. Racing Interest → Fall in love with speed
-2. Karting League → Competitive racing
-3. Karting Championship → Win titles (minigame!)
-4. Junior Formula → Professional team
-5. Junior Championship → More wins
-6. F1 Test Driver → Join F1 team
-7. F1 Race Driver → Official seat
-8. First F1 Race → Debut (minigame!)
-9. First F1 Win → Victory!
-10. F1 Championship → World Champion
-11. Racing Legend → Hall of Fame
-
-### 🎨 Artist Path
-Express yourself and become a legend!
-
-**Progression:**
-1. Art Interest → Discover talent
-2. Art Competition → Win recognition
-3. Art School → Study professionally
-4. First Gallery Show → Public debut
-5. Signature Style → Find your voice
-6. First Major Sale → Sell artwork
-7. Art Controversy → Handle critics
-8. Museum Acquisition → Enter collections
-9. Art Celebrity → Public recognition
-10. Career Retrospective → Cement legacy
-
-### 💻 Hacker Path
-Master the digital world!
-
-**Progression:**
-1. Computer Interest → Fascination begins
-2. Learn Programming → Study code
-3. First Hack → School systems
-4. First Exploit → Find vulnerabilities
-5. White/Black Hat Choice → Ethical decision
-6. Join Hacker Group → Find community
-7. Corporate Hack → Business targets
-8. Government Target → High stakes
-9. FBI Investigation → Evade capture
-10. Bug Bounty / Dark Web → Career choices
-11. Elite Hacker Status → Recognition
-12. Startup Founder → Build company
-13. Tech Billionaire → Ultimate success
-
-## 🎮 Minigames
-
-### 🎤 Presidential Debate
-Answer 5 political questions correctly to win the debate against your opponent!
-- Score points for correct answers
-- Timer adds pressure
-- Beat opponent's score to win
-
-### 🔓 Safe Cracking (Heist)
-Crack the 4-digit code in 6 attempts!
-- Green = correct digit in correct position
-- Yellow = correct digit, wrong position
-- Gray = digit not in code
-- Wordle-style gameplay
-
-### 🚗 Getaway
-Escape the cops by following the sequence!
-- Watch the highlighted buttons
-- Tap them in order quickly
-- Cops close in if you make mistakes
-- Fill your progress bar to escape
-
-### ⚡ Quick Time Event
-Hit the button when the marker is in the green zone!
-- Difficulty affects zone size
-- Test your reflexes
-- Used for various skill checks
+| Path | Description | Key Milestones |
+|------|-------------|----------------|
+| 🏛️ Political | Rise from intern to President | City Council → State Senator → Congress → President |
+| 💀 Criminal | Build a crime empire | Petty Thief → Gang Member → Underboss → Kingpin |
+| 📚 Teacher | Shape young minds | Teacher → Department Head → Principal → Superintendent |
+| 🏎️ Racer | Become a racing legend | Karting → Junior Formula → F1 → World Champion |
+| 🎨 Artist | Create masterpieces | Art School → Gallery Shows → Museum Pieces → Celebrity |
+| 💻 Hacker | Master the digital realm | Script Kiddie → Black Hat → Hacker Group → Elite |
 
 ## 📁 Project Structure
 
 ```
-/ReplicatedStorage/
-├── EventLibrary.lua       # 3,000+ lines, 150+ events
-├── NarrativeContent.lua   # 900+ lines of text variations
-├── EventRunner.lua        # 800+ lines, event engine
-├── LifeState.lua          # Player state management
-├── Minigames.lua          # 1,200+ lines, 4 minigames
-└── Screens/
-    ├── OccupationScreen.lua
-    ├── AssetsScreen.lua
-    ├── RelationshipsScreen.lua
-    ├── ActivitiesScreen.lua
-    └── StoryPathsScreen.lua
-
-/ServerScriptService/
-├── LifeManager.server.lua       # Core game loop
-└── LifeRemoteHandlers.server.lua # Actions handler
-
-/StarterPlayerScripts/
-└── LifeClient.client.lua        # Main UI (1,500+ lines)
+BloxLife/
+├── ReplicatedStorage/
+│   ├── LifeState.lua          # Player state management (extended)
+│   ├── EventLibrary.lua       # 300+ event definitions
+│   ├── EventRunner.lua        # Event processing & narrative
+│   ├── NarrativeContent.lua   # Text templates & flavor
+│   ├── Minigames.lua          # Interactive minigames (6 types)
+│   ├── UIManager.lua          # Centralized UI components
+│   └── Screens/
+│       ├── OccupationScreen.lua    # Jobs & education
+│       ├── AssetsScreen.lua        # Property, vehicles, gambling
+│       ├── RelationshipsScreen.lua # Family, friends, enemies
+│       ├── ActivitiesScreen.lua    # Activities & crimes
+│       └── StoryPathsScreen.lua    # Career progression
+├── ServerScriptService/
+│   ├── LifeManager.server.lua      # Core game loop
+│   └── LifeRemoteHandlers.server.lua # Screen action handlers
+└── StarterPlayerScripts/
+    └── LifeClient.client.lua       # Main UI & rendering
 ```
 
-**Total: 4,700+ lines of content across the event system!**
+## 🎯 Key Components
 
-## 🔧 Event System (No Repetition!)
+### LifeState (Extended)
 
-### Event Properties
+```lua
+-- New helper methods
+state:ApplyEffects({ Happiness = 10, Health = -5, Money = 1000 })
+state:SetFlag("gang_member")
+state:ClearFlag("student")
+state:HasFlag("president")
+state:AddMoney(5000)
+state:GetNetWorth()
+state:GetStoryProgress("criminal") -- Returns 0-100
+state:GetStoryTitle("political")   -- Returns "State Senator"
+
+-- Relationships
+state:AddRelationship("friends", { name = "John", relationship = 75 })
+state:ModifyRelationship("friends", "john_id", 10)
+state:GetRandomRelationship("classmates")
+
+-- Career
+state:SetCareer("teacher", "Math Teacher", "Lincoln High", 55000)
+state:HasJob()
+state:GetAnnualIncome()
+
+-- Assets
+state:AddAsset("houses", { name = "Beach House", value = 500000 })
+state:AddAsset("cars", { make = "Ferrari", model = "488", value = 250000 })
+```
+
+### EventRunner Flow
+
+```lua
+-- 1. Check available events
+local events = EventRunner.pickEvent(state, EventLibrary.Events)
+
+-- 2. Build client payload with dynamic text
+local payload, dynamicData = EventRunner.buildClientPayload(event, state)
+
+-- 3. Apply choice and get narrative
+local results = EventRunner.applyChoice(state, event, choiceIndex, dynamicData)
+-- results.resultText = "You became a gang member!"
+-- results.flagsSet = {"gang_member"}
+-- results.effects = {Happiness = 10, Money = 5000}
+```
+
+### Minigames
+
+```lua
+-- Available minigame types
+minigames:play("debate", callback)        -- Answer political questions
+minigames:play("heist", callback)         -- Crack a safe code
+minigames:play("getaway", callback)       -- Tap sequences to escape
+minigames:play("qte", callback)           -- Quick time events
+minigames:play("prison_escape", callback) -- Navigate maze to exit
+minigames:play("mash", callback)          -- Tap rapidly
+
+-- Callback receives: (success: boolean, data: table)
+```
+
+### UIManager
+
+```lua
+local UIManager = require(game.ReplicatedStorage.UIManager)
+local ui = UIManager.new(screenGui)
+
+-- Create BitLife-style event card
+local card = ui:createEventCard({
+    parent = screenGui,
+    category = "crime",
+    emoji = "🔫",
+    title = "Bank Heist",
+    text = "Your crew is ready. Are you in?",
+    choices = {
+        { text = "🎯 I'm in!" },
+        { text = "🚫 Too risky" },
+    },
+    showSurpriseMe = true,
+    onChoice = function(index) print("Chose:", index) end,
+})
+
+-- Create result popup
+ui:createResultCard({
+    parent = screenGui,
+    success = true,
+    emoji = "💰",
+    title = "Heist Successful!",
+    body = "You got away with $500,000!",
+    statChanges = { Happiness = 15 },
+    moneyChange = 500000,
+})
+
+-- Show stat toast (BitLife-style "Much Smarter")
+ui:showStatToast({
+    parent = screenGui,
+    statName = "Smarts",
+    oldValue = 50,
+    newValue = 65,
+    reason = "You read a lot of books this year.",
+})
+```
+
+## 🎨 UI Colors
+
+The `UIManager.Colors` table provides consistent colors:
+
+```lua
+-- Accents
+UIManager.Colors.Blue, BlueDark, BluePale
+UIManager.Colors.Green, GreenDark, GreenPale
+UIManager.Colors.Red, RedDark, RedPale
+UIManager.Colors.Amber, AmberDark, AmberPale
+UIManager.Colors.Purple, Pink, Cyan, Orange
+
+-- Neutrals
+UIManager.Colors.White, Gray100-900, Black
+
+-- Category colors
+UIManager.Colors.Education  -- Blue
+UIManager.Colors.Crime      -- Red
+UIManager.Colors.Money      -- Green
+UIManager.Colors.Social     -- Purple
+```
+
+## 📡 Remote Events
+
+### Client → Server
+
+| Remote | Purpose |
+|--------|---------|
+| `RequestAgeUp` | Advance age by 1 year |
+| `SubmitChoice` | Submit event choice |
+| `MinigameResult` | Report minigame outcome |
+| `SetLifeInfo` | Set name & gender |
+| `ApplyForJob` | Apply for a job |
+| `EnrollEducation` | Enroll in school |
+| `DoActivity` | Perform an activity |
+| `CommitCrime` | Attempt a crime |
+| `InteractPerson` | Interact with relationship |
+| `BuyProperty/Vehicle` | Purchase assets |
+| `DoSpecialAction` | Career-specific actions |
+
+### Server → Client
+
+| Remote | Purpose |
+|--------|---------|
+| `SyncState` | Sync full player state |
+| `PresentEvent` | Show event card |
+| `ShowResult` | Show result popup |
+
+## 🎮 How Events Work
+
+### Event Definition
+
 ```lua
 {
-    id = "unique_id",
-    minAge = 18, maxAge = 65,  -- Age range
-    weight = 10,               -- Selection probability
-    oneTime = true,            -- Fire only once
-    cooldown = 5,              -- Years between repeats
-    milestone = true,          -- Guaranteed if eligible
-    category = "school",       -- For narrative
+    id = "join_gang",
+    minAge = 16, maxAge = 30,
+    weight = 15,
+    cooldown = 3,           -- Can't fire again for 3 years
+    oneTime = false,        -- Can fire multiple times
+    milestone = false,      -- Not a forced milestone
+    
+    emoji = "🔪",
+    title = "Gang Recruitment",
+    category = "crime",
     
     requires = function(state)
-        -- SMART FLAG CHECKING prevents wrong events
-        local f = state.Flags or {}
-        return f.has_job and not f.already_promoted
+        return state:HasFlag("criminal_tendencies")
+            and not state:HasFlag("gang_member")
+            and not state.InJail
     end,
+    
+    getDynamicData = function(state)
+        return {
+            gangName = pickRandom({"Bloods", "Crips", "Latin Kings"}),
+            recruiterName = randomName(),
+        }
+    end,
+    
+    text = "A member of the %gangName% approaches you. %recruiterName% says they've been watching you...",
     
     choices = {
         {
-            text = "Choice text",
-            effects = { Happiness = 10, Money = -100 },
-            resultText = "What happens",
-            setFlag = "new_flag",        -- Set one flag
-            setFlags = {"a", "b"},       -- Set multiple
-            clearFlag = "old_flag",      -- Remove flag
-            minigame = "debate",         -- Trigger minigame
-        }
-    }
+            text = "Join the gang",
+            effects = { Happiness = 10, Money = 2000 },
+            setFlags = {"gang_member", "criminal"},
+            resultText = "You're now part of the %gangName%.",
+        },
+        {
+            text = "Refuse",
+            effects = { Happiness = -5 },
+            resultText = "You walked away. Maybe it's for the best.",
+        },
+        {
+            text = "🎮 Fight your way in",
+            minigame = "qte",
+            effects = { Health = -10, Happiness = 20 },
+            setFlag = "gang_member",
+            resultText = "You proved yourself in a brutal initiation.",
+        },
+    },
 }
 ```
 
-### Why Events Don't Repeat
-1. **`oneTime = true`**: Major life events (graduation, first job, wedding) only fire once
-2. **`cooldown = N`**: Years must pass before event can repeat
-3. **`requires` function**: Checks flags to ensure event makes sense
-4. **History tracking**: `EventHistory.seenEvents` tracks all fired events
-5. **Smart flag checking**: Career events check you don't already have that career
+### Event Flow
 
-Example: Job offer won't appear if:
-- `oneTime = true` and you already saw it
-- `requires` function returns false because you already have a job
-- Your age is outside the min/max range
-
-## 🎨 UI Features
-
-### Premium BitLife-Style Design
-- **Header**: Positioned to avoid Roblox logo overlap
-- **Avatar**: Dynamic emoji based on age
-- **Money Display**: Formatted with icons
-- **Stats Row**: Split LEFT/RIGHT avoiding center Age button
-- **Nav Bar**: Split LEFT/RIGHT with centered Age button
-- **Event Modals**: Animated slide-in with rich narrative text
-
-### 🆕 Result Popup System (BitLife-Style!)
-Every decision now triggers a detailed popup showing:
-- **Big emoji** (72px) - visual feedback
-- **Large title** (32px) - what happened
-- **Detailed description** (20px) - the story
-- **Stat change indicators** - see +/- for each stat
-- **Money change** - formatted with colors
-- **Continue button** - dismiss the popup
-
-### 🆕 Visual Feedback Effects
-- **Screen Shake**: Negative outcomes shake the screen (like real BitLife!)
-- **Red Flash**: Damage/loss events flash red
-- **Green Flash**: Good outcomes flash green  
-- **Blue Flash**: New events pop in with blue flash
-
-### 🆕 Bigger Text Everywhere
-All event cards now have 20% larger text:
-- Event emoji: 60px (was 48px)
-- Event title: 32px (was 26px)
-- Event body: 20px (was 16px)
-- Question text: 18px (was 15px)
-- Choice buttons: 58px height with 18px text
-
-### Navigation Layout
-```
-LEFT                 CENTER               RIGHT
-┌────────────────┐   ┌─────────┐   ┌────────────────┐
-│ Work   Assets  │   │  AGE+   │   │ People Fun Story│
-└────────────────┘   └─────────┘   └────────────────┘
-```
+1. **Age Up** → Server picks eligible event
+2. **Present Event** → Client shows BitLife card
+3. **Player Chooses** → Client sends choice to server
+4. **If Minigame** → Client plays minigame, sends result
+5. **Apply Effects** → Server modifies state, sets flags
+6. **Show Result** → Client shows result popup with stat changes
+7. **Update Feed** → Add narrative text to life feed
 
 ## 🚀 Getting Started
 
-1. Place all files in their respective locations in Roblox Studio
-2. The `LifeRemotes` folder will be auto-created on first run
-3. Play and enjoy your BitLife experience!
+1. Copy all files to their respective locations in Roblox Studio
+2. Ensure `LifeRemotes` folder exists in `ReplicatedStorage`
+3. Run the game - intro screen will appear
+4. Pick gender and name to start your life
+5. Press the Age button to advance through life
 
-## 📝 License
+## 📝 Adding New Events
 
-MIT License - Feel free to use and modify!
+1. Open `EventLibrary.lua`
+2. Add new event to the `events` table
+3. Follow the event definition structure above
+4. Use `requires` function for complex conditions
+5. Use `getDynamicData` for random names/values
+6. Test with different ages and flag combinations
+
+## 🎮 Adding New Minigames
+
+1. Open `Minigames.lua`
+2. Create `createXXXGame()` function for UI
+3. Create `startXXX(callback)` function
+4. Add to `play()` function's if-else chain
+5. Add to `cancel()` function
+6. Add to `getAvailableGames()` list
+
+## 📊 Statistics
+
+- **Events**: 300+ unique events
+- **Career Paths**: 6 deep progression paths
+- **Minigames**: 6 interactive minigames
+- **Relationships**: Family, Friends, Lovers, Enemies
+- **Assets**: Houses, Cars, Businesses, Pets
+- **Activities**: Mind & Body, Social, Entertainment, Crime
+
+## 🔧 Configuration
+
+Key values you might want to adjust:
+
+```lua
+-- LifeManager.server.lua
+local SIGNIFICANT_HAPPINESS_CHANGE = 15  -- Popup threshold
+local SIGNIFICANT_MONEY_CHANGE = 5000    -- Popup threshold
+
+-- EventLibrary.lua  
+local DEFAULT_WEIGHT = 10               -- Event selection weight
+
+-- Minigames.lua
+local DEBATE_TIME_PER_QUESTION = 8      -- Seconds
+local HEIST_MAX_ATTEMPTS = 6            -- Code guesses
+```
+
+## 📜 License
+
+Created for Roblox game development. Feel free to use and modify.
+
+---
+
+**Built with ❤️ for the ultimate BitLife experience on Roblox**

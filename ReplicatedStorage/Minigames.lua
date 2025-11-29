@@ -1195,6 +1195,536 @@ function Minigames:endQTE(success)
 end
 
 -- ═══════════════════════════════════════════════════════════════
+-- PRISON ESCAPE MINIGAME (Criminal Path)
+-- Navigate a maze to escape while avoiding the guard
+-- ═══════════════════════════════════════════════════════════════
+
+function Minigames:createPrisonEscapeGame()
+	self.prisonOverlay = Instance.new("Frame")
+	self.prisonOverlay.Size = UDim2.fromScale(1, 1)
+	self.prisonOverlay.BackgroundColor3 = C.Black
+	self.prisonOverlay.BackgroundTransparency = 0.2
+	self.prisonOverlay.Visible = false
+	self.prisonOverlay.ZIndex = 200
+	self.prisonOverlay.Parent = self.screenGui
+	
+	self.prisonCard = Instance.new("Frame")
+	self.prisonCard.Size = UDim2.new(0.95, 0, 0, 580)
+	self.prisonCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.prisonCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.prisonCard.BackgroundColor3 = C.Gray800
+	self.prisonCard.ZIndex = 201
+	self.prisonCard.Parent = self.prisonOverlay
+	corner(self.prisonCard, 24)
+	
+	-- Title
+	local prisonTitle = Instance.new("TextLabel")
+	prisonTitle.Size = UDim2.new(1, 0, 0, 60)
+	prisonTitle.BackgroundColor3 = Color3.fromRGB(64, 64, 64)
+	prisonTitle.Font = F.Title
+	prisonTitle.TextSize = 22
+	prisonTitle.TextColor3 = C.White
+	prisonTitle.Text = "🔐 PRISON ESCAPE"
+	prisonTitle.ZIndex = 202
+	prisonTitle.Parent = self.prisonCard
+	corner(prisonTitle, 24)
+	
+	local titleFix = Instance.new("Frame")
+	titleFix.Size = UDim2.new(1, 0, 0, 30)
+	titleFix.Position = UDim2.new(0, 0, 0, 35)
+	titleFix.BackgroundColor3 = Color3.fromRGB(64, 64, 64)
+	titleFix.ZIndex = 202
+	titleFix.Parent = prisonTitle
+	
+	-- Instructions
+	self.prisonInstructions = Instance.new("TextLabel")
+	self.prisonInstructions.Size = UDim2.new(0.9, 0, 0, 50)
+	self.prisonInstructions.AnchorPoint = Vector2.new(0.5, 0)
+	self.prisonInstructions.Position = UDim2.new(0.5, 0, 0, 65)
+	self.prisonInstructions.BackgroundTransparency = 1
+	self.prisonInstructions.Font = F.Body
+	self.prisonInstructions.TextSize = 13
+	self.prisonInstructions.TextColor3 = C.Gray300
+	self.prisonInstructions.TextWrapped = true
+	self.prisonInstructions.Text = "🟢 = You  |  🔴 = Guard  |  🟡 = Exit\nReach the exit before the guard catches you!\nThe guard moves TWICE for every move you make!"
+	self.prisonInstructions.ZIndex = 202
+	self.prisonInstructions.Parent = self.prisonCard
+	
+	-- Grid container
+	self.prisonGridContainer = Instance.new("Frame")
+	self.prisonGridContainer.Size = UDim2.new(0, 280, 0, 280)
+	self.prisonGridContainer.AnchorPoint = Vector2.new(0.5, 0)
+	self.prisonGridContainer.Position = UDim2.new(0.5, 0, 0, 120)
+	self.prisonGridContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+	self.prisonGridContainer.ZIndex = 202
+	self.prisonGridContainer.Parent = self.prisonCard
+	corner(self.prisonGridContainer, 12)
+	stroke(self.prisonGridContainer, 2, 0.5, C.Gray600)
+	
+	pad(self.prisonGridContainer, 4, 4, 4, 4)
+	
+	-- Grid cells
+	self.prisonCells = {}
+	local gridSize = 8
+	self.prisonGridSize = gridSize
+	local cellSize = 272 / gridSize
+	
+	for y = 1, gridSize do
+		self.prisonCells[y] = {}
+		for x = 1, gridSize do
+			local cell = Instance.new("Frame")
+			cell.Size = UDim2.new(0, cellSize - 2, 0, cellSize - 2)
+			cell.Position = UDim2.new(0, (x-1) * cellSize + 4, 0, (y-1) * cellSize + 4)
+			cell.BackgroundColor3 = C.Gray700
+			cell.ZIndex = 203
+			cell.Parent = self.prisonGridContainer
+			corner(cell, 4)
+			
+			local cellLabel = Instance.new("TextLabel")
+			cellLabel.Size = UDim2.fromScale(1, 1)
+			cellLabel.BackgroundTransparency = 1
+			cellLabel.Font = F.Body
+			cellLabel.TextSize = 20
+			cellLabel.Text = ""
+			cellLabel.ZIndex = 204
+			cellLabel.Parent = cell
+			
+			self.prisonCells[y][x] = { frame = cell, label = cellLabel }
+		end
+	end
+	
+	-- Arrow buttons container
+	local arrowContainer = Instance.new("Frame")
+	arrowContainer.Size = UDim2.new(0, 180, 0, 130)
+	arrowContainer.AnchorPoint = Vector2.new(0.5, 0)
+	arrowContainer.Position = UDim2.new(0.5, 0, 0, 420)
+	arrowContainer.BackgroundTransparency = 1
+	arrowContainer.ZIndex = 202
+	arrowContainer.Parent = self.prisonCard
+	
+	self.prisonArrows = {}
+	local arrows = {
+		{ dir = "up", text = "↑", x = 0.5, y = 0, dx = 0, dy = -1 },
+		{ dir = "down", text = "↓", x = 0.5, y = 1, dx = 0, dy = 1 },
+		{ dir = "left", text = "←", x = 0, y = 0.5, dx = -1, dy = 0 },
+		{ dir = "right", text = "→", x = 1, y = 0.5, dx = 1, dy = 0 },
+	}
+	
+	for _, arrow in ipairs(arrows) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 54, 0, 54)
+		btn.AnchorPoint = Vector2.new(0.5, 0.5)
+		btn.Position = UDim2.new(arrow.x, 0, arrow.y, 0)
+		btn.BackgroundColor3 = C.Gray600
+		btn.Font = F.Title
+		btn.TextSize = 28
+		btn.TextColor3 = C.White
+		btn.Text = arrow.text
+		btn.AutoButtonColor = false
+		btn.ZIndex = 203
+		btn.Parent = arrowContainer
+		corner(btn, 14)
+		
+		self.prisonArrows[arrow.dir] = { btn = btn, dx = arrow.dx, dy = arrow.dy }
+		
+		btn.MouseEnter:Connect(function()
+			tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.Blue })
+		end)
+		btn.MouseLeave:Connect(function()
+			tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.Gray600 })
+		end)
+	end
+	
+	-- Move counter
+	self.prisonMoveCounter = Instance.new("TextLabel")
+	self.prisonMoveCounter.Size = UDim2.new(0.9, 0, 0, 24)
+	self.prisonMoveCounter.AnchorPoint = Vector2.new(0.5, 0)
+	self.prisonMoveCounter.Position = UDim2.new(0.5, 0, 0, 555)
+	self.prisonMoveCounter.BackgroundTransparency = 1
+	self.prisonMoveCounter.Font = F.Medium
+	self.prisonMoveCounter.TextSize = 14
+	self.prisonMoveCounter.TextColor3 = C.Gray400
+	self.prisonMoveCounter.Text = "Moves: 0"
+	self.prisonMoveCounter.ZIndex = 202
+	self.prisonMoveCounter.Parent = self.prisonCard
+end
+
+function Minigames:startPrisonEscape(callback)
+	if not self.prisonOverlay then
+		self:createPrisonEscapeGame()
+	end
+	
+	self.callback = callback
+	self.prisonOverlay.Visible = true
+	self.activeGame = "prison_escape"
+	
+	-- Initialize positions
+	self.prisonPlayerPos = { x = 1, y = 1 }
+	self.prisonGuardPos = { x = self.prisonGridSize, y = self.prisonGridSize - 2 }
+	self.prisonExitPos = { x = self.prisonGridSize, y = self.prisonGridSize }
+	self.prisonMoves = 0
+	
+	-- Create walls (maze pattern)
+	self.prisonWalls = {}
+	local gs = self.prisonGridSize
+	
+	-- Create a simple but challenging maze
+	local wallPattern = {
+		{2, 2}, {3, 2}, {4, 2}, {5, 2},
+		{2, 4}, {3, 4}, {4, 4},
+		{6, 3}, {6, 4}, {6, 5},
+		{2, 6}, {3, 6}, {4, 6}, {5, 6},
+		{7, 6}, {7, 7},
+		{4, 7}, {4, 8},
+	}
+	
+	for _, wall in ipairs(wallPattern) do
+		if wall[1] <= gs and wall[2] <= gs then
+			self.prisonWalls[wall[2] .. "_" .. wall[1]] = true
+		end
+	end
+	
+	-- Connect arrow buttons
+	for dir, data in pairs(self.prisonArrows) do
+		-- Disconnect previous connections
+		if data.connection then
+			data.connection:Disconnect()
+		end
+		data.connection = data.btn.MouseButton1Click:Connect(function()
+			self:handlePrisonMove(data.dx, data.dy)
+		end)
+	end
+	
+	self:updatePrisonVisuals()
+end
+
+function Minigames:isPrisonWalkable(x, y)
+	-- Check bounds
+	if x < 1 or x > self.prisonGridSize or y < 1 or y > self.prisonGridSize then
+		return false
+	end
+	-- Check walls
+	if self.prisonWalls[y .. "_" .. x] then
+		return false
+	end
+	return true
+end
+
+function Minigames:updatePrisonVisuals()
+	-- Clear all cells
+	for y = 1, self.prisonGridSize do
+		for x = 1, self.prisonGridSize do
+			local cell = self.prisonCells[y][x]
+			cell.label.Text = ""
+			
+			-- Check if wall
+			if self.prisonWalls[y .. "_" .. x] then
+				cell.frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+			else
+				cell.frame.BackgroundColor3 = C.Gray700
+			end
+		end
+	end
+	
+	-- Draw exit
+	local exitCell = self.prisonCells[self.prisonExitPos.y][self.prisonExitPos.x]
+	exitCell.frame.BackgroundColor3 = C.Amber
+	exitCell.label.Text = "🚪"
+	
+	-- Draw guard
+	local guardCell = self.prisonCells[self.prisonGuardPos.y][self.prisonGuardPos.x]
+	guardCell.frame.BackgroundColor3 = C.Red
+	guardCell.label.Text = "👮"
+	
+	-- Draw player
+	local playerCell = self.prisonCells[self.prisonPlayerPos.y][self.prisonPlayerPos.x]
+	playerCell.frame.BackgroundColor3 = C.Green
+	playerCell.label.Text = "🏃"
+	
+	-- Update move counter
+	self.prisonMoveCounter.Text = "Moves: " .. self.prisonMoves
+end
+
+function Minigames:moveGuardTowardPlayer()
+	local gx, gy = self.prisonGuardPos.x, self.prisonGuardPos.y
+	local px, py = self.prisonPlayerPos.x, self.prisonPlayerPos.y
+	
+	-- Try horizontal first
+	local dx = 0
+	local dy = 0
+	
+	if px < gx and self:isPrisonWalkable(gx - 1, gy) then
+		dx = -1
+	elseif px > gx and self:isPrisonWalkable(gx + 1, gy) then
+		dx = 1
+	end
+	
+	if dx ~= 0 then
+		gx = gx + dx
+	else
+		-- Try vertical
+		if py < gy and self:isPrisonWalkable(gx, gy - 1) then
+			dy = -1
+		elseif py > gy and self:isPrisonWalkable(gx, gy + 1) then
+			dy = 1
+		end
+		
+		if dy ~= 0 then
+			gy = gy + dy
+		end
+	end
+	
+	self.prisonGuardPos.x = gx
+	self.prisonGuardPos.y = gy
+end
+
+function Minigames:handlePrisonMove(dx, dy)
+	if self.activeGame ~= "prison_escape" then return end
+	
+	-- Try to move player
+	local nx = self.prisonPlayerPos.x + dx
+	local ny = self.prisonPlayerPos.y + dy
+	
+	if self:isPrisonWalkable(nx, ny) then
+		self.prisonPlayerPos.x = nx
+		self.prisonPlayerPos.y = ny
+		self.prisonMoves = self.prisonMoves + 1
+	end
+	
+	self:updatePrisonVisuals()
+	
+	-- Check win
+	if self.prisonPlayerPos.x == self.prisonExitPos.x and self.prisonPlayerPos.y == self.prisonExitPos.y then
+		task.delay(0.2, function()
+			self:endPrisonEscape(true)
+		end)
+		return
+	end
+	
+	-- Guard moves twice
+	for i = 1, 2 do
+		self:moveGuardTowardPlayer()
+		
+		-- Check if guard caught player
+		if self.prisonGuardPos.x == self.prisonPlayerPos.x and self.prisonGuardPos.y == self.prisonPlayerPos.y then
+			self:updatePrisonVisuals()
+			task.delay(0.3, function()
+				self:endPrisonEscape(false)
+			end)
+			return
+		end
+	end
+	
+	self:updatePrisonVisuals()
+end
+
+function Minigames:endPrisonEscape(escaped)
+	self.activeGame = nil
+	
+	-- Disconnect arrow connections
+	for _, data in pairs(self.prisonArrows) do
+		if data.connection then
+			data.connection:Disconnect()
+			data.connection = nil
+		end
+	end
+	
+	self.prisonOverlay.Visible = false
+	
+	if self.callback then
+		self.callback(escaped, { moves = self.prisonMoves, escaped = escaped })
+		self.callback = nil
+	end
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- MASH MINIGAME (Universal - Tap rapidly)
+-- ═══════════════════════════════════════════════════════════════
+
+function Minigames:createMashGame()
+	self.mashOverlay = Instance.new("Frame")
+	self.mashOverlay.Size = UDim2.fromScale(1, 1)
+	self.mashOverlay.BackgroundColor3 = C.Black
+	self.mashOverlay.BackgroundTransparency = 0.3
+	self.mashOverlay.Visible = false
+	self.mashOverlay.ZIndex = 200
+	self.mashOverlay.Parent = self.screenGui
+	
+	self.mashCard = Instance.new("Frame")
+	self.mashCard.Size = UDim2.new(0.9, 0, 0, 380)
+	self.mashCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.mashCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.mashCard.BackgroundColor3 = C.Gray800
+	self.mashCard.ZIndex = 201
+	self.mashCard.Parent = self.mashOverlay
+	corner(self.mashCard, 24)
+	
+	-- Title
+	self.mashTitle = Instance.new("TextLabel")
+	self.mashTitle.Size = UDim2.new(1, 0, 0, 60)
+	self.mashTitle.BackgroundTransparency = 1
+	self.mashTitle.Font = F.Title
+	self.mashTitle.TextSize = 24
+	self.mashTitle.TextColor3 = C.White
+	self.mashTitle.Text = "⚡ MASH!"
+	self.mashTitle.ZIndex = 202
+	self.mashTitle.Parent = self.mashCard
+	
+	-- Instructions
+	self.mashInstructions = Instance.new("TextLabel")
+	self.mashInstructions.Size = UDim2.new(0.9, 0, 0, 30)
+	self.mashInstructions.AnchorPoint = Vector2.new(0.5, 0)
+	self.mashInstructions.Position = UDim2.new(0.5, 0, 0, 60)
+	self.mashInstructions.BackgroundTransparency = 1
+	self.mashInstructions.Font = F.Body
+	self.mashInstructions.TextSize = 14
+	self.mashInstructions.TextColor3 = C.Gray300
+	self.mashInstructions.Text = "TAP AS FAST AS YOU CAN!"
+	self.mashInstructions.ZIndex = 202
+	self.mashInstructions.Parent = self.mashCard
+	
+	-- Progress bar
+	self.mashProgressBg = Instance.new("Frame")
+	self.mashProgressBg.Size = UDim2.new(0.85, 0, 0, 30)
+	self.mashProgressBg.AnchorPoint = Vector2.new(0.5, 0)
+	self.mashProgressBg.Position = UDim2.new(0.5, 0, 0, 100)
+	self.mashProgressBg.BackgroundColor3 = C.Gray600
+	self.mashProgressBg.ZIndex = 202
+	self.mashProgressBg.Parent = self.mashCard
+	pill(self.mashProgressBg)
+	
+	self.mashProgressFill = Instance.new("Frame")
+	self.mashProgressFill.Size = UDim2.new(0, 0, 1, 0)
+	self.mashProgressFill.BackgroundColor3 = C.Green
+	self.mashProgressFill.ZIndex = 203
+	self.mashProgressFill.Parent = self.mashProgressBg
+	pill(self.mashProgressFill)
+	
+	-- Timer
+	self.mashTimer = Instance.new("TextLabel")
+	self.mashTimer.Size = UDim2.new(0.9, 0, 0, 30)
+	self.mashTimer.AnchorPoint = Vector2.new(0.5, 0)
+	self.mashTimer.Position = UDim2.new(0.5, 0, 0, 140)
+	self.mashTimer.BackgroundTransparency = 1
+	self.mashTimer.Font = F.Title
+	self.mashTimer.TextSize = 24
+	self.mashTimer.TextColor3 = C.Amber
+	self.mashTimer.Text = "5.0s"
+	self.mashTimer.ZIndex = 202
+	self.mashTimer.Parent = self.mashCard
+	
+	-- Tap button
+	self.mashTapBtn = Instance.new("TextButton")
+	self.mashTapBtn.Size = UDim2.new(0.7, 0, 0, 140)
+	self.mashTapBtn.AnchorPoint = Vector2.new(0.5, 0)
+	self.mashTapBtn.Position = UDim2.new(0.5, 0, 0, 185)
+	self.mashTapBtn.BackgroundColor3 = C.Blue
+	self.mashTapBtn.Font = F.Title
+	self.mashTapBtn.TextSize = 36
+	self.mashTapBtn.TextColor3 = C.White
+	self.mashTapBtn.Text = "👆\nTAP!"
+	self.mashTapBtn.AutoButtonColor = false
+	self.mashTapBtn.ZIndex = 202
+	self.mashTapBtn.Parent = self.mashCard
+	corner(self.mashTapBtn, 20)
+	
+	-- Tap counter
+	self.mashCounter = Instance.new("TextLabel")
+	self.mashCounter.Size = UDim2.new(0.9, 0, 0, 30)
+	self.mashCounter.AnchorPoint = Vector2.new(0.5, 0)
+	self.mashCounter.Position = UDim2.new(0.5, 0, 0, 340)
+	self.mashCounter.BackgroundTransparency = 1
+	self.mashCounter.Font = F.Title
+	self.mashCounter.TextSize = 18
+	self.mashCounter.TextColor3 = C.White
+	self.mashCounter.Text = "Taps: 0"
+	self.mashCounter.ZIndex = 202
+	self.mashCounter.Parent = self.mashCard
+end
+
+function Minigames:startMash(callback, options)
+	if not self.mashOverlay then
+		self:createMashGame()
+	end
+	
+	options = options or {}
+	self.callback = callback
+	self.mashOverlay.Visible = true
+	self.activeGame = "mash"
+	
+	self.mashTaps = 0
+	self.mashRequired = options.requiredTaps or 30
+	self.mashTimeLimit = options.timeLimit or 5
+	self.mashTimeRemaining = self.mashTimeLimit
+	
+	self.mashProgressFill.Size = UDim2.new(0, 0, 1, 0)
+	self.mashCounter.Text = "Taps: 0 / " .. self.mashRequired
+	self.mashTimer.Text = string.format("%.1fs", self.mashTimeRemaining)
+	
+	-- Connect tap button
+	if self.mashConnection then
+		self.mashConnection:Disconnect()
+	end
+	self.mashConnection = self.mashTapBtn.MouseButton1Click:Connect(function()
+		self:handleMashTap()
+	end)
+	
+	-- Start timer
+	task.spawn(function()
+		while self.activeGame == "mash" and self.mashTimeRemaining > 0 do
+			task.wait(0.1)
+			self.mashTimeRemaining = self.mashTimeRemaining - 0.1
+			self.mashTimer.Text = string.format("%.1fs", math.max(0, self.mashTimeRemaining))
+			
+			if self.mashTimeRemaining <= 0 then
+				self:endMash(false)
+				break
+			end
+		end
+	end)
+end
+
+function Minigames:handleMashTap()
+	if self.activeGame ~= "mash" then return end
+	
+	self.mashTaps = self.mashTaps + 1
+	self.mashCounter.Text = "Taps: " .. self.mashTaps .. " / " .. self.mashRequired
+	
+	-- Update progress
+	local progress = self.mashTaps / self.mashRequired
+	tween(self.mashProgressFill, TweenInfo.new(0.05), { Size = UDim2.new(math.min(1, progress), 0, 1, 0) })
+	
+	-- Button feedback
+	tween(self.mashTapBtn, TweenInfo.new(0.05), { Size = UDim2.new(0.68, 0, 0, 135) })
+	task.delay(0.05, function()
+		if self.mashTapBtn then
+			tween(self.mashTapBtn, TweenInfo.new(0.05), { Size = UDim2.new(0.7, 0, 0, 140) })
+		end
+	end)
+	
+	-- Check win
+	if self.mashTaps >= self.mashRequired then
+		self:endMash(true)
+	end
+end
+
+function Minigames:endMash(success)
+	self.activeGame = nil
+	
+	if self.mashConnection then
+		self.mashConnection:Disconnect()
+		self.mashConnection = nil
+	end
+	
+	self.mashOverlay.Visible = false
+	
+	if self.callback then
+		self.callback(success, { taps = self.mashTaps, required = self.mashRequired })
+		self.callback = nil
+	end
+end
+
+-- ═══════════════════════════════════════════════════════════════
 -- PUBLIC API
 -- ═══════════════════════════════════════════════════════════════
 
@@ -1209,6 +1739,15 @@ function Minigames:play(gameType, callback, options)
 		self:startGetaway(callback)
 	elseif gameType == "qte" then
 		self:startQTE(callback, options.difficulty)
+	elseif gameType == "prison_escape" then
+		self:startPrisonEscape(callback)
+	elseif gameType == "mash" then
+		self:startMash(callback, options)
+	else
+		-- Unknown game type, just call callback with success
+		if callback then
+			callback(true, { error = "Unknown minigame type: " .. tostring(gameType) })
+		end
 	end
 end
 
@@ -1218,11 +1757,24 @@ end
 
 function Minigames:cancel()
 	self.activeGame = nil
-	self.debateOverlay.Visible = false
-	self.heistOverlay.Visible = false
-	self.getawayOverlay.Visible = false
-	self.qteOverlay.Visible = false
+	if self.debateOverlay then self.debateOverlay.Visible = false end
+	if self.heistOverlay then self.heistOverlay.Visible = false end
+	if self.getawayOverlay then self.getawayOverlay.Visible = false end
+	if self.qteOverlay then self.qteOverlay.Visible = false end
+	if self.prisonOverlay then self.prisonOverlay.Visible = false end
+	if self.mashOverlay then self.mashOverlay.Visible = false end
 	self.callback = nil
+end
+
+function Minigames:getAvailableGames()
+	return {
+		{ id = "debate", name = "Debate", emoji = "🎤", description = "Answer questions correctly" },
+		{ id = "heist", name = "Heist", emoji = "🔓", description = "Crack the safe code" },
+		{ id = "getaway", name = "Getaway", emoji = "🚗", description = "Escape from the cops" },
+		{ id = "qte", name = "Quick Time", emoji = "⚡", description = "Tap at the right moment" },
+		{ id = "prison_escape", name = "Prison Escape", emoji = "🔐", description = "Navigate the maze" },
+		{ id = "mash", name = "Mash", emoji = "👆", description = "Tap as fast as you can" },
+	}
 end
 
 return Minigames
