@@ -7779,6 +7779,46 @@ local events = {
 }
 
 ----------------------------------------------------------------------
+-- MODULAR EVENT SYSTEM INTEGRATION
+----------------------------------------------------------------------
+
+-- Try to load modular events from LifeEvents system
+local modularEventsLoaded = 0
+local function loadModularEvents()
+	local success, LifeEventsModule = pcall(function()
+		return require(script.Parent:WaitForChild("LifeEvents", 1))
+	end)
+	
+	if success and LifeEventsModule then
+		local modularEvents = LifeEventsModule.getEvents()
+		if modularEvents and #modularEvents > 0 then
+			-- Track IDs to avoid duplicates
+			local existingIds = {}
+			for _, event in ipairs(events) do
+				if event.id then
+					existingIds[event.id] = true
+				end
+			end
+			
+			-- Add modular events that don't conflict with existing ones
+			for _, event in ipairs(modularEvents) do
+				if event.id and not existingIds[event.id] then
+					table.insert(events, event)
+					modularEventsLoaded = modularEventsLoaded + 1
+				end
+			end
+			
+			print("[EventLibrary] ✅ Loaded", modularEventsLoaded, "modular events from LifeEvents system")
+		end
+	else
+		print("[EventLibrary] ℹ️ LifeEvents module not found - using legacy events only")
+	end
+end
+
+-- Load modular events
+loadModularEvents()
+
+----------------------------------------------------------------------
 -- EXPORTS
 ----------------------------------------------------------------------
 
@@ -7793,6 +7833,9 @@ EventLibrary.randomRacingTeam = randomRacingTeam
 EventLibrary.randomHackerGroup = randomHackerGroup
 EventLibrary.randomArtStyle = randomArtStyle
 EventLibrary.hasNoCareer = hasNoCareer
+
+-- Expose modular system stats
+EventLibrary.modularEventsLoaded = modularEventsLoaded
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- ███████████████████████████████████████████████████████████████████████████
