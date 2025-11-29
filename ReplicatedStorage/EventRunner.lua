@@ -14,7 +14,7 @@ local StatNarrative = NarrativeContent.StatNarrative
 local MoneyNarrative = NarrativeContent.MoneyNarrative
 local FlagDescriptions = NarrativeContent.FlagDescriptions
 local YearRecapTemplates = NarrativeContent.YearRecapTemplates
-local CategoryFlavor = NarrativeContent.CategoryFlavor
+-- CategoryFlavor removed - was too spammy/repetitive
 local LifeStageTransitions = NarrativeContent.LifeStageTransitions
 local RelationshipLines = NarrativeContent.RelationshipLines
 
@@ -101,8 +101,8 @@ local function describeStatLine(statKey: string, delta: number, finalValue: numb
 	local template = pickRandom(bucketTable)
 	if not template then return nil end
 	
-	finalValue = clampStat(finalValue or 50)
-	return string.format(template, absDelta, finalValue)
+	-- Clean prose - no percentage formatting needed
+	return template
 end
 
 local function describeMoneyLine(delta: number, finalMoney: number?): string?
@@ -124,10 +124,8 @@ local function describeMoneyLine(delta: number, finalMoney: number?): string?
 	local template = pickRandom(bucketTbl)
 	if not template then return nil end
 	
-	local amountStr = formatMoney(absDelta)
-	local totalStr = formatMoney(finalMoney or 0)
-	
-	return string.format(template, amountStr, totalStr)
+	-- Clean prose - no amount formatting needed
+	return template
 end
 
 local function describeFlags(flagsSet, flagsCleared)
@@ -138,9 +136,8 @@ local function describeFlags(flagsSet, flagsCleared)
 			local desc = FlagDescriptions[flag]
 			if desc then
 				table.insert(lines, desc)
-			else
-				table.insert(lines, "Something in your life shifted (" .. flag .. ").")
 			end
+			-- Don't add generic text for unknown flags - keep it clean
 		end
 	end
 	
@@ -148,9 +145,7 @@ local function describeFlags(flagsSet, flagsCleared)
 		for _, flag in ipairs(flagsCleared) do
 			local desc = FlagDescriptions[flag]
 			if desc then
-				table.insert(lines, "That chapter seems to be over: " .. desc)
-			else
-				table.insert(lines, "A previous lifestyle faded out (" .. flag .. ").")
+				table.insert(lines, "That chapter is over.")
 			end
 		end
 	end
@@ -158,10 +153,7 @@ local function describeFlags(flagsSet, flagsCleared)
 	return lines
 end
 
-local function getCategoryFlavor(category)
-	if not category or not CategoryFlavor[category] then return nil end
-	return pickRandom(CategoryFlavor[category])
-end
+-- NOTE: getCategoryFlavor removed - was too spammy
 
 local function getYearRecap(state)
 	if not YearRecapTemplates then return nil end
@@ -255,13 +247,7 @@ function EventRunner.buildNarrativeText(state, eventDef, choice, results, dynami
 		end
 	end
 	
-	-- 5) Category flavor text
-	if eventDef and eventDef.category then
-		local flavor = getCategoryFlavor(eventDef.category)
-		if flavor then
-			table.insert(lines, flavor)
-		end
-	end
+	-- NOTE: Removed category flavor text - was too repetitive/spammy
 	
 	return table.concat(lines, "\n")
 end
