@@ -469,10 +469,23 @@ function LifeStageSystem.validateEvent(eventDef, state)
 	local stage = LifeStageSystem.getStage(age)
 	local caps = LifeStageSystem.getCapabilities(state)
 	
-	-- Debug print for prison events
-	if eventDef.category == "prison" then
-		print("[LifeStageSystem] Validating prison event:", eventDef.id)
-		print("[LifeStageSystem] - InJail:", caps.inPrison, "Flag in_prison:", flags.in_prison)
+	-- Enhanced debug logging for all validation
+	local DEBUG_EVENT_VALIDATION = false -- Set to true for verbose logging
+	
+	if DEBUG_EVENT_VALIDATION or eventDef.category == "prison" then
+		print("[LifeStageSystem] === VALIDATING EVENT ===")
+		print("[LifeStageSystem] Event:", eventDef.id, "Category:", eventDef.category or "none")
+		print("[LifeStageSystem] - Age:", age, "Stage:", stage.id)
+		print("[LifeStageSystem] - InPrison (caps):", caps.inPrison, "Flag in_prison:", flags.in_prison or false)
+		if eventDef.requiresFlag then
+			print("[LifeStageSystem] - requiresFlag:", eventDef.requiresFlag, "Has flag:", flags[eventDef.requiresFlag] or false)
+		end
+		if eventDef.requiresFlag2 then
+			print("[LifeStageSystem] - requiresFlag2:", eventDef.requiresFlag2, "Has flag:", flags[eventDef.requiresFlag2] or false)
+		end
+		if eventDef.blockIfFlag then
+			print("[LifeStageSystem] - blockIfFlag:", eventDef.blockIfFlag, "Has flag:", flags[eventDef.blockIfFlag] or false)
+		end
 	end
 	
 	-- 1. Check age range
@@ -622,6 +635,16 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		if not inSchool and not flags.college_student then
 			validationResult.valid = false
 			table.insert(validationResult.reasons, "Not in school")
+		end
+	end
+	
+	-- Final debug log for prison events or when debugging
+	local DEBUG_EVENT_VALIDATION = false
+	if DEBUG_EVENT_VALIDATION or eventDef.category == "prison" then
+		if validationResult.valid then
+			print("[LifeStageSystem] ✅ Event", eventDef.id, "PASSED validation")
+		else
+			print("[LifeStageSystem] ❌ Event", eventDef.id, "FAILED validation - Reasons:", table.concat(validationResult.reasons, ", "))
 		end
 	end
 	

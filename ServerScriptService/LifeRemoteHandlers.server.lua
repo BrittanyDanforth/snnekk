@@ -420,9 +420,27 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
+	local flags = lifeState and lifeState.Flags or {}
 	
 	-- Update auto-education first (high school etc. based on age)
 	updateAutoEducation(player)
+	
+	-- ========================================
+	-- CRIMINAL RECORD CHECKS (Ex-Convict System)
+	-- ========================================
+	
+	-- Fugitives can't apply for jobs (they're on the run!)
+	if flags.fugitive then
+		print("[LifeRemoteHandlers] Job application blocked - player is a fugitive")
+		return { success = false, message = "⚠️ You're a fugitive! You can't apply for jobs while on the run." }
+	end
+	
+	-- Wanted players can't apply
+	if flags.wanted then
+		print("[LifeRemoteHandlers] Job application blocked - player is wanted")
+		return { success = false, message = "⚠️ There's a warrant out for your arrest! You can't apply for jobs right now." }
+	end
 	
 	-- Find job
 	local job = nil
@@ -439,6 +457,7 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	end
 	
 	print("[LifeRemoteHandlers] Found job:", job.title, "for player age:", age)
+	print("[LifeRemoteHandlers] Player flags - ex_convict:", flags.ex_convict, "reformed:", flags.reformed, "second_chance:", flags.second_chance)
 	
 	-- Already have a job?
 	if extState.CurrentJob then
@@ -465,10 +484,66 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 		return { success = false, message = "You need " .. job.exp .. " years of experience." }
 	end
 	
+	-- ========================================
+	-- EX-CONVICT EMPLOYMENT PENALTIES
+	-- ========================================
+	
+	local acceptanceChance = job.acceptance
+	local isExConvict = flags.ex_convict or flags.did_time or flags.released_from_prison
+	local hasSecondChance = flags.second_chance
+	local isReformed = flags.reformed
+	
+	-- Jobs that require background checks (professional jobs) - block or severe penalty for ex-convicts
+	local backgroundCheckJobs = {
+		government = true, teacher = true, lawyer = true, doctor = true, nurse = true,
+		accountant = true, banker = true, financial = true, security = true, police = true,
+		daycare = true, school = true, hospital = true, pharmacy = true
+	}
+	
+	-- Check if job requires background check (based on job ID keywords)
+	local requiresBackgroundCheck = false
+	local jobIdLower = string.lower(job.id or "")
+	local jobTitleLower = string.lower(job.title or "")
+	for keyword, _ in pairs(backgroundCheckJobs) do
+		if string.find(jobIdLower, keyword) or string.find(jobTitleLower, keyword) then
+			requiresBackgroundCheck = true
+			break
+		end
+	end
+	
+	if isExConvict then
+		print("[LifeRemoteHandlers] Ex-convict applying for job. Background check required:", requiresBackgroundCheck)
+		
+		-- Block background check jobs entirely for ex-convicts (unless they have second_chance)
+		if requiresBackgroundCheck and not hasSecondChance then
+			return { 
+				success = false, 
+				message = "⛔ " .. job.company .. " ran a background check. Your criminal record disqualifies you for this position." 
+			}
+		end
+		
+		-- Reduce acceptance chance significantly for ex-convicts
+		if hasSecondChance or isReformed then
+			-- Reformed/second chance reduces penalty
+			acceptanceChance = math.floor(acceptanceChance * 0.7) -- 30% penalty
+			print("[LifeRemoteHandlers] Reformed ex-convict penalty applied. New acceptance:", acceptanceChance)
+		else
+			-- Standard ex-convict penalty
+			acceptanceChance = math.floor(acceptanceChance * 0.4) -- 60% penalty
+			print("[LifeRemoteHandlers] Ex-convict penalty applied. New acceptance:", acceptanceChance)
+		end
+	end
+	
 	-- Roll for acceptance
 	local roll = math.random(100)
-	if roll > job.acceptance then
-		return { success = false, message = "Unfortunately, " .. job.company .. " decided not to hire you." }
+	print("[LifeRemoteHandlers] Acceptance roll:", roll, "vs", acceptanceChance)
+	
+	if roll > acceptanceChance then
+		local message = "Unfortunately, " .. job.company .. " decided not to hire you."
+		if isExConvict then
+			message = "📋 " .. job.company .. " reviewed your application but passed. Your criminal record may have been a factor."
+		end
+		return { success = false, message = message }
 	end
 	
 	-- Hired!
@@ -480,9 +555,18 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	}
 	syncStateToClient(player)
 	
+	local message = "Congratulations! You got hired as a " .. job.title .. " at " .. job.company .. "!"
+	if isExConvict then
+		message = "🌟 Despite your criminal record, " .. job.company .. " decided to give you a chance! You got hired as a " .. job.title .. "!"
+		-- If they got hired as ex-convict, set the second_chance flag
+		if lifeState then
+			lifeState:SetFlag("second_chance")
+		end
+	end
+	
 	return { 
 		success = true, 
-		message = "Congratulations! You got hired as a " .. job.title .. " at " .. job.company .. "!",
+		message = message,
 		salary = job.salary
 	}
 end
@@ -523,6 +607,33 @@ end
 EnrollEducation.OnServerInvoke = function(player, eduId)
 	local state = getPlayerState(player)
 	local age = state.Age
+	local lifeState = getLifeManagerState(player)
+	local flags = lifeState and lifeState.Flags or {}
+	
+	print("[LifeRemoteHandlers] EnrollEducation called with eduId:", eduId)
+	print("[LifeRemoteHandlers] Player flags - ex_convict:", flags.ex_convict, "fugitive:", flags.fugitive)
+	
+	-- ========================================
+	-- CRIMINAL RECORD CHECKS (Ex-Convict System)
+	-- ========================================
+	
+	-- Fugitives can't enroll (they're on the run!)
+	if flags.fugitive then
+		print("[LifeRemoteHandlers] Education blocked - player is a fugitive")
+		return { success = false, message = "⚠️ You're a fugitive! You can't enroll in school while on the run." }
+	end
+	
+	-- Wanted players can't enroll
+	if flags.wanted then
+		print("[LifeRemoteHandlers] Education blocked - player is wanted")
+		return { success = false, message = "⚠️ There's a warrant out for your arrest! You can't enroll right now." }
+	end
+	
+	-- In jail?
+	local extState = getExtendedState(player)
+	if extState.InJail then
+		return { success = false, message = "You can't enroll in education while in jail! (Try the prison GED program instead)" }
+	end
 	
 	-- Find education
 	local edu = nil
@@ -536,6 +647,8 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	if not edu then
 		return { success = false, message = "Education program not found." }
 	end
+	
+	print("[LifeRemoteHandlers] Found education:", edu.name, "for player age:", age)
 	
 	-- Check age
 	if age < edu.minAge then
@@ -556,20 +669,85 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		return { success = false, message = "You already have this education level or higher." }
 	end
 	
+	-- ========================================
+	-- EX-CONVICT EDUCATION PENALTIES
+	-- ========================================
+	
+	local isExConvict = flags.ex_convict or flags.did_time or flags.released_from_prison
+	local isReformed = flags.reformed
+	local hasGED = flags.prison_educated
+	local actualCost = edu.cost
+	
+	-- Professional programs that require background checks and often reject ex-convicts
+	local restrictedPrograms = {
+		law_school = true, medical_school = true, nursing = true, 
+		education = true, teaching = true, police_academy = true,
+		government = true, security = true
+	}
+	
+	-- Check if program is restricted
+	local eduIdLower = string.lower(eduId or "")
+	local eduNameLower = string.lower(edu.name or "")
+	local isRestricted = false
+	for keyword, _ in pairs(restrictedPrograms) do
+		if string.find(eduIdLower, keyword) or string.find(eduNameLower, keyword) then
+			isRestricted = true
+			break
+		end
+	end
+	
+	if isExConvict then
+		print("[LifeRemoteHandlers] Ex-convict enrolling in education. Restricted program:", isRestricted)
+		
+		-- Block restricted programs for ex-convicts (unless reformed)
+		if isRestricted and not isReformed then
+			return { 
+				success = false, 
+				message = "⛔ Your criminal record disqualifies you from " .. edu.name .. ". Some programs require a clean background check." 
+			}
+		end
+		
+		-- Increase cost for ex-convicts (no financial aid/scholarships)
+		if not isReformed then
+			-- 50% cost increase due to no scholarships
+			actualCost = math.floor(edu.cost * 1.5)
+			print("[LifeRemoteHandlers] Ex-convict cost penalty applied. New cost:", actualCost)
+		else
+			-- Reformed ex-convicts get smaller penalty
+			actualCost = math.floor(edu.cost * 1.2)
+			print("[LifeRemoteHandlers] Reformed ex-convict cost penalty applied. New cost:", actualCost)
+		end
+	end
+	
 	-- Check cost
-	if not canAfford(player, edu.cost) then
-		return { success = false, message = "You can't afford this! Cost: $" .. edu.cost }
+	if not canAfford(player, actualCost) then
+		local message = "You can't afford this! Cost: $" .. actualCost
+		if isExConvict and actualCost > edu.cost then
+			message = "You can't afford this! Cost: $" .. actualCost .. " (increased due to limited financial aid for ex-convicts)"
+		end
+		return { success = false, message = message }
 	end
 	
 	-- Enroll!
-	deductMoney(player, edu.cost)
-	local extState = getExtendedState(player)
+	deductMoney(player, actualCost)
 	extState.Education = edu.grants
+	
+	-- Set college_student flag if applicable
+	if lifeState and (edu.grants == "Bachelor's" or edu.grants == "Master's" or edu.grants == "PhD" 
+		or edu.grants == "Medical School" or edu.grants == "Law School") then
+		lifeState:SetFlag("college_student")
+	end
+	
 	syncStateToClient(player)
+	
+	local message = "You enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. ")"
+	if isExConvict and actualCost > edu.cost then
+		message = "🎓 Despite your criminal record, you enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. " - limited financial aid available)"
+	end
 	
 	return { 
 		success = true, 
-		message = "You enrolled in " .. edu.name .. "! (Cost: $" .. edu.cost .. ")"
+		message = message
 	}
 end
 
