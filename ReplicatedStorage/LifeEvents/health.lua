@@ -4,7 +4,7 @@
 -- Diverse health situations across all life stages - not just "declining health"
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 

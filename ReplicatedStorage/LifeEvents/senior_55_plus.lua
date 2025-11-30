@@ -4,7 +4,7 @@
 -- 100+ deeply thought-out events for retirement and golden years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 

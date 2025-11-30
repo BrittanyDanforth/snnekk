@@ -4,7 +4,7 @@
 -- 140+ deeply thought-out events for college, career, and early adulthood
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 

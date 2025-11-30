@@ -4,7 +4,7 @@
 -- Not everything goes smoothly - varied outcomes with real consequences
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 

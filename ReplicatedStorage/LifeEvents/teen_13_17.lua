@@ -4,7 +4,7 @@
 -- 130+ deeply thought-out events for high school years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 

@@ -4,7 +4,7 @@
 -- 100+ deeply thought-out events for peak career and family years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 

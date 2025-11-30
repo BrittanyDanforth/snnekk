@@ -4,7 +4,7 @@
 -- Life doesn't always go your way - varied outcomes, risks, and surprises
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent)
+local LifeEvents = require(script.Parent.init)
 
 local module = {}
 
