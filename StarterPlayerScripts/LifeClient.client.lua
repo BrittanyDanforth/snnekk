@@ -81,6 +81,9 @@ print(string.format("[LifeClient] ⏱️ Remotes ready in %.2fs", tick() - start
 -- STATE
 ----------------------------------------------------------------
 
+-- Base birth year for all characters (consistent year calculation)
+local BIRTH_YEAR = 2025
+
 local currentState = {
 	Name = nil, Age = 0, Money = 0,
 	Happiness = 50, Health = 100, Smarts = 50, Looks = 50,
@@ -103,6 +106,11 @@ local showIntro, hideIntro
 local showTutorial, hideTutorial
 local updateNameButtons
 local updateFromState
+
+-- Helper: Calculate current year from age
+local function getCurrentYear(age)
+	return BIRTH_YEAR + (age or 0)
+end
 
 ----------------------------------------------------------------
 -- COLORS (Premium BitLife Palette)
@@ -1820,15 +1828,8 @@ hideIntro = function()
 	end)
 end
 
-genderBtns.ChildAdded:Connect(function() end)
-task.spawn(function()
-	while true do
-		if selectedGender and not nameBtns.Visible then
-			updateNameButtons()
-		end
-		task.wait(0.1)
-	end
-end)
+-- Note: updateNameButtons() is called directly when needed in the gender button click handler
+-- No need for a polling loop
 
 ----------------------------------------------------------------
 -- UPDATE UI FROM STATE
@@ -1841,7 +1842,7 @@ local function updateFromState()
 	ageYearLabel.Text = string.format(
 		"Age %d • %d",
 		currentState.Age or 0,
-		2025 + (currentState.Age or 0)
+		getCurrentYear(currentState.Age)
 	)
 	moneyLabel.Text = formatMoney(currentState.Money or 0)
 
@@ -1963,7 +1964,7 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 		
 		-- Reset header UI
 		nameLabel.Text = "New Life"
-		ageYearLabel.Text = string.format("Age %d • %d", state.Age or 0, 2025)
+		ageYearLabel.Text = string.format("Age %d • %d", state.Age or 0, getCurrentYear(state.Age))
 		moneyLabel.Text = formatMoney(state.Money or 0)
 		avatarEmoji.Text = "👶"
 		
@@ -2237,12 +2238,14 @@ activitiesScreenInstance    = safeNew(ActivitiesScreen,    "ActivitiesScreen",  
 storyPathsScreenInstance    = safeNew(StoryPathsScreen,    "StoryPathsScreen",    screenGui, currentState)
 
 if MinigamesModule then
-	local ok, mg = pcall(MinigamesModule.new, MinigamesModule, screenGui)
+	local ok, mg = pcall(function()
+		return MinigamesModule.new(screenGui)
+	end)
 	if ok and mg then
 		minigamesInstance = mg
 		print("[LifeClient] ✅ Minigames initialized!")
 	else
-		warn("[LifeClient] ⚠️ Failed to initialize minigames")
+		warn("[LifeClient] ⚠️ Failed to initialize minigames: " .. tostring(mg))
 	end
 end
 
