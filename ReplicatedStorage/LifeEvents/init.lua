@@ -240,6 +240,72 @@ function LifeEvents.hasChildren(state)
 end
 
 ----------------------------------------------------------------------
+-- RELATIONSHIP CHECK HELPERS (For friend/romance event gating)
+----------------------------------------------------------------------
+
+-- Check if player has any friends (checks flags AND actual relationships)
+function LifeEvents.hasFriend(state)
+	local f = state.Flags or {}
+	-- Check flags first
+	if f.has_best_friend or f.has_friend or f.social_butterfly or f.friendly or f.has_friend_group then
+		return true
+	end
+	-- Check actual relationships (flat dictionary format)
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if type(rel) == "table" and rel.type == "friend" and rel.alive ~= false then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- Check if player has a romantic partner
+function LifeEvents.hasPartner(state)
+	local f = state.Flags or {}
+	if f.married or f.engaged or f.in_relationship or f.dating then
+		return true
+	end
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if type(rel) == "table" and rel.type == "romance" and rel.alive ~= false then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- Get a friend's name from relationships or generate random
+function LifeEvents.getFriendName(state)
+	if state.Relationships then
+		local friends = {}
+		for id, rel in pairs(state.Relationships) do
+			if type(rel) == "table" and rel.type == "friend" and rel.alive ~= false and rel.name then
+				table.insert(friends, rel.name)
+			end
+		end
+		if #friends > 0 then
+			return friends[math.random(#friends)]
+		end
+	end
+	return LifeEvents.randomFirstName()
+end
+
+-- Get a partner's name from relationships or generate random
+function LifeEvents.getPartnerName(state)
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if type(rel) == "table" and rel.type == "romance" and rel.alive ~= false and rel.name then
+				return rel.name
+			end
+		end
+	end
+	return LifeEvents.randomFirstName()
+end
+
+----------------------------------------------------------------------
 -- EVENT TEMPLATE HELPERS (Create common event patterns)
 ----------------------------------------------------------------------
 

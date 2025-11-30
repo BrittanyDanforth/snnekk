@@ -107,8 +107,16 @@ module.events = {
 		weight = 35, cooldown = 3,
 		emoji = "😤", title = "Friend Group Drama!",
 		category = "social",
-		getDynamicData = function()
-			return { friend1 = LifeEvents.randomFirstName(), friend2 = LifeEvents.randomFirstName() }
+		requires = LifeEvents.hasFriend,  -- MUST have friends for this to fire
+		getDynamicData = function(state)
+			-- Use actual friend names if available
+			local name1 = LifeEvents.getFriendName(state)
+			local name2 = LifeEvents.getFriendName(state)
+			-- Make sure names are different
+			if name1 == name2 then
+				name2 = LifeEvents.randomFirstName()
+			end
+			return { friend1 = name1, friend2 = name2 }
 		end,
 		text = "%friend1% and %friend2% had a falling out! Your friend group is divided!",
 		choices = {
@@ -428,6 +436,7 @@ module.events = {
 		weight = 30, cooldown = 2,
 		emoji = "😬", title = "Peer Pressure",
 		category = "social",
+		requires = LifeEvents.hasFriend,  -- MUST have friends for this to fire
 		getDynamicData = function()
 			local pressures = {"try drinking", "skip school", "try a vape", "shoplift something", "bully someone", "cheat on a test"}
 			return { pressure = pressures[math.random(#pressures)] }

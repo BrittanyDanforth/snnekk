@@ -622,8 +622,9 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "🏠", title = "First Sleepover!",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		requires = LifeEvents.hasFriend,  -- MUST have friends for sleepover invite
+		getDynamicData = function(state)
+			return { friendName = LifeEvents.getFriendName(state) }
 		end,
 		text = "You're invited to your first sleepover at %friendName%'s house!",
 		choices = {

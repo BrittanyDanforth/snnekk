@@ -421,6 +421,7 @@ module.events = {
 		weight = 12, cooldown = 5,
 		emoji = "🎰", title = "Casino Night!",
 		category = "social",
+		requires = LifeEvents.hasFriend,  -- MUST have friends to go with friends
 		text = "Friends want to hit the casino! You've got some money. What do you do?",
 		choices = {
 			{ 
@@ -512,7 +513,8 @@ module.events = {
 				text = "🤝 Share stranger's umbrella",
 				effects = { Happiness = 10 },
 				resultText = "They offered! Had a nice chat walking together. New friend maybe?",
-				addRelationship = { category = "friends", dynamicNameKey = nil, startingRelationship = 40, type = "acquaintance" }
+				setFlag = "has_friend",
+				addRelationship = { category = "friends", startingRelationship = 40, type = "friend" }  -- Type must be "friend" for UI
 			},
 		},
 	},

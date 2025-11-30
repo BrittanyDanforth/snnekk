@@ -30,14 +30,14 @@ module.events = {
 				text = "💕 Ask them out!", 
 				effects = { Happiness = 8 }, 
 				resultText = "They said yes! You have a date with %personName%.", 
-				setFlag = "dating",
-				addRelationship = { category = "lovers", dynamicNameKey = "personName", startingRelationship = 55, type = "dating" }
+				setFlags = {"dating", "in_relationship"},
+				addRelationship = { category = "romance", dynamicNameKey = "personName", startingRelationship = 55, type = "romance" }  -- Type must be "romance" for UI
 			},
 			{ 
 				text = "📱 Get their number", 
 				effects = { Happiness = 5 }, 
 				resultText = "You exchanged contacts with %personName%. Potential!",
-				addRelationship = { category = "lovers", dynamicNameKey = "personName", startingRelationship = 35, type = "interest" }
+				addRelationship = { category = "romance", dynamicNameKey = "personName", startingRelationship = 35, type = "romance" }  -- Type must be "romance" for UI
 			},
 			{ text = "😰 Too nervous", effects = { Happiness = -3 }, resultText = "The moment passed. What if?" },
 		},

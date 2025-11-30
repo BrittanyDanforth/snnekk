@@ -96,6 +96,7 @@ module.events = {
 		weight = 35, cooldown = 2,
 		emoji = "🏖️", title = "Spring Break!",
 		category = "social",
+		requires = LifeEvents.hasFriend,  -- MUST have friends to go on spring break with friends
 		getDynamicData = function()
 			local destinations = {"Cancun", "Miami", "Panama City Beach", "Vegas", "road trip", "home"}
 			return { destination = destinations[math.random(#destinations)] }

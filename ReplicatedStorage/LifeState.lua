@@ -277,16 +277,57 @@ end
 ----------------------------------------------------------------------
 
 -- Type mapping for backwards compatibility with category-based calls
+-- Maps all relationship types to the 4 standard UI types: "friend", "romance", "family", "enemy"
 local typeFromCategory = {
+	-- Friend types
 	friends = "friend",
 	friend = "friend",
-	family = "family",
+	best_friend = "friend",
+	childhood_friend = "friend",
+	school_friend = "friend",
+	club_friend = "friend",
+	camp_friend = "friend",
+	daycare_friend = "friend",
+	kindergarten_friend = "friend",
+	study_buddy = "friend",
+	neighbor = "friend",
+	reformed_bully_friend = "friend",
+	preschool_friend = "friend",
+	classmates = "friend",
+	coworkers = "friend",
+	acquaintance = "friend",
+	former_student = "friend",
+	work_friend = "friend",
+	college_friend = "friend",
+	gym_buddy = "friend",
+	online_friend = "friend",
+	mentor = "friend",
+	mentee = "friend",
+	-- Romance types
 	romance = "romance",
 	lovers = "romance",
+	partner = "romance",
+	dating = "romance",
+	spouse = "romance",
+	interest = "romance",
+	crush = "romance",
+	ex = "romance",
+	fiance = "romance",
+	-- Family types
+	family = "family",
+	parent = "family",
+	sibling = "family",
+	child = "family",
+	grandparent = "family",
+	grandchild = "family",
+	cousin = "family",
+	aunt = "family",
+	uncle = "family",
+	in_law = "family",
+	-- Enemy types
 	enemies = "enemy",
 	enemy = "enemy",
-	coworkers = "friend",
-	classmates = "friend",
+	rival = "enemy",
 }
 
 function LifeState:AddRelationship(categoryOrType, person)

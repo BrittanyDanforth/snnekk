@@ -965,6 +965,7 @@ function EventRunner.applyChoice(
 		-- Determine the standard relationship type for UI display
 		-- Map categories/types to the 4 standard types the UI expects
 		local typeMapping = {
+			-- Friend types (all map to "friend")
 			friends = "friend",
 			friend = "friend",
 			best_friend = "friend",
@@ -980,15 +981,36 @@ function EventRunner.applyChoice(
 			preschool_friend = "friend",
 			classmates = "friend",
 			coworkers = "friend",
+			acquaintance = "friend",  -- Added
+			former_student = "friend", -- Added
+			work_friend = "friend", -- Added
+			college_friend = "friend", -- Added
+			gym_buddy = "friend", -- Added
+			online_friend = "friend", -- Added
+			mentor = "friend", -- Added
+			mentee = "friend", -- Added
+			-- Romance types (all map to "romance")
 			romance = "romance",
 			lovers = "romance",
 			partner = "romance",
 			dating = "romance",
 			spouse = "romance",
+			interest = "romance", -- Added
+			crush = "romance", -- Added
+			ex = "romance", -- Added (for tracking exes)
+			fiance = "romance", -- Added
+			-- Family types (all map to "family")
 			family = "family",
 			parent = "family",
 			sibling = "family",
 			child = "family",
+			grandparent = "family", -- Added
+			grandchild = "family", -- Added
+			cousin = "family", -- Added
+			aunt = "family", -- Added
+			uncle = "family", -- Added
+			in_law = "family", -- Added
+			-- Enemy types (all map to "enemy")
 			enemies = "enemy",
 			enemy = "enemy",
 			rival = "enemy",

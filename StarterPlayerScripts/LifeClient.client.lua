@@ -40,12 +40,25 @@ if ScreensFolder then
 	StoryPathsScreen    = safeRequire("StoryPathsScreen")
 end
 
--- Minigames module (directly in ReplicatedStorage) - no wait
+-- Minigames module (directly in ReplicatedStorage) - wait for it!
 local function safeRequireRS(name)
+	-- Try immediate find first, then wait if not found
 	local child = ReplicatedStorage:FindFirstChild(name)
+	if not child then
+		print("[LifeClient] ⏳ Waiting for " .. name .. " module...")
+		child = ReplicatedStorage:WaitForChild(name, 5)  -- Wait up to 5 seconds
+	end
 	if child then
 		local s, r = pcall(require, child)
-		return s and r or nil
+		if s then
+			print("[LifeClient] ✅ Loaded " .. name .. " module successfully!")
+			return r
+		else
+			warn("[LifeClient] ⚠️ Failed to require " .. name .. ": " .. tostring(r))
+			return nil
+		end
+	else
+		warn("[LifeClient] ⚠️ " .. name .. " module not found in ReplicatedStorage!")
 	end
 	return nil
 end
@@ -2238,15 +2251,24 @@ activitiesScreenInstance    = safeNew(ActivitiesScreen,    "ActivitiesScreen",  
 storyPathsScreenInstance    = safeNew(StoryPathsScreen,    "StoryPathsScreen",    screenGui, currentState)
 
 if MinigamesModule then
+	print("[LifeClient] 🎮 Initializing Minigames module...")
 	local ok, mg = pcall(function()
 		return MinigamesModule.new(screenGui)
 	end)
 	if ok and mg then
 		minigamesInstance = mg
-		print("[LifeClient] ✅ Minigames initialized!")
+		print("[LifeClient] ✅ Minigames initialized successfully! Available games:", table.concat({
+			"debate", "heist", "getaway", "qte", "prison_escape", "mash", "hacking"
+		}, ", "))
 	else
 		warn("[LifeClient] ⚠️ Failed to initialize minigames: " .. tostring(mg))
+		-- Try to print more debug info
+		if type(mg) == "string" then
+			warn("[LifeClient] Error details: " .. mg)
+		end
 	end
+else
+	warn("[LifeClient] ⚠️ MinigamesModule is nil - minigames will auto-fail!")
 end
 
 ----------------------------------------------------------------

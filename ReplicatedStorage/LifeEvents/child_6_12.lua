@@ -91,8 +91,9 @@ module.events = {
 		weight = 30, cooldown = 2,
 		emoji = "🍽️", title = "Lunch Table Drama",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		requires = LifeEvents.hasFriend,  -- MUST have friends for friend group drama
+		getDynamicData = function(state)
+			return { friendName = LifeEvents.getFriendName(state) }
 		end,
 		text = "There's drama at the lunch table! %friendName% is sitting in 'your' spot and your friend group is divided!",
 		choices = {
@@ -416,6 +417,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🏠", title = "Hosting a Sleepover!",
 		category = "social",
+		requires = LifeEvents.hasFriend,  -- MUST have friends to host a sleepover
 		getDynamicData = function()
 			return { count = math.random(2, 5) }
 		end,
