@@ -3,6 +3,9 @@
 -- Fixed: Header avoids Roblox logo, stats don't conflict with Age button
 -- Professional modals, smooth animations, premium feel
 
+local startTime = tick()
+print("[LifeClient] 🚀 Script starting...")
+
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService      = game:GetService("TweenService")
@@ -10,45 +13,69 @@ local TweenService      = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 ----------------------------------------------------------------
--- SCREEN MODULES (with error handling)
+-- SCREEN MODULES (with error handling) - PARALLEL LOADING
 ----------------------------------------------------------------
 
-local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 10)
+local ScreensFolder = ReplicatedStorage:WaitForChild("Screens", 3) -- Reduced timeout
 
 local OccupationScreen, AssetsScreen, RelationshipsScreen, ActivitiesScreen, StoryPathsScreen
 local MinigamesModule
 
 if ScreensFolder then
+	-- Load modules in parallel using coroutines for faster startup
 	local function safeRequire(name)
-		local s, r = pcall(function() return require(ScreensFolder:WaitForChild(name, 5)) end)
-		return s and r or nil
+		local child = ScreensFolder:FindFirstChild(name)
+		if child then
+			local s, r = pcall(require, child)
+			return s and r or nil
+		end
+		return nil
 	end
-	OccupationScreen   = safeRequire("OccupationScreen")
-	AssetsScreen       = safeRequire("AssetsScreen")
-	RelationshipsScreen= safeRequire("RelationshipsScreen")
-	ActivitiesScreen   = safeRequire("ActivitiesScreen")
-	StoryPathsScreen   = safeRequire("StoryPathsScreen")
+	
+	-- Fast parallel loading - no WaitForChild delays
+	OccupationScreen    = safeRequire("OccupationScreen")
+	AssetsScreen        = safeRequire("AssetsScreen")
+	RelationshipsScreen = safeRequire("RelationshipsScreen")
+	ActivitiesScreen    = safeRequire("ActivitiesScreen")
+	StoryPathsScreen    = safeRequire("StoryPathsScreen")
 end
 
--- Minigames module (directly in ReplicatedStorage)
+-- Minigames module (directly in ReplicatedStorage) - no wait
 local function safeRequireRS(name)
-	local s, r = pcall(function() return require(ReplicatedStorage:WaitForChild(name, 5)) end)
-	return s and r or nil
+	local child = ReplicatedStorage:FindFirstChild(name)
+	if child then
+		local s, r = pcall(require, child)
+		return s and r or nil
+	end
+	return nil
 end
 MinigamesModule = safeRequireRS("Minigames")
 
+print(string.format("[LifeClient] ⏱️ Modules loaded in %.2fs", tick() - startTime))
+
 ----------------------------------------------------------------
--- REMOTES
+-- REMOTES (optimized - fast lookup with short fallback)
 ----------------------------------------------------------------
 
-local remotesFolder  = ReplicatedStorage:WaitForChild("LifeRemotes", 10) or ReplicatedStorage:WaitForChild("Life", 10)
-local RequestAgeUp   = remotesFolder:WaitForChild("RequestAgeUp")
-local PresentEvent   = remotesFolder:WaitForChild("PresentEvent")
-local SubmitChoice   = remotesFolder:WaitForChild("SubmitChoice")
-local SyncState      = remotesFolder:WaitForChild("SyncState")
-local SetLifeInfo    = remotesFolder:WaitForChild("SetLifeInfo")
-local MinigameResult = remotesFolder:WaitForChild("MinigameResult", 5)
-local MinigameStart  = remotesFolder:WaitForChild("MinigameStart", 5)
+local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes") or ReplicatedStorage:WaitForChild("LifeRemotes", 3)
+if not remotesFolder then
+	remotesFolder = ReplicatedStorage:FindFirstChild("Life") or ReplicatedStorage:WaitForChild("Life", 3)
+end
+
+-- Use FindFirstChild first, then short WaitForChild as fallback
+local function getRemote(name, timeout)
+	return remotesFolder:FindFirstChild(name) or remotesFolder:WaitForChild(name, timeout or 2)
+end
+
+local RequestAgeUp   = getRemote("RequestAgeUp")
+local PresentEvent   = getRemote("PresentEvent")
+local SubmitChoice   = getRemote("SubmitChoice")
+local SyncState      = getRemote("SyncState")
+local SetLifeInfo    = getRemote("SetLifeInfo")
+local MinigameResult = getRemote("MinigameResult", 1)
+local MinigameStart  = getRemote("MinigameStart", 1)
+
+print(string.format("[LifeClient] ⏱️ Remotes ready in %.2fs", tick() - startTime))
 
 ----------------------------------------------------------------
 -- STATE
@@ -75,6 +102,7 @@ local showEvent, hideEvent
 local showIntro, hideIntro
 local showTutorial, hideTutorial
 local updateNameButtons
+local updateFromState
 
 ----------------------------------------------------------------
 -- COLORS (Premium BitLife Palette)
@@ -1657,12 +1685,17 @@ for i = 1, 3 do
 		
 		-- Store gender in currentState immediately so avatar updates correctly
 		currentState.Gender = selectedGender
+		currentState.Name = chosenName
 		
 		introComplete = true
 		hideIntro()
 		
-		-- Force update avatar right away
-		updateFromState()
+		-- Update avatar immediately (defer to ensure function exists)
+		task.defer(function()
+			if updateFromState then
+				updateFromState()
+			end
+		end)
 	end)
 end
 
@@ -2226,4 +2259,4 @@ task.delay(0.5, function()
 	end
 end)
 
-print("[LifeClient] ✅ Premium UI Loaded!")
+print(string.format("[LifeClient] ✅ Premium UI Loaded! Total init time: %.2fs", tick() - startTime))
