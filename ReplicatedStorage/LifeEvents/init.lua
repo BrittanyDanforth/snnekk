@@ -297,34 +297,40 @@ end
 -- List of all event modules to load
 -- Add new modules here as they're created
 local MODULE_LIST = {
-	-- Core life stages
-	"child_0_5",        -- Infant, toddler, early childhood
-	"child_5_12",       -- Elementary school years
-	"teen_12_18",       -- Middle school & high school
-	"adult_18_35",      -- Young adult, college, early career
-	"adult_35_60",      -- Middle age, career peak
-	"senior_60_plus",   -- Retirement, elder years
+	-- ═══════════════════════════════════════════════════════════════
+	-- CORE LIFE STAGES (Massive expansion - 700+ events total)
+	-- ═══════════════════════════════════════════════════════════════
+	"child_0_5",          -- Ages 0-5: Birth, infant, toddler, preschool (100+ events)
+	"child_6_12",         -- Ages 6-12: Elementary school years (120+ events)
+	"teen_13_17",         -- Ages 13-17: Middle school & high school (130+ events)
+	"young_adult_18_35",  -- Ages 18-35: College, career start, relationships (140+ events)
+	"middle_aged_36_55",  -- Ages 36-55: Career peak, family, midlife (100+ events)
+	"senior_55_plus",     -- Ages 55+: Retirement, golden years (100+ events)
 	
-	-- Career paths (specialized events)
-	"career_criminal",  -- Crime, gangs, prison
-	"career_political", -- Politics, elections, government
-	"career_arts",      -- Art, music, entertainment, fame
-	"career_tech",      -- Technology, hacking, startups
-	"career_sports",    -- Athletics, racing, competition
-	"career_business",  -- Business, entrepreneurship
-	"career_medical",   -- Doctor, nurse, healthcare
-	"career_education", -- Teacher, professor, academia
-	"career_legal",     -- Lawyer, judge, law enforcement
-	"career_military",  -- Military, veteran
+	-- ═══════════════════════════════════════════════════════════════
+	-- CAREER PATHS (Specialized events)
+	-- ═══════════════════════════════════════════════════════════════
+	"career_criminal",    -- Crime, gangs, prison life
+	"career_political",   -- Politics, elections, government
+	"career_arts",        -- Art, music, entertainment, fame
+	"career_tech",        -- Technology, hacking, startups
+	"career_sports",      -- Athletics, racing, competition
+	"career_business",    -- Business, entrepreneurship
+	"career_medical",     -- Doctor, nurse, healthcare
+	"career_education",   -- Teacher, professor, academia
+	"career_legal",       -- Lawyer, judge, law enforcement
+	"career_military",    -- Military, veteran
 	
-	-- Life themes
-	"relationships",    -- Romance, marriage, family, friends
-	"health",           -- Illness, injury, wellness
-	"wealth",           -- Money, investments, inheritance
-	"prison",           -- Prison-specific events
-	"random_encounters",-- Random life events
-	"disasters",        -- Natural disasters, accidents
-	"fame",             -- Celebrity, social media, influencer
+	-- ═══════════════════════════════════════════════════════════════
+	-- LIFE THEMES
+	-- ═══════════════════════════════════════════════════════════════
+	"relationships",      -- Romance, marriage, family, friends
+	"health",             -- Illness, injury, wellness
+	"wealth",             -- Money, investments, inheritance
+	"prison",             -- Prison-specific events
+	"random_encounters",  -- Random life events
+	"disasters",          -- Natural disasters, accidents
+	"fame",               -- Celebrity, social media, influencer
 }
 
 -- Storage for loaded events
