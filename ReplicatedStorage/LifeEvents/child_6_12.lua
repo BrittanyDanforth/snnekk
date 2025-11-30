@@ -58,17 +58,12 @@ module.events = {
 		weight = 45, cooldown = 3,
 		emoji = "📋", title = "Report Card Time!",
 		category = "school",
-		getDynamicData = function()
-			local grades = math.random(1, 10)
-			local performance = grades > 7 and "excellent" or grades > 4 and "average" or "needs improvement"
-			return { performance = performance, grades = grades }
-		end,
-		text = "Report cards are out! Your performance this term was: %performance%.",
+		text = "Report cards come out tomorrow! How have you been doing in school?",
 		choices = {
-			{ text = "📈 Straight A's!", effects = { Smarts = 8, Happiness = 7, Money = 20 }, resultText = "Your parents were so proud! Maybe even a reward!", setFlag = "honor_student" },
-			{ text = "📊 Middle of the pack", effects = { Smarts = 3, Happiness = 2 }, resultText = "Not the best, not the worst. Room for improvement." },
-			{ text = "📉 Uh oh...", effects = { Smarts = 1, Happiness = -5 }, resultText = "Your parents had 'a talk' with you about trying harder." },
-			{ text = "🎭 Hide the bad grades", effects = { Happiness = 2, Smarts = -2 }, resultText = "You hid it... until parent-teacher conference.", setFlag = "sneaky" },
+			{ text = "📚 I've been studying hard", effects = { Smarts = 8, Happiness = 7, Money = 20 }, resultText = "Straight A's! Your hard work paid off! Parents are SO proud!", setFlag = "honor_student" },
+			{ text = "🤷 Did my best I guess", effects = { Smarts = 4, Happiness = 3 }, resultText = "B's and C's. Not bad! Room to improve but you're doing okay." },
+			{ text = "🎮 Honestly didn't try much", effects = { Smarts = 1, Happiness = -5 }, resultText = "Yikes... D's and F's. Parents had a VERY serious talk with you." },
+			{ text = "🙈 Hide it from parents", effects = { Happiness = 2, Smarts = -2 }, resultText = "Hid the bad grades... got caught at parent-teacher conference. Worse now.", setFlag = "sneaky" },
 		},
 	},
 	
@@ -177,12 +172,12 @@ module.events = {
 			local plays = {"The Wizard of Oz", "Peter Pan", "Beauty and the Beast", "The Lion King", "Alice in Wonderland"}
 			return { play = plays[math.random(#plays)] }
 		end,
-		text = "The school is putting on '%play%'! Are you going to audition?",
+		text = "The school is putting on '%play%'! Auditions are today! What do you do?",
 		choices = {
-			{ text = "🌟 Get the lead!", effects = { Happiness = 10, Looks = 5, Smarts = 2 }, resultText = "You got the main role! Star of the show!", setFlag = "drama_kid" },
-			{ text = "🎭 Get a supporting role", effects = { Happiness = 6, Looks = 2 }, resultText = "You got a great part! Not the lead, but memorable." },
-			{ text = "🔧 Work backstage", effects = { Smarts = 5, Happiness = 4 }, resultText = "You helped with sets and lights. Just as important!" },
-			{ text = "🙅 Stage fright", effects = { Happiness = -2 }, resultText = "You didn't audition. Maybe next time." },
+			{ text = "🌟 Audition with confidence!", effects = { Happiness = 10, Looks = 5, Smarts = 2 }, resultText = "You NAILED it! Got the lead role! Star of the show!", setFlag = "drama_kid" },
+			{ text = "🎭 Audition nervously", effects = { Happiness = 6, Looks = 2 }, resultText = "A bit shaky but you got a supporting role! Still great!" },
+			{ text = "🔧 Volunteer for backstage", effects = { Smarts = 5, Happiness = 4 }, resultText = "Behind the scenes hero! Sets and lights need YOU!" },
+			{ text = "🙅 Too scared to try", effects = { Happiness = -5 }, resultText = "Watched from the audience on show night. Regret not trying." },
 		},
 	},
 	
@@ -196,12 +191,12 @@ module.events = {
 			local projects = {"volcano model", "solar system display", "plant growth experiment", "electricity demonstration", "water filtration system"}
 			return { project = projects[math.random(#projects)] }
 		end,
-		text = "The science fair is coming! You're working on a %project%.",
+		text = "The science fair is coming! You need to do a %project%. How much effort do you put in?",
 		choices = {
-			{ text = "🏆 WIN FIRST PLACE!", effects = { Smarts = 10, Happiness = 10, Money = 50 }, resultText = "Your project was incredible! First place!", setFlag = "science_talent" },
-			{ text = "📊 Honorable mention", effects = { Smarts = 6, Happiness = 5 }, resultText = "You didn't win, but the judges were impressed." },
-			{ text = "💥 It exploded...", effects = { Smarts = 3, Happiness = -3 }, resultText = "Your experiment had unexpected results. Oops." },
-			{ text = "🤷 Minimal effort", effects = { Smarts = 2 }, resultText = "You threw something together last minute. Meh." },
+			{ text = "🔬 Work really hard on it", effects = { Smarts = 10, Happiness = 10, Money = 50 }, resultText = "FIRST PLACE! All that effort paid off! You're a science star!", setFlag = "science_talent" },
+			{ text = "📚 Do solid research", effects = { Smarts = 6, Happiness = 5 }, resultText = "Honorable mention! Judges were impressed with your knowledge!" },
+			{ text = "⚡ Try something risky", effects = { Smarts = 5, Happiness = -3 }, resultText = "It EXPLODED during the presentation! Embarrassing but memorable..." },
+			{ text = "🤷 Throw it together last minute", effects = { Smarts = 2, Happiness = -2 }, resultText = "The judges could tell. C- and a disappointed look. Ouch." },
 		},
 	},
 	
@@ -215,12 +210,12 @@ module.events = {
 			local words = {"necessary", "occurrence", "accommodate", "rhythm", "conscientious", "mischievous", "onomatopoeia"}
 			return { finalWord = words[math.random(#words)] }
 		end,
-		text = "You made it to the school spelling bee! The final word is: '%finalWord%'",
+		text = "You made it to the school spelling bee finals! Your word is: '%finalWord%'. How do you approach it?",
 		choices = {
-			{ text = "🏆 Spelled it perfectly!", effects = { Smarts = 10, Happiness = 10 }, resultText = "CORRECT! You're the spelling bee champion!", setFlags = {"spelling_champ", "academic_achiever"} },
-			{ text = "😰 Choked under pressure", effects = { Happiness = -4 }, resultText = "You got nervous and misspelled it. So close!" },
-			{ text = "🥈 Second place", effects = { Smarts = 6, Happiness = 4 }, resultText = "You got second! Still a great achievement." },
-			{ text = "🤔 Asked for definition", effects = { Smarts = 7, Happiness = 5 }, resultText = "Using context clues, you figured it out!" },
+			{ text = "🧠 Sound it out carefully", effects = { Smarts = 10, Happiness = 10 }, resultText = "CORRECT! You're the spelling bee CHAMPION! All that studying paid off!", setFlags = {"spelling_champ", "academic_achiever"} },
+			{ text = "⚡ Answer quickly", effects = { Happiness = -4, Smarts = 3 }, resultText = "Too fast! Made a mistake. Second place. So close!" },
+			{ text = "🤔 Ask for definition first", effects = { Smarts = 8, Happiness = 6 }, resultText = "Smart strategy! The definition helped. You got it right!" },
+			{ text = "😰 Freeze up", effects = { Happiness = -6 }, resultText = "Brain went blank! Time ran out. Third place. Nerves got you." },
 		},
 	},
 	
@@ -234,12 +229,12 @@ module.events = {
 			local sports = {"soccer", "basketball", "baseball", "swimming", "track", "gymnastics"}
 			return { sport = sports[math.random(#sports)] }
 		end,
-		text = "Tryouts for the %sport% team are today! Are you going to go for it?",
+		text = "Tryouts for the %sport% team are today! What do you do?",
 		choices = {
-			{ text = "🏆 Make the team!", effects = { Health = 8, Happiness = 8, Looks = 2 }, resultText = "You made it! You're on the team!", setFlag = "athlete" },
-			{ text = "😔 Didn't make it", effects = { Happiness = -5, Health = 2 }, resultText = "You didn't make the cut. There's always next year." },
-			{ text = "⭐ STAR PLAYER!", effects = { Health = 10, Happiness = 10, Looks = 4 }, resultText = "The coach was blown away! You're starting!", setFlags = {"athlete", "sports_star"} },
-			{ text = "🙅 Not my thing", effects = { Smarts = 2 }, resultText = "You decided sports aren't for you." },
+			{ text = "💪 Try your absolute hardest", effects = { Health = 10, Happiness = 10, Looks = 4 }, resultText = "Coach was IMPRESSED! You made the starting lineup!", setFlags = {"athlete", "sports_star"} },
+			{ text = "👍 Give a solid effort", effects = { Health = 8, Happiness = 6, Looks = 2 }, resultText = "Made the team! Not starting but you're in!", setFlag = "athlete" },
+			{ text = "😰 Show up nervous", effects = { Happiness = -5, Health = 3 }, resultText = "Nerves got you. Didn't make it this time. Next year?" },
+			{ text = "🙅 Skip tryouts", effects = { Happiness = -2, Smarts = 2 }, resultText = "Decided not to try. Regret or relief? Hard to say." },
 		},
 	},
 	
@@ -253,12 +248,12 @@ module.events = {
 			local talents = {"singing", "playing piano", "magic tricks", "dancing", "comedy routine", "juggling", "martial arts demo"}
 			return { talent = talents[math.random(#talents)] }
 		end,
-		text = "The school talent show is coming! You want to perform %talent%!",
+		text = "The school talent show is coming! You signed up for %talent%! How do you prepare?",
 		choices = {
-			{ text = "🌟 Standing ovation!", effects = { Happiness = 10, Looks = 5, Smarts = 2 }, resultText = "You brought the house down! AMAZING!", setFlag = "performer" },
-			{ text = "👏 Good performance", effects = { Happiness = 6, Looks = 2 }, resultText = "You did well! The crowd appreciated it." },
-			{ text = "😰 Stage fright disaster", effects = { Happiness = -6 }, resultText = "You froze on stage. Mortifying." },
-			{ text = "🎬 Behind the scenes", effects = { Smarts = 4, Happiness = 3 }, resultText = "You helped organize instead. Less scary!" },
+			{ text = "🎯 Practice every single day", effects = { Happiness = 10, Looks = 5, Smarts = 2 }, resultText = "STANDING OVATION! All that practice made you a STAR!", setFlag = "performer" },
+			{ text = "📝 Prepare a little bit", effects = { Happiness = 6, Looks = 2 }, resultText = "Solid performance! Crowd clapped! Not viral but good!" },
+			{ text = "🤷 Wing it", effects = { Happiness = -6, Looks = -2 }, resultText = "Forgot your routine halfway through! MORTIFYING! Never again." },
+			{ text = "🎬 Switch to helping backstage", effects = { Smarts = 4, Happiness = 4 }, resultText = "Backed out of performing. Helped run the show instead!" },
 		},
 	},
 	
@@ -310,12 +305,12 @@ module.events = {
 			local topics = {"multiplication", "division", "fractions", "decimals", "geometry", "word problems"}
 			return { topic = topics[math.random(#topics)] }
 		end,
-		text = "The big %topic% test is today! Did you study?",
+		text = "The big %topic% test is tomorrow! What do you do?",
 		choices = {
-			{ text = "💯 Aced it!", effects = { Smarts = 8, Happiness = 8 }, resultText = "100%! Math genius!", setFlag = "math_talent" },
-			{ text = "📊 Did okay", effects = { Smarts = 4, Happiness = 2 }, resultText = "B- isn't bad. Math is hard." },
-			{ text = "📉 Bombed it...", effects = { Smarts = 1, Happiness = -5 }, resultText = "Yikes. Study harder next time." },
-			{ text = "🤫 May have cheated", effects = { Smarts = -2, Happiness = 2 }, resultText = "You didn't get caught... this time.", setFlag = "cheater" },
+			{ text = "📚 Study hard tonight", effects = { Smarts = 8, Happiness = 8 }, resultText = "100%! All that studying paid off! MATH GENIUS!", setFlag = "math_talent" },
+			{ text = "📖 Review a little", effects = { Smarts = 4, Happiness = 2 }, resultText = "B-. Not bad! You remembered most of it." },
+			{ text = "🎮 Play games instead", effects = { Smarts = 1, Happiness = -5 }, resultText = "BOMBED IT. Should have studied. Parents are NOT happy." },
+			{ text = "👀 Copy off neighbor", effects = { Smarts = -2, Happiness = -8 }, resultText = "Teacher SAW you! Zero on the test AND detention. Bad choice.", setFlag = "caught_cheating" },
 		},
 	},
 	
@@ -603,12 +598,12 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🗳️", title = "Class Elections!",
 		category = "school",
-		text = "Class president elections are coming! Will you run?",
+		text = "Class president elections are coming! What do you do?",
 		choices = {
-			{ text = "🏆 WIN THE ELECTION!", effects = { Happiness = 10, Looks = 4, Smarts = 3 }, resultText = "You're the class president! Power!", setFlags = {"class_president", "leader", "political_interest"} },
-			{ text = "🥈 Runner-up", effects = { Happiness = 4, Smarts = 2 }, resultText = "You lost by just a few votes. So close!" },
-			{ text = "📢 Amazing campaign", effects = { Happiness = 6, Looks = 2, Smarts = 2 }, resultText = "Win or lose, your posters were everywhere!" },
-			{ text = "🗳️ Just vote, don't run", effects = { Smarts = 2 }, resultText = "Democracy in action! You did your civic duty." },
+			{ text = "📢 Run a big campaign", effects = { Happiness = 10, Looks = 4, Smarts = 3 }, resultText = "Posters everywhere! Great speech! You WON! Class President!", setFlags = {"class_president", "leader", "political_interest"} },
+			{ text = "🎤 Run but keep it chill", effects = { Happiness = 4, Smarts = 2 }, resultText = "Ran a quiet campaign. Lost by a few votes. So close!" },
+			{ text = "🤝 Help someone else's campaign", effects = { Happiness = 6, Smarts = 4 }, resultText = "Your friend won! And they promised you a cabinet position!" },
+			{ text = "🙅 Just vote", effects = { Smarts = 2, Happiness = 2 }, resultText = "Not interested in politics. You voted though! Civic duty!" },
 		},
 	},
 	
@@ -641,12 +636,12 @@ module.events = {
 			local illnesses = {"a cold", "the flu", "stomach bug", "strep throat", "pink eye"}
 			return { illness = illnesses[math.random(#illnesses)] }
 		end,
-		text = "You caught %illness%! No school today!",
+		text = "You woke up not feeling well. Might be %illness%. What do you do?",
 		choices = {
-			{ text = "😷 Actually feel terrible", effects = { Health = -8, Happiness = -3 }, resultText = "Being sick is no fun. Soup and rest." },
-			{ text = "📺 Milk it for TV time", effects = { Happiness = 5, Health = -5 }, resultText = "You watched cartoons all day. Silver lining!" },
-			{ text = "📚 Study anyway", effects = { Smarts = 4, Health = -3 }, resultText = "You didn't want to fall behind.", setFlag = "dedicated_student" },
-			{ text = "🤥 Were you really sick?", effects = { Happiness = 6, Smarts = 2 }, resultText = "Maybe exaggerated a little... mental health day!", setFlag = "sneaky" },
+			{ text = "🛏️ Tell mom and rest", effects = { Health = 5, Happiness = 3 }, resultText = "Mom kept you home. Soup and rest. Feeling better!" },
+			{ text = "💪 Go to school anyway", effects = { Health = -10, Happiness = -5 }, resultText = "Bad idea! Got worse and had to be sent home. Also got others sick." },
+			{ text = "😭 Exaggerate symptoms", effects = { Happiness = 6, Smarts = -2 }, resultText = "Oscar-worthy performance! Day off to watch TV!", setFlag = "sneaky" },
+			{ text = "📚 Stay home but study", effects = { Smarts = 5, Health = 3, Happiness = 2 }, resultText = "Rested but kept up with homework. Responsible!", setFlag = "dedicated_student" },
 		},
 	},
 	

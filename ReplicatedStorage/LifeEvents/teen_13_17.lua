@@ -235,12 +235,12 @@ module.events = {
 		requiresFlag = "learning_to_drive",
 		emoji = "🪪", title = "Driver's License!",
 		category = "family",
-		text = "The big day! Your driving test is TODAY!",
+		text = "The big day! Your driving test is TODAY! How do you feel going in?",
 		choices = {
-			{ text = "🎉 PASSED!", effects = { Happiness = 15, Smarts = 2 }, resultText = "FREEDOM! You can drive alone now!", setFlag = "can_drive" },
-			{ text = "😭 Failed...", effects = { Happiness = -8 }, resultText = "Parallel parking got you. Try again soon." },
-			{ text = "✨ Perfect score!", effects = { Happiness = 12, Smarts = 5 }, resultText = "Not a single point off! Impressive!", setFlags = {"can_drive", "perfect_driver"} },
-			{ text = "😅 Barely passed", effects = { Happiness = 6 }, resultText = "A pass is a pass! Legal driver!", setFlag = "can_drive" },
+			{ text = "😎 Super confident", effects = { Happiness = 15, Smarts = 2 }, resultText = "PASSED! Your confidence showed! FREEDOM is yours!", setFlag = "can_drive" },
+			{ text = "😰 Really nervous", effects = { Happiness = -8 }, resultText = "Nerves got you. Failed parallel parking. Reschedule..." },
+			{ text = "🧘 Stay calm and focused", effects = { Happiness = 12, Smarts = 5 }, resultText = "PERFECT SCORE! Calm and collected wins the day!", setFlags = {"can_drive", "perfect_driver"} },
+			{ text = "🤞 Just hope for the best", effects = { Happiness = 6 }, resultText = "Barely passed! Made some mistakes but you're legal! A pass is a pass!", setFlag = "can_drive" },
 		},
 	},
 	
@@ -274,12 +274,12 @@ module.events = {
 			local sports = {"football", "basketball", "soccer", "baseball", "volleyball", "swimming", "track", "tennis", "wrestling", "lacrosse"}
 			return { sport = sports[math.random(#sports)] }
 		end,
-		text = "You tried out for the %sport% team! The roster is being posted...",
+		text = "Tryouts for the %sport% team are today! How do you approach them?",
 		choices = {
-			{ text = "🏆 Made varsity!", effects = { Health = 8, Happiness = 10, Looks = 4 }, resultText = "Starting position! You're a starter!", setFlags = {"varsity_athlete", "popular"} },
-			{ text = "📋 Made JV", effects = { Health = 5, Happiness = 4 }, resultText = "JV is still the team! Work your way up." },
-			{ text = "⭐ Team captain!", effects = { Health = 6, Happiness = 12, Looks = 5 }, resultText = "They made you captain! Leader!", setFlags = {"varsity_athlete", "team_captain", "popular"} },
-			{ text = "😔 Didn't make it", effects = { Happiness = -6, Health = 2 }, resultText = "Tough cut. Maybe try another sport." },
+			{ text = "💪 Train hard beforehand", effects = { Health = 8, Happiness = 10, Looks = 4 }, resultText = "Preparation paid off! Made VARSITY! Starting position!", setFlags = {"varsity_athlete", "popular"} },
+			{ text = "👍 Show up and try", effects = { Health = 5, Happiness = 4 }, resultText = "Made JV! Not varsity yet but you're on the team. Keep grinding." },
+			{ text = "🗣️ Talk to coach first", effects = { Health = 6, Happiness = 12, Looks = 5 }, resultText = "Impressed the coach with dedication! Made varsity AND they're considering you for captain!", setFlags = {"varsity_athlete", "team_captain", "popular"} },
+			{ text = "🤷 Wing it", effects = { Happiness = -6, Health = 2 }, resultText = "Didn't make it. Should have prepared more. Try again next year?" },
 		},
 	},
 	
@@ -326,16 +326,12 @@ module.events = {
 		weight = 60, oneTime = true,
 		emoji = "📝", title = "SAT/ACT Time!",
 		category = "school",
-		getDynamicData = function()
-			local scores = {"incredible", "above average", "average", "below expectations"}
-			return { scoreLevel = scores[math.random(#scores)] }
-		end,
-		text = "College entrance exams! Months of prep come down to this!",
+		text = "College entrance exams are coming up! How do you prepare?",
 		choices = {
-			{ text = "🎯 Perfect/Near Perfect!", effects = { Smarts = 15, Happiness = 12 }, resultText = "Outstanding score! Ivy League here you come!", setFlag = "high_test_scores" },
-			{ text = "📈 Great score!", effects = { Smarts = 10, Happiness = 8 }, resultText = "Solid results! Many doors open!", setFlag = "good_test_scores" },
-			{ text = "📊 It's okay...", effects = { Smarts = 4, Happiness = 2 }, resultText = "Could be better. Retake?" },
-			{ text = "😰 Test anxiety", effects = { Smarts = 2, Happiness = -5 }, resultText = "You didn't perform your best. There's always retakes." },
+			{ text = "📚 Study intensively for months", effects = { Smarts = 15, Happiness = 12 }, resultText = "CRUSHED IT! Near-perfect score! All that prep work paid off!", setFlag = "high_test_scores" },
+			{ text = "📖 Take a prep course", effects = { Smarts = 10, Happiness = 8 }, resultText = "Great score! The prep course strategies really helped!", setFlag = "good_test_scores" },
+			{ text = "🤷 Just wing it", effects = { Smarts = 4, Happiness = 2 }, resultText = "Meh score. Could retake but probably fine for some schools." },
+			{ text = "😴 Didn't sleep well before", effects = { Smarts = 2, Happiness = -5 }, resultText = "Bombed it. Brain fog all morning. Retake scheduled." },
 		},
 	},
 	
@@ -349,12 +345,12 @@ module.events = {
 			local colleges = {"Harvard", "Yale", "State University", "Community College", "Art School", "Tech Institute"}
 			return { dreamSchool = colleges[math.random(#colleges)] }
 		end,
-		text = "You're applying to colleges! Your dream school is %dreamSchool%.",
+		text = "Time to apply to colleges! Your dream school is %dreamSchool%. How do you approach your applications?",
 		choices = {
-			{ text = "📬 ACCEPTED to dream school!", effects = { Happiness = 20, Smarts = 5 }, resultText = "THE LETTER CAME! YOU'RE IN!!!", setFlag = "college_accepted" },
-			{ text = "📋 Accepted elsewhere", effects = { Happiness = 8, Smarts = 3 }, resultText = "Not your first choice, but still great options!", setFlag = "college_accepted" },
-			{ text = "💰 Full scholarship!", effects = { Happiness = 15, Smarts = 4, Money = 5000 }, resultText = "They're paying for everything! Academic achievement!", setFlags = {"college_accepted", "scholarship"} },
-			{ text = "😔 Waitlisted/Rejected", effects = { Happiness = -10 }, resultText = "Dreams crushed... but other paths exist." },
+			{ text = "📝 Write amazing essays", effects = { Happiness = 20, Smarts = 5 }, resultText = "ACCEPTED to your dream school! Your essays really stood out!", setFlag = "college_accepted" },
+			{ text = "📊 Apply to lots of schools", effects = { Happiness = 8, Smarts = 3 }, resultText = "Got into several backup schools! Options are good!", setFlag = "college_accepted" },
+			{ text = "🎯 Focus on scholarships", effects = { Happiness = 15, Smarts = 4, Money = 5000 }, resultText = "FULL SCHOLARSHIP! All that extra work on applications paid off!", setFlags = {"college_accepted", "scholarship"} },
+			{ text = "😰 Procrastinate on apps", effects = { Happiness = -10 }, resultText = "Rushed applications. Waitlisted and rejected everywhere good. Panic mode." },
 		},
 	},
 	

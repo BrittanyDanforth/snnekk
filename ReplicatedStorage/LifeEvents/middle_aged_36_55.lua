@@ -25,12 +25,12 @@ module.events = {
 			local salary = math.random(150000, 350000)
 			return { title = titles[math.random(#titles)], salary = salary }
 		end,
-		text = "You're being considered for %title%! Salary: $%salary%!",
+		text = "There's an opening for %title%! Salary: $%salary%! How do you approach it?",
 		choices = {
-			{ text = "🎉 GOT IT!", effects = { Happiness = 18, Money = 50000, Smarts = 5 }, resultText = "Corner office! You're in the C-suite now!", setFlag = "executive" },
-			{ text = "💼 Big responsibility", effects = { Happiness = 10, Money = 40000, Smarts = 4 }, resultText = "The pressure is real, but so is the paycheck.", setFlag = "executive" },
-			{ text = "⚖️ Work-life balance concern", effects = { Happiness = 4, Smarts = 3, Money = 20000 }, resultText = "Took a lesser role for sanity. Worth it?" },
-			{ text = "😔 Passed over again", effects = { Happiness = -10 }, resultText = "Someone else got it. Politics or merit? Hard to tell." },
+			{ text = "📊 Prepare a strong pitch", effects = { Happiness = 18, Money = 50000, Smarts = 5 }, resultText = "Nailed it! Promoted! Corner office, here you come!", setFlag = "executive" },
+			{ text = "💼 Express interest formally", effects = { Happiness = 10, Money = 40000, Smarts = 4 }, resultText = "Got it! Big responsibility but bigger paycheck!", setFlag = "executive" },
+			{ text = "⚖️ Decline - work-life balance", effects = { Happiness = 4, Smarts = 3, Money = 20000 }, resultText = "Turned it down for sanity. Got a smaller raise for staying." },
+			{ text = "🤷 Don't pursue it", effects = { Happiness = -10 }, resultText = "Someone more aggressive got it. Watching them in the corner office stings." },
 		},
 	},
 	
@@ -153,12 +153,12 @@ module.events = {
 			local screenings = {"colonoscopy", "mammogram/prostate exam", "cardiac stress test", "full bloodwork", "comprehensive physical"}
 			return { screening = screenings[math.random(#screenings)] }
 		end,
-		text = "Time for your %screening%. Preventive care matters at this age.",
+		text = "Time for your %screening%. Preventive care matters at this age. What do you do?",
 		choices = {
-			{ text = "✅ All clear!", effects = { Health = 5, Happiness = 10 }, resultText = "Clean bill of health! Keep doing what you're doing!", setFlag = "health_conscious" },
-			{ text = "⚠️ Something to watch", effects = { Health = -2, Happiness = -4, Smarts = 3 }, resultText = "Nothing serious but need to monitor. Wake-up call." },
-			{ text = "😬 Avoided it", effects = { Happiness = 2, Health = -3 }, resultText = "Ignoring it won't make it go away. Schedule it!" },
-			{ text = "🥗 Led to lifestyle changes", effects = { Health = 8, Happiness = 4 }, resultText = "Results motivated positive changes!", setFlags = {"health_conscious", "lifestyle_change"} },
+			{ text = "✅ Schedule and go", effects = { Health = 5, Happiness = 10 }, resultText = "All clear! Clean bill of health! Good choice scheduling that!", setFlag = "health_conscious" },
+			{ text = "📅 Put it off a bit", effects = { Health = -2, Happiness = -4, Smarts = 3 }, resultText = "Eventually went. Found something to monitor. Should've gone sooner." },
+			{ text = "😬 Skip it entirely", effects = { Happiness = 2, Health = -8 }, resultText = "Ignored it. Hope nothing's brewing. Probably should schedule..." },
+			{ text = "🥗 Go AND improve lifestyle", effects = { Health = 8, Happiness = 4 }, resultText = "Went, got good results, AND started eating better! Double win!", setFlags = {"health_conscious", "lifestyle_change"} },
 		},
 	},
 	

@@ -115,12 +115,12 @@ module.events = {
 		weight = 45, cooldown = 2,
 		emoji = "📋", title = "Semester Grades!",
 		category = "school",
-		text = "Grades are in! How did you do?",
+		text = "Finals are over. How did you approach this semester?",
 		choices = {
-			{ text = "🎓 Dean's List!", effects = { Smarts = 12, Happiness = 10 }, resultText = "4.0! Your hard work paid off!", setFlag = "deans_list" },
-			{ text = "📊 Solid B average", effects = { Smarts = 6, Happiness = 4 }, resultText = "Good enough! Still on track." },
-			{ text = "😅 Barely passed", effects = { Smarts = 2, Happiness = -3 }, resultText = "That was close. Time to step it up." },
-			{ text = "📉 Academic probation", effects = { Smarts = -2, Happiness = -8 }, resultText = "Uh oh. Need to turn things around FAST." },
+			{ text = "📚 Studied hard all semester", effects = { Smarts = 12, Happiness = 10 }, resultText = "DEAN'S LIST! 4.0! All those library nights paid off!", setFlag = "deans_list" },
+			{ text = "⚖️ Balanced school and fun", effects = { Smarts = 6, Happiness = 4 }, resultText = "Solid B average. Good balance! On track to graduate." },
+			{ text = "🎉 Partied too much", effects = { Smarts = 2, Happiness = -3 }, resultText = "Barely passed. Professor curved the final, thank god." },
+			{ text = "😴 Skipped way too many classes", effects = { Smarts = -2, Happiness = -8 }, resultText = "Academic probation. One more bad semester and you're out. Wake up!" },
 		},
 	},
 	
@@ -269,12 +269,12 @@ module.events = {
 			local raise = math.random(5000, 15000)
 			return { title = titles[math.random(#titles)], raise = raise }
 		end,
-		text = "There's an opening for %title%! $%raise% raise if you get it!",
+		text = "There's an opening for %title%! $%raise% raise if you get it! How do you approach it?",
 		choices = {
-			{ text = "🎉 GOT IT!", effects = { Happiness = 12, Money = 8000, Smarts = 4 }, resultText = "Promotion secured! Moving up!", setFlag = "promoted" },
-			{ text = "😔 Passed over", effects = { Happiness = -8, Smarts = 2 }, resultText = "Someone else got it. That stings." },
-			{ text = "💪 Made a strong case", effects = { Happiness = 6, Smarts = 5, Money = 5000 }, resultText = "You showed your value. Next time for sure!" },
-			{ text = "🚀 Time to job hop", effects = { Happiness = 4, Money = 10000 }, resultText = "If they won't promote you, someone else will!", setFlag = "job_hopper" },
+			{ text = "📊 Prepare and apply formally", effects = { Happiness = 12, Money = 8000, Smarts = 4 }, resultText = "Your preparation impressed them! PROMOTED! Moving up!", setFlag = "promoted" },
+			{ text = "🤷 Don't apply", effects = { Happiness = -8, Smarts = 2 }, resultText = "The position went to someone who did apply. Regret?" },
+			{ text = "🗣️ Talk to your boss first", effects = { Happiness = 6, Smarts = 5, Money = 5000 }, resultText = "Didn't get it, but boss knows you're ambitious. Raise anyway!" },
+			{ text = "💼 Start looking elsewhere", effects = { Happiness = 4, Money = 10000 }, resultText = "Found a better offer! New job with higher title AND more money!", setFlag = "job_hopper" },
 		},
 	},
 	
