@@ -1,12 +1,12 @@
 -- NarrativeContent.lua
--- MASSIVE BitLife-style text content library
--- Contains 1500+ narrative variations for rich storytelling
+-- MASSIVE BitLife-style text content library (v2 – expanded & richer)
+-- Contains well over 1500 narrative variations for rich storytelling
 -- NO LOGIC - PURE CONTENT ONLY
 
 local NarrativeContent = {}
 
 ----------------------------------------------------------------------
--- STAT NARRATIVE VARIATIONS (40+ per bucket = 640+ total stat lines)
+-- STAT NARRATIVE VARIATIONS (expanded, more BitLife-style flavor)
 ----------------------------------------------------------------------
 
 NarrativeContent.StatNarrative = {
@@ -23,6 +23,17 @@ NarrativeContent.StatNarrative = {
 				"Your spirits rose ever so slightly.",
 				"Life doesn't seem quite so bad.",
 				"You caught yourself humming a tune.",
+				-- extra
+				"A tiny spark of hope flickered inside you.",
+				"You felt just a little lighter than before.",
+				"Something small went right for once.",
+				"Your day turned out better than you expected.",
+				"You noticed you're not as stressed as before.",
+				"You found a tiny moment of peace.",
+				"You realized you're complaining a bit less.",
+				"A quiet contentment settled in.",
+				"You smiled at a random thought.",
+				"You actually meant it when you said 'I'm okay.'",
 			},
 			medium = {
 				"Your happiness noticeably improved.",
@@ -35,6 +46,17 @@ NarrativeContent.StatNarrative = {
 				"You caught yourself actually enjoying life.",
 				"A wave of contentment washed over you.",
 				"Your spirits are noticeably higher.",
+				-- extra
+				"You felt like a weight finally came off your chest.",
+				"You started looking forward to tomorrow.",
+				"You laughed harder than you have in a while.",
+				"You realized you haven't felt this good in some time.",
+				"The world suddenly seemed a little more colorful.",
+				"You caught yourself being optimistic.",
+				"You actually meant it when you said 'today was good.'",
+				"You stopped doom-scrolling and enjoyed the moment.",
+				"You found real joy in something simple.",
+				"You felt genuinely grateful to be alive.",
 			},
 			big = {
 				"You felt a huge boost of joy.",
@@ -47,6 +69,17 @@ NarrativeContent.StatNarrative = {
 				"Pure happiness flooded through you.",
 				"You feel like you could take on the world.",
 				"Your heart is soaring.",
+				-- extra
+				"You felt like you were living in a highlight reel.",
+				"You honestly couldn't stop grinning.",
+				"This became a core memory level moment.",
+				"You forgot your problems for a while.",
+				"You felt like the luckiest person alive.",
+				"You wanted to freeze this feeling forever.",
+				"You felt lighter than air.",
+				"You wished you could text everyone about your day.",
+				"You felt like everything finally clicked.",
+				"You realized you genuinely like your life right now.",
 			},
 			huge = {
 				"This was a life-changing moment of happiness.",
@@ -59,6 +92,17 @@ NarrativeContent.StatNarrative = {
 				"Nothing could bring you down right now.",
 				"This is the happiest you've ever been.",
 				"Your soul is singing with joy.",
+				-- extra
+				"You felt like every struggle led to this moment.",
+				"You genuinely thought, 'I wish this never ends.'",
+				"You felt joy radiating out of your chest.",
+				"You couldn't believe this was your life now.",
+				"You knew you'd be telling this story for years.",
+				"You felt like you were glowing from the inside out.",
+				"It felt like the universe finally gave you a win.",
+				"You forgot what sadness even felt like.",
+				"You felt completely at peace with everything.",
+				"You realized this was one of the best days of your life.",
 			},
 		},
 		down = {
@@ -73,6 +117,17 @@ NarrativeContent.StatNarrative = {
 				"Your spirits dropped slightly.",
 				"The day got a little grayer.",
 				"You let out a small sigh.",
+				-- extra
+				"You felt a bit off for the rest of the day.",
+				"Your good mood slowly faded.",
+				"You weren't as talkative as before.",
+				"Little things started bothering you more.",
+				"You felt your patience wearing thin.",
+				"You caught yourself zoning out more.",
+				"Your smile didn't come as easily.",
+				"You felt a quiet heaviness you couldn't explain.",
+				"You brushed it off, but it stuck with you.",
+				"You felt mildly annoyed at everything.",
 			},
 			medium = {
 				"This took a toll on your happiness.",
@@ -85,6 +140,17 @@ NarrativeContent.StatNarrative = {
 				"The joy drained from your face.",
 				"Life feels heavier than before.",
 				"You can't shake this down feeling.",
+				-- extra
+				"You lost interest in things you usually enjoy.",
+				"You felt like the day was ruined.",
+				"You kept replaying what happened in your head.",
+				"You found it hard to fake a smile.",
+				"You felt like nothing was going your way.",
+				"You just wanted to be left alone.",
+				"You stared at your phone, not really seeing it.",
+				"You felt that familiar ache in your chest.",
+				"You wondered when things would finally ease up.",
+				"You went quiet, even around people you trust.",
 			},
 			big = {
 				"Your happiness plummeted.",
@@ -97,6 +163,17 @@ NarrativeContent.StatNarrative = {
 				"This hit you harder than expected.",
 				"You're struggling to see the bright side.",
 				"Your heart feels incredibly heavy.",
+				-- extra
+				"You felt like crying over the smallest things.",
+				"You kept wondering why this always happens to you.",
+				"You felt completely drained emotionally.",
+				"You didn't recognize yourself in this mood.",
+				"You wanted to disappear for a while.",
+				"You felt like everything was falling apart.",
+				"You couldn't find a single thing to be happy about.",
+				"It felt like someone turned down the brightness on life.",
+				"You felt painfully alone, even around others.",
+				"You couldn't remember the last time you felt okay.",
 			},
 			huge = {
 				"You were devastated by this.",
@@ -109,6 +186,17 @@ NarrativeContent.StatNarrative = {
 				"The world lost all its color.",
 				"You can't stop the tears.",
 				"Everything feels hopeless.",
+				-- extra
+				"You felt like your whole life was unraveling.",
+				"You couldn't see a way out of how you felt.",
+				"You questioned everything about your life.",
+				"You felt like you had nothing left in the tank.",
+				"You stared at the ceiling, numb and exhausted.",
+				"You felt like the universe was against you.",
+				"You couldn't remember what happiness felt like.",
+				"You felt like you were watching your life from far away.",
+				"You genuinely wondered how things got this bad.",
+				"You felt shattered in a way that words couldn't explain.",
 			},
 		},
 	},
@@ -126,6 +214,17 @@ NarrativeContent.StatNarrative = {
 				"You feel a touch more vital.",
 				"Your stamina improved a bit.",
 				"You're breathing a little easier.",
+				-- extra
+				"You woke up feeling a bit more rested.",
+				"You didn't feel quite as drained as usual.",
+				"Your body felt just a little less stiff.",
+				"You noticed you weren't as out of breath.",
+				"You realized your headaches are less frequent.",
+				"You felt just healthy enough to notice the difference.",
+				"You had a bit more spring in your step.",
+				"Your body didn't complain as much today.",
+				"You felt a small but real improvement overall.",
+				"You caught yourself moving more without thinking.",
 			},
 			medium = {
 				"Your health noticeably improved.",
@@ -138,6 +237,17 @@ NarrativeContent.StatNarrative = {
 				"Your body is healing nicely.",
 				"You're noticeably more energetic.",
 				"Your vitality has clearly improved.",
+				-- extra
+				"You woke up actually feeling refreshed.",
+				"You realized you can do more without getting tired.",
+				"Your body feels like it's finally cooperating.",
+				"You feel less weighed down by aches and pains.",
+				"You can move around with much more ease.",
+				"You felt proud of how far your health has come.",
+				"You noticed your habits are finally paying off.",
+				"You felt more in control of your wellbeing.",
+				"You made it through the day without crashing.",
+				"You felt strong enough to take on extra challenges.",
 			},
 			big = {
 				"Your health made a big recovery.",
@@ -150,6 +260,17 @@ NarrativeContent.StatNarrative = {
 				"You're bursting with energy.",
 				"Your health has transformed.",
 				"You feel incredibly strong.",
+				-- extra
+				"You felt like you got your body back.",
+				"You moved in ways you haven't in years.",
+				"You felt unstoppable physically.",
+				"You couldn't believe how light you felt.",
+				"You forgot what it was like to feel this good.",
+				"You felt like you could run a marathon.",
+				"Your reflection looked measurably healthier.",
+				"You realized you're in the best shape you've been in a long time.",
+				"You felt powerful in your own skin.",
+				"You stopped worrying about your body holding you back.",
 			},
 			huge = {
 				"This turned your health around.",
@@ -162,6 +283,17 @@ NarrativeContent.StatNarrative = {
 				"You feel invincible physically.",
 				"Your vitality hit maximum levels.",
 				"A complete health renaissance.",
+				-- extra
+				"You got the kind of recovery people pray for.",
+				"You felt like your body reset to factory settings.",
+				"You realized you're healthier now than in your youth.",
+				"Doctors would be impressed by your turnaround.",
+				"You felt like you dodged something truly serious.",
+				"You promised yourself you wouldn't waste this second chance.",
+				"You felt entirely restored from the inside out.",
+				"You moved without fear, pain, or hesitation.",
+				"You finally trusted your body again.",
+				"You felt like you could rewrite your entire lifestyle now.",
 			},
 		},
 		down = {
@@ -176,6 +308,17 @@ NarrativeContent.StatNarrative = {
 				"A small toll on your health.",
 				"Your stamina dropped slightly.",
 				"You feel a bit more tired.",
+				-- extra
+				"You noticed a little ache that wasn't there before.",
+				"You felt more sluggish than usual.",
+				"You brushed off a small symptom, but you noticed it.",
+				"You felt a light headache lingering.",
+				"You realized you're not bouncing back as fast.",
+				"You felt your body protesting a bit.",
+				"You needed a bit more rest than normal.",
+				"You didn't feel awful, just not quite right.",
+				"You caught yourself thinking, 'I should take better care of myself.'",
+				"You felt like you might be coming down with something.",
 			},
 			medium = {
 				"This hurt your health.",
@@ -188,6 +331,17 @@ NarrativeContent.StatNarrative = {
 				"Your energy is notably low.",
 				"Your vitality dropped significantly.",
 				"You're paying for this physically.",
+				-- extra
+				"You had to slow down your whole day.",
+				"You felt wiped out just doing basic things.",
+				"You started worrying about your health more seriously.",
+				"You felt your body begging for rest.",
+				"You realized you can't ignore this anymore.",
+				"You felt weaker than you're used to.",
+				"You needed help with things you normally handle alone.",
+				"You felt constantly drained.",
+				"You noticed symptoms stacking up.",
+				"You could feel yourself getting worse, not better.",
 			},
 			big = {
 				"Your health took a serious hit.",
@@ -200,6 +354,17 @@ NarrativeContent.StatNarrative = {
 				"You feel terrible physically.",
 				"Your health is in serious decline.",
 				"You're struggling to stay upright.",
+				-- extra
+				"You felt like your body was betraying you.",
+				"You were forced to cancel plans and responsibilities.",
+				"You realized you might need medical help.",
+				"You felt exhausted just walking across the room.",
+				"You couldn't do even basic tasks without strain.",
+				"You felt fragile in a way that scared you.",
+				"You started questioning how long you can keep this up.",
+				"You lay down more than you stood.",
+				"You watched your strength slip away day by day.",
+				"You felt like your body simply gave up.",
 			},
 			huge = {
 				"Your health collapsed after this.",
@@ -212,6 +377,17 @@ NarrativeContent.StatNarrative = {
 				"You've never felt this sick.",
 				"This was life-threateningly serious.",
 				"Your health hit rock bottom.",
+				-- extra
+				"You realized how fragile staying alive really is.",
+				"You needed serious intervention to keep going.",
+				"You felt like every breath was borrowed time.",
+				"You saw fear in other people's faces when they looked at you.",
+				"You wondered if you'd ever fully recover.",
+				"You understood, painfully, that you're not invincible.",
+				"You felt like your body was hanging by a thread.",
+				"You questioned every choice that led your health here.",
+				"You clung to hope with whatever strength you had left.",
+				"You knew this chapter would change everything, one way or another.",
 			},
 		},
 	},
@@ -229,6 +405,17 @@ NarrativeContent.StatNarrative = {
 				"Your brain appreciated that.",
 				"A minor mental upgrade.",
 				"Your knowledge base grew a bit.",
+				-- extra
+				"You connected a couple of ideas you hadn't before.",
+				"You understood something that confused you earlier.",
+				"You felt quicker in conversations.",
+				"You caught a detail you usually would've missed.",
+				"You realized you remembered more than you thought.",
+				"Your brain felt just a bit more awake.",
+				"You picked up a neat little fact for later.",
+				"You felt proud of how fast you caught on.",
+				"You understood a joke you might've missed before.",
+				"You realized you're not as clueless as you thought.",
 			},
 			medium = {
 				"Your smarts improved noticeably.",
@@ -241,6 +428,17 @@ NarrativeContent.StatNarrative = {
 				"Your thinking has leveled up.",
 				"You're noticeably more knowledgeable.",
 				"Your cognitive growth is evident.",
+				-- extra
+				"You solved problems that would've stumped you before.",
+				"You understood concepts on the first try.",
+				"You impressed yourself with how quickly you learn now.",
+				"You started giving smarter advice to others.",
+				"You realized studying actually paid off.",
+				"You caught mistakes others completely missed.",
+				"You felt more confident answering hard questions.",
+				"You processed complex ideas without getting lost.",
+				"You felt mentally 'on' all day.",
+				"You noticed your perspective becoming more nuanced.",
 			},
 			big = {
 				"Your intelligence jumped up.",
@@ -253,6 +451,17 @@ NarrativeContent.StatNarrative = {
 				"You feel like a genius.",
 				"Your mind opened up dramatically.",
 				"This was incredibly enlightening.",
+				-- extra
+				"You started seeing patterns everywhere.",
+				"You felt like puzzles in life suddenly made sense.",
+				"You understood things people usually struggle with.",
+				"You surprised others with how sharp you've become.",
+				"You handled complex decisions with clarity.",
+				"You made connections that changed how you see the world.",
+				"You felt like your IQ just leveled up for real.",
+				"You could explain hard topics in simple ways.",
+				"You realized you think on a different level now.",
+				"You felt mentally unstoppable.",
 			},
 			huge = {
 				"You feel downright brilliant after this.",
@@ -265,6 +474,17 @@ NarrativeContent.StatNarrative = {
 				"Your brain underwent a transformation.",
 				"You feel like the smartest person alive.",
 				"Your cognitive abilities are superhuman.",
+				-- extra
+				"You processed information like a supercomputer.",
+				"You felt like every problem had an elegant solution.",
+				"You could predict outcomes with scary accuracy.",
+				"You understood systems most people don't even notice.",
+				"You felt like your mind stepped into a higher tier.",
+				"You became the person others come to for answers.",
+				"You saw through nonsense instantly.",
+				"You could hold complex ideas in your head with ease.",
+				"You felt like you'd never think the same way again.",
+				"You realized you can out-think almost anyone now.",
 			},
 		},
 		down = {
@@ -279,6 +499,17 @@ NarrativeContent.StatNarrative = {
 				"Your mind wandered off course.",
 				"You feel marginally less sharp.",
 				"Your cognitive edge dulled slightly.",
+				-- extra
+				"You forgot what you were saying mid-sentence.",
+				"You had to reread the same line a few times.",
+				"You couldn't focus the way you usually do.",
+				"You missed an obvious detail.",
+				"You felt mentally 'off' for no clear reason.",
+				"You struggled to find the right word.",
+				"You lost your train of thought more than once.",
+				"You felt easily distracted by everything.",
+				"You caught yourself zoning out a lot.",
+				"Your thoughts felt just a bit heavier.",
 			},
 			medium = {
 				"You aren't thinking as clearly.",
@@ -291,6 +522,17 @@ NarrativeContent.StatNarrative = {
 				"Your cognitive abilities suffered.",
 				"You're having trouble thinking straight.",
 				"Your mental sharpness declined.",
+				-- extra
+				"You made mistakes you normally wouldn't.",
+				"You struggled to follow conversations.",
+				"Thinking felt like wading through mud.",
+				"You felt slower than everyone around you.",
+				"You couldn't keep track of details.",
+				"You second-guessed even simple decisions.",
+				"You felt like your brain needed a reboot.",
+				"You couldn't process information at your usual speed.",
+				"You forgot basic things embarrassingly often.",
+				"You felt intellectually drained.",
 			},
 			big = {
 				"Your smarts took a serious hit.",
@@ -303,6 +545,17 @@ NarrativeContent.StatNarrative = {
 				"Your cognitive functions are severely impaired.",
 				"You feel genuinely stupid.",
 				"This fried your brain.",
+				-- extra
+				"You struggled with things that used to be easy.",
+				"You felt embarrassingly out of your depth.",
+				"You watched your confidence in your intelligence collapse.",
+				"You couldn't hold a thought long enough to use it.",
+				"You felt like your brain just wouldn't cooperate.",
+				"You zoned out even in important moments.",
+				"You felt ashamed of how confused you were.",
+				"You couldn't organize your thoughts at all.",
+				"You felt dangerously unfocused.",
+				"You wondered if you'd ever feel as sharp again.",
 			},
 			huge = {
 				"This completely scrambled you.",
@@ -315,6 +568,17 @@ NarrativeContent.StatNarrative = {
 				"You feel brain-dead.",
 				"This was a mental apocalypse.",
 				"Your wisdom evaporated entirely.",
+				-- extra
+				"You felt like your mind simply wasn't there.",
+				"You couldn't follow even basic logic.",
+				"You stared at things without processing them.",
+				"You felt terrifyingly disconnected from your own thoughts.",
+				"You couldn't trust your own judgment at all.",
+				"Your mind felt like static noise.",
+				"You felt like your intelligence just shut off.",
+				"You forgot things moments after hearing them.",
+				"You completely blanked at crucial times.",
+				"You realized how scary it is to lose your mental edge.",
 			},
 		},
 	},
@@ -332,6 +596,17 @@ NarrativeContent.StatNarrative = {
 				"You feel slightly more put-together.",
 				"A small boost to your appearance.",
 				"You're looking a tad sharper.",
+				-- extra
+				"You caught your reflection and didn't hate it.",
+				"You noticed a small but satisfying change.",
+				"You felt more comfortable being seen.",
+				"You took a selfie and didn't immediately delete it.",
+				"You felt slightly more confident in your skin.",
+				"You looked more awake and alive.",
+				"You felt like your efforts are starting to show.",
+				"You started liking certain angles of yourself.",
+				"You noticed people glancing at you a bit more.",
+				"You felt a tiny boost of vanity, in a good way.",
 			},
 			medium = {
 				"You had a noticeable glow-up.",
@@ -344,6 +619,17 @@ NarrativeContent.StatNarrative = {
 				"Your attractiveness is clearly higher.",
 				"You've got a new confidence in your appearance.",
 				"Your style game improved.",
+				-- extra
+				"You started catching double-takes from strangers.",
+				"You felt great walking past mirrors.",
+				"You got compliments you aren't used to hearing.",
+				"You actually liked how you look in photos.",
+				"You felt more bold with your style.",
+				"You noticed your posture getting more confident.",
+				"You felt like you've finally found your look.",
+				"You enjoyed getting ready instead of dreading it.",
+				"You felt proud of how far your appearance has come.",
+				"You realized you're becoming someone you'd crush on.",
 			},
 			big = {
 				"You had a major glow-up.",
@@ -356,6 +642,17 @@ NarrativeContent.StatNarrative = {
 				"You feel incredibly good-looking.",
 				"Your attractiveness is through the roof.",
 				"You could be a model.",
+				-- extra
+				"You walked into rooms and felt eyes on you.",
+				"You felt like the main character in every setting.",
+				"You started getting attention you never expected.",
+				"You looked like your own 'after' picture.",
+				"You felt stunning in almost anything you wore.",
+				"You noticed your confidence changing how others see you.",
+				"You looked like you belong on someone's mood board.",
+				"You felt like the 'hot friend' now.",
+				"You could feel your presence change a room.",
+				"You realized you've become someone's dream look.",
 			},
 			huge = {
 				"You're basically a model now.",
@@ -368,6 +665,17 @@ NarrativeContent.StatNarrative = {
 				"Your beauty is otherworldly.",
 				"You've become drop-dead gorgeous.",
 				"Your looks could launch a thousand ships.",
+				-- extra
+				"You look like you stepped out of a movie.",
+				"People do double-takes when you walk by.",
+				"You look like you belong on a billboard.",
+				"You became the reference photo people bring to salons.",
+				"Your reflection looks like a professionally edited version of you.",
+				"You felt unreal, like someone drew you perfectly.",
+				"You turned into the type of person others stalk on social media.",
+				"You look like your own glow-up TikTok transition.",
+				"You could crash apps with a single profile picture.",
+				"You look so good it feels slightly unfair to everyone else.",
 			},
 		},
 		down = {
@@ -382,6 +690,17 @@ NarrativeContent.StatNarrative = {
 				"You feel slightly less confident about your looks.",
 				"A small ding to your attractiveness.",
 				"You're looking a tad worn.",
+				-- extra
+				"You caught your reflection and winced a little.",
+				"You looked more tired than you'd like.",
+				"You felt off your usual look game.",
+				"You noticed small things that bothered you.",
+				"You didn't feel as photogenic today.",
+				"You needed a bit more effort to look presentable.",
+				"You felt like your outfit wasn't helping.",
+				"You saw subtle signs of stress on your face.",
+				"You weren't in the mood for pictures.",
+				"You felt underwhelmed by how you looked.",
 			},
 			medium = {
 				"This didn't do your looks any favors.",
@@ -394,6 +713,17 @@ NarrativeContent.StatNarrative = {
 				"You're struggling with your appearance.",
 				"Your attractiveness faded noticeably.",
 				"This really hurt your looks.",
+				-- extra
+				"You avoided mirrors more than usual.",
+				"You didn't recognize yourself in photos.",
+				"You felt insecure around almost everyone.",
+				"You noticed people reacting differently to you.",
+				"You felt your confidence crumble in public.",
+				"You struggled to find an angle you liked.",
+				"You felt like every flaw was highlighted.",
+				"You didn't feel like yourself aesthetically.",
+				"You saw stress and exhaustion written on your face.",
+				"You felt like your appearance aged overnight.",
 			},
 			big = {
 				"Your looks took a major hit.",
@@ -406,6 +736,17 @@ NarrativeContent.StatNarrative = {
 				"This really damaged your appearance.",
 				"You can't stand looking in the mirror.",
 				"Your attractiveness plummeted.",
+				-- extra
+				"You felt almost unrecognizable to yourself.",
+				"You dreaded seeing new photos of yourself.",
+				"You felt painfully aware of how you looked.",
+				"You felt like every reaction to you changed.",
+				"You saw exhaustion, stress, and damage all at once.",
+				"You struggled to feel worthy of attention.",
+				"You felt like your looks were working against you.",
+				"You felt devastated by your reflection.",
+				"You felt swallowed by insecurity.",
+				"You seriously wondered if you'd ever feel attractive again.",
 			},
 			huge = {
 				"This wrecked your appearance.",
@@ -418,6 +759,17 @@ NarrativeContent.StatNarrative = {
 				"This permanently damaged your looks.",
 				"You feel like the ugliest person alive.",
 				"Your visual appeal is non-existent.",
+				-- extra
+				"You felt like your face told the story of everything you've been through.",
+				"You looked at old photos and barely believed they were you.",
+				"You felt like your appearance would never fully recover.",
+				"You felt broken by how drastically you've changed.",
+				"You avoided cameras like they were dangerous.",
+				"You felt trapped in a version of yourself you didn't choose.",
+				"You couldn't hide the damage, no matter how you tried.",
+				"You felt like your old self had disappeared entirely.",
+				"You saw a stranger in the mirror staring back.",
+				"You wondered if anyone would ever see you the same way again.",
 			},
 		},
 	},
@@ -440,6 +792,17 @@ NarrativeContent.MoneyNarrative = {
 			"You scraped together some extra money.",
 			"A bit of extra income arrived.",
 			"You pocketed a little something.",
+			-- extra
+			"You found a little more in your balance than expected.",
+			"You got just enough to treat yourself to something small.",
+			"You padded your wallet with a light boost.",
+			"You earned a little something on the side.",
+			"You got a casual, no-pressure bit of income.",
+			"A small bonus brightened your day.",
+			"You picked up some side money without much effort.",
+			"You made enough to not feel completely broke.",
+			"You quietly stacked a tiny bit more.",
+			"It wasn't life-changing, but it helped.",
 		},
 		medium = {
 			"You scored a solid payout.",
@@ -452,6 +815,17 @@ NarrativeContent.MoneyNarrative = {
 			"Money well earned.",
 			"You pulled in some good cash.",
 			"Financial gains are looking good.",
+			-- extra
+			"You finally had some breathing room in your budget.",
+			"You made enough to actually notice the difference.",
+			"You felt that paycheck hit in a real way.",
+			"You got paid for your efforts, and it felt right.",
+			"Your wallet felt heavier than usual.",
+			"You smiled when you checked your balance.",
+			"You made smart moves that actually paid out.",
+			"You earned enough to relax a little.",
+			"You felt justified in your hard work.",
+			"This put you comfortably ahead for now.",
 		},
 		large = {
 			"You hit a big financial win!",
@@ -464,6 +838,17 @@ NarrativeContent.MoneyNarrative = {
 			"You made bank!",
 			"A life-changing sum arrived!",
 			"Financial dreams came true!",
+			-- extra
+			"You went from budgeting to balling overnight.",
+			"You stared at your balance in disbelief.",
+			"You realized this money changes what you can do now.",
+			"You felt like you unlocked a new financial tier.",
+			"You could finally afford things you only scrolled past before.",
+			"You upgraded from 'barely getting by' to 'comfortable' in one hit.",
+			"You felt like whatever you did really paid off.",
+			"You mentally started making big plans.",
+			"You felt the weight of money stress slide off your shoulders.",
+			"This payout put you on a whole different playing field.",
 		},
 	},
 	loss = {
@@ -478,6 +863,17 @@ NarrativeContent.MoneyNarrative = {
 			"A modest expense occurred.",
 			"Your wallet got a bit lighter.",
 			"A small price to pay.",
+			-- extra
+			"You watched your balance nudge downward.",
+			"It stung a little, but you could live with it.",
+			"You parted ways with a bit of cash.",
+			"You shrugged and paid the small cost.",
+			"It wasn't fun, but it wasn't devastating.",
+			"You ended up slightly poorer, but not by much.",
+			"You accepted it as one of those everyday expenses.",
+			"You sighed and tapped 'confirm purchase' anyway.",
+			"It was one of those 'it adds up over time' costs.",
+			"You mentally noted to chill on small spending.",
 		},
 		medium = {
 			"This cost you a decent amount.",
@@ -490,6 +886,17 @@ NarrativeContent.MoneyNarrative = {
 			"Money flew out pretty fast.",
 			"A painful expense occurred.",
 			"That set you back financially.",
+			-- extra
+			"You felt that payment in your soul.",
+			"You had to rethink your next few purchases.",
+			"You watched your balance dip lower than you'd like.",
+			"You realized you'll need to be careful for a while.",
+			"You mentally adjusted your budget on the spot.",
+			"You regretted it a little, but it was already done.",
+			"You paid the bill and winced at the total.",
+			"You felt your savings lose some of their cushion.",
+			"You wondered if there was a cheaper option.",
+			"You knew this would ripple through your finances for a bit.",
 		},
 		large = {
 			"You lost a massive amount.",
@@ -502,12 +909,23 @@ NarrativeContent.MoneyNarrative = {
 			"A fortune vanished.",
 			"You're suddenly much poorer.",
 			"Financial disaster struck.",
+			-- extra
+			"You stared at your remaining balance in disbelief.",
+			"You felt panic creeping in as the numbers updated.",
+			"You realized this changes everything about your plans.",
+			"You went from stable to struggling in one move.",
+			"You watched months or years of saving disappear.",
+			"You felt like you’d been financially knocked out.",
+			"You questioned every decision that led to this point.",
+			"You knew it would take a long time to recover.",
+			"You felt sick thinking about the loss.",
+			"This wiped out the safety net you were counting on.",
 		},
 	},
 }
 
 ----------------------------------------------------------------------
--- FLAG DESCRIPTIONS (100+ life flags)
+-- FLAG DESCRIPTIONS (expanded – 100+ life flags)
 ----------------------------------------------------------------------
 
 NarrativeContent.FlagDescriptions = {
@@ -521,6 +939,7 @@ NarrativeContent.FlagDescriptions = {
 	city_council = "You won a seat on city council.",
 	mayor = "You became the mayor of your city.",
 	state_rep = "You were elected to the state legislature.",
+	state_representative = "You were elected to the state legislature.",
 	state_senator = "You moved up to state-level politics.",
 	governor = "You became the governor of your state.",
 	congressman = "You became a member of Congress.",
@@ -528,12 +947,15 @@ NarrativeContent.FlagDescriptions = {
 	presidential_candidate = "You're running for President!",
 	won_debate = "You dominated the presidential debate.",
 	president = "You reached the highest office in the country.",
+	vice_president = "You became the Vice President of the country.",
 	inaugurated = "You were officially inaugurated as President.",
 
 	-- CRIMINAL PATH
 	criminal_tendencies = "You began dipping your toes into the criminal world.",
 	petty_thief = "You started stealing small things.",
+	shoplifter = "You got caught swiping things that weren't yours.",
 	car_thief = "You picked up a reputation for stealing cars.",
+	burglar = "You started breaking into other people's property.",
 	arrested = "You've been arrested by police.",
 	snitch = "You cooperated with the authorities.",
 	did_time = "You served time in prison.",
@@ -548,6 +970,7 @@ NarrativeContent.FlagDescriptions = {
 	master_thief = "You pulled off a legendary heist.",
 	underboss = "You rose to the rank of underboss.",
 	crime_boss = "You became the boss of a criminal organization.",
+	kingpin = "You became the undisputed kingpin of the underworld.",
 	empire_built = "Your criminal empire spans multiple cities.",
 
 	-- TEACHER PATH
@@ -586,7 +1009,7 @@ NarrativeContent.FlagDescriptions = {
 	art_celebrity = "You're a celebrity in the art world.",
 	art_legend = "Your legacy is cemented in art history.",
 
-	-- HACKER PATH
+	-- HACKER / TECH PATH
 	computer_interest = "You discovered a fascination with computers.",
 	programmer = "You became fluent in programming.",
 	hacker_skills = "You learned to hack systems.",
@@ -602,33 +1025,54 @@ NarrativeContent.FlagDescriptions = {
 	startup_founder = "You founded your own tech company.",
 	tech_billionaire = "You became a tech billionaire.",
 
-	-- EDUCATION
+	-- EDUCATION / PERSONAL DEVELOPMENT
 	studious = "You were always focused on learning.",
 	college_student = "You're attending college.",
 	trade_student = "You're learning a trade.",
 	job_hunting = "You entered the workforce.",
 	honor_student = "You were recognized as an honor student.",
 	rebel = "You live by your own rules.",
+	dropout = "You decided traditional education wasn't for you.",
+	self_taught = "You taught yourself what you needed to know.",
+	self_made = "You built your success from the ground up.",
 
-	-- CHILDHOOD
+	-- CHILDHOOD / LIFE MILESTONES
 	athletic_child = "You were always the athletic one.",
 	has_license = "You got your driver's license.",
 	pet_owner = "You have a loyal pet companion.",
+	first_job = "You started working your very first job.",
+	moved_out = "You finally moved out on your own.",
+	first_apartment = "You signed the lease on your first place.",
+	homeowner = "You became a homeowner.",
+	parent = "You stepped into the world of parenthood.",
+	grandparent = "You became a grandparent.",
 
-	-- CAREER GENERAL
+	-- CAREER GENERAL / MONEY
 	retired = "You retired from work.",
 	famous = "You became famous.",
 	millionaire = "You became a millionaire.",
 	billionaire = "You became a billionaire.",
+	bankrupt = "You declared bankruptcy.",
+	unemployed = "You found yourself out of work.",
+	homeless = "You lost your home and stability.",
+	entrepreneur = "You started your own business.",
+	ceo = "You became the CEO of a company.",
 
 	-- RELATIONSHIPS
 	popular = "You're very popular.",
 	married = "You got married.",
+	engaged = "You got engaged to be married.",
 	in_love = "You're deeply in love.",
+	divorced = "You went through a divorce.",
+	widowed = "You lost your partner.",
+	heartbroken = "You had your heart broken.",
+	big_family = "You built a large, chaotic family.",
+	introvert = "You prefer a quiet, low-key social life.",
+	extrovert = "You thrive in social situations and crowds.",
 }
 
 ----------------------------------------------------------------------
--- YEAR RECAP TEMPLATES (BitLife-style multi-line summaries)
+-- YEAR RECAP TEMPLATES (BitLife-style multi-line summaries – expanded)
 ----------------------------------------------------------------------
 
 NarrativeContent.YearRecapTemplates = {
@@ -637,54 +1081,87 @@ NarrativeContent.YearRecapTemplates = {
 		"Age: %d years\nYou spent your days sleeping and crying.\nYour parents changed countless diapers.\nYou discovered your own toes.\nThe world was a blur of colors and sounds.\nEverything was new and fascinating.\nYou learned that crying gets you food.",
 		"Age: %d years\nLife as a baby is simple.\nYou ate, you slept, you cried.\nYour parents looked exhausted but happy.\nYou smiled for the first time.\nSomeone always picked you up when you fussed.\nYou were blissfully unaware of everything.",
 		"Age: %d years\nYou couldn't do much yet.\nBut you watched everything with wide eyes.\nYour parents made silly faces at you.\nYou tried to grab things and mostly failed.\nSleep was your best friend.\nThe world revolved around you.",
+		-- extra
+		"Age: %d years\nYou babbled nonsense that made perfect sense to you.\nYour laugh became everyone's favorite sound.\nYou reached for anything shiny or colorful.\nYou drooled on everything within reach.\nEvery little noise startled you.\nYou were the center of every photo.",
+		"Age: %d years\nYou spent most of the year being carried.\nYou recognized familiar faces and smiled.\nYou cried when they left the room.\nYou explored the world one chew toy at a time.\nThe smallest things made you giggle.\nLife was nothing but instincts and comfort.",
 	},
-	
+
 	toddler = {
 		"Age: %d years\nYou're starting to walk and talk.\nEverything in the house became climbable.\nYou said 'no' to almost everything.\nYour parents baby-proofed the entire house.\nYou discovered the joy of throwing food.\nTemper tantrums became your new skill.",
 		"Age: %d years\nToddler life is full of discoveries.\nYou learned new words every day.\nYou fell down constantly but kept trying.\nYou made friends with the family pet.\nYour favorite word was 'mine.'\nNaps were your parents' favorite time.",
 		"Age: %d years\nYou terrorized the household with energy.\nRunning was more fun than walking.\nYou asked 'why' approximately 500 times a day.\nYour imagination started to develop.\nEverything was a potential toy.\nYou started developing your personality.",
+		-- extra
+		"Age: %d years\nYou turned the living room into your playground.\nYou clung to your favorite stuffed toy.\nYou tried to copy everything adults did.\nYou insisted on doing things 'by myself.'\nYour moods switched in seconds.\nYou made huge messes and tiny memories.",
+		"Age: %d years\nYou tried to feed people your snacks.\nYou mispronounced words in the cutest ways.\nYou danced whenever music played.\nYou refused to wear anything you didn't like.\nBedtime became a daily negotiation.\nYou filled the house with chaos and laughter.",
 	},
 
 	early_childhood = {
 		"Age: %d years\nYou started making friends at preschool.\nPlaydates became a regular thing.\nYou learned your ABCs and 123s.\nYour favorite shows were on repeat.\nYou believed in Santa Claus with all your heart.\nBedtime stories were the best part of the day.",
 		"Age: %d years\nKindergarten was a big adventure.\nYou made macaroni art for your parents.\nYour best friend was your entire world.\nYou skinned your knee and thought you'd die.\nSnack time was sacred.\nYou dreamed of being a superhero.",
 		"Age: %d years\nChildhood was simple and sweet.\nYour biggest worry was which cartoon to watch.\nYou collected random rocks and treasures.\nHide and seek was serious business.\nYour parents were your heroes.\nLife was full of wonder and magic.",
+		-- extra
+		"Age: %d years\nYou learned to share, at least sometimes.\nYou thought teachers knew everything.\nYou argued over crayons and toys.\nRecess felt like freedom.\nYou believed every story adults told you.\nThe world still felt safe and small.",
+		"Age: %d years\nYou memorized songs from kids' shows.\nYou wore your favorite outfit on repeat.\nYou made up games no one else understood.\nYou lived for birthdays and holidays.\nYou thought growing up would be easy.\nLife was mostly snacks, naps, and wonder.",
 	},
 
 	childhood = {
 		"Age: %d years\nSchool became more serious.\nYou started doing real homework.\nFriendships began to have drama.\nYou discovered your first hobby.\nParents started saying 'when I was your age...'\nYou still believed adults knew everything.",
 		"Age: %d years\nElementary school life continued.\nYou learned multiplication tables.\nRecess was the best subject.\nYou had your first crush but pretended you didn't.\nBirthday parties were elaborate events.\nYou started questioning Santa Claus.",
 		"Age: %d years\nYou're becoming more independent.\nYou can ride a bike without training wheels.\nYou argue with siblings constantly.\nVideo games became very important.\nYou think you know everything.\nYour room is always a mess.",
+		-- extra
+		"Age: %d years\nYou balanced school, friends, and playtime.\nYou started to notice unfairness in the world.\nYour friendships felt like everything.\nYou argued with your parents over small things.\nYou discovered what you're good at.\nYou began to build early memories that will stay forever.",
+		"Age: %d years\nYou learned how mean kids can be sometimes.\nYou learned how kind they can be too.\nYou started to care about fitting in.\nYou secretly wished to be 'cool.'\nBedtime felt too early now.\nYou were still young, but growing fast.",
 	},
 
 	tween = {
 		"Age: %d years\nMiddle school is rough.\nYou're not a kid but not a teen.\nFriendships shift constantly.\nYou're very aware of being awkward.\nSchool dances are terrifying.\nYou spend hours on the internet.",
 		"Age: %d years\nYour body is changing and it's weird.\nYou care way too much what people think.\nDrama seems to follow everyone.\nYou're figuring out who you are.\nParents suddenly became embarrassing.\nMusic became very important to you.",
 		"Age: %d years\nThe tween years are confusing.\nYou're caught between childhood and teen life.\nHormones are doing strange things.\nYou discovered sarcasm.\nYour room became your sanctuary.\nYou think no one understands you.",
+		-- extra
+		"Age: %d years\nYou lived in hoodies, headphones, and attitude.\nYou felt everything way too strongly.\nFriend groups formed, shifted, and broke.\nYou learned the hard way who your real friends were.\nYou started hiding more of your life from adults.\nYou felt cringey and cool at the same time.",
+		"Age: %d years\nYou spent way too long on your phone.\nYou cared deeply about people who barely noticed you.\nYou started experimenting with your style.\nSchool felt like a social battlefield.\nYou rolled your eyes more than you smiled.\nYou were changing faster than you could process.",
 	},
 
 	teenage = {
 		"Age: %d years\nHigh school drama is real.\nYou're figuring out your identity.\nFriendships feel more intense.\nRomantic feelings are confusing.\nYou think you're invincible.\nThe future feels both exciting and scary.",
 		"Age: %d years\nTeen life is a rollercoaster.\nYou're making choices that actually matter.\nPeer pressure is constantly present.\nYou're pushing boundaries with parents.\nSocial media consumes your attention.\nYou're planning for life after high school.",
 		"Age: %d years\nYou're almost an adult but not quite.\nResponsibilities are increasing.\nYou have strong opinions about everything.\nYour friend group is your chosen family.\nYou're discovering who you really are.\nThe real world is approaching fast.",
+		-- extra
+		"Age: %d years\nYou stayed up late and woke up exhausted.\nYou swore you'd move out as soon as possible.\nYou fell in and out of love dramatically.\nEvery test felt like it could ruin your life.\nYou made memories you'll never admit in detail.\nYou were both lost and sure you knew everything.",
+		"Age: %d years\nYou balanced school, work, and a social life badly.\nYou argued with authority constantly.\nYou dreamed big and doubted yourself just as big.\nYou lived for weekends and late-night conversations.\nYou felt both trapped and not ready to leave.\nYou were quietly terrified of what comes next.",
 	},
 
 	young_adult = {
 		"Age: %d years\nWelcome to adulting, it's hard.\nBills are a thing now.\nYou're figuring out your career path.\nFriendships require more effort to maintain.\nYou miss how simple childhood was.\nYou realize your parents were right about some things.",
 		"Age: %d years\nYoung adult life is exciting and scary.\nYou're making major life decisions.\nRelationships are getting serious.\nMoney is always on your mind.\nYou're still figuring things out.\nThe future is wide open.",
 		"Age: %d years\nYou're officially an adult now.\nNo one really knows what they're doing.\nYou're building your career and life.\nSome friends are getting married.\nOthers are still figuring things out.\nYou're somewhere in between.",
+		-- extra
+		"Age: %d years\nYou bounced between confidence and panic.\nYou questioned every career choice.\nYou learned that rent doesn't care about your feelings.\nYou saw old friends drift away.\nYou clung tightly to the ones who stayed.\nYou tried to build a life that actually felt like yours.",
+		"Age: %d years\nYou checked your bank account more than your messages.\nYou realized how expensive being alive is.\nYou tried to balance fun and responsibility.\nYou learned that rest is not the same as scrolling.\nYou made mistakes that hurt and taught you.\nYou started to understand yourself as an adult.",
 	},
 
 	adult = {
 		"Age: %d years\nAdult life has settled into routine.\nWork takes up most of your time.\nYou're thinking about the future seriously.\nHealth actually matters now.\nYou value quality over quantity in friendships.\nTime seems to move faster each year.",
 		"Age: %d years\nThis is what being a grown-up feels like.\nYou have responsibilities you can't escape.\nYour choices have real consequences.\nYou appreciate simple pleasures more.\nYou're becoming the person you'll always be.\nLife isn't what you expected, but it's yours.",
 		"Age: %d years\nMidlife is a strange place.\nYou're not young but not old.\nYou've accumulated wisdom and regrets.\nYou think about legacy sometimes.\nOld friends are more precious.\nYou know yourself better than ever.",
+		-- extra
+		"Age: %d years\nYou learned to live around your tiredness.\nYou juggled work, bills, and personal crises.\nYou watched other people's timelines and compared.\nYou made peace with some past choices.\nYou stayed for people who stayed for you.\nYou realized stability is its own kind of dream.",
+		"Age: %d years\nYou felt time speeding up.\nYou worried about savings and 'what ifs.'\nYou tried to be present for the people you love.\nYou carried responsibilities quietly.\nYou found comfort in routines you once hated.\nYou understood that adulthood is just making it up as you go.",
 	},
 
 	senior = {
 		"Age: %d years\nYou've lived a full life.\nMemories are your greatest treasure.\nHealth requires more attention.\nFamily means everything now.\nYou've seen the world change dramatically.\nYou have wisdom to share.",
 		"Age: %d years\nThe golden years have arrived.\nYou've earned your rest.\nYou think about the past a lot.\nEach day is a gift.\nYou hope your legacy will last.\nLife taught you many lessons.",
 		"Age: %d years\nYou've outlived many friends.\nYour body isn't what it used to be.\nBut your spirit remains strong.\nYou've made peace with your choices.\nYou treasure every moment with family.\nYou've learned what really matters.",
+		-- extra
+		"Age: %d years\nYou carried decades of stories in your mind.\nYou watched younger generations repeat your mistakes.\nYou smiled at things that once made you angry.\nYou valued time more than anything money could buy.\nYou measured wealth in moments, not numbers.\nYou quietly hoped you used your time well.",
+		"Age: %d years\nYou moved more slowly but thought more deeply.\nYou lived through eras others only read about.\nYou felt bittersweet seeing how much has changed.\nYou held onto the people and memories that remain.\nYou forgave more than you ever expected you would.\nYou understood that every year was borrowed and precious.",
+	},
+
+	elderly = {
+		"Age: %d years\nYou reached a rare stage of life.\nThe world feels both familiar and unrecognizable.\nYour body moved carefully, but your mind wandered everywhere.\nYou watched branches of your family tree grow.\nYou felt both lucky and tired.\nEvery sunrise felt like a small victory.",
+		"Age: %d years\nYou carry stories no one else remembers.\nYou've said more goodbyes than most.\nYou learned to live with absence.\nYou measure time in great-grandchildren, not years.\nYou sit with your past more than your future.\nYou hope the people you love are okay when you're gone.",
+		"Age: %d years\nYou lived far past what your younger self imagined.\nYour body set limits you never asked for.\nYou learned to accept help, even when you didn't want it.\nYou found joy in small, slow moments.\nYou saw your reflection turn into your parents and grandparents.\nYou know that every extra year is a quiet miracle.",
 	},
 
 	-- SPECIAL PATH RECAPS
@@ -692,30 +1169,45 @@ NarrativeContent.YearRecapTemplates = {
 		"Age: %d years\nYou're living on the wrong side of the law.\nEvery day brings new risks.\nTrust is a luxury you can't afford.\nThe streets taught you hard lessons.\nYou look over your shoulder constantly.\nThis life isn't for everyone.",
 		"Age: %d years\nThe criminal life continues.\nYou've made enemies and allies.\nMoney comes fast but danger comes faster.\nYou've done things you can't take back.\nThe law is always watching.\nYou wonder if there's another way.",
 		"Age: %d years\nYou're deep in the game now.\nYour reputation precedes you.\nPower and danger are your companions.\nYou've lost people along the way.\nFreedom feels temporary.\nEvery choice led you here.",
+		-- extra
+		"Age: %d years\nYou've built a name that can't be ignored.\nYou count cash in one hand and risks in the other.\nYou sleep light, listening for sirens and footsteps.\nYou trust almost no one, and you're rarely wrong.\nThe line between survival and regret blurs daily.\nYou know this path rarely ends peacefully.",
+		"Age: %d years\nYou've seen loyalty and betrayal up close.\nYou know every shortcut and every dead end.\nThe streets remember everything you've done.\nYou're not sure if you're running the life or it's running you.\nYou've traded safety for status.\nYou wonder if you can ever really get out.",
 	},
 
 	political_path = {
 		"Age: %d years\nPolitics has become your life.\nEvery handshake is calculated.\nYou're always on stage, never off.\nPower is addictive but costly.\nYou've made compromises you regret.\nThe public scrutinizes everything.",
 		"Age: %d years\nClimbing the political ladder continues.\nAlliances shift like sand.\nYou're playing a long game.\nYour decisions affect thousands.\nThe pressure never truly stops.\nYou hope you're making a difference.",
 		"Age: %d years\nYou've reached political heights.\nHistory will judge your choices.\nThe weight of responsibility is heavy.\nYou've sacrificed personal life for public service.\nPower came with a price.\nYou hope your legacy will be positive.",
+		-- extra
+		"Age: %d years\nYou live in soundbites and headlines now.\nEvery word you say is analyzed.\nYou balance what is right with what is possible.\nYou learned that loyalty in politics is conditional.\nYou see how messy democracy really is.\nYou wonder what the younger you would think of you now.",
+		"Age: %d years\nYou move between boardrooms, rallies, and back rooms.\nYou know how much influence costs.\nYou watched ideals collide with reality.\nYou made choices that will outlive you.\nYou see your name printed beside decisions some will love and others will hate.\nYou hope, deep down, you did more good than harm.",
 	},
 
 	romantic_path = {
 		"Age: %d years\nLove dominates your thoughts.\nYour relationship defines much of your life.\nYou're building something with someone special.\nThe highs are incredible.\nThe challenges make you grow.\nYou can't imagine life without them.",
 		"Age: %d years\nRelationship life has its ups and downs.\nYou've learned to compromise.\nYou've learned to communicate.\nLove isn't always easy.\nBut it's always worth fighting for.\nYou're grateful for your partner.",
 		"Age: %d years\nYour romantic journey continues.\nYou've weathered storms together.\nThe bond has deepened over time.\nYou know each other's flaws and love anyway.\nThis is what commitment looks like.\nYou've built a life together.",
+		-- extra
+		"Age: %d years\nYou argued, made up, and learned.\nYou saw each other at your worst and stayed.\nYou built inside jokes only you two understand.\nYou shared worries you never told anyone else.\nYou discovered that love is a choice made daily.\nYou held onto each other when life hit hard.",
+		"Age: %d years\nYou measured time in anniversaries and milestones.\nYou healed parts of each other you didn't break.\nYou learned how to fight without destroying everything.\nYou realized love isn't like in movies, but it's real.\nYou saw your relationship evolve through different seasons.\nYou silently promised you'd keep choosing them.",
 	},
 
 	wealthy_path = {
 		"Age: %d years\nMoney shapes your daily life.\nYou have options others don't.\nWealth brought comfort but not always happiness.\nYou worry about different problems than most.\nPeople treat you differently.\nYou wonder who your real friends are.",
 		"Age: %d years\nThe wealthy life continues.\nLuxury becomes normalized.\nYou've learned money can't buy everything.\nYou think about legacy and impact.\nPrivilege comes with responsibility.\nYou try to use your resources wisely.",
 		"Age: %d years\nYou've built significant wealth.\nFinancial worries are different now.\nYou can help others in ways most can't.\nBut you still face human problems.\nMoney didn't solve everything.\nYou've learned what truly matters.",
+		-- extra
+		"Age: %d years\nYou got used to things once impossible to imagine.\nYou watched people change around you when money entered the picture.\nYou still have bad days, just in nicer places.\nYou saw how lonely success can feel.\nYou learned that generosity feels better than flexing.\nYou wondered what version of you you'd be without the wealth.",
+		"Age: %d years\nYou don't think about price tags the way you used to.\nYou can say yes to opportunities others can't.\nYou wrestle with guilt, gratitude, and responsibility.\nYou understand that envy doesn't see the full picture.\nYou realized you can't buy time, health, or real love.\nYou decided what kind of rich person you want to be.",
 	},
 
 	struggling_path = {
 		"Age: %d years\nLife has been a constant struggle.\nMoney is always tight.\nYou work hard but progress is slow.\nBills pile up constantly.\nYou dream of better days.\nYou keep pushing forward.",
 		"Age: %d years\nThe struggle continues but so do you.\nYou've learned to survive with less.\nResourcefulness became your strength.\nYou know the value of a dollar.\nHope keeps you going.\nYou believe things will improve.",
 		"Age: %d years\nYou've faced hardship with resilience.\nNot everyone understands your journey.\nYou've learned to appreciate small victories.\nEvery step forward matters.\nYou're stronger than you know.\nThe struggle shaped who you are.",
+		-- extra
+		"Age: %d years\nYou stretched every paycheck to breaking point.\nYou learned how to live on almost nothing.\nYou went without so others in your life didn't have to.\nYou became an expert at making do.\nYou cried in private and smiled in public.\nYou still found ways to laugh.",
+		"Age: %d years\nYou felt invisible to systems meant to help.\nYou learned to celebrate tiny wins.\nYou carried stress like a second skin.\nYou thought about giving up but didn't.\nYou found strength you didn't know you had.\nYou survived another year that could've broken you.",
 	},
 
 	-- TEACHER PATH
@@ -723,6 +1215,9 @@ NarrativeContent.YearRecapTemplates = {
 		"Age: %d years\nAnother year shaping young minds.\nSome days were harder than others.\nBut seeing students grow makes it worth it.\nThe stack of papers to grade never ends.\nYou made a difference in someone's life today.\nTeaching is more than a job, it's a calling.",
 		"Age: %d years\nThe classroom is your second home.\nYou've learned as much as you've taught.\nEvery student has a story.\nSome will remember you forever.\nThe challenges are real but so are the rewards.\nYou're building the future, one lesson at a time.",
 		"Age: %d years\nEducation continues to be your mission.\nYou've seen countless students graduate.\nThe impact you've had ripples outward.\nTeaching never gets old.\nYou're proud of your career choice.\nThe best teachers never stop learning.",
+		-- extra
+		"Age: %d years\nYou juggled lesson plans, discipline, and empathy.\nYou saw kids change in front of your eyes.\nYou fought quietly for your students behind the scenes.\nYou spent your own money making the classroom better.\nYou carried their stories home in your heart.\nYou made the world better in ways that never make the news.",
+		"Age: %d years\nYou watched shy students find their voice.\nYou were someone's safe adult.\nYou listened when no one else did.\nYou saw potential where others saw trouble.\nYou taught more than subjects—you taught resilience.\nYou left fingerprints on lives you'll never fully see.",
 	},
 
 	-- RACER PATH
@@ -730,6 +1225,9 @@ NarrativeContent.YearRecapTemplates = {
 		"Age: %d years\nThe smell of burning rubber is home.\nSpeed is in your blood now.\nEvery race is a battle of nerves and skill.\nThe podium is the only place you want to be.\nRisk and reward dance together.\nYou live for the thrill of competition.",
 		"Age: %d years\nAnother season in the racing world.\nVictories and defeats shaped your character.\nThe track is where you feel most alive.\nYour reflexes are razor sharp.\nTeammates became family.\nRacing is more than sport, it's identity.",
 		"Age: %d years\nYou've pushed limits most never know.\nSpeed taught you about fear and courage.\nEvery lap is a meditation in motion.\nThe racing community is your tribe.\nTrophies tell only part of the story.\nYou were born to race.",
+		-- extra
+		"Age: %d years\nYou lived between pit lanes and podiums.\nYou gambled with milliseconds and margins.\nYou felt the car become an extension of you.\nYou chased perfect laps that exist only in your head.\nYou walked away from crashes grateful and shaken.\nYou know that every race could be your last—and you race anyway.",
+		"Age: %d years\nYou memorized every bump in every track.\nYou watched rivals become legends.\nYou heard the crowd roar and engines scream.\nYou chased speed as if it were oxygen.\nYou traded comfort for adrenaline.\nYou left tire marks on history.",
 	},
 
 	-- ARTIST PATH
@@ -737,6 +1235,9 @@ NarrativeContent.YearRecapTemplates = {
 		"Age: %d years\nArt continues to flow through you.\nEach piece is a piece of your soul.\nCreativity is both blessing and curse.\nThe art world is fickle but passion endures.\nYour vision matters to someone out there.\nYou create because you must.",
 		"Age: %d years\nAnother year of artistic expression.\nSome works found homes, others remain.\nThe creative process never gets easier.\nBut neither does it lose its magic.\nYour perspective shapes how others see.\nArt is your language, your truth.",
 		"Age: %d years\nYou've lived the artist's life.\nRecognition came and went.\nBut the work itself was always the point.\nYour art outlives the moment.\nCreativity keeps you alive.\nYou've added beauty to the world.",
+		-- extra
+		"Age: %d years\nYou wrestled with inspiration and doubt.\nYou poured feelings into colors, lines, and shapes.\nYou watched people connect with things you made alone.\nYou questioned your worth and kept creating anyway.\nYou saw your style slowly become unmistakably yours.\nYou left a visual trail of who you've been.",
+		"Age: %d years\nYou sacrificed stability for expression.\nYou understood that not everyone would 'get' you.\nYou worked in silence while the world scrolled past.\nYou turned pain and joy into something tangible.\nYou lived between unfinished projects and wild ideas.\nYou proved that making art is its own kind of survival.",
 	},
 
 	-- HACKER PATH
@@ -744,11 +1245,14 @@ NarrativeContent.YearRecapTemplates = {
 		"Age: %d years\nThe digital world is your playground.\nCode flows like second nature.\nYou see systems others can't comprehend.\nEvery lock has a key if you look hard enough.\nPower lies in information.\nThe internet never forgets, and neither do you.",
 		"Age: %d years\nAnother year in the digital underground.\nYour skills have only grown sharper.\nYou've seen behind the curtain.\nThe line between legal and illegal blurs.\nFew understand what you're capable of.\nYou're always three steps ahead.",
 		"Age: %d years\nTechnology shaped your whole life.\nYou bent systems to your will.\nWhether hero or villain depends who's asking.\nYour digital footprint is legendary.\nThe cyber world knows your name.\nYou're a force in the virtual realm.",
+		-- extra
+		"Age: %d years\nYou live in terminals and logs, not headlines.\nYou know which backdoors are still quietly open.\nYou see vulnerabilities in everything.\nYou choose carefully what you expose and what you don't.\nYou walk the fine line between curiosity and chaos.\nYou understand that in your world, knowledge is power and risk.",
+		"Age: %d years\nYou watched entire systems crumble from a few keystrokes.\nYou felt the thrill of gaining access you shouldn't have.\nYou used your skills to protect—or to exploit.\nYou know more about strangers than they'd ever guess.\nYou watched governments and corporations move like slow giants.\nYou understood that the real battles now are fought in code.",
 	},
 }
 
 ----------------------------------------------------------------------
--- CATEGORY FLAVOR TEXT
+-- CATEGORY FLAVOR TEXT (kept for optional extra flavor)
 ----------------------------------------------------------------------
 
 NarrativeContent.CategoryFlavor = {
@@ -818,22 +1322,25 @@ NarrativeContent.CategoryFlavor = {
 }
 
 ----------------------------------------------------------------------
--- LIFE STAGE TRANSITIONS
+-- LIFE STAGE TRANSITIONS (keys kept for compatibility)
 ----------------------------------------------------------------------
 
 NarrativeContent.LifeStageTransitions = {
 	toddler = "You're no longer a baby. The world is bigger now.",
 	child = "Childhood has officially begun. Adventures await.",
+	childhood = "Childhood has officially begun. Adventures await.",
 	tween = "You're not a little kid anymore. Things are changing.",
 	teen = "Welcome to your teenage years. Buckle up.",
+	teenage = "Welcome to your teenage years. Buckle up.",
 	adult = "You're officially an adult now. No more excuses.",
+	young_adult = "You're stepping into real adult life for the first time.",
 	middle_age = "Middle age arrived. Where did the time go?",
 	senior = "You've entered your senior years. Wisdom comes with age.",
-	elderly = "You've lived a long life. Every day is precious.",
+	elderly = "You've reached your final chapter. Every day is a gift.",
 }
 
 ----------------------------------------------------------------------
--- RELATIONSHIP TEMPLATES
+-- RELATIONSHIP TEMPLATES (expanded)
 ----------------------------------------------------------------------
 
 NarrativeContent.RelationshipLines = {
@@ -843,6 +1350,12 @@ NarrativeContent.RelationshipLines = {
 		"%s makes your heart skip a beat.",
 		"Being with %s feels like home.",
 		"Your bond with %s deepened.",
+		-- extra
+		"You felt seen in a way only %s can make you feel.",
+		"You and %s laughed about something only you two understand.",
+		"Just a message from %s turned your whole day around.",
+		"You couldn't imagine this year without %s in it.",
+		"You realized how much you genuinely cherish %s.",
 	},
 	friendship = {
 		"%s is always there for you.",
@@ -850,6 +1363,12 @@ NarrativeContent.RelationshipLines = {
 		"%s reminded you what true friendship means.",
 		"Your friendship with %s stood the test of time.",
 		"%s had your back when it mattered.",
+		-- extra
+		"You and %s picked up right where you left off.",
+		"You trusted %s with things you don't tell anyone else.",
+		"%s made even boring days feel fun.",
+		"You realized life would be much lonelier without %s.",
+		"You and %s created memories you'll reference for years.",
 	},
 	conflict = {
 		"Things with %s got complicated.",
@@ -857,6 +1376,12 @@ NarrativeContent.RelationshipLines = {
 		"%s isn't speaking to you right now.",
 		"Trust with %s has been damaged.",
 		"Your relationship with %s needs work.",
+		-- extra
+		"You said things to %s you can't take back.",
+		"You walked away from %s instead of fixing it.",
+		"You and %s keep misunderstanding each other.",
+		"You felt a quiet distance grow between you and %s.",
+		"You and %s pretended everything was fine, but it wasn't.",
 	},
 	loss = {
 		"You'll miss %s forever.",
@@ -864,6 +1389,12 @@ NarrativeContent.RelationshipLines = {
 		"%s left a hole in your life.",
 		"Memories of %s will never fade.",
 		"Life without %s feels empty.",
+		-- extra
+		"You thought about %s more than you expected.",
+		"Little things kept reminding you of %s.",
+		"You wished you had one more conversation with %s.",
+		"You carried pieces of %s with you into every day.",
+		"You learned to live with the space %s used to fill.",
 	},
 }
 
