@@ -9,11 +9,11 @@ local LifeEvents = require(script.Parent)
 local module = {}
 
 module.events = {
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- BIRTH & NEWBORN (Age 0)
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_birth",
 		minAge = 0, maxAge = 0,
@@ -27,7 +27,7 @@ module.events = {
 			{ text = "👀 Look around curiously", effects = { Smarts = 4 }, resultText = "You observed everything with wide, curious eyes. Already trying to figure out this strange new world." },
 		},
 	},
-	
+
 	{
 		id = "m_birth_complications",
 		minAge = 0, maxAge = 0,
@@ -40,7 +40,7 @@ module.events = {
 			{ text = "🏥 NICU stay", effects = { Health = -8, Smarts = 2 }, resultText = "You spent your first weeks in the NICU. But you made it.", setFlag = "premature" },
 		},
 	},
-	
+
 	{
 		id = "m_birth_twin",
 		minAge = 0, maxAge = 0,
@@ -57,7 +57,7 @@ module.events = {
 			{ text = "😤 Compete for attention", effects = { Happiness = 2, Smarts = 2 }, resultText = "Even now, you're vying for your parents' attention.", setFlags = {"has_twin", "competitive_sibling"} },
 		},
 	},
-	
+
 	{
 		id = "m_first_breath",
 		minAge = 0, maxAge = 0,
@@ -70,7 +70,7 @@ module.events = {
 			{ text = "😮 Gasp quietly", effects = { Health = 2, Smarts = 2 }, resultText = "You took it all in silently, already processing this new world." },
 		},
 	},
-	
+
 	{
 		id = "m_first_smile",
 		minAge = 0, maxAge = 1,
@@ -84,7 +84,7 @@ module.events = {
 			{ text = "😏 Cheeky grin", effects = { Happiness = 5, Smarts = 2 }, resultText = "There was mischief in that smile. Trouble ahead!" },
 		},
 	},
-	
+
 	{
 		id = "m_first_laugh",
 		minAge = 0, maxAge = 1,
@@ -98,7 +98,7 @@ module.events = {
 			{ text = "😈 Laughing at chaos", effects = { Happiness = 7, Smarts = 2 }, resultText = "You laughed when something fell. Already finding joy in mischief!", setFlag = "mischievous" },
 		},
 	},
-	
+
 	{
 		id = "m_first_crawl",
 		minAge = 0, maxAge = 1,
@@ -112,7 +112,7 @@ module.events = {
 			{ text = "🚪 Crawl for escape", effects = { Smarts = 4, Health = 2 }, resultText = "Already trying to explore beyond your boundaries!", setFlag = "adventurous" },
 		},
 	},
-	
+
 	{
 		id = "m_first_word",
 		minAge = 1, maxAge = 2,
@@ -127,7 +127,7 @@ module.events = {
 			{ text = "🐕 Say 'Dog!'", effects = { Happiness = 5, Smarts = 3 }, resultText = "Your first word was about the family pet! Animal lover in the making.", setFlag = "animal_lover" },
 		},
 	},
-	
+
 	{
 		id = "m_first_steps",
 		minAge = 1, maxAge = 2,
@@ -142,7 +142,7 @@ module.events = {
 			{ text = "💥 Crash into furniture", effects = { Health = -2, Smarts = 2 }, resultText = "Learning to walk comes with bumps and bruises. You're okay!" },
 		},
 	},
-	
+
 	{
 		id = "m_first_birthday",
 		minAge = 1, maxAge = 1,
@@ -157,11 +157,11 @@ module.events = {
 			{ text = "🎁 Love the presents!", effects = { Happiness = 8 }, resultText = "You were more interested in the wrapping paper than the actual gifts!" },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- FIRST YEAR EXPERIENCES (Age 0-1)
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_first_bath",
 		minAge = 0, maxAge = 1,
@@ -175,7 +175,7 @@ module.events = {
 			{ text = "🦆 Fascinated by duck", effects = { Happiness = 5, Smarts = 2 }, resultText = "The rubber ducky became your obsession!" },
 		},
 	},
-	
+
 	{
 		id = "m_teething_begins",
 		minAge = 0, maxAge = 1,
@@ -189,7 +189,7 @@ module.events = {
 			{ text = "💪 Tough it out", effects = { Health = 3, Happiness = -2 }, resultText = "You handled it better than expected. Strong baby!", setFlag = "tough_baby" },
 		},
 	},
-	
+
 	{
 		id = "m_baby_sick",
 		minAge = 0, maxAge = 2,
@@ -207,7 +207,7 @@ module.events = {
 			{ text = "🏥 Doctor visit", effects = { Health = 5, Happiness = -1, Money = -200 }, resultText = "The pediatrician helped you feel better fast." },
 		},
 	},
-	
+
 	{
 		id = "m_first_solid_food",
 		minAge = 0, maxAge = 1,
@@ -225,7 +225,7 @@ module.events = {
 			{ text = "🤔 Confused", effects = { Smarts = 2, Happiness = 2 }, resultText = "What IS this strange texture? You're still figuring it out." },
 		},
 	},
-	
+
 	{
 		id = "m_rolling_over",
 		minAge = 0, maxAge = 1,
@@ -238,7 +238,7 @@ module.events = {
 			{ text = "😲 Surprise yourself", effects = { Happiness = 3, Smarts = 2 }, resultText = "You looked shocked at your own achievement!" },
 		},
 	},
-	
+
 	{
 		id = "m_stranger_anxiety",
 		minAge = 0, maxAge = 1,
@@ -252,7 +252,7 @@ module.events = {
 			{ text = "🤷 Actually fine", effects = { Happiness = 2 }, resultText = "You're pretty chill with new people!" },
 		},
 	},
-	
+
 	{
 		id = "m_first_haircut",
 		minAge = 0, maxAge = 2,
@@ -266,11 +266,11 @@ module.events = {
 			{ text = "😴 Sleep through it", effects = { Happiness = 2, Looks = 2 }, resultText = "You dozed off and woke up looking fresh!" },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- TODDLER YEARS (Age 2-3)
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_terrible_twos",
 		minAge = 2, maxAge = 2,
@@ -285,7 +285,7 @@ module.events = {
 			{ text = "😤 Epic meltdowns", effects = { Happiness = 2 }, resultText = "Your tantrums were legendary. Floor-pounding, breath-holding, the works." },
 		},
 	},
-	
+
 	{
 		id = "m_potty_training",
 		minAge = 2, maxAge = 3,
@@ -300,7 +300,7 @@ module.events = {
 			{ text = "🏆 Motivated by rewards", effects = { Smarts = 4, Happiness = 5 }, resultText = "Stickers and treats worked like magic!" },
 		},
 	},
-	
+
 	{
 		id = "m_baby_tantrum",
 		minAge = 1, maxAge = 4,
@@ -319,7 +319,7 @@ module.events = {
 			{ text = "🚶 Stomp away", effects = { Happiness = -1 }, resultText = "You dramatically stomped to your room." },
 		},
 	},
-	
+
 	{
 		id = "m_baby_sibling",
 		minAge = 1, maxAge = 5,
@@ -338,7 +338,7 @@ module.events = {
 			{ text = "🧸 Share your toys", effects = { Happiness = 5, Smarts = 2 }, resultText = "You offered your teddy to the baby. So sweet!", setFlags = {"has_sibling", "generous"} },
 		},
 	},
-	
+
 	{
 		id = "m_imaginary_friend",
 		minAge = 3, maxAge = 6,
@@ -356,7 +356,7 @@ module.events = {
 			{ text = "🤷 They're just pretend", effects = { Smarts = 5 }, resultText = "You know %friendName% isn't real. But you play along anyway." },
 		},
 	},
-	
+
 	{
 		id = "m_first_pet_encounter",
 		minAge = 2, maxAge = 6,
@@ -376,7 +376,7 @@ module.events = {
 			{ text = "🤕 Got scratched/nipped", effects = { Health = -3, Happiness = -2 }, resultText = "%petName% didn't mean to hurt you. Still friends?" },
 		},
 	},
-	
+
 	{
 		id = "m_daycare_start",
 		minAge = 2, maxAge = 3,
@@ -395,7 +395,7 @@ module.events = {
 			{ text = "👑 Boss other kids", effects = { Happiness = 4, Smarts = -1 }, resultText = "You quickly established yourself as the leader!", setFlag = "dominant" },
 		},
 	},
-	
+
 	{
 		id = "m_playground_fall",
 		minAge = 2, maxAge = 5,
@@ -413,7 +413,7 @@ module.events = {
 			{ text = "🩹 Need a bandaid", effects = { Health = -2 }, resultText = "A bandaid with cartoon characters made everything better." },
 		},
 	},
-	
+
 	{
 		id = "m_picky_eater",
 		minAge = 2, maxAge = 5,
@@ -432,11 +432,11 @@ module.events = {
 			{ text = "🎭 Hide it", effects = { Smarts = 3 }, resultText = "You hid the %food% under other food. Genius!", setFlag = "sneaky" },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- PRESCHOOL YEARS (Age 3-5)
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_preschool_start",
 		minAge = 4, maxAge = 4,
@@ -455,7 +455,7 @@ module.events = {
 			{ text = "🎨 Love the activities", effects = { Smarts = 5, Happiness = 5 }, resultText = "Art, blocks, storytime - you loved it all!" },
 		},
 	},
-	
+
 	{
 		id = "m_playground_incident",
 		minAge = 3, maxAge = 6,
@@ -473,7 +473,7 @@ module.events = {
 			{ text = "🤝 Become friends", effects = { Happiness = 5, Smarts = 3 }, resultText = "Somehow you ended up playing together!", setFlag = "forgiving" },
 		},
 	},
-	
+
 	{
 		id = "m_first_drawing",
 		minAge = 3, maxAge = 5,
@@ -488,7 +488,7 @@ module.events = {
 			{ text = "✍️ Try to write your name", effects = { Smarts = 5, Happiness = 3 }, resultText = "Letters are interesting! Even if they're backwards." },
 		},
 	},
-	
+
 	{
 		id = "m_learn_abc",
 		minAge = 3, maxAge = 5,
@@ -503,7 +503,7 @@ module.events = {
 			{ text = "📱 Learn on tablet", effects = { Smarts = 4, Happiness = 4 }, resultText = "Educational apps made it fun!" },
 		},
 	},
-	
+
 	{
 		id = "m_counting",
 		minAge = 3, maxAge = 5,
@@ -518,7 +518,7 @@ module.events = {
 			{ text = "🍪 Count snacks", effects = { Smarts = 3, Happiness = 5 }, resultText = "Math is more fun with cookies!" },
 		},
 	},
-	
+
 	{
 		id = "m_sharing_lesson",
 		minAge = 3, maxAge = 5,
@@ -537,7 +537,7 @@ module.events = {
 			{ text = "⏰ Take turns", effects = { Smarts = 4, Happiness = 4 }, resultText = "You learned about taking turns. Compromise!" },
 		},
 	},
-	
+
 	{
 		id = "m_naptime_rebellion",
 		minAge = 2, maxAge = 4,
@@ -552,7 +552,7 @@ module.events = {
 			{ text = "📚 Look at books instead", effects = { Smarts = 4, Health = 2 }, resultText = "Quiet time with books was a good compromise." },
 		},
 	},
-	
+
 	{
 		id = "m_make_believe",
 		minAge = 3, maxAge = 6,
@@ -571,7 +571,7 @@ module.events = {
 			{ text = "🪄 Create magic", effects = { Smarts = 6, Happiness = 5 }, resultText = "Your imagination knows no bounds!", setFlag = "creative_mind" },
 		},
 	},
-	
+
 	{
 		id = "m_fear_dark",
 		minAge = 2, maxAge = 6,
@@ -586,7 +586,7 @@ module.events = {
 			{ text = "👨‍👩‍👧 Sleep with parents", effects = { Happiness = 4 }, resultText = "Safe in mommy and daddy's bed!" },
 		},
 	},
-	
+
 	{
 		id = "m_birthday_party",
 		minAge = 3, maxAge = 5,
@@ -604,7 +604,7 @@ module.events = {
 			{ text = "🎂 Win musical chairs!", effects = { Happiness = 8, Smarts = 2 }, resultText = "You dominated the party games!", setFlag = "competitive" },
 		},
 	},
-	
+
 	{
 		id = "m_first_sleepover",
 		minAge = 4, maxAge = 6,
@@ -622,7 +622,7 @@ module.events = {
 			{ text = "🎬 Movie marathon", effects = { Happiness = 8 }, resultText = "You watched movies until you couldn't keep your eyes open!" },
 		},
 	},
-	
+
 	{
 		id = "m_lost_toy",
 		minAge = 2, maxAge = 5,
@@ -641,7 +641,7 @@ module.events = {
 			{ text = "🆕 Get a new one", effects = { Happiness = 2, Money = -25 }, resultText = "Your parents got you a replacement. Not quite the same though." },
 		},
 	},
-	
+
 	{
 		id = "m_parent_fight",
 		minAge = 3, maxAge = 6,
@@ -656,7 +656,7 @@ module.events = {
 			{ text = "🗣️ Ask why", effects = { Smarts = 4, Happiness = -3 }, resultText = "They explained that adults sometimes disagree. You're growing up." },
 		},
 	},
-	
+
 	{
 		id = "m_new_word",
 		minAge = 2, maxAge = 4,
@@ -674,7 +674,7 @@ module.events = {
 			{ text = "📚 Learn more words", effects = { Smarts = 6, Happiness = 3 }, resultText = "Your vocabulary is expanding rapidly!", setFlag = "early_reader" },
 		},
 	},
-	
+
 	{
 		id = "m_first_lie",
 		minAge = 3, maxAge = 5,
@@ -693,7 +693,7 @@ module.events = {
 			{ text = "🐕 Blame the pet", effects = { Smarts = 2, Happiness = 3 }, resultText = "You blamed the dog. Classic move." },
 		},
 	},
-	
+
 	{
 		id = "m_helping_parent",
 		minAge = 3, maxAge = 5,
@@ -712,7 +712,7 @@ module.events = {
 			{ text = "👀 Watch and learn", effects = { Smarts = 5, Happiness = 3 }, resultText = "You observed carefully. Learning for next time!" },
 		},
 	},
-	
+
 	{
 		id = "m_new_food_adventure",
 		minAge = 3, maxAge = 5,
@@ -731,7 +731,7 @@ module.events = {
 			{ text = "🎭 Dramatic reaction", effects = { Happiness = 4 }, resultText = "Your theatrical disgust was hilarious to everyone." },
 		},
 	},
-	
+
 	{
 		id = "m_bathroom_accident",
 		minAge = 2, maxAge = 4,
@@ -745,7 +745,7 @@ module.events = {
 			{ text = "😂 Laugh it off", effects = { Happiness = 2 }, resultText = "You giggled about it. Way to own it!" },
 		},
 	},
-	
+
 	{
 		id = "m_sibling_fight",
 		minAge = 3, maxAge = 6,
@@ -761,7 +761,7 @@ module.events = {
 			{ text = "🚶 Walk away", effects = { Happiness = 2, Smarts = 2 }, resultText = "You took the high road. Very mature!" },
 		},
 	},
-	
+
 	{
 		id = "m_questions_phase",
 		minAge = 3, maxAge = 5,
@@ -776,7 +776,7 @@ module.events = {
 			{ text = "📚 Find answers in books", effects = { Smarts = 7, Happiness = 3 }, resultText = "You learned to research your own questions!", setFlag = "bookworm" },
 		},
 	},
-	
+
 	{
 		id = "m_tooth_fairy",
 		minAge = 5, maxAge = 6,
@@ -791,7 +791,7 @@ module.events = {
 			{ text = "💰 Negotiate price", effects = { Smarts = 4, Money = 5 }, resultText = "You left a note asking for more. Got $5!", setFlag = "negotiator" },
 		},
 	},
-	
+
 	{
 		id = "m_swimming_lesson",
 		minAge = 4, maxAge = 6,
@@ -806,7 +806,7 @@ module.events = {
 			{ text = "🎉 Best part: splashing!", effects = { Happiness = 7 }, resultText = "You loved splashing more than actual swimming!" },
 		},
 	},
-	
+
 	{
 		id = "m_kindergarten_prep",
 		minAge = 5, maxAge = 5,
@@ -821,7 +821,7 @@ module.events = {
 			{ text = "🎒 Excited for new backpack!", effects = { Happiness = 5 }, resultText = "The supplies shopping was the best part!" },
 		},
 	},
-	
+
 	{
 		id = "m_role_model",
 		minAge = 4, maxAge = 6,
@@ -839,7 +839,7 @@ module.events = {
 			{ text = "🎭 Imitate them", effects = { Happiness = 5, Looks = 2 }, resultText = "You tried to walk, talk, and act like them!" },
 		},
 	},
-	
+
 	{
 		id = "m_season_discovery",
 		minAge = 3, maxAge = 5,
