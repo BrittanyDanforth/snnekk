@@ -1,7 +1,7 @@
 -- LifeEvents/health.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- HEALTH EVENTS
--- Diverse health situations across all life stages - not just "declining health"
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -20,12 +20,12 @@ module.events = {
 		weight = 30, cooldown = 2,
 		emoji = "🤒", title = "Got the Flu!",
 		category = "health",
-		text = "You came home from school with the flu! Fever, chills, the works.",
+		text = "You're sick with the flu! Fever and chills. Mom says you need to rest. What do you do?",
 		choices = {
-			{ text = "🛏️ Rest and recover", effects = { Health = 5, Happiness = 4 }, resultText = "Mom's chicken soup and rest did the trick!" },
-			{ text = "😭 Miss friend's party", effects = { Happiness = -8 }, resultText = "Had to miss the best party of the year. So unfair!" },
-			{ text = "🎮 At least got games", effects = { Happiness = 6, Smarts = 2 }, resultText = "Week off school playing games! Silver lining!" },
-			{ text = "🤧 Got everyone sick", effects = { Health = -5, Happiness = -3 }, resultText = "Spread it to the whole family. Oops." },
+			{ text = "🛏️ Stay in bed like told", effects = { Health = 8, Happiness = 3 }, resultText = "Rested and recovered quickly! Mom's soup really helped!" },
+			{ text = "🎮 Sneak to play games", effects = { Happiness = 5, Health = -5 }, resultText = "Got caught! Mom wasn't happy. Also got sicker. Worth it?" },
+			{ text = "😭 Complain constantly", effects = { Happiness = -5, Health = 2 }, resultText = "Everyone's tired of the whining. But you got extra attention..." },
+			{ text = "🏫 Try to go to school anyway", effects = { Health = -10, Smarts = -3 }, resultText = "Got way worse! Sent home after an hour. Spread it to three classmates. Bad call." },
 		},
 	},
 	
@@ -33,37 +33,37 @@ module.events = {
 		id = "h_childhood_broken_arm",
 		minAge = 5, maxAge = 14,
 		weight = 15, cooldown = 8,
-		emoji = "🦴", title = "Broken Arm!",
+		emoji = "🦴", title = "Broke Your Arm!",
 		category = "health",
 		getDynamicData = function()
-			local causes = {"falling off the monkey bars", "skateboard accident", "tripped while running", "fell off your bike", "playground accident"}
+			local causes = {"falling off the monkey bars", "skateboard trick gone wrong", "bike crash", "tripped while running"}
 			return { cause = causes[math.random(#causes)] }
 		end,
-		text = "You broke your arm %cause%! Time for a cast.",
+		text = "You broke your arm %cause%! Doctor put it in a cast. 6 weeks to heal. What's your attitude?",
 		choices = {
-			{ text = "✍️ Cast signatures!", effects = { Happiness = 4 }, resultText = "Everyone at school signed your cast. Kinda cool!" },
-			{ text = "😤 Can't play sports", effects = { Happiness = -10 }, resultText = "No recess sports for 6 weeks. This stinks!" },
-			{ text = "💪 Healed stronger", effects = { Health = 5 }, resultText = "Doctor says it healed great! Back to normal!" },
-			{ text = "😢 Still hurts", effects = { Health = -8, Happiness = -5 }, resultText = "Healing was slow and painful. Rough time." },
+			{ text = "✍️ Show off the cast", effects = { Happiness = 8, Looks = 2 }, resultText = "Everyone signed it! You're basically a celebrity at school!" },
+			{ text = "😤 Be mad about it", effects = { Happiness = -10, Health = 2 }, resultText = "Sulked for weeks. Missing out on sports was the worst." },
+			{ text = "💪 Try to do stuff anyway", effects = { Health = -8, Happiness = -5 }, resultText = "Re-injured it being dumb! Reset the healing time. Doctor was not impressed." },
+			{ text = "📚 Focus on other things", effects = { Smarts = 5, Happiness = 3 }, resultText = "Read more books, got better grades. Made the best of it!" },
 		},
 	},
 	
 	{
-		id = "h_childhood_allergy_discovery",
+		id = "h_childhood_allergy_reaction",
 		minAge = 3, maxAge = 15,
 		weight = 15, oneTime = true,
-		emoji = "🥜", title = "Allergy Discovered!",
+		emoji = "🥜", title = "Allergic Reaction!",
 		category = "health",
 		getDynamicData = function()
-			local allergies = {"peanuts", "shellfish", "dairy", "bee stings", "gluten"}
-			return { allergy = allergies[math.random(#allergies)] }
+			local foods = {"peanuts", "shellfish", "dairy", "eggs", "tree nuts"}
+			return { food = foods[math.random(#foods)] }
 		end,
-		text = "You had a reaction! Turns out you're allergic to %allergy%.",
+		text = "You ate something with %food% and your throat is swelling! Can't breathe well! What happens?",
 		choices = {
-			{ text = "💉 Got an EpiPen", effects = { Health = 5, Smarts = 3 }, resultText = "Now you know! Staying safe with emergency meds.", setFlag = "has_allergy" },
-			{ text = "😢 So many foods off-limits", effects = { Happiness = -8 }, resultText = "No more of your favorite foods. Life is unfair.", setFlag = "has_allergy" },
-			{ text = "🏥 Scary hospital trip", effects = { Health = -5, Happiness = -10 }, resultText = "ER visit was terrifying. At least now you know.", setFlag = "has_allergy" },
-			{ text = "📚 Learned to manage it", effects = { Smarts = 5 }, resultText = "Researched everything. You're an expert now!", setFlag = "has_allergy" },
+			{ text = "💉 EpiPen saves you", effects = { Health = 5, Smarts = 5 }, resultText = "Someone had an EpiPen! You're okay but that was SCARY. Now you know.", setFlag = "has_allergy" },
+			{ text = "🏥 Rush to hospital", effects = { Health = -5, Money = -500, Happiness = -8 }, resultText = "Emergency room trip! They stabilized you. Terrifying experience.", setFlag = "has_allergy" },
+			{ text = "😰 Mild reaction only", effects = { Health = -3, Happiness = -5 }, resultText = "Hives and discomfort but nothing deadly. Lucky. Get tested!", setFlag = "has_allergy" },
+			{ text = "⚠️ Very serious!", effects = { Health = -20, Money = -2000, Happiness = -15 }, resultText = "Almost died! ICU stay. Life-changing experience. Always check ingredients now.", setFlag = "has_allergy" },
 		},
 	},
 	
@@ -77,12 +77,12 @@ module.events = {
 		weight = 35, cooldown = 3,
 		emoji = "😰", title = "Acne Breakout!",
 		category = "health",
-		text = "Puberty strikes again! Major acne breakout right before something important.",
+		text = "Major acne breakout! Right before something important. What do you do?",
 		choices = {
-			{ text = "💊 Dermatologist help", effects = { Health = 3, Money = -100, Looks = 5 }, resultText = "Treatment is working! Clearing up nicely." },
-			{ text = "😭 So embarrassing", effects = { Happiness = -10, Looks = -3 }, resultText = "Didn't want to leave the house. Teen life is hard." },
-			{ text = "💅 Makeup covers it", effects = { Happiness = 4, Looks = 2 }, resultText = "Got good at concealer! Can barely tell!" },
-			{ text = "🤷 Embraced it", effects = { Happiness = 6, Smarts = 2 }, resultText = "Everyone has acne! Not letting it stop you." },
+			{ text = "👨‍⚕️ Go to dermatologist", effects = { Health = 5, Money = -150, Looks = 5 }, resultText = "Got prescription treatment. Working great! Worth the cost." },
+			{ text = "💊 Pop them all", effects = { Looks = -5, Health = -3 }, resultText = "Made it SO much worse! Scarring and more breakouts. Don't do that!" },
+			{ text = "💅 Cover with makeup", effects = { Looks = 3, Happiness = 3 }, resultText = "Concealer is magic! Got through the event. Confidence saved." },
+			{ text = "🤷 Just deal with it", effects = { Happiness = -8, Smarts = 2 }, resultText = "Went anyway. It was fine. No one cared as much as you did." },
 		},
 	},
 	
@@ -93,22 +93,15 @@ module.events = {
 		emoji = "⚽", title = "Sports Injury!",
 		category = "health",
 		getDynamicData = function()
-			local injuries = {
-				{ type = "sprained ankle", severity = "minor" },
-				{ type = "torn ACL", severity = "major" },
-				{ type = "concussion", severity = "major" },
-				{ type = "dislocated shoulder", severity = "moderate" },
-				{ type = "pulled hamstring", severity = "minor" },
-			}
-			local chosen = injuries[math.random(#injuries)]
-			return { injury = chosen.type, severity = chosen.severity }
+			local injuries = {"sprained ankle", "knee pain", "shoulder issue", "back strain"}
+			return { injury = injuries[math.random(#injuries)] }
 		end,
-		text = "Got a %injury% during practice! This could affect your season.",
+		text = "You got a %injury% during practice! Coach says take it easy. What do you do?",
 		choices = {
-			{ text = "🏥 Full recovery!", effects = { Health = 5, Happiness = 8 }, resultText = "Physical therapy paid off! Back at 100%!" },
-			{ text = "😔 Season over", effects = { Happiness = -15, Health = -5 }, resultText = "Too serious to continue this season. Devastating." },
-			{ text = "💪 Pushed through", effects = { Health = -10, Happiness = 4 }, resultText = "Played injured. Not smart but didn't want to let team down." },
-			{ text = "🔄 Changed sports", effects = { Happiness = 2, Smarts = 3 }, resultText = "Injury made you try something new. Actually enjoying it!" },
+			{ text = "🏥 Get it properly checked", effects = { Health = 10, Money = -200 }, resultText = "Doctor said rest 2 weeks. Followed orders. Full recovery!" },
+			{ text = "💪 Play through the pain", effects = { Health = -15, Happiness = -8 }, resultText = "Made it WAY worse! Now out for the whole season. Should've rested." },
+			{ text = "🧊 Ice and rest at home", effects = { Health = 5, Happiness = 2 }, resultText = "Took care of it yourself. Minor injury healed fine!" },
+			{ text = "😤 Refuse to sit out", effects = { Health = -25, Happiness = -15 }, resultText = "Tore something! Surgery needed. Career-threatening. Pride has a price." },
 		},
 	},
 	
@@ -116,14 +109,14 @@ module.events = {
 		id = "h_teen_mental_health",
 		minAge = 13, maxAge = 22,
 		weight = 25, cooldown = 5,
-		emoji = "🧠", title = "Mental Health Check",
+		emoji = "🧠", title = "Feeling Down...",
 		category = "health",
-		text = "You've been feeling really stressed and anxious lately.",
+		text = "You've been feeling really down, stressed, and anxious lately. What do you do about it?",
 		choices = {
-			{ text = "💬 Talked to someone", effects = { Happiness = 10, Health = 5 }, resultText = "Opening up really helped! You're not alone." },
-			{ text = "🎨 Found creative outlet", effects = { Happiness = 8, Smarts = 3 }, resultText = "Art/music/writing became your therapy. Beautiful expression." },
-			{ text = "😶 Kept it inside", effects = { Happiness = -10, Health = -5 }, resultText = "Bottling it up made things worse. Please reach out." },
-			{ text = "🏃 Exercise helped", effects = { Happiness = 8, Health = 8 }, resultText = "Physical activity cleared your head. Natural mood booster!" },
+			{ text = "💬 Talk to someone", effects = { Happiness = 12, Health = 8 }, resultText = "Opened up to a friend/parent. Felt so much better not being alone in it." },
+			{ text = "😶 Keep it to yourself", effects = { Happiness = -15, Health = -10 }, resultText = "Bottled it up. Got worse. Please reach out - you don't have to suffer alone." },
+			{ text = "🎨 Express it creatively", effects = { Happiness = 8, Smarts = 5 }, resultText = "Art/music/writing became your outlet. Beautiful expression of hard feelings." },
+			{ text = "🏃 Exercise it out", effects = { Happiness = 10, Health = 12 }, resultText = "Physical activity really helped! Natural mood booster. Feeling better!" },
 		},
 	},
 	
@@ -135,48 +128,48 @@ module.events = {
 		id = "h_adult_back_pain",
 		minAge = 25, maxAge = 65,
 		weight = 30, cooldown = 3,
-		emoji = "🔙", title = "Back Problems!",
+		emoji = "🔙", title = "Back Pain!",
 		category = "health",
 		getDynamicData = function()
-			local causes = {"from sitting at desk all day", "from lifting something heavy", "for no apparent reason", "from sleeping wrong", "from that old injury"}
+			local causes = {"from sitting all day", "from lifting wrong", "for no reason", "from sleeping weird"}
 			return { cause = causes[math.random(#causes)] }
 		end,
-		text = "Your back has been killing you %cause%!",
+		text = "Your back is killing you %cause%! What do you do about it?",
 		choices = {
-			{ text = "💆 Chiropractor visit", effects = { Health = 8, Money = -150 }, resultText = "That adjustment was AMAZING! Relief at last!" },
-			{ text = "💊 Pain pills", effects = { Health = 2, Happiness = 4 }, resultText = "Managing with medication. Not ideal but functional." },
-			{ text = "🧘 Started yoga", effects = { Health = 10, Happiness = 6 }, resultText = "Yoga is life changing! Why didn't you start sooner?", setFlag = "does_yoga" },
-			{ text = "😫 Just suffered", effects = { Health = -8, Happiness = -10 }, resultText = "Ignored it. Got worse. Should've done something earlier." },
+			{ text = "💆 Go to chiropractor", effects = { Health = 10, Money = -150, Happiness = 5 }, resultText = "That adjustment was AMAZING! Relief! Walking out feeling new!" },
+			{ text = "💊 Just take pain pills", effects = { Health = -5, Happiness = -3 }, resultText = "Masking the problem. Didn't fix anything. Still hurts." },
+			{ text = "🧘 Start doing yoga", effects = { Health = 15, Happiness = 8 }, resultText = "Game changer! Flexibility and strength fixing the root cause!", setFlag = "does_yoga" },
+			{ text = "😫 Ignore it", effects = { Health = -12, Happiness = -10 }, resultText = "Got way worse! Now can barely move. Should've done something earlier." },
 		},
 	},
 	
 	{
-		id = "h_adult_sleep_issues",
-		minAge = 20, maxAge = 70,
-		weight = 25, cooldown = 3,
-		emoji = "😴", title = "Sleep Problems!",
+		id = "h_adult_checkup_results",
+		minAge = 25, maxAge = 70,
+		weight = 20, cooldown = 5,
+		emoji = "🏥", title = "Doctor Wants to Talk",
 		category = "health",
-		text = "You haven't been sleeping well. Tossing and turning every night.",
+		text = "Your test results came back and the doctor wants to discuss them. You're nervous. What's your approach?",
 		choices = {
-			{ text = "☕ Just more coffee", effects = { Health = -5, Smarts = -3 }, resultText = "Caffeinating through it. Zombie mode activated." },
-			{ text = "📵 Digital detox", effects = { Health = 8, Happiness = 6 }, resultText = "No screens before bed WORKS! Sleeping like a baby now!" },
-			{ text = "💊 Sleep study", effects = { Health = 6, Money = -300 }, resultText = "Discovered you have sleep apnea. Treatment helping!" },
-			{ text = "🧘 Better sleep hygiene", effects = { Health = 10, Happiness = 8 }, resultText = "New routine, new mattress, blackout curtains. GAME CHANGER!" },
+			{ text = "😰 Prepare for worst", effects = { Happiness = -10, Health = 10 }, resultText = "Good news! You're fine! All that worry for nothing. But good to check!" },
+			{ text = "🙏 Stay positive", effects = { Happiness = 5, Health = -5 }, resultText = "Some concerns found. Treatable but need lifestyle changes. Caught early at least." },
+			{ text = "🗓️ Keep delaying the call", effects = { Health = -15, Happiness = -15 }, resultText = "Avoided it for months. Problem got worse. Now it's serious. Don't do this!" },
+			{ text = "📋 Ask lots of questions", effects = { Smarts = 5, Health = 5 }, resultText = "Understanding your health is power! Made a plan with the doctor. Proactive!" },
 		},
 	},
 	
 	{
-		id = "h_adult_weight_struggle",
+		id = "h_adult_weight_issue",
 		minAge = 22, maxAge = 70,
 		weight = 25, cooldown = 4,
 		emoji = "⚖️", title = "Weight Concerns",
 		category = "health",
-		text = "Your clothes are fitting differently. Time to address your weight.",
+		text = "You've noticed significant weight change. Clothes fitting differently. What do you do?",
 		choices = {
-			{ text = "🥗 Lifestyle change", effects = { Health = 12, Happiness = 8, Looks = 5 }, resultText = "Diet and exercise working! Feel amazing!", setFlag = "healthy_lifestyle" },
-			{ text = "🏋️ Started gym", effects = { Health = 8, Happiness = 4, Money = -50 }, resultText = "Gym membership paying off! Getting stronger!" },
-			{ text = "😔 Emotional eating", effects = { Health = -8, Happiness = -6 }, resultText = "Stress made you eat more. Cycle continues..." },
-			{ text = "🤷 Body positive", effects = { Happiness = 6, Smarts = 3 }, resultText = "Accepted yourself as you are. Mental health matters too!" },
+			{ text = "🥗 Change diet seriously", effects = { Health = 15, Happiness = 5, Looks = 5 }, resultText = "Committed to change! Seeing results! Feel so much better!" },
+			{ text = "🏋️ Start exercising", effects = { Health = 10, Happiness = 8, Money = -50 }, resultText = "Gym membership paying off! Stronger, healthier, more energy!" },
+			{ text = "🍕 Keep same habits", effects = { Health = -10, Happiness = -5 }, resultText = "Problem got worse. Doctors concerned now. Should've acted earlier." },
+			{ text = "💊 Try a fad diet", effects = { Health = -8, Happiness = -5, Money = -100 }, resultText = "Didn't work. Lost then gained it all back. No shortcuts." },
 		},
 	},
 	
@@ -187,158 +180,106 @@ module.events = {
 		emoji = "😨", title = "Health Scare!",
 		category = "health",
 		getDynamicData = function()
-			local scares = {"suspicious mole", "chest pain episode", "abnormal lab results", "lump you found", "unexplained symptoms"}
+			local scares = {"suspicious lump", "chest pains", "abnormal test", "worrying symptoms"}
 			return { scare = scares[math.random(#scares)] }
 		end,
-		text = "Doctor wants more tests for that %scare%. Scary waiting period.",
+		text = "You found a %scare%. Doctor ordered more tests. Waiting for results. What do you do?",
 		choices = {
-			{ text = "😌 False alarm!", effects = { Health = 5, Happiness = 15 }, resultText = "All clear! Best news ever! Life appreciation intensified!" },
-			{ text = "⚠️ Need monitoring", effects = { Health = 0, Happiness = -5 }, resultText = "Not serious but needs watching. Annual checkups are important." },
-			{ text = "😰 Anxiety spiral", effects = { Health = -5, Happiness = -15 }, resultText = "The waiting was torture. Even good news didn't stop the worry." },
-			{ text = "🏥 Caught it early", effects = { Health = 8, Smarts = 3 }, resultText = "Something was found but caught early! Treatment successful!" },
+			{ text = "📅 Keep the appointment", effects = { Health = 10, Happiness = 8 }, resultText = "FALSE ALARM! All clear! Relief washes over you. So grateful!" },
+			{ text = "😰 Spiral with worry", effects = { Health = -5, Happiness = -20 }, resultText = "Results were fine but the anxiety was awful. The wait was torture." },
+			{ text = "🗓️ Delay getting results", effects = { Health = -15, Happiness = -15 }, resultText = "Something WAS wrong. Delaying made it worse. Could've been caught earlier." },
+			{ text = "💪 Stay busy, stay calm", effects = { Health = 5, Happiness = 5, Smarts = 3 }, resultText = "Results showed minor issue, easily treatable. Good attitude helped!" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- SENIOR HEALTH (55+) - DIVERSE, NOT JUST DECLINING!
+	-- SENIOR HEALTH (55+)
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "h_senior_joint_pain",
 		minAge = 50, maxAge = 100,
 		weight = 30, cooldown = 3,
-		emoji = "🦵", title = "Joint Pain",
+		emoji = "🦵", title = "Joint Pain!",
 		category = "health",
 		getDynamicData = function()
-			local joints = {"knee", "hip", "shoulder", "hands", "back"}
+			local joints = {"knee", "hip", "shoulder", "hands"}
 			return { joint = joints[math.random(#joints)] }
 		end,
-		text = "Your %joint% has been bothering you more than usual lately.",
+		text = "Your %joint% has been really bothering you. What do you do about it?",
 		choices = {
-			{ text = "💊 Anti-inflammatory", effects = { Health = 3, Money = -30 }, resultText = "Medication helping manage the pain." },
-			{ text = "🏊 Water aerobics", effects = { Health = 10, Happiness = 8 }, resultText = "Low-impact exercise is perfect! Actually having fun!", setFlag = "active_senior" },
-			{ text = "🦿 Surgery option", effects = { Health = 15, Money = -5000 }, resultText = "Replacement surgery was scary but you're like new!" },
-			{ text = "🧘 Gentle stretching", effects = { Health = 6, Happiness = 4 }, resultText = "Daily stretching routine makes a big difference!" },
+			{ text = "💊 Take anti-inflammatory", effects = { Health = 3, Money = -30 }, resultText = "Medication helps manage the pain. Not fixed but functional." },
+			{ text = "🏊 Try water exercises", effects = { Health = 12, Happiness = 10 }, resultText = "Low-impact aqua aerobics is perfect! Actually enjoying it!", setFlag = "active_senior" },
+			{ text = "😤 Tough it out", effects = { Health = -10, Happiness = -8 }, resultText = "Got way worse! Now need serious intervention. Should've addressed it." },
+			{ text = "👨‍⚕️ See a specialist", effects = { Health = 15, Money = -500 }, resultText = "Physical therapy plan is working! Mobility improving!" },
 		},
 	},
 	
 	{
-		id = "h_senior_hearing_vision",
+		id = "h_senior_vision_hearing",
 		minAge = 55, maxAge = 100,
 		weight = 25, cooldown = 4,
-		emoji = "👓", title = "Sensory Changes",
+		emoji = "👓", title = "Senses Changing",
 		category = "health",
 		getDynamicData = function()
-			local senses = {
-				{ type = "vision", solution = "glasses", emoji = "👓" },
-				{ type = "hearing", solution = "hearing aids", emoji = "👂" },
+			local issues = {
+				{ type = "vision", fix = "glasses" },
+				{ type = "hearing", fix = "hearing aids" },
 			}
-			local chosen = senses[math.random(#senses)]
-			return { sense = chosen.type, solution = chosen.solution, senseEmoji = chosen.emoji }
+			local chosen = issues[math.random(#issues)]
+			return { sense = chosen.type, fix = chosen.fix }
 		end,
-		getDynamicEmoji = function(data) return data.senseEmoji or "👓" end,
-		text = "Your %sense% isn't what it used to be. Doctor recommends %solution%.",
+		text = "Your %sense% isn't what it used to be. Doctor recommends %fix%. What do you do?",
 		choices = {
-			{ text = "✅ Embraced the change", effects = { Health = 5, Happiness = 6 }, resultText = "Amazing difference! Should've done this sooner!" },
-			{ text = "😤 Stubbornly refused", effects = { Happiness = -8, Health = -5 }, resultText = "Pride before quality of life. Missing out on conversations/sights." },
-			{ text = "😎 Got stylish ones", effects = { Happiness = 8, Looks = 3 }, resultText = "Actually looking pretty good! New look!" },
-			{ text = "🔬 Latest technology", effects = { Health = 8, Money = -2000 }, resultText = "Top of the line! Crystal clear! Worth the investment!" },
+			{ text = "✅ Get them right away", effects = { Health = 8, Happiness = 10, Money = -500 }, resultText = "Wow! What a difference! Should've done this sooner!" },
+			{ text = "😤 Refuse, you're fine", effects = { Health = -8, Happiness = -10 }, resultText = "Stubborn pride. Missing conversations, can't read signs. Quality of life suffering." },
+			{ text = "💰 Wait, too expensive", effects = { Health = -5, Happiness = -5 }, resultText = "Delayed getting help. Problems got worse. Eventually had to anyway." },
+			{ text = "😎 Get fancy stylish ones", effects = { Health = 8, Looks = 5, Money = -800, Happiness = 10 }, resultText = "Looking good AND seeing/hearing great! Top quality!" },
 		},
 	},
 	
 	{
-		id = "h_senior_fitness_milestone",
-		minAge = 55, maxAge = 90,
-		weight = 20, cooldown = 5,
-		emoji = "🏆", title = "Fitness Achievement!",
-		category = "health",
-		getDynamicData = function()
-			local achievements = {
-				"completed a 5K walk for charity",
-				"hiked a challenging trail",
-				"won your age group in a golf tournament",
-				"completed a senior fitness challenge",
-				"got your best health checkup in years",
-			}
-			return { achievement = achievements[math.random(#achievements)] }
-		end,
-		text = "You %achievement%! Age is just a number!",
-		choices = {
-			{ text = "💪 Proud of yourself!", effects = { Health = 10, Happiness = 15 }, resultText = "Proving everyone wrong! Still got it!", setFlag = "active_senior" },
-			{ text = "🎯 Set bigger goals", effects = { Health = 8, Happiness = 12, Smarts = 3 }, resultText = "If you can do this, what else is possible?" },
-			{ text = "👨‍👩‍👧 Inspiring family", effects = { Happiness = 12 }, resultText = "Grandkids think you're a superhero!" },
-			{ text = "🏥 Overdid it a bit", effects = { Health = -5, Happiness = 4 }, resultText = "Pushed too hard but worth it. Rest time." },
-		},
-	},
-	
-	{
-		id = "h_senior_medication_management",
-		minAge = 55, maxAge = 100,
-		weight = 25, cooldown = 3,
-		emoji = "💊", title = "Medication Review",
-		category = "health",
-		text = "Doctor reviewing your medications. Time to optimize your health routine.",
-		choices = {
-			{ text = "💊 Reduced meds!", effects = { Health = 8, Happiness = 10, Money = 100 }, resultText = "Your health improved enough to cut some pills! Great news!" },
-			{ text = "🔄 Adjusted dosages", effects = { Health = 5 }, resultText = "Fine-tuned for better effectiveness. Feeling better!" },
-			{ text = "➕ Added new one", effects = { Health = 3, Money = -100 }, resultText = "New medication for a new issue. Managing it." },
-			{ text = "⚠️ Bad interaction found", effects = { Health = 10, Happiness = 5 }, resultText = "Caught a dangerous drug interaction! Close call!" },
-		},
-	},
-	
-	{
-		id = "h_senior_fall_prevention",
+		id = "h_senior_fall",
 		minAge = 65, maxAge = 100,
 		weight = 25, cooldown = 4,
-		emoji = "⚠️", title = "Balance Check",
+		emoji = "⚠️", title = "You Fell!",
 		category = "health",
-		text = "You've had a couple near-falls recently. Time to address it.",
+		text = "You took a fall! Lying on the ground. What do you do?",
 		choices = {
-			{ text = "🏠 Home modifications", effects = { Health = 8, Money = -500 }, resultText = "Grab bars, non-slip mats, better lighting. Much safer!" },
-			{ text = "🧘 Balance exercises", effects = { Health = 10, Happiness = 5 }, resultText = "Tai Chi classes working wonders! Balance is back!" },
-			{ text = "🦯 Got a cane", effects = { Health = 5, Happiness = -2 }, resultText = "Practical choice. Safety over vanity." },
-			{ text = "🤷 Ignored the signs", effects = { Health = -15, Happiness = -10 }, resultText = "Had a bad fall. Hospital stay. Should've taken precautions." },
+			{ text = "📞 Call for help", effects = { Health = -5, Happiness = 5 }, resultText = "Help arrived. Minor injury. Good thing you had your phone!" },
+			{ text = "💪 Try to get up alone", effects = { Health = -15, Happiness = -10 }, resultText = "Made it worse trying! Hurt yourself more. Don't do that!" },
+			{ text = "🆘 Press medical alert", effects = { Health = 0, Happiness = 8, Money = -30 }, resultText = "Worth every penny! Help arrived fast. So glad you had it." },
+			{ text = "😤 Lie there in denial", effects = { Health = -20, Happiness = -15 }, resultText = "Hours before someone found you. Hypothermia. Hospitalized. Scary." },
 		},
 	},
 	
 	{
-		id = "h_senior_memory_concern",
+		id = "h_senior_memory",
 		minAge = 60, maxAge = 100,
 		weight = 20, cooldown = 5,
-		emoji = "🧠", title = "Memory Moment",
+		emoji = "🧠", title = "Memory Concerns",
 		category = "health",
-		text = "You've been forgetting things more often. Family noticed too.",
+		text = "You've been forgetting things more often. Where did you put the keys? What were you saying? What do you do?",
 		choices = {
-			{ text = "🧩 Brain exercises", effects = { Smarts = 5, Happiness = 5 }, resultText = "Puzzles, games, reading! Keeping your mind sharp!" },
-			{ text = "👨‍⚕️ Got evaluated", effects = { Health = 3, Happiness = 4 }, resultText = "Just normal aging. Strategies to help memory." },
-			{ text = "😰 Really worried", effects = { Happiness = -12, Health = -3 }, resultText = "Fear of cognitive decline is consuming you." },
-			{ text = "📝 Systems in place", effects = { Smarts = 8, Happiness = 6 }, resultText = "Lists, reminders, routines. Working smarter!" },
+			{ text = "🧩 Brain exercises daily", effects = { Smarts = 8, Happiness = 5 }, resultText = "Puzzles, games, learning! Keeping your mind sharp!" },
+			{ text = "👨‍⚕️ Get evaluated", effects = { Health = 5, Happiness = 3 }, resultText = "Doctor says it's normal aging. Gave you strategies to help. Relief!" },
+			{ text = "😰 Panic about it", effects = { Happiness = -15, Health = -5 }, resultText = "The worry makes it worse! Anxiety affecting memory more than age." },
+			{ text = "📝 Create systems", effects = { Smarts = 10, Happiness = 8 }, resultText = "Lists, routines, reminders everywhere! Working smarter not harder!" },
 		},
 	},
 	
 	{
-		id = "h_senior_new_hobby_health",
-		minAge = 55, maxAge = 90,
+		id = "h_senior_staying_active",
+		minAge = 55, maxAge = 85,
 		weight = 20, cooldown = 4,
-		emoji = "🎨", title = "Health Through Hobby",
+		emoji = "🚶", title = "Staying Active?",
 		category = "health",
-		getDynamicData = function()
-			local hobbies = {
-				{ hobby = "gardening", benefit = "exercise and fresh air" },
-				{ hobby = "dancing", benefit = "cardio and balance" },
-				{ hobby = "swimming", benefit = "low-impact full body workout" },
-				{ hobby = "volunteering", benefit = "mental health and purpose" },
-				{ hobby = "cooking classes", benefit = "nutrition and social connection" },
-			}
-			local chosen = hobbies[math.random(#hobbies)]
-			return { hobby = chosen.hobby, benefit = chosen.benefit }
-		end,
-		text = "You started %hobby%! Getting great health benefits from %benefit%.",
+		text = "Friends invite you to join a senior fitness class. What do you do?",
 		choices = {
-			{ text = "❤️ Life-changing!", effects = { Health = 12, Happiness = 15 }, resultText = "This has transformed your life! Why didn't you start earlier?" },
-			{ text = "👥 Made friends", effects = { Happiness = 12, Smarts = 3 }, resultText = "The social aspect is as good as the health benefits!" },
-			{ text = "🏆 Got really good", effects = { Happiness = 10, Smarts = 5 }, resultText = "Natural talent! Or maybe experience is the best teacher!" },
-			{ text = "😔 Didn't stick", effects = { Happiness = -3 }, resultText = "Started strong but lost motivation. Maybe try something else." },
+			{ text = "✅ Join enthusiastically", effects = { Health = 15, Happiness = 12 }, resultText = "LOVE IT! New friends, better health, more energy! Best decision!", setFlag = "active_senior" },
+			{ text = "🤷 Make excuses", effects = { Health = -8, Happiness = -5 }, resultText = "Stayed home. Getting stiffer and lonelier. Should've gone." },
+			{ text = "😬 Try once and quit", effects = { Health = 3, Happiness = -3 }, resultText = "Too hard. Embarrassing. Gave up after one class." },
+			{ text = "🏆 Become the star", effects = { Health = 20, Happiness = 15, Looks = 3 }, resultText = "You're the most dedicated one there! Inspiring others! Age is just a number!" },
 		},
 	},
 	
@@ -350,18 +291,14 @@ module.events = {
 		id = "h_dental_emergency",
 		minAge = 10, maxAge = 100,
 		weight = 20, cooldown = 4,
-		emoji = "🦷", title = "Dental Emergency!",
+		emoji = "🦷", title = "Tooth Pain!",
 		category = "health",
-		getDynamicData = function()
-			local issues = {"toothache", "cracked tooth", "cavity", "abscess", "wisdom tooth pain"}
-			return { issue = issues[math.random(#issues)] }
-		end,
-		text = "Major %issue%! Can't ignore this one.",
+		text = "OUCH! Severe tooth pain! Can't ignore this. What do you do?",
 		choices = {
-			{ text = "🦷 Emergency dentist", effects = { Health = 8, Money = -500 }, resultText = "Fixed! The relief is incredible!" },
-			{ text = "💊 Pain pills for now", effects = { Health = -3, Happiness = -5 }, resultText = "Temporary fix. This will get worse." },
-			{ text = "😱 Major procedure needed", effects = { Health = 5, Money = -2000 }, resultText = "Root canal/extraction. Expensive but necessary." },
-			{ text = "🍀 Simple fix!", effects = { Health = 5, Money = -100 }, resultText = "Not as bad as feared! Quick fix!" },
+			{ text = "🦷 Emergency dentist NOW", effects = { Health = 10, Money = -400, Happiness = 5 }, resultText = "Fixed! The relief is incredible! Worth every penny." },
+			{ text = "💊 Pain pills and wait", effects = { Health = -10, Happiness = -8 }, resultText = "Infection got worse! Now need root canal. Should've gone immediately." },
+			{ text = "🍺 Try to numb it yourself", effects = { Health = -5, Happiness = -5 }, resultText = "Didn't work. Still hurts. Delayed the inevitable trip." },
+			{ text = "😬 Pull it yourself", effects = { Health = -25, Happiness = -20 }, resultText = "TERRIBLE IDEA! Made everything worse. Infection, damage, hospital trip. NEVER do this!" },
 		},
 	},
 	
@@ -372,49 +309,45 @@ module.events = {
 		emoji = "🤮", title = "Food Poisoning!",
 		category = "health",
 		getDynamicData = function()
-			local sources = {"that gas station sushi", "the sketchy restaurant", "something from the fridge", "the potluck dish", "undercooked chicken"}
+			local sources = {"that sketchy restaurant", "gas station sushi", "old leftovers", "undercooked chicken"}
 			return { source = sources[math.random(#sources)] }
 		end,
-		text = "Definitely %source%. You're paying for it now.",
+		text = "Pretty sure it was %source%. You're MISERABLE. What do you do?",
 		choices = {
-			{ text = "🚽 24-hour nightmare", effects = { Health = -10, Happiness = -12 }, resultText = "The worst 24 hours. Never eating there again." },
-			{ text = "🏥 Had to go to ER", effects = { Health = -15, Money = -800 }, resultText = "Severe dehydration. Hospital stay needed." },
-			{ text = "🤢 Mild but miserable", effects = { Health = -5, Happiness = -6 }, resultText = "Could've been worse. Still awful." },
-			{ text = "🍵 Tea and rest", effects = { Health = 5, Happiness = 2 }, resultText = "Home remedies worked. Recovery mode." },
+			{ text = "🛏️ Rest and hydrate", effects = { Health = 5, Happiness = -5 }, resultText = "Rough 24 hours but recovered. Never eating there again!" },
+			{ text = "💊 Try to tough it out", effects = { Health = -10, Happiness = -12 }, resultText = "Made it last longer! Should've just rested properly." },
+			{ text = "🏥 Go to ER", effects = { Health = 8, Money = -500 }, resultText = "Was dehydrated. They helped. Better safe than sorry." },
+			{ text = "😤 Complain to restaurant", effects = { Happiness = 3, Money = 50 }, resultText = "They gave you a refund. Small consolation for this suffering." },
 		},
 	},
 	
 	{
-		id = "h_annual_checkup",
-		minAge = 18, maxAge = 100,
-		weight = 25, cooldown = 8,
-		emoji = "🏥", title = "Annual Checkup Results",
-		category = "health",
-		text = "Your yearly physical results are in!",
-		choices = {
-			{ text = "💪 Perfect health!", effects = { Health = 10, Happiness = 12 }, resultText = "Doctor says you're in great shape! Keep it up!" },
-			{ text = "⚠️ Some concerns", effects = { Health = -3, Smarts = 3 }, resultText = "Some numbers to watch. Lifestyle changes recommended." },
-			{ text = "😅 Cholesterol high", effects = { Health = -5, Happiness = -4 }, resultText = "Diet changes needed. No more bacon?" },
-			{ text = "🎉 Better than last year!", effects = { Health = 8, Happiness = 10 }, resultText = "Your changes are working! Improvement across the board!" },
-		},
-	},
-	
-	{
-		id = "h_exercise_milestone",
+		id = "h_exercise_decision",
 		minAge = 15, maxAge = 80,
-		weight = 20, cooldown = 4,
-		emoji = "🏃", title = "Fitness Progress!",
+		weight = 25, cooldown = 3,
+		emoji = "🏃", title = "Time to Exercise?",
 		category = "health",
-		getDynamicData = function()
-			local milestones = {"ran your first mile without stopping", "hit a new personal record", "reached your goal weight", "completed a 30-day challenge", "got compliments on your progress"}
-			return { milestone = milestones[math.random(#milestones)] }
-		end,
-		text = "You %milestone%! Hard work paying off!",
+		text = "You've been thinking about getting in shape. What do you do?",
 		choices = {
-			{ text = "💪 So proud!", effects = { Health = 10, Happiness = 12, Looks = 3 }, resultText = "The dedication is showing! Feel amazing!" },
-			{ text = "🎯 Setting higher goals", effects = { Health = 8, Smarts = 3 }, resultText = "If you achieved this, what's next?" },
-			{ text = "😤 Injury setback", effects = { Health = -8, Happiness = -5 }, resultText = "Pushed too hard. Time to recover and try again." },
-			{ text = "📸 Progress pics!", effects = { Happiness = 8, Looks = 5 }, resultText = "The before/after is INCREDIBLE! Motivating others!" },
+			{ text = "🏋️ Start a routine", effects = { Health = 12, Happiness = 10, Looks = 3 }, resultText = "Stuck with it! Feeling better every day! Best decision!" },
+			{ text = "🛋️ Start tomorrow...", effects = { Health = -5, Happiness = -3 }, resultText = "Tomorrow never came. Still on the couch months later." },
+			{ text = "💪 Go too hard too fast", effects = { Health = -8, Happiness = -5 }, resultText = "Injured yourself! Now can't exercise at all. Start slow next time." },
+			{ text = "🚶 Just walk more", effects = { Health = 8, Happiness = 6 }, resultText = "Simple but effective! Energy up, weight down! Easy wins!" },
+		},
+	},
+	
+	{
+		id = "h_sick_choice",
+		minAge = 18, maxAge = 70,
+		weight = 25, cooldown = 2,
+		emoji = "🤧", title = "Feeling Sick",
+		category = "health",
+		text = "You're coming down with something. Feel awful. What do you do?",
+		choices = {
+			{ text = "🏠 Stay home and rest", effects = { Health = 10, Happiness = 5 }, resultText = "Good call! Recovered quickly. Body needed the rest." },
+			{ text = "💼 Go to work anyway", effects = { Health = -10, Happiness = -8 }, resultText = "Got everyone else sick! Boss mad. You're worse now. Stay home when sick!" },
+			{ text = "💊 Pop cold medicine and push", effects = { Health = -5, Happiness = -3 }, resultText = "Dragged on for 2 weeks instead of 3 days. Should've rested." },
+			{ text = "👨‍⚕️ See a doctor", effects = { Health = 12, Money = -100 }, resultText = "Got proper treatment! Knocked it out fast. Worth the copay." },
 		},
 	},
 }

@@ -1,7 +1,7 @@
 -- LifeEvents/career_arts.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- ARTS & ENTERTAINMENT CAREER EVENTS
--- Musicians, Artists, Actors, Writers, Entertainers - The creative life
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -18,7 +18,7 @@ module.events = {
 		id = "arts_childhood_talent",
 		minAge = 6, maxAge = 12,
 		weight = 25, oneTime = true,
-		emoji = "🎨", title = "Creative Spark!",
+		emoji = "🎨", title = "Teacher Noticed Something!",
 		category = "school",
 		getDynamicData = function()
 			local talents = {
@@ -27,18 +27,17 @@ module.events = {
 				{ type = "playing piano", emoji = "🎹" },
 				{ type = "dancing", emoji = "💃" },
 				{ type = "acting", emoji = "🎭" },
-				{ type = "writing stories", emoji = "✍️" },
 			}
 			local chosen = talents[math.random(#talents)]
 			return { talent = chosen.type, talentEmoji = chosen.emoji }
 		end,
 		getDynamicEmoji = function(data) return data.talentEmoji or "🎨" end,
-		text = "Your teacher noticed you have a natural gift for %talent%!",
+		text = "Your teacher says you have natural talent for %talent%! They suggest you pursue it. What do you do?",
 		choices = {
-			{ text = "🌟 Practice every day!", effects = { Happiness = 10, Smarts = 5 }, resultText = "You're getting better! This could be your calling!", setFlag = "artistic_talent" },
-			{ text = "😊 It's just for fun", effects = { Happiness = 8 }, resultText = "A fun hobby to enjoy!" },
-			{ text = "🎓 Take lessons", effects = { Happiness = 8, Smarts = 6, Money = -500 }, resultText = "Professional training begins! Your skills are growing fast!", setFlags = {"artistic_talent", "trained_artist"} },
-			{ text = "🤷 Not that interested", effects = { Happiness = 2 }, resultText = "Maybe art isn't your thing." },
+			{ text = "🌟 Practice every day", effects = { Happiness = 12, Smarts = 5 }, resultText = "You're getting really good! This could be your calling!", setFlag = "artistic_talent" },
+			{ text = "🎓 Ask for lessons", effects = { Happiness = 8, Smarts = 6, Money = -500 }, resultText = "Parents enrolled you in classes! Professional training begins!", setFlags = {"artistic_talent", "trained_artist"} },
+			{ text = "😊 Just do it for fun", effects = { Happiness = 6 }, resultText = "A nice hobby! No pressure, just enjoy it." },
+			{ text = "🤷 Not interested", effects = { Happiness = 0 }, resultText = "Teacher was disappointed but you moved on to other things." },
 		},
 	},
 	
@@ -49,15 +48,15 @@ module.events = {
 		emoji = "🎭", title = "School Play Auditions!",
 		category = "school",
 		getDynamicData = function()
-			local plays = {"Romeo and Juliet", "The Wizard of Oz", "A Christmas Carol", "Grease", "The Lion King Jr."}
+			local plays = {"Romeo and Juliet", "The Wizard of Oz", "A Christmas Carol", "Grease"}
 			return { play = plays[math.random(#plays)] }
 		end,
-		text = "School is putting on %play%! Auditions are open!",
+		text = "School is putting on %play%! Auditions are today! What do you do?",
 		choices = {
-			{ text = "🌟 Go for the lead!", effects = { Happiness = 15, Looks = 3 }, resultText = "YOU GOT THE LEAD ROLE! Everyone's talking about you!", setFlag = "theater_kid" },
-			{ text = "🎭 Try for supporting", effects = { Happiness = 10, Smarts = 2 }, resultText = "Got a great part! This is so fun!", setFlag = "theater_kid" },
-			{ text = "🎨 Help with sets", effects = { Happiness = 6, Smarts = 3 }, resultText = "Behind the scenes magic! You painted amazing backdrops!" },
-			{ text = "😰 Too nervous", effects = { Happiness = -3 }, resultText = "Watched from the audience. Maybe next time..." },
+			{ text = "🌟 Audition for the lead", effects = { Happiness = 15, Looks = 3 }, resultText = "You nailed it! GOT THE LEAD! Everyone's talking about you!", setFlag = "theater_kid" },
+			{ text = "🎭 Audition for supporting", effects = { Happiness = 10, Smarts = 2 }, resultText = "Got a fun supporting role! Perfect amount of stage time!", setFlag = "theater_kid" },
+			{ text = "🎨 Volunteer for backstage", effects = { Happiness = 6, Smarts = 3 }, resultText = "Painting sets and handling props! The unsung heroes of theater!" },
+			{ text = "😰 Skip the audition", effects = { Happiness = -5 }, resultText = "Too nervous. Watched from the audience on opening night. Regret." },
 		},
 	},
 	
@@ -69,20 +68,20 @@ module.events = {
 		id = "music_first_band",
 		minAge = 14, maxAge = 22,
 		weight = 25, oneTime = true,
-		emoji = "🎸", title = "Starting a Band!",
+		emoji = "🎸", title = "Start a Band?",
 		category = "social",
 		requiresFlag = "artistic_talent",
 		getDynamicData = function()
-			local genres = {"rock", "pop", "indie", "metal", "punk", "alternative"}
-			local bandNames = {"The Midnight Echoes", "Neon Dreams", "Broken Compass", "Electric Youth", "The Last Sunset"}
+			local genres = {"rock", "pop", "indie", "punk", "alternative"}
+			local bandNames = {"The Midnight Echoes", "Neon Dreams", "Broken Compass", "Electric Youth"}
 			return { genre = genres[math.random(#genres)], bandName = bandNames[math.random(#bandNames)] }
 		end,
-		text = "You and some friends want to start a %genre% band called %bandName%!",
+		text = "Friends want to start a %genre% band called %bandName%! They need you! What do you do?",
 		choices = {
-			{ text = "🎸 Let's do it!", effects = { Happiness = 15 }, resultText = "First practice was AMAZING! You might have something here!", setFlag = "in_band" },
-			{ text = "🎤 I'll be the singer", effects = { Happiness = 12, Looks = 3 }, resultText = "Front and center! The spotlight feels natural!", setFlags = {"in_band", "lead_singer"} },
-			{ text = "🤔 Just for fun", effects = { Happiness = 8 }, resultText = "Garage band vibes! Good times with friends!", setFlag = "in_band" },
-			{ text = "🙅 Not my scene", effects = { Happiness = 2 }, resultText = "Bands aren't really your thing." },
+			{ text = "🎸 Join as guitarist", effects = { Happiness = 15 }, resultText = "First jam session was electric! This band has potential!", setFlag = "in_band" },
+			{ text = "🎤 Only if I can sing", effects = { Happiness = 12, Looks = 3 }, resultText = "They agreed! You're the frontperson! Spotlight feels natural!", setFlags = {"in_band", "lead_singer"} },
+			{ text = "🤔 Just help out sometimes", effects = { Happiness = 6 }, resultText = "Casual involvement. Show up when you can. Low pressure.", setFlag = "in_band" },
+			{ text = "🙅 Pass on it", effects = { Happiness = 0 }, resultText = "Not your thing. They found someone else." },
 		},
 	},
 	
@@ -94,15 +93,15 @@ module.events = {
 		category = "work",
 		requiresFlag = "in_band",
 		getDynamicData = function()
-			local venues = {"a local coffee shop", "a small club", "a house party", "a school talent show", "a street festival"}
+			local venues = {"a local coffee shop", "a small club", "a house party", "a street festival"}
 			return { venue = venues[math.random(#venues)] }
 		end,
-		text = "Your band got booked to play at %venue%! Your first real show!",
+		text = "Your band got booked at %venue%! First real show! How do you approach it?",
 		choices = {
-			{ text = "🔥 Killed it!", effects = { Happiness = 20, Looks = 3, Money = 100 }, resultText = "The crowd went CRAZY! People want you back!", setFlag = "performing_musician" },
-			{ text = "😅 Made some mistakes", effects = { Happiness = 8, Smarts = 3 }, resultText = "Not perfect but you learned so much!" },
-			{ text = "😰 Froze up", effects = { Happiness = -10, Health = -2 }, resultText = "Stage fright hit hard. You stumbled through it." },
-			{ text = "🌟 Got discovered!", effects = { Happiness = 25, Money = 500 }, resultText = "A talent scout was in the audience! They want to talk!", setFlags = {"performing_musician", "industry_contact"} },
+			{ text = "💪 Give it 110%!", effects = { Happiness = 20, Looks = 3, Money = 100 }, resultText = "CRUSHED IT! Crowd went wild! People want you back!", setFlag = "performing_musician" },
+			{ text = "😎 Play it cool", effects = { Happiness = 10, Smarts = 3 }, resultText = "Solid performance! Nothing flashy but no mistakes either!" },
+			{ text = "🍺 Get drunk first", effects = { Happiness = -15, Looks = -3 }, resultText = "DISASTER! Forgot lyrics, fell off stage. Embarrassing night." },
+			{ text = "😰 Almost cancel", effects = { Happiness = 5 }, resultText = "Nervous wreck but did it anyway. Not great but you survived!" },
 		},
 	},
 	
@@ -110,20 +109,20 @@ module.events = {
 		id = "music_record_deal",
 		minAge = 18, maxAge = 35,
 		weight = 15, oneTime = true,
-		emoji = "📀", title = "Record Deal Offer!",
+		emoji = "📀", title = "Record Label Interested!",
 		category = "work",
 		requiresFlag = "performing_musician",
 		getDynamicData = function()
-			local labels = {"Universal", "Sony", "Warner", "an indie label", "a small startup label"}
-			local advance = math.random(10000, 100000)
+			local labels = {"a major label", "an indie label", "a startup label"}
+			local advance = math.random(20000, 80000)
 			return { label = labels[math.random(#labels)], advance = advance }
 		end,
-		text = "%label% wants to sign you! They're offering a $%advance% advance!",
+		text = "%label% wants to sign you! $%advance% advance offered. What do you do?",
 		choices = {
-			{ text = "✍️ Sign the deal!", effects = { Happiness = 30, Money = 50000 }, resultText = "YOU'RE A SIGNED ARTIST! Dreams coming true!", setFlags = {"signed_artist", "record_deal"} },
-			{ text = "📋 Negotiate better terms", effects = { Happiness = 25, Money = 80000, Smarts = 5 }, resultText = "Got a better deal! Smart move!", setFlags = {"signed_artist", "record_deal"} },
-			{ text = "🤔 Stay independent", effects = { Happiness = 10, Smarts = 3 }, resultText = "Keeping creative control. Risky but authentic.", setFlag = "indie_artist" },
-			{ text = "⚠️ Bad contract!", effects = { Happiness = -15, Money = 20000 }, resultText = "Signed without reading carefully. Terrible terms!", setFlags = {"signed_artist", "bad_contract"} },
+			{ text = "✍️ Sign immediately!", effects = { Happiness = 20, Money = 50000 }, resultText = "Signed! You're officially a recording artist! Dreams coming true!", setFlags = {"signed_artist", "record_deal"} },
+			{ text = "📋 Hire a lawyer first", effects = { Happiness = 25, Money = 70000, Smarts = 5 }, resultText = "Lawyer found bad clauses! Negotiated better terms! Smart move!", setFlags = {"signed_artist", "record_deal"} },
+			{ text = "🤔 Stay independent", effects = { Happiness = 8, Smarts = 3 }, resultText = "Keeping creative control. Harder path but YOUR path.", setFlag = "indie_artist" },
+			{ text = "😬 Don't read the contract", effects = { Happiness = -10, Money = 20000 }, resultText = "Signed blind. TERRIBLE terms! They own everything. Big mistake!", setFlags = {"signed_artist", "bad_contract"} },
 		},
 	},
 	
@@ -131,19 +130,15 @@ module.events = {
 		id = "music_hit_song",
 		minAge = 18, maxAge = 50,
 		weight = 10, oneTime = true,
-		emoji = "🎵", title = "YOUR SONG IS A HIT!",
+		emoji = "🎵", title = "Song Going Viral!",
 		category = "work",
 		requiresFlag = "signed_artist",
-		getDynamicData = function()
-			local positions = {1, 3, 5, 10}
-			return { chartPosition = positions[math.random(#positions)] }
-		end,
-		text = "Your song hit #%chartPosition% on the charts! You're going VIRAL!",
+		text = "Your new song is blowing up! Millions of streams! Labels and press calling! How do you handle it?",
 		choices = {
-			{ text = "🤩 This is surreal!", effects = { Happiness = 40, Money = 200000, Looks = 10 }, resultText = "Interviews! Awards! Your life changed overnight!", setFlags = {"famous_musician", "chart_hit"} },
-			{ text = "🎤 World tour time!", effects = { Happiness = 35, Money = 500000, Health = -5 }, resultText = "50 cities! Exhausting but incredible!", setFlags = {"famous_musician", "touring_artist"} },
-			{ text = "😰 Fame is overwhelming", effects = { Happiness = 10, Money = 150000, Health = -8 }, resultText = "Success came with anxiety. Can't go anywhere without being recognized." },
-			{ text = "💰 Capitalize on it!", effects = { Happiness = 20, Money = 400000 }, resultText = "Merch, endorsements, brand deals! Making that money!", setFlags = {"famous_musician", "sellout"} },
+			{ text = "🎤 Do every interview", effects = { Happiness = 30, Money = 200000, Looks = 10, Health = -5 }, resultText = "Non-stop press! Exhausting but your name is EVERYWHERE!", setFlags = {"famous_musician", "chart_hit"} },
+			{ text = "🎸 Focus on the music", effects = { Happiness = 25, Money = 100000, Smarts = 5 }, resultText = "Let the music speak. Earned respect as a real artist.", setFlags = {"famous_musician", "respected_artist"} },
+			{ text = "💰 Chase the money", effects = { Happiness = 15, Money = 300000, Looks = -3 }, resultText = "Brand deals, merch, sellout collabs. Rich but respect down.", setFlags = {"famous_musician", "sellout"} },
+			{ text = "😰 Hide from spotlight", effects = { Happiness = 5, Money = 80000 }, resultText = "Turned down most offers. Missed the moment. One hit wonder?" },
 		},
 	},
 	
@@ -151,15 +146,15 @@ module.events = {
 		id = "music_one_hit_wonder",
 		minAge = 20, maxAge = 50,
 		weight = 20, cooldown = 5,
-		emoji = "📉", title = "Career Slump",
+		emoji = "📉", title = "New Album Flopping!",
 		category = "work",
 		requiresFlag = "chart_hit",
-		text = "Your new album flopped. Critics are calling you a one-hit wonder.",
+		text = "Your new album isn't doing well. Critics calling you a one-hit wonder. What do you do?",
 		choices = {
-			{ text = "💪 Prove them wrong!", effects = { Happiness = -5, Smarts = 5 }, resultText = "Back to the studio. You'll show them!", setFlag = "comeback_kid" },
-			{ text = "😔 Maybe they're right", effects = { Happiness = -20, Health = -5 }, resultText = "The doubt is crushing. Was it all luck?" },
-			{ text = "🔄 Reinvent yourself", effects = { Happiness = 5, Smarts = 8 }, resultText = "New sound, new image. Artists evolve!", setFlag = "reinvented" },
-			{ text = "🎸 Go back to small venues", effects = { Happiness = 10, Money = -10000 }, resultText = "Back to your roots. The music is what matters.", setFlag = "humble_artist" },
+			{ text = "💪 Work even harder", effects = { Happiness = 10, Smarts = 5, Health = -5 }, resultText = "Back to the studio! Determined to prove them wrong! Comeback loading..." },
+			{ text = "🔄 Completely reinvent", effects = { Happiness = 15, Smarts = 8 }, resultText = "New sound, new image! Risky but people are intrigued!", setFlag = "reinvented" },
+			{ text = "😔 Give up music", effects = { Happiness = -25, Health = -5 }, resultText = "The rejection broke you. Walked away from the industry.", clearFlags = {"signed_artist", "famous_musician"} },
+			{ text = "🎸 Go back to basics", effects = { Happiness = 12, Money = -20000 }, resultText = "Small venues, real fans. Less money, more soul. Pure again." },
 		},
 	},
 	
@@ -168,42 +163,42 @@ module.events = {
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "acting_first_audition",
+		id = "acting_audition",
 		minAge = 18, maxAge = 35,
-		weight = 25, oneTime = true,
-		emoji = "🎬", title = "Hollywood Audition!",
+		weight = 25, cooldown = 2,
+		emoji = "🎬", title = "Audition Opportunity!",
 		category = "work",
 		requiresFlag = "theater_kid",
 		getDynamicData = function()
-			local roles = {"a small TV role", "a commercial", "an indie film", "a background extra", "a web series"}
+			local roles = {"a TV commercial", "an indie film", "a small TV role", "a web series"}
 			return { role = roles[math.random(#roles)] }
 		end,
-		text = "You scored an audition for %role%! This could be your break!",
+		text = "You got an audition for %role%! Big opportunity! How do you prepare?",
 		choices = {
-			{ text = "🌟 Nailed it!", effects = { Happiness = 20, Money = 2000 }, resultText = "YOU GOT THE PART! Your acting career begins!", setFlag = "working_actor" },
-			{ text = "😅 Did okay", effects = { Happiness = 5, Smarts = 3 }, resultText = "Didn't get it but got great feedback. Keep trying!" },
-			{ text = "😰 Terrible audition", effects = { Happiness = -10 }, resultText = "Completely blanked. The rejection stings." },
-			{ text = "🤝 Made connections", effects = { Happiness = 8, Smarts = 4 }, resultText = "Didn't get this one but the casting director remembered you!", setFlag = "industry_contact" },
+			{ text = "📚 Study the script deeply", effects = { Happiness = 18, Money = 2000 }, resultText = "Your preparation showed! BOOKED THE ROLE! Acting career begins!", setFlag = "working_actor" },
+			{ text = "🎭 Just wing it", effects = { Happiness = -10 }, resultText = "Not prepared enough. They could tell. Rejection email came fast." },
+			{ text = "😰 Overthink everything", effects = { Happiness = 5 }, resultText = "So nervous you blanked! But they saw potential. Callback!" },
+			{ text = "🍺 Party the night before", effects = { Happiness = -15, Looks = -3 }, resultText = "Showed up hungover. TERRIBLE audition. Burned that bridge." },
 		},
 	},
 	
 	{
-		id = "acting_breakout_role",
+		id = "acting_big_break",
 		minAge = 20, maxAge = 45,
 		weight = 12, oneTime = true,
-		emoji = "🎭", title = "BREAKOUT ROLE!",
+		emoji = "🎭", title = "Big Role Offered!",
 		category = "work",
 		requiresFlag = "working_actor",
 		getDynamicData = function()
-			local shows = {"a hit Netflix series", "a blockbuster movie", "an HBO drama", "a Marvel film", "a critically acclaimed indie"}
+			local shows = {"a Netflix series", "a major movie", "an HBO drama", "a blockbuster film"}
 			return { production = shows[math.random(#shows)] }
 		end,
-		text = "You landed a major role in %production%! This is THE ONE!",
+		text = "You're offered a major role in %production%! This is THE break! What do you do?",
 		choices = {
-			{ text = "🌟 Career-defining!", effects = { Happiness = 40, Money = 500000, Looks = 10 }, resultText = "Critics are raving! You're the next big thing!", setFlags = {"famous_actor", "breakout_star"} },
-			{ text = "🏆 Award nomination!", effects = { Happiness = 45, Money = 300000, Looks = 8 }, resultText = "Emmy/Oscar buzz! Your performance is unforgettable!", setFlags = {"famous_actor", "award_nominated"} },
-			{ text = "😰 Pressure is intense", effects = { Happiness = 15, Money = 400000, Health = -10 }, resultText = "Success but at what cost? The stress is real." },
-			{ text = "🎬 Method acting toll", effects = { Happiness = 30, Money = 350000, Health = -15 }, resultText = "Lost yourself in the role. Brilliant performance but you're drained.", setFlags = {"famous_actor", "method_actor"} },
+			{ text = "✅ Accept immediately!", effects = { Happiness = 40, Money = 300000, Looks = 10 }, resultText = "Career-defining role! Critics raving! Awards buzz! MADE IT!", setFlags = {"famous_actor", "breakout_star"} },
+			{ text = "📋 Negotiate aggressively", effects = { Happiness = 30, Money = 500000, Smarts = 5 }, resultText = "Got way more money! But they remember you being difficult...", setFlag = "famous_actor" },
+			{ text = "🤔 Ask for script changes", effects = { Happiness = 15, Money = 200000 }, resultText = "Some changes made. Good role but tension with director.", setFlag = "famous_actor" },
+			{ text = "😬 Turn it down", effects = { Happiness = -20 }, resultText = "They gave it to someone else who became a HUGE star. Regret forever." },
 		},
 	},
 	
@@ -211,19 +206,19 @@ module.events = {
 		id = "acting_scandal",
 		minAge = 22, maxAge = 60,
 		weight = 15, cooldown = 5,
-		emoji = "📰", title = "Hollywood Scandal!",
+		emoji = "📰", title = "Scandal Breaking!",
 		category = "work",
 		requiresFlag = "famous_actor",
 		getDynamicData = function()
-			local scandals = {"leaked photos", "on-set meltdown video", "controversial tweet", "paparazzi caught you", "tabloid rumors"}
+			local scandals = {"leaked photos", "on-set meltdown video", "controversial interview", "past tweets surfaced"}
 			return { scandal = scandals[math.random(#scandals)] }
 		end,
-		text = "A %scandal% is all over the news! Your reputation is at stake!",
+		text = "OH NO! %scandal% all over the news! Sponsors threatening to drop you! What do you do?",
 		choices = {
-			{ text = "📱 Apologize publicly", effects = { Happiness = -10, Looks = -5 }, resultText = "Damage control worked. People are forgiving.", clearFlag = "scandalous" },
-			{ text = "🤐 No comment", effects = { Happiness = -5, Smarts = 3 }, resultText = "Let it blow over. Old news eventually." },
-			{ text = "⚔️ Sue the tabloids", effects = { Happiness = -8, Money = -50000 }, resultText = "Legal battle begins. Stressful but standing your ground." },
-			{ text = "😈 Lean into it", effects = { Happiness = 5, Looks = 3 }, resultText = "Any publicity is good publicity? Oddly, your fame grew.", setFlag = "controversial" },
+			{ text = "📱 Apologize immediately", effects = { Happiness = -5, Looks = -3 }, resultText = "Owned it. Apologized sincerely. People appreciated the honesty. Survived." },
+			{ text = "⚖️ Sue the tabloids", effects = { Happiness = -10, Money = -100000 }, resultText = "Long legal battle. Exhausting. Won eventually but at what cost?" },
+			{ text = "😤 Double down", effects = { Happiness = -20, Looks = -10, Money = -200000 }, resultText = "Made it SO much worse! Sponsors fled. Reputation tanked. Bad move!" },
+			{ text = "🤐 Go completely silent", effects = { Happiness = -8, Looks = -5 }, resultText = "Waited it out. Mostly blew over. Some damage but recovered eventually." },
 		},
 	},
 	
@@ -232,38 +227,22 @@ module.events = {
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "artist_first_gallery",
+		id = "artist_gallery_offer",
 		minAge = 20, maxAge = 50,
-		weight = 20, oneTime = true,
-		emoji = "🖼️", title = "First Gallery Show!",
+		weight = 20, cooldown = 4,
+		emoji = "🖼️", title = "Gallery Show Offer!",
 		category = "work",
 		requiresFlag = "artistic_talent",
 		getDynamicData = function()
-			local galleries = {"a small local gallery", "a hip downtown space", "an online exhibition", "a coffee shop", "an art collective"}
+			local galleries = {"a local gallery", "a downtown space", "an art collective", "a coffee shop"}
 			return { gallery = galleries[math.random(#galleries)] }
 		end,
-		text = "%gallery% wants to display your work! Your first real exhibition!",
+		text = "%gallery% wants to display your work! Your first real exhibition! How do you prepare?",
 		choices = {
-			{ text = "🎨 Sold everything!", effects = { Happiness = 25, Money = 5000 }, resultText = "Every piece sold! People love your work!", setFlags = {"professional_artist", "art_sold"} },
-			{ text = "😊 Great feedback", effects = { Happiness = 15, Smarts = 3 }, resultText = "Didn't sell much but made amazing connections!", setFlag = "professional_artist" },
-			{ text = "😔 Barely noticed", effects = { Happiness = -5 }, resultText = "Nobody showed up. The art world is tough." },
-			{ text = "🌟 Collector noticed you!", effects = { Happiness = 20, Money = 10000 }, resultText = "A wealthy collector bought your centerpiece! Patron acquired!", setFlags = {"professional_artist", "art_patron"} },
-		},
-	},
-	
-	{
-		id = "artist_viral_piece",
-		minAge = 18, maxAge = 60,
-		weight = 10, oneTime = true,
-		emoji = "🔥", title = "Viral Artwork!",
-		category = "work",
-		requiresFlag = "professional_artist",
-		text = "Your latest piece went viral! Millions are seeing your art!",
-		choices = {
-			{ text = "💰 Sell prints!", effects = { Happiness = 25, Money = 50000 }, resultText = "Print sales through the roof! You're making real money!", setFlag = "successful_artist" },
-			{ text = "🏛️ Museum offer!", effects = { Happiness = 30, Money = 20000, Smarts = 5 }, resultText = "A museum wants to acquire it! Your work in a permanent collection!", setFlags = {"successful_artist", "museum_artist"} },
-			{ text = "😤 People stealing it", effects = { Happiness = -10, Money = 5000 }, resultText = "Everyone's using it without credit. The internet is brutal." },
-			{ text = "🎨 Stay humble", effects = { Happiness = 15, Smarts = 5 }, resultText = "Fame is fleeting. Back to creating.", setFlag = "humble_artist" },
+			{ text = "🎨 Create new pieces", effects = { Happiness = 20, Money = 5000 }, resultText = "Fresh work impressed everyone! Sold several pieces! Success!", setFlags = {"professional_artist", "art_sold"} },
+			{ text = "🖼️ Show existing work", effects = { Happiness = 12, Money = 2000 }, resultText = "Solid showing! Some interest. Good experience!", setFlag = "professional_artist" },
+			{ text = "📢 Market aggressively", effects = { Happiness = 15, Money = 8000, Looks = 3 }, resultText = "Huge turnout from your promotion! Sold everything! Smart!", setFlags = {"professional_artist", "art_sold"} },
+			{ text = "😰 Rush unprepared", effects = { Happiness = -10 }, resultText = "Work wasn't ready. Embarrassing night. Gallery won't call back." },
 		},
 	},
 	
@@ -275,19 +254,15 @@ module.events = {
 		id = "writer_first_book",
 		minAge = 20, maxAge = 70,
 		weight = 20, oneTime = true,
-		emoji = "📚", title = "Finished Your First Book!",
+		emoji = "📚", title = "Finished Your Book!",
 		category = "work",
 		requiresFlag = "artistic_talent",
-		getDynamicData = function()
-			local genres = {"a thriller", "a romance novel", "a fantasy epic", "literary fiction", "a memoir", "a self-help book"}
-			return { genre = genres[math.random(#genres)] }
-		end,
-		text = "You finished writing %genre%! Years of work, finally complete!",
+		text = "You finished writing your first book! Years of work done. What do you do with it?",
 		choices = {
-			{ text = "📮 Query agents", effects = { Happiness = 10, Smarts = 3 }, resultText = "Rejection letters pouring in... but one said yes!", setFlag = "writer" },
-			{ text = "📱 Self-publish", effects = { Happiness = 12, Money = -2000 }, resultText = "You're a published author! Sales are slow but it's out there!", setFlag = "self_published" },
-			{ text = "🗑️ Trunk it", effects = { Happiness = -5, Smarts = 4 }, resultText = "Not ready. Back to the drawer. Start the next one." },
-			{ text = "🎉 Publishing deal!", effects = { Happiness = 25, Money = 15000 }, resultText = "A publisher wants it! Advance received!", setFlags = {"writer", "published_author"} },
+			{ text = "📮 Query literary agents", effects = { Happiness = 20, Money = 15000 }, resultText = "An agent signed you! Publisher interested! Book deal!", setFlags = {"writer", "published_author"} },
+			{ text = "📱 Self-publish on Amazon", effects = { Happiness = 12, Money = 2000 }, resultText = "You're published! Sales slow but it's OUT THERE!", setFlag = "self_published" },
+			{ text = "🗑️ Trunk it, start over", effects = { Happiness = -5, Smarts = 5 }, resultText = "Decided it wasn't good enough. Painful but maybe wise." },
+			{ text = "👨‍👩‍👧 Just share with family", effects = { Happiness = 8 }, resultText = "Family loved it! That's enough for now." },
 		},
 	},
 	
@@ -295,24 +270,20 @@ module.events = {
 		id = "writer_bestseller",
 		minAge = 25, maxAge = 80,
 		weight = 8, oneTime = true,
-		emoji = "🏆", title = "BESTSELLER!",
+		emoji = "🏆", title = "Book Taking Off!",
 		category = "work",
 		requiresFlag = "published_author",
-		getDynamicData = function()
-			local weeks = math.random(1, 20)
-			return { weeks = weeks }
-		end,
-		text = "Your book hit the NYT Bestseller list! %weeks% weeks and counting!",
+		text = "Your book is climbing the bestseller lists! Publisher wants you to promote it HARD. What do you do?",
 		choices = {
-			{ text = "📚 Book tour!", effects = { Happiness = 30, Money = 100000, Health = -5 }, resultText = "Signing books across the country! Exhausting but amazing!", setFlag = "bestselling_author" },
-			{ text = "🎬 Movie deal!", effects = { Happiness = 35, Money = 500000 }, resultText = "Hollywood wants to adapt it! Big screen dreams!", setFlags = {"bestselling_author", "movie_deal"} },
-			{ text = "✍️ Pressure for next book", effects = { Happiness = 10, Money = 80000, Health = -8 }, resultText = "Publisher wants a sequel ASAP. The pressure is crushing." },
-			{ text = "🙏 Grateful and humble", effects = { Happiness = 25, Money = 75000, Smarts = 5 }, resultText = "Dreams do come true. Back to writing with purpose.", setFlag = "bestselling_author" },
+			{ text = "📚 Full book tour", effects = { Happiness = 25, Money = 100000, Health = -8 }, resultText = "50 cities! Exhausting but BESTSELLING AUTHOR status!", setFlag = "bestselling_author" },
+			{ text = "🎬 Sell movie rights", effects = { Happiness = 30, Money = 500000 }, resultText = "HOLLYWOOD CALLED! Movie deal signed! Life changing!", setFlags = {"bestselling_author", "movie_deal"} },
+			{ text = "✍️ Focus on next book", effects = { Happiness = 15, Money = 50000, Smarts = 5 }, resultText = "Let success speak for itself. Working on the follow-up." },
+			{ text = "🏖️ Enjoy the moment", effects = { Happiness = 20, Money = 80000 }, resultText = "Took a break to appreciate it. Smart self-care." },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- LATE CAREER / LEGACY EVENTS
+	-- LATE CAREER / LEGACY
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
@@ -321,13 +292,13 @@ module.events = {
 		weight = 10, oneTime = true,
 		emoji = "🏆", title = "Lifetime Achievement Award!",
 		category = "work",
-		requiresFlag = "successful_artist",
-		text = "You're receiving a lifetime achievement award for your contributions to the arts!",
+		requiresFlag = "famous_musician",
+		text = "You're receiving a lifetime achievement award for your contributions to the arts! How do you accept?",
 		choices = {
-			{ text = "😭 Overwhelmed with gratitude", effects = { Happiness = 40, Looks = 5 }, resultText = "Standing ovation. Your whole career flashes before your eyes. Worth it.", setFlag = "legend" },
-			{ text = "🎤 Inspiring speech", effects = { Happiness = 35, Smarts = 5 }, resultText = "Your words moved the audience to tears. Legacy secured.", setFlag = "legend" },
-			{ text = "🤔 Feel like a fraud", effects = { Happiness = 15 }, resultText = "Imposter syndrome hits even now. But you accept graciously." },
-			{ text = "🌟 Pass the torch", effects = { Happiness = 30, Smarts = 3 }, resultText = "Used the moment to spotlight young artists. Class act.", setFlags = {"legend", "mentor"} },
+			{ text = "😭 Emotional speech", effects = { Happiness = 40, Looks = 5 }, resultText = "Brought the house to tears. Standing ovation. Beautiful moment.", setFlag = "legend" },
+			{ text = "🎤 Thank everyone", effects = { Happiness = 35, Smarts = 3 }, resultText = "Gracious and humble. Mentioned everyone who helped. Class act.", setFlag = "legend" },
+			{ text = "🌟 Spotlight young artists", effects = { Happiness = 38, Smarts = 5 }, resultText = "Used your moment to highlight new talent. Legendary generosity.", setFlags = {"legend", "mentor"} },
+			{ text = "🎸 Perform instead of speak", effects = { Happiness = 42, Health = -3 }, resultText = "One more performance. Pure magic. They'll never forget this.", setFlag = "legend" },
 		},
 	},
 	
@@ -335,67 +306,34 @@ module.events = {
 		id = "arts_creative_block",
 		minAge = 25, maxAge = 70,
 		weight = 25, cooldown = 4,
-		emoji = "😔", title = "Creative Block",
+		emoji = "😔", title = "Creative Block!",
 		category = "work",
 		requiresFlag = "professional_artist",
-		text = "You can't create anything. The inspiration is just... gone. Weeks of nothing.",
+		text = "You can't create anything. The inspiration is just... gone. Weeks of nothing. What do you do?",
 		choices = {
-			{ text = "🏖️ Take a break", effects = { Happiness = 5, Health = 5 }, resultText = "Rest helped. Ideas slowly returning." },
-			{ text = "💪 Force through it", effects = { Happiness = -10, Smarts = 3 }, resultText = "Produced work you hate. But you kept going." },
-			{ text = "🌍 Travel for inspiration", effects = { Happiness = 10, Money = -3000, Smarts = 5 }, resultText = "New places, new perspectives. The block is lifting!", setFlag = "inspired" },
-			{ text = "😰 Depression spiral", effects = { Happiness = -20, Health = -10 }, resultText = "The block fed the darkness. Need to talk to someone.", setFlag = "depressed" },
+			{ text = "🏖️ Take a real break", effects = { Happiness = 10, Health = 8 }, resultText = "Rest helped! Ideas slowly returning. Sometimes you need to stop." },
+			{ text = "💪 Force through it", effects = { Happiness = -15, Smarts = 3 }, resultText = "Produced work you hate. But kept going. Maybe quantity leads to quality." },
+			{ text = "🌍 Travel for inspiration", effects = { Happiness = 15, Money = -3000, Smarts = 5 }, resultText = "New places sparked new ideas! Breakthrough coming!", setFlag = "inspired" },
+			{ text = "🍺 Self-medicate", effects = { Happiness = -20, Health = -15 }, resultText = "Made everything worse. Block is deeper now. Need real help.", setFlag = "struggling" },
 		},
 	},
 	
 	{
-		id = "arts_passing_torch",
-		minAge = 50, maxAge = 85,
-		weight = 20, oneTime = true,
-		emoji = "🎓", title = "Mentoring the Next Generation",
+		id = "arts_mentor_request",
+		minAge = 40, maxAge = 85,
+		weight = 20, cooldown = 5,
+		emoji = "🎓", title = "Young Artist Asks for Guidance",
 		category = "work",
-		requiresFlag = "successful_artist",
+		requiresFlag = "professional_artist",
 		getDynamicData = function()
 			return { studentName = LifeEvents.randomFirstName() }
 		end,
-		text = "%studentName%, a young artist, asks you to be their mentor. They remind you of yourself.",
+		text = "%studentName%, a talented young artist, asks you to mentor them. They remind you of yourself. What do you do?",
 		choices = {
-			{ text = "🤝 Take them under your wing", effects = { Happiness = 20, Smarts = 3 }, resultText = "Watching them grow brings you so much joy. Legacy continues.", setFlag = "mentor" },
-			{ text = "📚 Teach a masterclass", effects = { Happiness = 15, Money = 10000 }, resultText = "Sharing your knowledge with dozens of young artists!", setFlag = "teacher" },
-			{ text = "🤔 Not ready to mentor", effects = { Happiness = -3 }, resultText = "You have your own work to focus on." },
-			{ text = "😢 They surpassed you", effects = { Happiness = 25, Smarts = 5 }, resultText = "%studentName% became bigger than you ever were. You couldn't be prouder.", setFlag = "proud_mentor" },
-		},
-	},
-	
-	{
-		id = "arts_forgotten",
-		minAge = 50, maxAge = 90,
-		weight = 15, cooldown = 5,
-		emoji = "😔", title = "Fading From Memory",
-		category = "work",
-		requiresFlag = "famous_musician",
-		blockIfFlag = "legend",
-		text = "A young person didn't recognize you. 'Who were you again?' Fame is fleeting.",
-		choices = {
-			{ text = "😔 It hurts", effects = { Happiness = -15 }, resultText = "All that work, and people forget. The industry moves on." },
-			{ text = "😂 Kind of funny", effects = { Happiness = 5, Smarts = 3 }, resultText = "Laughed it off. You know who you were. That's enough." },
-			{ text = "🎵 Comeback time!", effects = { Happiness = 10, Money = -10000 }, resultText = "Recording new music. You're not done yet!", setFlag = "comeback_kid" },
-			{ text = "🙏 At peace with it", effects = { Happiness = 8, Smarts = 5 }, resultText = "Legacy isn't about fame. It's about the art you made.", setFlag = "at_peace" },
-		},
-	},
-	
-	{
-		id = "arts_masterpiece",
-		minAge = 30, maxAge = 80,
-		weight = 8, oneTime = true,
-		emoji = "✨", title = "Your Magnum Opus",
-		category = "work",
-		requiresFlag = "professional_artist",
-		text = "You created something that feels... different. This might be the best thing you've ever made.",
-		choices = {
-			{ text = "🎨 It's perfect", effects = { Happiness = 35, Smarts = 8 }, resultText = "This is the one. The piece that defines your entire career. Masterpiece.", setFlag = "created_masterpiece" },
-			{ text = "🔥 Destroy it", effects = { Happiness = -10, Smarts = 5 }, resultText = "Burned it. Too personal. Some things aren't meant to be shared." },
-			{ text = "🏛️ Donate to museum", effects = { Happiness = 30, Smarts = 5 }, resultText = "Your masterpiece will inspire generations. Immortalized.", setFlags = {"created_masterpiece", "museum_artist"} },
-			{ text = "💰 Auction it", effects = { Happiness = 20, Money = 500000 }, resultText = "Sold for a fortune. But part of you wishes you kept it.", setFlag = "created_masterpiece" },
+			{ text = "🤝 Take them under your wing", effects = { Happiness = 20, Smarts = 3 }, resultText = "Watching them grow is deeply fulfilling. Legacy through teaching.", setFlag = "mentor" },
+			{ text = "📚 Point them to resources", effects = { Happiness = 8 }, resultText = "Gave them book recommendations and advice. Helped but from a distance." },
+			{ text = "😤 Too busy for mentoring", effects = { Happiness = -5 }, resultText = "Turned them down. They found someone else. Slight regret." },
+			{ text = "💰 Offer paid lessons", effects = { Happiness = 10, Money = 2000 }, resultText = "Professional arrangement. Good for both! Teaching is rewarding." },
 		},
 	},
 }

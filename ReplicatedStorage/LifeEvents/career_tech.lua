@@ -1,7 +1,7 @@
 -- LifeEvents/career_tech.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- TECHNOLOGY CAREER EVENTS
--- Programmers, Hackers, Data Scientists, Game Devs, Tech Bros - The digital life
+-- TECHNOLOGY & PROGRAMMING CAREER EVENTS
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,221 +11,190 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- EARLY TECH DISCOVERY
+	-- EARLY TECH INTEREST
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "tech_first_computer",
-		minAge = 6, maxAge = 14,
-		weight = 30, oneTime = true,
-		emoji = "💻", title = "First Computer!",
-		category = "family",
-		text = "You got your first computer! A whole new world opens up!",
-		choices = {
-			{ text = "🎮 Games all day!", effects = { Happiness = 12 }, resultText = "Gaming obsession begins! Maybe too much screen time...", setFlag = "gamer" },
-			{ text = "💻 How does this work?", effects = { Happiness = 10, Smarts = 8 }, resultText = "You took it apart! Now to put it back together...", setFlags = {"computer_interest", "tinkerer"} },
-			{ text = "🌐 Discovered the internet", effects = { Happiness = 8, Smarts = 5 }, resultText = "Infinite knowledge! And memes! The internet is amazing!", setFlag = "computer_interest" },
-			{ text = "👨‍💻 Tried to code", effects = { Happiness = 10, Smarts = 10 }, resultText = "Hello World! Programming is like magic!", setFlags = {"computer_interest", "coder"} },
-		},
-	},
-	
-	{
-		id = "tech_built_website",
-		minAge = 12, maxAge = 20,
+		minAge = 8, maxAge = 14,
 		weight = 25, oneTime = true,
-		emoji = "🌐", title = "Built Your First Website!",
+		emoji = "💻", title = "Got a Computer!",
 		category = "school",
-		requiresFlag = "computer_interest",
-		text = "You built a website from scratch! HTML, CSS, the works!",
+		text = "You got your first computer! What do you spend most of your time doing?",
 		choices = {
-			{ text = "🎨 It looks amazing!", effects = { Happiness = 15, Smarts = 5 }, resultText = "Actually looks professional! Friends are impressed!", setFlag = "web_dev" },
-			{ text = "🤮 Looks terrible but works", effects = { Happiness = 8, Smarts = 8 }, resultText = "Function over form! The backend is what matters... right?", setFlag = "web_dev" },
-			{ text = "💰 Made money from it", effects = { Happiness = 12, Money = 500, Smarts = 5 }, resultText = "People paid you to make THEIR websites!", setFlags = {"web_dev", "freelancer"} },
-			{ text = "🔥 It got hacked", effects = { Happiness = -5, Smarts = 10 }, resultText = "Security vulnerability! Learned about cybersecurity the hard way.", setFlags = {"web_dev", "security_interest"} },
+			{ text = "💻 Try to learn coding", effects = { Smarts = 15, Happiness = 10 }, resultText = "Hello World! Your first program! You're hooked!", setFlags = {"programmer", "tech_natural"} },
+			{ text = "🎮 Just play games", effects = { Happiness = 12, Smarts = 3 }, resultText = "Gaming is life! Maybe you'll make games someday?", setFlag = "gamer" },
+			{ text = "🔧 Take it apart", effects = { Smarts = 10, Happiness = 8 }, resultText = "Learned how it all works! Put it back together (mostly)!", setFlag = "hardware_curious" },
+			{ text = "📱 Social media only", effects = { Happiness = 8 }, resultText = "Spending hours online. Not learning much but connected!" },
 		},
 	},
 	
 	{
-		id = "tech_hackathon_teen",
-		minAge = 14, maxAge = 19,
-		weight = 20, cooldown = 2,
-		emoji = "🏆", title = "Teen Hackathon!",
+		id = "tech_teen_hacking",
+		minAge = 13, maxAge = 17,
+		weight = 20, oneTime = true,
+		emoji = "🔓", title = "Discovered Something!",
 		category = "school",
-		requiresFlag = "coder",
-		getDynamicData = function()
-			local projects = {"an app to help students study", "a game in 48 hours", "a tool for environmental tracking", "a social platform for teens", "an AI chatbot"}
-			return { project = projects[math.random(#projects)] }
-		end,
-		text = "24-hour hackathon! You're building %project%!",
+		requiresFlag = "programmer",
+		text = "You found a security flaw in your school's network! What do you do?",
 		choices = {
-			{ text = "🏆 Won first place!", effects = { Happiness = 20, Money = 1000, Smarts = 8 }, resultText = "Your team dominated! Recruiters are watching!", setFlag = "hackathon_winner" },
-			{ text = "💤 No sleep, finished!", effects = { Happiness = 10, Health = -5, Smarts = 5 }, resultText = "48 hours no sleep! Project works! Worth it!", setFlag = "hackathon_vet" },
-			{ text = "🤝 Made great connections", effects = { Happiness = 12, Smarts = 3 }, resultText = "Met amazing developers! Future co-founders maybe?", setFlag = "tech_network" },
-			{ text = "💥 Everything broke", effects = { Happiness = -8, Smarts = 5 }, resultText = "Demo failed spectacularly. Debugging nightmares." },
+			{ text = "🎓 Report it to IT", effects = { Happiness = 15, Smarts = 8 }, resultText = "They were impressed! Offered you a student IT job!", setFlags = {"white_hat", "cybersecurity"} },
+			{ text = "😈 Exploit it for grades", effects = { Happiness = 10, Smarts = -5, Money = 0 }, resultText = "Changed some grades... got caught. Suspended! Bad idea.", setFlag = "black_hat" },
+			{ text = "🤫 Tell no one", effects = { Happiness = 5, Smarts = 3 }, resultText = "Kept the secret. Nothing bad happened. Opportunity wasted?" },
+			{ text = "📢 Brag to friends", effects = { Happiness = -10, Smarts = 3 }, resultText = "Word got back to administration. In trouble but not expelled. Close call!" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- SOFTWARE ENGINEERING PATH
+	-- EDUCATION & EARLY CAREER
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "tech_first_dev_job",
-		minAge = 18, maxAge = 30,
-		weight = 25, oneTime = true,
-		emoji = "👨‍💻", title = "First Developer Job!",
+		id = "tech_college_path",
+		minAge = 17, maxAge = 19,
+		weight = 20, oneTime = true,
+		emoji = "🎓", title = "College Decision!",
+		category = "school",
+		requiresFlag = "programmer",
+		text = "College time! What path do you take for your tech career?",
+		choices = {
+			{ text = "🎓 CS degree at university", effects = { Smarts = 15, Money = -80000 }, resultText = "Stanford/MIT/etc! Rigorous education! Networking opportunities!", setFlags = {"cs_degree", "college_grad"} },
+			{ text = "🏫 Coding bootcamp", effects = { Smarts = 10, Money = -15000 }, resultText = "3 months of intensive training! Job-ready fast!", setFlag = "bootcamp_grad" },
+			{ text = "📚 Self-taught route", effects = { Smarts = 12, Happiness = 5 }, resultText = "YouTube, docs, and Stack Overflow! The free path!", setFlag = "self_taught" },
+			{ text = "💼 Skip education, just work", effects = { Happiness = 8, Money = 30000 }, resultText = "Started at a startup that doesn't care about degrees!", setFlag = "school_of_hard_knocks" },
+		},
+	},
+	
+	{
+		id = "tech_first_job",
+		minAge = 20, maxAge = 28,
+		weight = 20, oneTime = true,
+		emoji = "👨‍💻", title = "First Tech Job Interview!",
 		category = "work",
-		requiresFlag = "coder",
+		requiresFlag = "programmer",
 		getDynamicData = function()
-			local companies = {"a startup", "a tech giant", "a consulting firm", "a remote company", "a game studio"}
-			local salary = math.random(60, 120)
-			return { company = companies[math.random(#companies)], salary = salary }
+			local companies = {"Google", "Facebook", "a hot startup", "Microsoft", "Amazon"}
+			return { company = companies[math.random(#companies)] }
 		end,
-		text = "You got hired as a developer at %company%! Starting salary: $%salary%K!",
+		text = "Interview at %company%! The coding challenge is hard. How do you approach it?",
 		choices = {
-			{ text = "🎉 Dream job!", effects = { Happiness = 25, Money = 80000 }, resultText = "Free snacks, ping pong, and you get paid to code! Life is good!", setFlags = {"software_engineer", "employed"} },
-			{ text = "😰 Imposter syndrome", effects = { Happiness = 8, Money = 75000, Smarts = 5 }, resultText = "Do you actually belong here? Everyone seems smarter...", setFlags = {"software_engineer", "employed", "imposter_syndrome"} },
-			{ text = "🤓 Learning so much!", effects = { Happiness = 15, Money = 70000, Smarts = 10 }, resultText = "Senior devs mentoring you! Skills leveling up fast!", setFlags = {"software_engineer", "employed"} },
-			{ text = "💼 It's just a job", effects = { Happiness = 10, Money = 85000 }, resultText = "Code, paycheck, go home. Work-life balance matters.", setFlags = {"software_engineer", "employed"} },
+			{ text = "🧠 Solve it cleanly", effects = { Happiness = 25, Money = 120000, Smarts = 5 }, resultText = "NAILED IT! Offer letter incoming! Six figures!", setFlags = {"software_engineer", "employed"} },
+			{ text = "🤔 Talk through your thinking", effects = { Happiness = 18, Money = 100000 }, resultText = "Didn't solve it perfectly but they liked your process! Hired!", setFlags = {"software_engineer", "employed"} },
+			{ text = "😰 Panic and blank", effects = { Happiness = -15 }, resultText = "Froze under pressure. Rejection email. Practice more." },
+			{ text = "🤷 Guess randomly", effects = { Happiness = -10 }, resultText = "They could tell you were guessing. No offer. Not ready yet." },
 		},
 	},
 	
+	-- ═══════════════════════════════════════════════════════════════
+	-- MID CAREER
+	-- ═══════════════════════════════════════════════════════════════
+	
 	{
-		id = "tech_burnout",
-		minAge = 22, maxAge = 50,
+		id = "tech_side_project",
+		minAge = 22, maxAge = 40,
 		weight = 25, cooldown = 3,
-		emoji = "🔥", title = "Developer Burnout",
+		emoji = "🚀", title = "Side Project Idea!",
 		category = "work",
 		requiresFlag = "software_engineer",
-		text = "Crunch time for months. Endless bugs. You're burnt out.",
+		getDynamicData = function()
+			local projects = {"a mobile app", "a browser extension", "a SaaS tool", "an open source project"}
+			return { project = projects[math.random(#projects)] }
+		end,
+		text = "You have an idea for %project%! Do you build it?",
 		choices = {
-			{ text = "🏖️ Take a sabbatical", effects = { Happiness = 15, Health = 10, Money = -20000 }, resultText = "Three months off. Rediscovered why you loved coding.", clearFlag = "burnt_out" },
-			{ text = "🏃 Quit!", effects = { Happiness = 10, Money = -10000 }, resultText = "Life's too short for toxic workplaces!", clearFlags = {"employed"}, setFlag = "between_jobs" },
-			{ text = "😔 Push through", effects = { Happiness = -15, Health = -10, Money = 20000 }, resultText = "Shipped the product. Feel empty inside.", setFlag = "burnt_out" },
-			{ text = "💬 Therapy helps", effects = { Happiness = 10, Health = 5, Money = -2000 }, resultText = "Learning to set boundaries. Slow recovery.", setFlag = "in_therapy" },
+			{ text = "🌙 Build nights/weekends", effects = { Happiness = 15, Health = -5, Smarts = 5 }, resultText = "It's DONE! Launched it! Now to see if anyone uses it...", setFlag = "side_project" },
+			{ text = "🚀 Go full time on it", effects = { Happiness = 12, Money = -20000 }, resultText = "Quit to focus! All in! Startup founder mode!", setFlag = "indie_developer" },
+			{ text = "🤝 Find a cofounder", effects = { Happiness = 10, Smarts = 3 }, resultText = "Partnered with someone! Sharing the work and the vision!", setFlags = {"side_project", "has_partner"} },
+			{ text = "📝 Never start", effects = { Happiness = -5 }, resultText = "The idea sits in a notes app forever. Another what-if." },
+		},
+	},
+	
+	{
+		id = "tech_project_viral",
+		minAge = 22, maxAge = 45,
+		weight = 15, oneTime = true,
+		emoji = "📈", title = "Project Going Viral!",
+		category = "work",
+		requiresFlag = "side_project",
+		text = "Your side project is BLOWING UP! Hacker News front page! 100k users overnight! What do you do?",
+		choices = {
+			{ text = "🚀 Drop everything for it", effects = { Happiness = 30, Money = -10000 }, resultText = "Quit your job! Going all in! This is the opportunity!", setFlags = {"founder", "startup_mode"} },
+			{ text = "💰 Monetize quick", effects = { Happiness = 20, Money = 50000 }, resultText = "Added premium tier! Money flowing in! Keeping day job for now!", setFlag = "profitable_project" },
+			{ text = "🆓 Keep it free forever", effects = { Happiness = 15, Smarts = 3 }, resultText = "Community loves you! No money but tons of respect and GitHub stars!" },
+			{ text = "💼 Sell it to a company", effects = { Happiness = 18, Money = 200000 }, resultText = "Acquisition! Nice payout! Someone else's problem now!", setFlag = "had_exit" },
 		},
 	},
 	
 	{
 		id = "tech_faang_offer",
-		minAge = 22, maxAge = 45,
+		minAge = 24, maxAge = 40,
 		weight = 15, oneTime = true,
-		emoji = "🏢", title = "FAANG Offer!",
+		emoji = "🏢", title = "FAANG Company Offer!",
 		category = "work",
 		requiresFlag = "software_engineer",
 		getDynamicData = function()
-			local companies = {"Google", "Meta", "Apple", "Amazon", "Netflix", "Microsoft"}
-			local tc = math.random(200, 500)
-			return { company = companies[math.random(#companies)], tc = tc }
+			local companies = {"Google", "Apple", "Meta", "Amazon", "Netflix"}
+			local packages = {350000, 400000, 450000, 500000}
+			return { company = companies[math.random(#companies)], package = packages[math.random(#packages)] }
 		end,
-		text = "%company% wants you! Total comp: $%tc%K/year!",
+		text = "%company% offering $%package%/year total comp! The dream! What do you do?",
 		choices = {
-			{ text = "💰 Take it!", effects = { Happiness = 25, Money = 300000 }, resultText = "Big tech money! Stock options! The dream!", setFlags = {"faang_engineer", "high_earner"} },
-			{ text = "📈 Negotiate higher", effects = { Happiness = 22, Money = 400000, Smarts = 5 }, resultText = "Counter-offered and won! Even better package!", setFlags = {"faang_engineer", "high_earner"} },
-			{ text = "🤔 Prefer startup life", effects = { Happiness = 10, Smarts = 3 }, resultText = "Golden handcuffs aren't for you. Equity over salary." },
-			{ text = "😰 Failed the interview", effects = { Happiness = -15, Smarts = 5 }, resultText = "Whiteboard coding is brutal. LeetCode grind continues." },
-		},
-	},
-	
-	{
-		id = "tech_side_project_viral",
-		minAge = 18, maxAge = 45,
-		weight = 12, oneTime = true,
-		emoji = "🚀", title = "Side Project Went Viral!",
-		category = "work",
-		requiresFlag = "coder",
-		getDynamicData = function()
-			local projects = {"your open-source tool", "the app you built for fun", "your indie game", "your browser extension", "your AI experiment"}
-			local users = math.random(100, 500)
-			return { project = projects[math.random(#projects)], users = users }
-		end,
-		text = "%project% has %users%K users! It's blowing up!",
-		choices = {
-			{ text = "💰 Monetize it!", effects = { Happiness = 25, Money = 50000 }, resultText = "Added premium features! Passive income flowing!", setFlags = {"indie_dev", "side_income"} },
-			{ text = "🆓 Keep it free", effects = { Happiness = 20, Smarts = 5 }, resultText = "Open source hero! The community loves you!", setFlags = {"indie_dev", "open_source"} },
-			{ text = "🏢 Got acquisition offers", effects = { Happiness = 20, Money = 500000 }, resultText = "A company wants to buy it! Big payout!", setFlags = {"indie_dev", "acquired"} },
-			{ text = "😰 Can't handle the scale", effects = { Happiness = -5, Health = -5 }, resultText = "Server costs, bug reports, feature requests... drowning!" },
+			{ text = "✅ Accept!", effects = { Happiness = 30, Money = 200000, Looks = 3 }, resultText = "You work at %company% now! Prestige unlocked! Golden handcuffs on!", setFlags = {"faang_engineer", "big_tech"} },
+			{ text = "📋 Negotiate higher", effects = { Happiness = 28, Money = 250000, Smarts = 5 }, resultText = "Got a signing bonus bump! Always negotiate!", setFlags = {"faang_engineer", "big_tech"} },
+			{ text = "🚀 Reject for startup", effects = { Happiness = 20, Money = 50000 }, resultText = "Chose equity over salary! High risk high reward!", setFlag = "startup_bet" },
+			{ text = "😰 Fail the interview", effects = { Happiness = -15 }, resultText = "Bombed the system design round. No offer. Try again in 6 months." },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- GAME DEVELOPMENT PATH
+	-- SENIOR / MANAGEMENT
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "tech_first_game",
-		minAge = 14, maxAge = 35,
+		id = "tech_management_track",
+		minAge = 28, maxAge = 45,
 		weight = 20, oneTime = true,
-		emoji = "🎮", title = "Made Your First Game!",
+		emoji = "👥", title = "Management Opportunity!",
 		category = "work",
-		requiresFlag = "coder",
-		getDynamicData = function()
-			local genres = {"a platformer", "an RPG", "a puzzle game", "a horror game", "a simulation"}
-			return { genre = genres[math.random(#genres)] }
-		end,
-		text = "You finished developing %genre%! Time to release it!",
+		requiresFlag = "software_engineer",
+		text = "Offered to lead a team of engineers! But you'd write less code. What do you do?",
 		choices = {
-			{ text = "🎉 People love it!", effects = { Happiness = 25, Money = 5000, Smarts = 5 }, resultText = "Positive reviews! Players are streaming it!", setFlags = {"game_dev", "released_game"} },
-			{ text = "😔 Barely any downloads", effects = { Happiness = -5, Smarts = 5 }, resultText = "Marketing is harder than coding. Lesson learned.", setFlag = "game_dev" },
-			{ text = "🎥 Streamer played it!", effects = { Happiness = 20, Money = 20000 }, resultText = "A big streamer featured your game! Sales exploded!", setFlags = {"game_dev", "viral_game"} },
-			{ text = "🏆 Won an award!", effects = { Happiness = 30, Money = 10000, Looks = 3 }, resultText = "Indie game award winner! Recognition feels amazing!", setFlags = {"game_dev", "award_winner"} },
+			{ text = "👥 Become a manager", effects = { Happiness = 15, Money = 50000 }, resultText = "Engineering Manager now! Different skills! Leading people!", setFlags = {"engineering_manager", "people_leader"} },
+			{ text = "💻 Stay technical (IC)", effects = { Happiness = 18, Money = 40000, Smarts = 5 }, resultText = "Principal Engineer path! Deep technical work! Individual contributor!", setFlag = "senior_ic" },
+			{ text = "⚖️ Try manager, can switch back", effects = { Happiness = 12, Money = 40000 }, resultText = "Trying it out! Can always return to coding if you hate it!" },
+			{ text = "🚀 Leave for CTO role", effects = { Happiness = 20, Money = 30000 }, resultText = "Startup offered CTO title! Smaller company, bigger role!", setFlags = {"cto", "startup_executive"} },
 		},
 	},
 	
 	{
-		id = "tech_game_studio",
-		minAge = 22, maxAge = 45,
-		weight = 15, oneTime = true,
-		emoji = "🏢", title = "Start a Game Studio?",
-		category = "work",
-		requiresFlag = "game_dev",
-		text = "Your games are getting noticed. Time to go bigger?",
+		id = "tech_burnout",
+		minAge = 25, maxAge = 50,
+		weight = 25, cooldown = 4,
+		emoji = "😴", title = "Burning Out...",
+		category = "health",
+		requiresFlag = "software_engineer",
+		text = "Constant on-call, tight deadlines, endless Slack. You're exhausted. What do you do?",
 		choices = {
-			{ text = "🏢 Founded a studio!", effects = { Happiness = 20, Money = -50000 }, resultText = "Hired a small team! Time to make something amazing!", setFlags = {"studio_founder", "game_studio"} },
-			{ text = "🤝 Joined a big studio", effects = { Happiness = 15, Money = 120000 }, resultText = "AAA development! Working on massive projects!", setFlags = {"aaa_dev", "employed"} },
-			{ text = "🎮 Stay indie", effects = { Happiness = 18, Smarts = 3 }, resultText = "Small but independent. Creative freedom is priceless.", setFlag = "indie_forever" },
-			{ text = "📱 Mobile games", effects = { Happiness = 10, Money = 100000 }, resultText = "Free-to-play mobile! Not glamorous but profitable!", setFlag = "mobile_dev" },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- CYBERSECURITY / HACKING PATH
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "tech_first_hack",
-		minAge = 14, maxAge = 25,
-		weight = 15, oneTime = true,
-		emoji = "🔓", title = "First Successful Hack",
-		category = "social",
-		requiresFlag = "security_interest",
-		text = "You found a vulnerability in a system. You could exploit it...",
-		choices = {
-			{ text = "🎩 Report it (white hat)", effects = { Happiness = 15, Smarts = 10, Money = 1000 }, resultText = "Bug bounty reward! Responsible disclosure!", setFlags = {"white_hat", "ethical_hacker"} },
-			{ text = "😈 Exploit it (black hat)", effects = { Happiness = 5, Money = 5000, Smarts = 8 }, resultText = "Got access to things you shouldn't. Thrilling but dangerous.", setFlags = {"black_hat", "criminal_hacker"} },
-			{ text = "🤔 Just test it", effects = { Happiness = 10, Smarts = 8 }, resultText = "Explored the vulnerability but didn't do anything bad.", setFlag = "grey_hat" },
-			{ text = "😰 Too scared", effects = { Happiness = -2, Smarts = 3 }, resultText = "Closed your laptop. Some doors shouldn't be opened." },
+			{ text = "🏖️ Take a sabbatical", effects = { Happiness = 20, Health = 15, Money = -20000 }, resultText = "Unplugged for 3 months! Came back refreshed! Worth it!", clearFlag = "burnout" },
+			{ text = "🏃 Leave for calmer job", effects = { Happiness = 15, Health = 10, Money = -30000 }, resultText = "New company, better work-life balance! Sanity restored!", clearFlag = "burnout" },
+			{ text = "💪 Push through it", effects = { Happiness = -15, Health = -20 }, resultText = "Made it worse. Now you REALLY need to stop.", setFlag = "severe_burnout" },
+			{ text = "🧘 Set strict boundaries", effects = { Happiness = 10, Health = 8 }, resultText = "No more after-hours Slack! Calendar blocked! Self-care activated!", clearFlag = "burnout" },
 		},
 	},
 	
 	{
-		id = "tech_security_job",
-		minAge = 20, maxAge = 50,
-		weight = 20, oneTime = true,
-		emoji = "🔐", title = "Cybersecurity Career!",
+		id = "tech_layoffs",
+		minAge = 23, maxAge = 55,
+		weight = 20, cooldown = 5,
+		emoji = "📉", title = "Company Layoffs!",
 		category = "work",
-		requiresFlag = "ethical_hacker",
-		getDynamicData = function()
-			local roles = {"penetration tester", "security analyst", "bug bounty hunter", "security consultant", "CISO"}
-			local salary = math.random(100, 250)
-			return { role = roles[math.random(#roles)], salary = salary }
-		end,
-		text = "Offered a job as a %role%! Salary: $%salary%K!",
+		requiresFlag = "software_engineer",
+		text = "Mass layoffs announced! 20% of the company! Your meeting is tomorrow. What do you do?",
 		choices = {
-			{ text = "🔐 Dream security job!", effects = { Happiness = 25, Money = 150000 }, resultText = "Getting paid to hack (legally)! Perfect career!", setFlags = {"security_pro", "employed"} },
-			{ text = "💰 Bug bounties instead", effects = { Happiness = 20, Money = 100000 }, resultText = "Freelance hunter! Found a critical bug at a major company!", setFlags = {"bug_bounty_hunter", "freelancer"} },
-			{ text = "🏛️ Government offer", effects = { Happiness = 15, Money = 120000, Smarts = 5 }, resultText = "Three letter agency... interesting work. Can't talk about it.", setFlags = {"gov_security", "classified"} },
-			{ text = "🎓 Teach security", effects = { Happiness = 18, Money = 80000 }, resultText = "Training the next generation of security experts!", setFlags = {"security_teacher", "educator"} },
+			{ text = "📄 Prepare resume just in case", effects = { Happiness = 5, Smarts = 5 }, resultText = "SURVIVED! Not on the list! But resume is ready now.", setFlag = "layoff_survivor" },
+			{ text = "😰 Lose sleep worrying", effects = { Happiness = -20, Health = -5 }, resultText = "You're SAFE! But the anxiety was brutal. Still traumatized." },
+			{ text = "💼 Already interviewing elsewhere", effects = { Happiness = 15, Money = 20000 }, resultText = "Got laid off BUT had another offer ready! Smooth transition!" },
+			{ text = "🎯 Perform extra hard", effects = { Happiness = 8, Health = -3 }, resultText = "They noticed your effort! Kept you! Hard work paid off!" },
 		},
 	},
 	
@@ -234,34 +203,18 @@ module.events = {
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "tech_ai_breakthrough",
-		minAge = 25, maxAge = 55,
-		weight = 8, oneTime = true,
-		emoji = "🤖", title = "AI Breakthrough!",
+		id = "tech_ai_transition",
+		minAge = 25, maxAge = 50,
+		weight = 20, oneTime = true,
+		emoji = "🤖", title = "AI Revolution!",
 		category = "work",
 		requiresFlag = "software_engineer",
-		text = "Your AI research achieved something significant! The tech world is watching!",
+		text = "AI is changing everything! Your skills might become obsolete. What do you do?",
 		choices = {
-			{ text = "📄 Publish the paper", effects = { Happiness = 25, Smarts = 10 }, resultText = "Cited by everyone! You're a thought leader now!", setFlags = {"ai_researcher", "academic_respect"} },
-			{ text = "🏢 Start an AI company", effects = { Happiness = 20, Money = 500000 }, resultText = "VCs throwing money at AI! Massive funding!", setFlags = {"ai_founder", "startup_founder"} },
-			{ text = "😰 Ethical concerns", effects = { Happiness = -5, Smarts = 8 }, resultText = "This could be dangerous... should you release it?", setFlag = "ai_ethics" },
-			{ text = "💰 Sell to big tech", effects = { Happiness = 15, Money = 5000000 }, resultText = "Acquired by a tech giant! Set for life!", setFlags = {"ai_researcher", "acquired"} },
-		},
-	},
-	
-	{
-		id = "tech_legacy",
-		minAge = 50, maxAge = 80,
-		weight = 15, oneTime = true,
-		emoji = "🏛️", title = "Tech Legend Status",
-		category = "work",
-		requiresFlag = "faang_engineer",
-		text = "Reflecting on decades in tech. What's your legacy?",
-		choices = {
-			{ text = "📚 Wrote influential books", effects = { Happiness = 25, Money = 200000, Smarts = 5 }, resultText = "Your books taught millions to code. Legacy secured.", setFlag = "tech_author" },
-			{ text = "🎓 Stanford professorship", effects = { Happiness = 22, Money = 150000 }, resultText = "Teaching at a top university. Shaping future innovators.", setFlag = "tech_professor" },
-			{ text = "🌍 Tech for good", effects = { Happiness = 30, Money = -100000 }, resultText = "Built technology that helps developing nations. Meaningful work.", setFlag = "tech_philanthropist" },
-			{ text = "🏖️ Retire wealthy", effects = { Happiness = 20, Health = 5 }, resultText = "FIRE achieved decades ago. Enjoying the rewards of your career.", setFlag = "retired_tech" },
+			{ text = "🧠 Learn AI/ML deeply", effects = { Happiness = 15, Smarts = 15 }, resultText = "Upskilled! Now an AI engineer! More valuable than ever!", setFlags = {"ai_engineer", "future_proof"} },
+			{ text = "🤖 Use AI to 10x output", effects = { Happiness = 18, Smarts = 10 }, resultText = "AI tools making you way more productive! Embracing the future!", setFlag = "ai_augmented" },
+			{ text = "😤 Refuse to change", effects = { Happiness = -10, Smarts = -5 }, resultText = "Falling behind. Companies want AI-native developers now. Adapt or..." },
+			{ text = "🎓 Get an AI-focused degree", effects = { Smarts = 20, Money = -50000 }, resultText = "Back to school for ML masters! Investing in the future!", setFlags = {"ai_specialist", "grad_student"} },
 		},
 	},
 }

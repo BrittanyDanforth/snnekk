@@ -1,7 +1,7 @@
 -- LifeEvents/career_sports.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SPORTS & ATHLETICS CAREER EVENTS
--- Athletes, Olympians, Pro Players, Coaches - The competitive life
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -18,7 +18,7 @@ module.events = {
 		id = "sports_childhood_natural",
 		minAge = 6, maxAge = 12,
 		weight = 25, oneTime = true,
-		emoji = "⚽", title = "Natural Athlete!",
+		emoji = "⚽", title = "Coach Sees Potential!",
 		category = "school",
 		getDynamicData = function()
 			local sports = {
@@ -27,38 +27,33 @@ module.events = {
 				{ name = "baseball", emoji = "⚾" },
 				{ name = "swimming", emoji = "🏊" },
 				{ name = "gymnastics", emoji = "🤸" },
-				{ name = "tennis", emoji = "🎾" },
 			}
 			local chosen = sports[math.random(#sports)]
 			return { sport = chosen.name, sportEmoji = chosen.emoji }
 		end,
 		getDynamicEmoji = function(data) return data.sportEmoji or "⚽" end,
-		text = "Coach says you're a natural at %sport%! You're way ahead of other kids!",
+		text = "Coach says you're a natural at %sport%! Way ahead of other kids! What do you want to do?",
 		choices = {
-			{ text = "🏆 Train seriously!", effects = { Happiness = 15, Health = 8, Smarts = 2 }, resultText = "Daily practice begins! You're getting really good!", setFlags = {"athlete", "serious_athlete"} },
-			{ text = "🎮 Prefer video games", effects = { Happiness = 8, Health = -2 }, resultText = "Sports are okay but gaming is more fun!" },
-			{ text = "🏅 Dream of going pro", effects = { Happiness = 12, Health = 5 }, resultText = "One day you'll play in the big leagues!", setFlags = {"athlete", "pro_dreams"} },
-			{ text = "⚖️ Balance with school", effects = { Happiness = 10, Health = 5, Smarts = 5 }, resultText = "Athletics AND academics. Well-rounded approach.", setFlag = "athlete" },
+			{ text = "🏆 Train seriously", effects = { Happiness = 15, Health = 10 }, resultText = "Daily practice begins! You're getting really good!", setFlags = {"athlete", "serious_athlete"} },
+			{ text = "🎮 Prefer video games", effects = { Happiness = 8, Health = -3 }, resultText = "Sports are okay but gaming is more fun. Talent unused." },
+			{ text = "⚖️ Balance with school", effects = { Happiness = 10, Health = 5, Smarts = 5 }, resultText = "Playing AND good grades! Well-rounded approach!", setFlag = "athlete" },
+			{ text = "🏅 Dream of going pro", effects = { Happiness = 12, Health = 8 }, resultText = "One day you'll be famous! The dream starts now!", setFlags = {"athlete", "pro_dreams"} },
 		},
 	},
 	
 	{
-		id = "sports_youth_league_star",
+		id = "sports_youth_championship",
 		minAge = 10, maxAge = 16,
 		weight = 25, cooldown = 2,
-		emoji = "🌟", title = "Youth League MVP!",
+		emoji = "🏆", title = "Championship Game!",
 		category = "school",
 		requiresFlag = "athlete",
-		getDynamicData = function()
-			local stats = {"scored the winning goal", "set a league record", "led your team to the championship", "got a perfect score", "dominated every game"}
-			return { achievement = stats[math.random(#stats)] }
-		end,
-		text = "You %achievement%! Named Youth League MVP!",
+		text = "It's the championship game! Tied score, final moments! You have a chance to make a play! What do you do?",
 		choices = {
-			{ text = "🏆 Best feeling ever!", effects = { Happiness = 20, Health = 5, Looks = 3 }, resultText = "The trophy, the cheers... you were born for this!", setFlag = "mvp" },
-			{ text = "🤝 Team effort", effects = { Happiness = 15, Smarts = 3 }, resultText = "Couldn't have done it without your teammates. Humble champion.", setFlag = "team_player" },
-			{ text = "👀 Scouts are watching", effects = { Happiness = 18, Smarts = 2 }, resultText = "College and pro scouts noticed you! Pressure is on!", setFlags = {"mvp", "scouted"} },
-			{ text = "😤 Want more", effects = { Happiness = 12, Health = 3 }, resultText = "MVP isn't enough. You want championships.", setFlags = {"mvp", "competitive"} },
+			{ text = "💪 Go for the winning play", effects = { Happiness = 25, Health = 3, Looks = 5 }, resultText = "YOU DID IT! CHAMPIONS! They're chanting your name!", setFlag = "clutch_player" },
+			{ text = "🤝 Pass to teammate", effects = { Happiness = 15, Smarts = 3 }, resultText = "They scored! CHAMPIONS! Team effort! Unselfish play!", setFlag = "team_player" },
+			{ text = "😰 Choke under pressure", effects = { Happiness = -15, Health = -3 }, resultText = "Missed it. Lost the game. Devastating. But there's next year." },
+			{ text = "🤕 Get injured trying", effects = { Happiness = -10, Health = -15 }, resultText = "Hurt yourself making the play. Won the game but at a cost.", setFlag = "injured_athlete" },
 		},
 	},
 	
@@ -67,38 +62,38 @@ module.events = {
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "sports_varsity",
+		id = "sports_varsity_tryouts",
 		minAge = 14, maxAge = 18,
 		weight = 25, oneTime = true,
-		emoji = "🏈", title = "Made Varsity!",
+		emoji = "🏈", title = "Varsity Tryouts!",
 		category = "school",
 		requiresFlag = "athlete",
-		text = "You made the varsity team as an underclassman! Big deal at your school!",
+		text = "Varsity tryouts today! This is a big deal. How do you approach it?",
 		choices = {
-			{ text = "🌟 Became the star", effects = { Happiness = 25, Health = 5, Looks = 5 }, resultText = "Best player on the team! Everyone knows your name!", setFlags = {"varsity_star", "popular"} },
-			{ text = "📺 Local news feature", effects = { Happiness = 20, Looks = 3 }, resultText = "Local paper did a story on you! Mini celebrity!", setFlags = {"varsity_star", "local_fame"} },
-			{ text = "🤕 Got injured", effects = { Happiness = -15, Health = -10 }, resultText = "Torn ACL. Season over. Will you recover?", setFlags = {"injured_athlete"}, clearFlag = "varsity_star" },
-			{ text = "📚 Grades suffered", effects = { Happiness = 10, Smarts = -5 }, resultText = "Too focused on sports. Academic probation warning.", setFlag = "varsity_star" },
+			{ text = "💯 Give 100% effort", effects = { Happiness = 20, Health = 5, Looks = 3 }, resultText = "MADE VARSITY! Coach loved your hustle! Starting lineup!", setFlags = {"varsity", "popular"} },
+			{ text = "😤 Show off skills", effects = { Happiness = 10, Health = 3 }, resultText = "Made the team but coach thinks you're cocky. Bench for now." },
+			{ text = "🤝 Support teammates", effects = { Happiness = 12, Smarts = 3 }, resultText = "Made the team! Coach appreciates your attitude!", setFlag = "varsity" },
+			{ text = "😰 Too nervous", effects = { Happiness = -10, Health = -3 }, resultText = "Choked under pressure. JV for another year. Disappointing." },
 		},
 	},
 	
 	{
-		id = "sports_scholarship",
+		id = "sports_scholarship_offer",
 		minAge = 17, maxAge = 18,
 		weight = 20, oneTime = true,
-		emoji = "🎓", title = "Athletic Scholarship!",
+		emoji = "🎓", title = "Scholarship Offers!",
 		category = "school",
-		requiresFlag = "varsity_star",
+		requiresFlag = "varsity",
 		getDynamicData = function()
-			local schools = {"Duke", "UCLA", "Ohio State", "Alabama", "Stanford", "Michigan", "Texas"}
+			local schools = {"Duke", "UCLA", "Ohio State", "Alabama", "Stanford", "Michigan"}
 			return { school = schools[math.random(#schools)] }
 		end,
-		text = "%school% is offering you a FULL athletic scholarship!",
+		text = "Multiple colleges want you! %school% offering a FULL athletic scholarship! What do you do?",
 		choices = {
-			{ text = "🎓 Full ride!", effects = { Happiness = 30, Money = 100000, Smarts = 3 }, resultText = "Free college! D1 athlete! Dream come true!", setFlags = {"college_athlete", "scholarship"} },
-			{ text = "📋 Multiple offers", effects = { Happiness = 28, Money = 100000, Smarts = 5 }, resultText = "Choosing between schools! Recruiting wars!", setFlags = {"college_athlete", "highly_recruited"} },
-			{ text = "😰 Pressure intense", effects = { Happiness = 15, Money = 100000, Health = -3 }, resultText = "Everyone expects you to go pro. Heavy expectations.", setFlags = {"college_athlete", "high_expectations"} },
-			{ text = "❌ Academic requirements", effects = { Happiness = -10, Smarts = -2 }, resultText = "Didn't meet academic standards. Scholarship lost.", clearFlag = "varsity_star" },
+			{ text = "✅ Accept top program", effects = { Happiness = 30, Money = 100000 }, resultText = "FULL RIDE! D1 athlete! Dream school! Future bright!", setFlags = {"college_athlete", "scholarship"} },
+			{ text = "📋 Wait for more offers", effects = { Happiness = 20, Money = 100000, Smarts = 5 }, resultText = "Played the recruitment game! Got an even BETTER offer!", setFlags = {"college_athlete", "highly_recruited"} },
+			{ text = "🎓 Prioritize academics", effects = { Happiness = 15, Smarts = 8 }, resultText = "Chose the better school, not the better program. Smart long-term." },
+			{ text = "😰 Can't decide", effects = { Happiness = 5, Smarts = 3 }, resultText = "Waited too long! Best offers expired. Settled for less." },
 		},
 	},
 	
@@ -106,19 +101,19 @@ module.events = {
 		id = "sports_college_injury",
 		minAge = 18, maxAge = 22,
 		weight = 20, cooldown = 3,
-		emoji = "🏥", title = "Career-Threatening Injury!",
+		emoji = "🏥", title = "Injured in Practice!",
 		category = "health",
 		requiresFlag = "college_athlete",
 		getDynamicData = function()
-			local injuries = {"torn ACL", "broken ankle", "shoulder separation", "back injury", "concussion"}
+			local injuries = {"sprained ankle", "torn ACL", "shoulder injury", "concussion"}
 			return { injury = injuries[math.random(#injuries)] }
 		end,
-		text = "You suffered a %injury% during the big game. This could end everything.",
+		text = "You got a %injury% during practice! Doctor says you need to rest. What do you do?",
 		choices = {
-			{ text = "💪 Full recovery!", effects = { Happiness = 15, Health = 5 }, resultText = "Rehab was brutal but you're back! Stronger than ever!", setFlag = "comeback_story" },
-			{ text = "😔 Never the same", effects = { Happiness = -20, Health = -10 }, resultText = "Lost a step. Not the player you were before.", setFlag = "diminished" },
-			{ text = "🔄 Different position", effects = { Happiness = 5, Health = -5, Smarts = 5 }, resultText = "Adapted your game. Different but still competitive." },
-			{ text = "💔 Career over", effects = { Happiness = -30, Health = -15 }, resultText = "The injury was too severe. Dreams shattered.", clearFlags = {"college_athlete", "scholarship"}, setFlag = "career_ending_injury" },
+			{ text = "🏥 Follow doctor's orders", effects = { Health = 10, Happiness = 5 }, resultText = "Full recovery! Back at 100%! Patience paid off!", setFlag = "comeback_story" },
+			{ text = "💪 Play through it", effects = { Health = -20, Happiness = -15 }, resultText = "Made it WAY worse! Season over. Possibly career-threatening now.", setFlag = "career_doubt" },
+			{ text = "😔 Depression hits", effects = { Health = -5, Happiness = -20 }, resultText = "Identity crisis. Who are you without sports? Struggling hard." },
+			{ text = "🔄 Learn other positions", effects = { Health = 5, Smarts = 5, Happiness = 8 }, resultText = "Used recovery time to study the game. Came back smarter!" },
 		},
 	},
 	
@@ -130,21 +125,15 @@ module.events = {
 		id = "sports_draft_day",
 		minAge = 20, maxAge = 24,
 		weight = 15, oneTime = true,
-		emoji = "📺", title = "DRAFT DAY!",
+		emoji = "📺", title = "Draft Day!",
 		category = "work",
 		requiresFlag = "college_athlete",
-		blockIfFlag = "career_ending_injury",
-		getDynamicData = function()
-			local rounds = {1, 2, 3, 4, 5}
-			local pick = math.random(1, 30)
-			return { round = rounds[math.random(#rounds)], pick = pick }
-		end,
-		text = "The professional draft is today! Your whole family is watching!",
+		text = "The professional draft is today! Your family is watching! Commissioner approaches the mic! What's your mindset?",
 		choices = {
-			{ text = "📞 Round 1 pick!", effects = { Happiness = 40, Money = 5000000, Looks = 5 }, resultText = "YOUR NAME IS CALLED! First round! Millions guaranteed!", setFlags = {"pro_athlete", "first_rounder"} },
-			{ text = "📺 Later round pick", effects = { Happiness = 25, Money = 500000 }, resultText = "Not first round but you're IN! Prove them wrong!", setFlags = {"pro_athlete", "chip_on_shoulder"} },
-			{ text = "😰 Undrafted", effects = { Happiness = -20, Smarts = 5 }, resultText = "Name never called. Devastating. But free agent route exists.", setFlag = "undrafted" },
-			{ text = "🌍 Overseas offer", effects = { Happiness = 15, Money = 200000 }, resultText = "Not the NFL/NBA but playing professionally in Europe!", setFlag = "overseas_pro" },
+			{ text = "🙏 Hopeful and ready", effects = { Happiness = 35, Money = 2000000 }, resultText = "YOUR NAME CALLED! First round pick! Millions guaranteed!", setFlags = {"pro_athlete", "first_rounder"} },
+			{ text = "😰 Nervous wreck", effects = { Happiness = 15, Money = 500000 }, resultText = "Went later than hoped. Chip on shoulder. Prove them wrong!", setFlags = {"pro_athlete", "chip_on_shoulder"} },
+			{ text = "😎 Know your worth", effects = { Happiness = 25, Money = 1500000 }, resultText = "Confidence showed! Good pick! Ready for the league!", setFlag = "pro_athlete" },
+			{ text = "😔 Accept any outcome", effects = { Happiness = -10, Money = 100000 }, resultText = "Undrafted. Free agent route. Long shot but possible.", setFlag = "undrafted" },
 		},
 	},
 	
@@ -152,23 +141,23 @@ module.events = {
 		id = "sports_rookie_season",
 		minAge = 21, maxAge = 26,
 		weight = 25, cooldown = 2,
-		emoji = "⭐", title = "Rookie Season!",
+		emoji = "⭐", title = "Big Game as Rookie!",
 		category = "work",
 		requiresFlag = "pro_athlete",
-		text = "Your first professional season! Time to prove you belong!",
+		text = "Huge game! National TV! All eyes on the rookie! How do you approach it?",
 		choices = {
-			{ text = "🏆 Rookie of the Year!", effects = { Happiness = 35, Money = 1000000, Looks = 5 }, resultText = "ROTY! Exceeded all expectations! Superstar in the making!", setFlags = {"roty", "superstar"} },
-			{ text = "📈 Solid contributor", effects = { Happiness = 20, Money = 500000 }, resultText = "Good rookie year. Building towards something bigger.", setFlag = "solid_pro" },
-			{ text = "🪑 Mostly bench", effects = { Happiness = -5, Money = 200000 }, resultText = "Didn't get much playing time. Need to develop." },
-			{ text = "😔 Struggled hard", effects = { Happiness = -15, Money = 150000, Health = -5 }, resultText = "The jump to pro level was harder than expected. Doubt creeping in." },
+			{ text = "🔥 Leave it all out there", effects = { Happiness = 30, Money = 500000, Looks = 5 }, resultText = "BREAKOUT PERFORMANCE! Sportscenter top 10! Star is born!", setFlags = {"breakout_star", "superstar"} },
+			{ text = "📚 Stick to the gameplan", effects = { Happiness = 15, Money = 200000, Smarts = 5 }, resultText = "Solid performance. Nothing flashy but coach trusts you now." },
+			{ text = "😰 Pressure gets to you", effects = { Happiness = -15, Money = 100000 }, resultText = "Not your best night. Struggled with the spotlight. Keep working." },
+			{ text = "🤕 Get hurt during game", effects = { Happiness = -10, Health = -20, Money = 150000 }, resultText = "Injury in the spotlight. Everyone saw it. Long recovery ahead." },
 		},
 	},
 	
 	{
-		id = "sports_big_contract",
+		id = "sports_contract_negotiation",
 		minAge = 24, maxAge = 35,
 		weight = 15, oneTime = true,
-		emoji = "💰", title = "MEGA CONTRACT!",
+		emoji = "💰", title = "Contract Negotiation!",
 		category = "work",
 		requiresFlag = "superstar",
 		getDynamicData = function()
@@ -176,28 +165,28 @@ module.events = {
 			local amount = math.random(100, 300)
 			return { years = years, amount = amount }
 		end,
-		text = "You're a free agent and teams are bidding! Offers of $%amount% MILLION over %years% years!",
+		text = "Free agency! Teams bidding! $%amount% million over %years% years on the table! What do you do?",
 		choices = {
-			{ text = "💰 MAX CONTRACT!", effects = { Happiness = 40, Money = 50000000 }, resultText = "Richest contract in history! Generational wealth!", setFlags = {"max_contract", "wealthy_athlete"} },
-			{ text = "🏆 Chase rings", effects = { Happiness = 30, Money = 20000000 }, resultText = "Took less to join a contender. Championships matter more.", setFlag = "ring_chaser" },
-			{ text = "🏠 Hometown discount", effects = { Happiness = 35, Money = 30000000 }, resultText = "Stayed loyal to your city. Fans love you forever.", setFlags = {"loyal_player", "hometown_hero"} },
-			{ text = "😤 Holdout drama", effects = { Happiness = 10, Money = 40000000 }, resultText = "Contentious negotiations. Got the money but fans are upset." },
+			{ text = "💰 Take the money!", effects = { Happiness = 30, Money = 50000000 }, resultText = "MEGA CONTRACT! Generational wealth secured! Set for life!", setFlags = {"max_contract", "wealthy_athlete"} },
+			{ text = "🏆 Chase championships", effects = { Happiness = 25, Money = 20000000 }, resultText = "Took less to join a contender! Rings over money!", setFlag = "ring_chaser" },
+			{ text = "🏠 Stay loyal", effects = { Happiness = 35, Money = 30000000 }, resultText = "Hometown discount! Fans love you forever! Legend status!", setFlags = {"loyal_player", "hometown_hero"} },
+			{ text = "😤 Demand more", effects = { Happiness = 10, Money = 60000000 }, resultText = "Hardball worked! More money but burned some bridges." },
 		},
 	},
 	
 	{
-		id = "sports_championship",
+		id = "sports_championship_game",
 		minAge = 22, maxAge = 40,
 		weight = 10, oneTime = true,
-		emoji = "🏆", title = "CHAMPIONSHIP GAME!",
+		emoji = "🏆", title = "THE CHAMPIONSHIP!",
 		category = "work",
 		requiresFlag = "pro_athlete",
-		text = "THE CHAMPIONSHIP! This is what you've worked your entire life for!",
+		text = "CHAMPIONSHIP GAME! This is what you've worked your ENTIRE LIFE for! Final moments! What do you do?",
 		choices = {
-			{ text = "🏆 CHAMPION!", effects = { Happiness = 50, Money = 2000000, Looks = 10 }, resultText = "YOU DID IT! Confetti falling! Holding the trophy! CHAMPION!", setFlags = {"champion", "ring_winner"} },
-			{ text = "🌟 MVP performance!", effects = { Happiness = 55, Money = 3000000, Looks = 10 }, resultText = "Championship MVP! Legendary performance! Your name is immortal!", setFlags = {"champion", "finals_mvp", "legendary"} },
-			{ text = "💔 Lost the final", effects = { Happiness = -25, Health = -5 }, resultText = "So close. The loss haunts you. Will you get another chance?" },
-			{ text = "🤕 Injured in game", effects = { Happiness = -15, Health = -15 }, resultText = "Got hurt in the championship. Watched from sidelines.", setFlag = "championship_injury" },
+			{ text = "🏆 Take the big shot", effects = { Happiness = 50, Money = 2000000, Looks = 10 }, resultText = "YOU DID IT! CHAMPION! Confetti falling! Trophy in hands! IMMORTALIZED!", setFlags = {"champion", "clutch_legend"} },
+			{ text = "🤝 Set up teammate", effects = { Happiness = 40, Money = 1500000 }, resultText = "CHAMPIONS! Team win! You made the winning pass! Selfless!", setFlags = {"champion", "team_player"} },
+			{ text = "😔 Come up short", effects = { Happiness = -30, Health = -5 }, resultText = "So close. Lost in the final seconds. Haunting. Will you get another chance?" },
+			{ text = "🤕 Injured in final", effects = { Happiness = -20, Health = -20 }, resultText = "Hurt during the championship. Watched the end from sideline. Devastating." },
 		},
 	},
 	
@@ -212,12 +201,12 @@ module.events = {
 		emoji = "🏅", title = "Olympic Trials!",
 		category = "work",
 		requiresFlag = "serious_athlete",
-		text = "You're competing in the Olympic trials! A chance to represent your country!",
+		text = "Olympic trials! Chance to represent your country! This is the moment! How do you perform?",
 		choices = {
-			{ text = "🎉 Made the team!", effects = { Happiness = 40, Health = 5, Looks = 5 }, resultText = "YOU'RE AN OLYMPIAN! Going to the Olympics!", setFlags = {"olympian", "national_team"} },
-			{ text = "😔 Just missed", effects = { Happiness = -15, Smarts = 5 }, resultText = "4th place. So close. Four more years..." },
-			{ text = "📺 World watching", effects = { Happiness = 30, Looks = 3 }, resultText = "Even though you didn't win, sponsors noticed you!", setFlags = {"olympian", "sponsor_attention"} },
-			{ text = "🤕 Injury at worst time", effects = { Happiness = -20, Health = -10 }, resultText = "Got hurt during trials. Olympic dream delayed.", setFlag = "injured_olympian" },
+			{ text = "💪 Peak performance", effects = { Happiness = 40, Health = 5, Looks = 5 }, resultText = "MADE THE TEAM! You're an OLYMPIAN! Representing your country!", setFlags = {"olympian", "national_team"} },
+			{ text = "😤 Fight through pain", effects = { Happiness = 25, Health = -10 }, resultText = "Made it despite injury! Painful but you're going to the Olympics!", setFlags = {"olympian", "warrior"} },
+			{ text = "😔 Just miss the cut", effects = { Happiness = -20, Smarts = 5 }, resultText = "4th place. So close. Four more years of waiting and wondering." },
+			{ text = "😰 Pressure crushes you", effects = { Happiness = -25, Health = -5 }, resultText = "Choked when it mattered most. Dreams shattered. Devastating." },
 		},
 	},
 	
@@ -225,25 +214,15 @@ module.events = {
 		id = "sports_olympic_medal",
 		minAge = 16, maxAge = 40,
 		weight = 8, oneTime = true,
-		emoji = "🥇", title = "OLYMPIC MEDAL!",
+		emoji = "🥇", title = "Olympic Final!",
 		category = "work",
 		requiresFlag = "olympian",
-		getDynamicData = function()
-			local medals = {
-				{ type = "gold", emoji = "🥇", points = 50 },
-				{ type = "silver", emoji = "🥈", points = 35 },
-				{ type = "bronze", emoji = "🥉", points = 25 },
-			}
-			local chosen = medals[math.random(#medals)]
-			return { medal = chosen.type, medalEmoji = chosen.emoji }
-		end,
-		getDynamicEmoji = function(data) return data.medalEmoji or "🏅" end,
-		text = "The Olympic final! Everything you've trained for comes down to this!",
+		text = "THE OLYMPIC FINAL! Billions watching! Everything you've trained for! How do you compete?",
 		choices = {
-			{ text = "🥇 GOLD MEDAL!", effects = { Happiness = 60, Money = 1000000, Looks = 10 }, resultText = "OLYMPIC CHAMPION! National anthem plays! Tears streaming! LEGENDARY!", setFlags = {"olympic_gold", "national_hero"} },
-			{ text = "🥈 Silver medal", effects = { Happiness = 35, Money = 500000 }, resultText = "Second in the WORLD. Incredible achievement. So proud.", setFlag = "olympic_medalist" },
-			{ text = "🥉 Bronze medal", effects = { Happiness = 30, Money = 300000 }, resultText = "On the podium! An Olympic medalist forever!", setFlag = "olympic_medalist" },
-			{ text = "4️⃣ Fourth place", effects = { Happiness = -20 }, resultText = "So close to a medal. The cruelest place to finish." },
+			{ text = "🥇 Perfect execution", effects = { Happiness = 60, Money = 1000000, Looks = 10 }, resultText = "GOLD MEDAL! National anthem playing! Tears streaming! LEGENDARY!", setFlags = {"olympic_gold", "national_hero"} },
+			{ text = "💪 Give everything", effects = { Happiness = 35, Money = 500000 }, resultText = "Silver medal! Second in the WORLD! Incredible achievement!", setFlag = "olympic_medalist" },
+			{ text = "🤕 Compete injured", effects = { Happiness = 25, Health = -15, Money = 300000 }, resultText = "Bronze through pain! Medal is medal! Warrior spirit!", setFlag = "olympic_medalist" },
+			{ text = "😔 Fall short", effects = { Happiness = -25 }, resultText = "4th place. No medal. The cruelest place to finish. So close to history." },
 		},
 	},
 	
@@ -255,31 +234,31 @@ module.events = {
 		id = "sports_decline",
 		minAge = 30, maxAge = 42,
 		weight = 25, cooldown = 3,
-		emoji = "📉", title = "Athletic Decline",
+		emoji = "📉", title = "Father Time Undefeated",
 		category = "work",
 		requiresFlag = "pro_athlete",
-		text = "You're not as fast as you used to be. Father Time is undefeated.",
+		text = "You're not as fast as you used to be. Younger players passing you. What do you do?",
 		choices = {
-			{ text = "💪 Adapt your game", effects = { Happiness = 10, Smarts = 5 }, resultText = "Can't rely on athleticism anymore. Playing smarter.", setFlag = "veteran_savvy" },
-			{ text = "😔 Losing roster spot", effects = { Happiness = -15, Money = -500000 }, resultText = "Younger players taking your minutes. Writing on the wall." },
-			{ text = "🏆 One last run", effects = { Happiness = 15, Health = -5 }, resultText = "Pushing your body for one more championship attempt.", setFlag = "last_dance" },
-			{ text = "📺 Become a mentor", effects = { Happiness = 12, Smarts = 3 }, resultText = "Helping young players. Your experience is valuable.", setFlag = "veteran_mentor" },
+			{ text = "💪 Adapt your game", effects = { Happiness = 12, Smarts = 8 }, resultText = "Can't rely on athleticism anymore. Playing smarter! Veteran savvy!", setFlag = "veteran_savvy" },
+			{ text = "😤 Refuse to accept", effects = { Happiness = -10, Health = -10 }, resultText = "Pushing too hard. Body breaking down. Pride before health." },
+			{ text = "🏆 One last run", effects = { Happiness = 15, Health = -8 }, resultText = "Everything for one more championship attempt! Going out swinging!" },
+			{ text = "📺 Mentor young players", effects = { Happiness = 15, Smarts = 5 }, resultText = "Passing on wisdom. Your experience is valuable to the next generation." },
 		},
 	},
 	
 	{
-		id = "sports_retirement",
+		id = "sports_retirement_decision",
 		minAge = 32, maxAge = 45,
 		weight = 20, oneTime = true,
-		emoji = "🎤", title = "Retirement Press Conference",
+		emoji = "🎤", title = "Time to Retire?",
 		category = "work",
 		requiresFlag = "pro_athlete",
-		text = "The day has come. Time to hang it up. Press conference scheduled.",
+		text = "The body is tired. Is it time to hang it up? Press conference is scheduled. What do you announce?",
 		choices = {
-			{ text = "😭 Emotional goodbye", effects = { Happiness = 20, Health = 5 }, resultText = "Tears, standing ovation, thank yous. Beautiful send-off.", clearFlag = "pro_athlete", setFlags = {"retired_athlete", "beloved"} },
-			{ text = "🏆 Going out on top", effects = { Happiness = 30, Looks = 3 }, resultText = "Won the championship and retired. Perfect ending.", clearFlag = "pro_athlete", setFlags = {"retired_athlete", "legendary"} },
-			{ text = "😔 Forced out", effects = { Happiness = -10 }, resultText = "No team wanted you. Career ended quietly.", clearFlag = "pro_athlete", setFlag = "retired_athlete" },
-			{ text = "🔄 Actually, comeback!", effects = { Happiness = 10, Health = -5 }, resultText = "Changed your mind! One more season!", setFlag = "comeback" },
+			{ text = "😭 Announce retirement", effects = { Happiness = 25, Health = 10 }, resultText = "Emotional farewell. Standing ovation. Beautiful send-off. Legend.", clearFlag = "pro_athlete", setFlags = {"retired_athlete", "beloved"} },
+			{ text = "🏆 One more season", effects = { Happiness = 15, Health = -10 }, resultText = "Not done yet! Going for one more year! They can't stop you!" },
+			{ text = "🔄 Try different team", effects = { Happiness = 10, Health = -5 }, resultText = "Fresh start somewhere else! New chapter! Still got gas in the tank!" },
+			{ text = "📺 Announce TV career", effects = { Happiness = 20, Money = 500000 }, resultText = "Retiring to the broadcast booth! Analyst life begins!", clearFlag = "pro_athlete", setFlags = {"retired_athlete", "analyst"} },
 		},
 	},
 	
@@ -287,35 +266,35 @@ module.events = {
 		id = "sports_hall_of_fame",
 		minAge = 40, maxAge = 80,
 		weight = 8, oneTime = true,
-		emoji = "🏛️", title = "HALL OF FAME!",
+		emoji = "🏛️", title = "Hall of Fame Call!",
 		category = "work",
-		requiresFlag = "legendary",
-		text = "You're being inducted into the Hall of Fame!",
+		requiresFlag = "champion",
+		text = "THE CALL CAME! You're being inducted into the Hall of Fame! How do you react?",
 		choices = {
-			{ text = "😭 Greatest honor", effects = { Happiness = 50, Looks = 5 }, resultText = "Your name is immortalized forever. Legendary status confirmed.", setFlag = "hall_of_famer" },
-			{ text = "🎤 Amazing speech", effects = { Happiness = 45, Smarts = 5 }, resultText = "Your speech moved everyone to tears. Unforgettable moment.", setFlag = "hall_of_famer" },
-			{ text = "👨‍👩‍👧 Family moment", effects = { Happiness = 48 }, resultText = "Seeing your family's pride. This is what it was all for.", setFlag = "hall_of_famer" },
-			{ text = "🙏 Thank the fans", effects = { Happiness = 45, Looks = 3 }, resultText = "Without the fans, none of this matters. Gratitude forever.", setFlag = "hall_of_famer" },
+			{ text = "😭 Overwhelmed with emotion", effects = { Happiness = 50, Looks = 5 }, resultText = "Cried on the phone. Dreams fulfilled. Immortalized forever.", setFlag = "hall_of_famer" },
+			{ text = "🎤 Prepare perfect speech", effects = { Happiness = 45, Smarts = 5 }, resultText = "Thanked everyone who helped. Moved the audience. Perfect moment.", setFlag = "hall_of_famer" },
+			{ text = "👨‍👩‍👧 Celebrate with family", effects = { Happiness = 48 }, resultText = "Shared the moment with those who sacrificed with you. Full circle.", setFlag = "hall_of_famer" },
+			{ text = "🙏 Stay humble", effects = { Happiness = 42, Smarts = 3 }, resultText = "Deflected praise to coaches and teammates. Class until the end.", setFlag = "hall_of_famer" },
 		},
 	},
 	
 	{
-		id = "sports_coaching",
+		id = "sports_coaching_offer",
 		minAge = 35, maxAge = 65,
 		weight = 20, oneTime = true,
-		emoji = "📋", title = "Coaching Offer",
+		emoji = "📋", title = "Coaching Offer!",
 		category = "work",
 		requiresFlag = "retired_athlete",
 		getDynamicData = function()
-			local levels = {"a college team", "a professional team", "your old team", "a youth program", "a national team"}
+			local levels = {"a college team", "a professional team", "your old team", "a youth program"}
 			return { level = levels[math.random(#levels)] }
 		end,
-		text = "%level% wants you as their coach! Staying in the game!",
+		text = "%level% wants you as their coach! Staying in the game! What do you do?",
 		choices = {
-			{ text = "📋 Born to coach!", effects = { Happiness = 25, Money = 500000 }, resultText = "Leading the next generation! Different kind of competition!", setFlags = {"coach", "employed"} },
-			{ text = "🏆 Championship coach!", effects = { Happiness = 35, Money = 1000000 }, resultText = "Won it as a player AND coach! Rare air!", setFlags = {"coach", "championship_coach"} },
-			{ text = "😔 Harder than playing", effects = { Happiness = 5, Health = -5 }, resultText = "Managing egos, politics... miss just playing." },
-			{ text = "🏖️ Enjoy retirement", effects = { Happiness = 15, Health = 5 }, resultText = "Thanks but no. Enjoying life off the field." },
+			{ text = "📋 Accept the job", effects = { Happiness = 25, Money = 500000 }, resultText = "Coach [Your Name]! Leading the next generation! Full circle!", setFlags = {"coach", "employed"} },
+			{ text = "🏆 Only if I can win", effects = { Happiness = 20, Money = 700000 }, resultText = "Negotiated full control! Championship expectations! Let's go!", setFlags = {"coach", "championship_coach"} },
+			{ text = "🏖️ Enjoy retirement", effects = { Happiness = 15, Health = 5 }, resultText = "Thanks but no. Enjoying life off the field. You've earned it." },
+			{ text = "📺 Prefer broadcasting", effects = { Happiness = 18, Money = 400000 }, resultText = "TV is more your speed. Less stress, good money, fame continues.", setFlag = "broadcaster" },
 		},
 	},
 }

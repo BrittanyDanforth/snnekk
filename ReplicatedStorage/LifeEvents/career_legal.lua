@@ -1,7 +1,7 @@
 -- LifeEvents/career_legal.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- LEGAL CAREER EVENTS
--- Lawyers, Judges, Prosecutors, Public Defenders - Justice system life
+-- LEGAL CAREER EVENTS - Lawyers, Judges, Legal System
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,101 +11,77 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- EARLY INTEREST IN LAW
+	-- EARLY INTEREST
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "law_mock_trial",
+		id = "legal_mock_trial",
 		minAge = 14, maxAge = 18,
 		weight = 25, oneTime = true,
 		emoji = "⚖️", title = "Mock Trial Competition!",
 		category = "school",
-		text = "Your school's mock trial team needs members. Courtroom drama awaits!",
+		text = "Your school has a mock trial team! Argue fake cases in front of real judges. Interested?",
 		choices = {
-			{ text = "⚖️ Loved it!", effects = { Happiness = 15, Smarts = 8 }, resultText = "The arguments! The objections! The verdict! This is THRILLING!", setFlags = {"law_interest", "mock_trial"} },
-			{ text = "🏆 Won the competition!", effects = { Happiness = 20, Smarts = 8, Looks = 3 }, resultText = "Best attorney award! Natural in the courtroom!", setFlags = {"law_interest", "mock_trial", "born_lawyer"} },
-			{ text = "📚 Fascinating but hard", effects = { Happiness = 10, Smarts = 6 }, resultText = "So much research and prep. But arguing is fun!", setFlag = "law_interest" },
-			{ text = "😰 Stage fright", effects = { Happiness = -5, Smarts = 3 }, resultText = "Speaking in front of judges is terrifying. Maybe law isn't for you." },
-		},
-	},
-	
-	{
-		id = "law_debate_champion",
-		minAge = 15, maxAge = 22,
-		weight = 20, cooldown = 2,
-		emoji = "🎤", title = "Debate Champion!",
-		category = "school",
-		requiresFlag = "law_interest",
-		text = "Debate tournament finals! Can you argue your way to victory?",
-		choices = {
-			{ text = "🏆 Destroyed the opposition!", effects = { Happiness = 20, Smarts = 8 }, resultText = "Logical. Persuasive. Devastating. You won every argument!", setFlags = {"debate_champion", "persuasive"} },
-			{ text = "🤝 Close but lost", effects = { Happiness = 5, Smarts = 5 }, resultText = "Second place. So close. But you'll be back." },
-			{ text = "💡 Changed minds", effects = { Happiness = 15, Smarts = 6 }, resultText = "Judges said your arguments were compelling. Even opponents respected you.", setFlag = "persuasive" },
-			{ text = "😤 Unfair judging", effects = { Happiness = -8, Smarts = 3 }, resultText = "You were robbed! Politics in debate judging? Injustice!" },
+			{ text = "⚖️ Join as attorney", effects = { Happiness = 15, Smarts = 10 }, resultText = "OBJECTION! You're a natural! Love the courtroom drama!", setFlags = {"legal_interest", "mock_trial"} },
+			{ text = "🎭 Be a witness", effects = { Happiness = 10, Smarts = 5 }, resultText = "Playing characters on the stand! Fun way to participate!", setFlag = "legal_interest" },
+			{ text = "📋 Help with research", effects = { Happiness = 8, Smarts = 8 }, resultText = "Behind the scenes work! Learning how cases are built!", setFlag = "legal_interest" },
+			{ text = "🙅 Not interested", effects = { Happiness = 3 }, resultText = "Law isn't your thing. That's okay!" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- LAW SCHOOL
+	-- LAW SCHOOL PATH
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "law_lsat",
-		minAge = 20, maxAge = 30,
+		id = "legal_lsat",
+		minAge = 20, maxAge = 25,
 		weight = 20, oneTime = true,
-		emoji = "📝", title = "LSAT Results!",
+		emoji = "📝", title = "LSAT Day!",
 		category = "school",
-		requiresFlag = "law_interest",
-		getDynamicData = function()
-			local scores = {175, 170, 165, 160, 155}
-			return { score = scores[math.random(#scores)] }
-		end,
-		text = "Your LSAT score: %score%! Law school applications are next!",
+		requiresFlag = "legal_interest",
+		text = "The LSAT - the test that determines your law school options! 4 hours of logic puzzles! How do you do?",
 		choices = {
-			{ text = "🎉 Crushed it!", effects = { Happiness = 25, Smarts = 8 }, resultText = "Top 1% score! Yale, Harvard, Stanford are possible!", setFlag = "lsat_ace" },
-			{ text = "📊 Good enough", effects = { Happiness = 15, Smarts = 5 }, resultText = "Solid score! Many good law schools are options!", setFlag = "law_school_ready" },
-			{ text = "😔 Below expectations", effects = { Happiness = -10, Smarts = 3 }, resultText = "Not what you hoped. Study more and retake?" },
-			{ text = "🔄 Retaking", effects = { Happiness = -5, Smarts = 5 }, resultText = "Not accepting that score. More prep. Try again." },
+			{ text = "🧠 Crush it - 170+", effects = { Happiness = 30, Smarts = 10 }, resultText = "Top percentile! Harvard and Yale are calling!", setFlags = {"lsat_ace", "law_school_bound"} },
+			{ text = "📊 Solid score - 160s", effects = { Happiness = 18, Smarts = 5 }, resultText = "Good schools within reach! Competitive applicant!", setFlag = "law_school_bound" },
+			{ text = "😰 Underperformed", effects = { Happiness = -10 }, resultText = "Test day nerves got you. Study more, retake later." },
+			{ text = "🎯 Just hit your target", effects = { Happiness = 15, Smarts = 3 }, resultText = "Got what you needed! Doors are open!", setFlag = "law_school_bound" },
 		},
 	},
 	
 	{
-		id = "law_school_acceptance",
-		minAge = 21, maxAge = 32,
+		id = "legal_law_school",
+		minAge = 22, maxAge = 28,
 		weight = 18, oneTime = true,
-		emoji = "✉️", title = "Law School Decision!",
+		emoji = "🎓", title = "Law School!",
 		category = "school",
-		requiresFlag = "law_school_ready",
+		requiresFlag = "law_school_bound",
 		getDynamicData = function()
-			local schools = {"Harvard Law", "Yale Law", "Stanford Law", "Columbia Law", "your state's law school"}
+			local schools = {"Harvard", "Yale", "Stanford", "Columbia", "a T14 school", "a regional school"}
 			return { school = schools[math.random(#schools)] }
 		end,
-		text = "Opening the letter from %school%... heart pounding...",
+		text = "Accepted to %school% Law! Three years of grueling work ahead. How do you approach it?",
 		choices = {
-			{ text = "🎉 ACCEPTED!", effects = { Happiness = 35, Money = -150000, Smarts = 8 }, resultText = "You're going to be a LAWYER! Three years of legal education ahead!", setFlag = "law_student" },
-			{ text = "💰 Scholarship!", effects = { Happiness = 40, Money = -50000, Smarts = 8 }, resultText = "Accepted WITH scholarship! Less debt! Perfect!", setFlags = {"law_student", "law_scholarship"} },
-			{ text = "📋 Waitlisted", effects = { Happiness = 5, Smarts = 3 }, resultText = "Not rejected... but not accepted. The waiting is torture." },
-			{ text = "❌ Rejected", effects = { Happiness = -20, Smarts = 3 }, resultText = "Devastating. But other schools might say yes. Don't give up." },
+			{ text = "📚 Gunner mode - top of class", effects = { Smarts = 15, Happiness = -5, Health = -5 }, resultText = "Law Review! Top 10%! Big Law is guaranteed!", setFlags = {"law_student", "top_of_class"}, clearFlag = "law_school_bound" },
+			{ text = "⚖️ Clinic work focus", effects = { Smarts = 10, Happiness = 10 }, resultText = "Real cases! Helping real people! Public interest calling!", setFlags = {"law_student", "public_interest"}, clearFlag = "law_school_bound" },
+			{ text = "🍺 Law school life balance", effects = { Smarts = 8, Happiness = 8 }, resultText = "Good enough grades AND a social life! Healthy approach!", setFlag = "law_student", clearFlag = "law_school_bound" },
+			{ text = "😔 Struggle and doubt", effects = { Smarts = 5, Happiness = -10 }, resultText = "This is SO hard. Is law even right for you? Pushing through...", setFlag = "law_student", clearFlag = "law_school_bound" },
 		},
 	},
 	
 	{
-		id = "law_school_grind",
-		minAge = 22, maxAge = 35,
-		weight = 25, cooldown = 2,
-		emoji = "📚", title = "Law School Struggles",
-		category = "school",
+		id = "legal_bar_exam",
+		minAge = 25, maxAge = 32,
+		weight = 20, oneTime = true,
+		emoji = "📝", title = "Bar Exam!",
+		category = "work",
 		requiresFlag = "law_student",
-		getDynamicData = function()
-			local challenges = {"Constitutional Law exam", "the Socratic method grilling", "legal writing assignment", "moot court competition", "study group tensions"}
-			return { challenge = challenges[math.random(#challenges)] }
-		end,
-		text = "Currently dealing with: %challenge%. Law school is brutal.",
+		text = "THE BAR EXAM! Two days of testing everything you learned. Pass this or can't practice law. How does it go?",
 		choices = {
-			{ text = "💪 Made Law Review!", effects = { Happiness = 25, Smarts = 8 }, resultText = "Top grades earned you a spot! Resume gold!", setFlag = "law_review" },
-			{ text = "📚 Grinding through", effects = { Happiness = 5, Health = -5, Smarts = 5 }, resultText = "Sleep? What's that? But you're learning." },
-			{ text = "😰 Imposter syndrome", effects = { Happiness = -10, Smarts = 3 }, resultText = "Everyone seems smarter. Do you belong here?" },
-			{ text = "🤝 Study group saved me", effects = { Happiness = 12, Smarts = 5 }, resultText = "Couldn't do it alone. Your group keeps you sane." },
+			{ text = "✅ Passed first try!", effects = { Happiness = 35, Smarts = 5 }, resultText = "YOU'RE A LAWYER! Bar card coming! Can officially practice!", setFlags = {"attorney", "bar_passed"}, clearFlag = "law_student" },
+			{ text = "😰 Failed... devastated", effects = { Happiness = -25, Money = -3000 }, resultText = "Didn't pass. SO many people fail. Take it again. You can do this." },
+			{ text = "🎯 Passed barely", effects = { Happiness = 20 }, resultText = "A pass is a pass! No one asks your bar score! You're a lawyer!", setFlags = {"attorney", "bar_passed"}, clearFlag = "law_student" },
+			{ text = "😬 Still waiting for results", effects = { Happiness = -15 }, resultText = "The anxiety of waiting is the worst part. Months of limbo." },
 		},
 	},
 	
@@ -114,162 +90,130 @@ module.events = {
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "law_bar_exam",
-		minAge = 24, maxAge = 35,
+		id = "legal_first_job",
+		minAge = 25, maxAge = 32,
 		weight = 20, oneTime = true,
-		emoji = "📝", title = "Bar Exam!",
+		emoji = "💼", title = "First Legal Job!",
 		category = "work",
-		requiresFlag = "law_student",
-		text = "The bar exam. Two days of hell. Everything you learned, tested.",
+		requiresFlag = "attorney",
+		text = "Time to start your legal career! What path do you take?",
 		choices = {
-			{ text = "✅ PASSED!", effects = { Happiness = 35, Smarts = 5 }, resultText = "You're officially a LAWYER! Licensed to practice! Esq.!", clearFlag = "law_student", setFlags = {"lawyer", "bar_passed"} },
-			{ text = "😰 Failed", effects = { Happiness = -25, Smarts = 3 }, resultText = "Devastating. But many great lawyers failed their first time. Study and retake." },
-			{ text = "🎉 Top score!", effects = { Happiness = 40, Smarts = 8, Looks = 3 }, resultText = "One of the highest scores in the state! Firms are calling!", clearFlag = "law_student", setFlags = {"lawyer", "bar_passed", "top_bar"} },
-			{ text = "😅 Barely passed", effects = { Happiness = 20, Smarts = 3 }, resultText = "A pass is a pass! You're a lawyer now!", clearFlag = "law_student", setFlags = {"lawyer", "bar_passed"} },
+			{ text = "🏛️ Big Law firm", effects = { Happiness = 10, Money = 200000, Health = -10 }, resultText = "200k starting! Billing 80 hours a week! Brutal but lucrative!", setFlags = {"biglaw", "corporate_lawyer"} },
+			{ text = "⚖️ Public defender", effects = { Happiness = 15, Money = 55000 }, resultText = "Fighting for those who can't afford lawyers! Noble calling!", setFlags = {"public_defender", "courtroom_lawyer"} },
+			{ text = "🏛️ Prosecutor", effects = { Happiness = 12, Money = 65000 }, resultText = "Seeking justice! In court every day! Trial experience!", setFlags = {"prosecutor", "courtroom_lawyer"} },
+			{ text = "🏠 Start own practice", effects = { Happiness = 18, Money = 30000 }, resultText = "Your own boss! Chasing clients! Entrepreneurial lawyer!", setFlags = {"solo_practice", "own_firm"} },
 		},
 	},
 	
 	{
-		id = "law_first_job",
-		minAge = 25, maxAge = 36,
+		id = "legal_first_trial",
+		minAge = 26, maxAge = 45,
 		weight = 20, oneTime = true,
-		emoji = "👔", title = "First Legal Job!",
+		emoji = "🎤", title = "Your First Trial!",
 		category = "work",
-		requiresFlag = "lawyer",
-		getDynamicData = function()
-			local jobs = {
-				{ type = "Big Law firm", salary = 190000, hours = "brutal" },
-				{ type = "Public Defender's office", salary = 55000, hours = "heavy" },
-				{ type = "District Attorney's office", salary = 60000, hours = "demanding" },
-				{ type = "small firm", salary = 70000, hours = "reasonable" },
-				{ type = "corporate legal department", salary = 100000, hours = "moderate" },
-			}
-			local chosen = jobs[math.random(#jobs)]
-			return { job = chosen.type, salary = chosen.salary, hours = chosen.hours }
-		end,
-		text = "You got an offer from %job%! Salary: $%salary%! Hours: %hours%!",
+		requiresFlag = "courtroom_lawyer",
+		text = "First time as lead attorney in a trial! Jury watching. Client depending on you. Opening statement time!",
 		choices = {
-			{ text = "💼 Big Law money!", effects = { Happiness = 15, Money = 190000, Health = -5 }, resultText = "Partner track! 80-hour weeks! Golden handcuffs!", setFlags = {"big_law", "employed"} },
-			{ text = "⚖️ Public service", effects = { Happiness = 25, Money = 55000 }, resultText = "Defending those who can't afford lawyers. Noble work.", setFlags = {"public_defender", "employed"} },
-			{ text = "🔒 Prosecuting criminals", effects = { Happiness = 20, Money = 60000 }, resultText = "Putting bad guys away. Justice served.", setFlags = {"prosecutor", "employed"} },
-			{ text = "⚖️ Work-life balance", effects = { Happiness = 22, Money = 80000, Health = 5 }, resultText = "Not the most money but you have a life outside work.", setFlags = {"balanced_lawyer", "employed"} },
+			{ text = "🔥 Commanding presence", effects = { Happiness = 25, Smarts = 5, Looks = 3 }, resultText = "NAILED IT! Jury was captivated! Won the case! Future trial star!", setFlags = {"trial_lawyer", "winning_record"} },
+			{ text = "📋 Methodical and prepared", effects = { Happiness = 18, Smarts = 8 }, resultText = "Solid work. Won on the facts. Not flashy but effective!", setFlag = "trial_lawyer" },
+			{ text = "😰 Nervous but got through", effects = { Happiness = 10, Smarts = 3 }, resultText = "Shaky start but found your footing. Experience helps!" },
+			{ text = "💔 Lost the case", effects = { Happiness = -15, Smarts = 5 }, resultText = "They found against your client. Devastating but you learned a lot.", setFlag = "trial_experience" },
 		},
 	},
 	
 	{
-		id = "law_big_case",
-		minAge = 26, maxAge = 55,
-		weight = 25, cooldown = 3,
-		emoji = "🏛️", title = "Big Case!",
+		id = "legal_big_case",
+		minAge = 30, maxAge = 55,
+		weight = 15, cooldown = 4,
+		emoji = "⚖️", title = "Career-Defining Case!",
 		category = "work",
-		requiresFlag = "lawyer",
+		requiresFlag = "trial_lawyer",
 		getDynamicData = function()
-			local cases = {"murder trial", "corporate merger", "civil rights case", "class action lawsuit", "high-profile divorce"}
+			local cases = {"murder trial", "class action lawsuit", "high-profile corruption case", "landmark civil rights case"}
 			return { caseType = cases[math.random(#cases)] }
 		end,
-		text = "You're lead attorney on a %caseType%! Career-defining moment!",
+		text = "Assigned to a major %caseType%! Media attention! This could make or break your career. How do you handle it?",
 		choices = {
-			{ text = "🏆 Won the case!", effects = { Happiness = 35, Money = 50000, Smarts = 5 }, resultText = "VERDICT IN YOUR FAVOR! Brilliant strategy! Reputation soaring!", setFlag = "winning_lawyer" },
-			{ text = "💔 Lost", effects = { Happiness = -20, Smarts = 5 }, resultText = "Did everything you could. Not every case can be won. Hurts though." },
-			{ text = "🤝 Settled favorably", effects = { Happiness = 20, Money = 30000 }, resultText = "Not a trial win but your client got what they wanted. Smart lawyering." },
-			{ text = "📺 Media attention", effects = { Happiness = 25, Money = 20000, Looks = 5 }, resultText = "Case made headlines! You're on TV! Famous lawyer status!", setFlags = {"winning_lawyer", "famous_lawyer"} },
+			{ text = "💪 Rise to the occasion", effects = { Happiness = 35, Money = 100000, Looks = 5 }, resultText = "WON THE CASE! You're famous in legal circles! Career made!", setFlags = {"famous_lawyer", "landmark_win"} },
+			{ text = "🤝 Build the best team", effects = { Happiness = 28, Money = 80000 }, resultText = "Team effort wins! You're a leader! Reputation enhanced!", setFlag = "respected_attorney" },
+			{ text = "😰 Crack under pressure", effects = { Happiness = -20, Money = -10000 }, resultText = "Made mistakes. Lost badly. Very public failure. Recovery needed." },
+			{ text = "💰 Settle it out", effects = { Happiness = 15, Money = 50000 }, resultText = "Negotiated a good settlement. No trial glory but good outcome." },
 		},
 	},
 	
+	-- ═══════════════════════════════════════════════════════════════
+	-- ETHICAL DILEMMAS
+	-- ═══════════════════════════════════════════════════════════════
+	
 	{
-		id = "law_ethical_dilemma",
+		id = "legal_ethics_dilemma",
 		minAge = 28, maxAge = 60,
 		weight = 20, cooldown = 4,
-		emoji = "⚖️", title = "Ethical Dilemma",
+		emoji = "🤔", title = "Ethical Dilemma!",
 		category = "work",
-		requiresFlag = "lawyer",
-		text = "Your client confessed something to you privately. Do you have to defend them knowing what you know?",
+		requiresFlag = "attorney",
+		text = "You discover evidence that helps your client but was obtained unethically. What do you do?",
 		choices = {
-			{ text = "📜 Follow the ethics rules", effects = { Happiness = 5, Smarts = 5 }, resultText = "Everyone deserves a defense. That's the system. You do your job.", setFlag = "ethical_lawyer" },
-			{ text = "😔 Withdraw from case", effects = { Happiness = -5, Money = -10000 }, resultText = "Couldn't do it. Lost the fee but kept your conscience." },
-			{ text = "⚖️ Justice vs. duty", effects = { Happiness = -10, Smarts = 5 }, resultText = "The conflict tears at you. Law isn't always justice." },
-			{ text = "🤫 It haunts you", effects = { Happiness = -15, Health = -3 }, resultText = "You did your job but... knowing what you know... it's hard." },
+			{ text = "🚫 Report it properly", effects = { Happiness = 10, Smarts = 8 }, resultText = "Did the right thing. Ethics over winning. Sleep well.", setFlag = "ethical_attorney" },
+			{ text = "😬 Use it anyway", effects = { Happiness = -10, Money = 20000 }, resultText = "Won the case but compromised your integrity. Worth it?", setFlag = "morally_gray" },
+			{ text = "📋 Consult ethics board", effects = { Happiness = 5, Smarts = 10 }, resultText = "Got proper guidance. Covered yourself. Professional approach." },
+			{ text = "🔄 Find another way to win", effects = { Happiness = 15, Smarts = 8 }, resultText = "Found legitimate evidence! Won ethically! Best outcome!", setFlag = "ethical_attorney" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- JUDICIAL PATH
+	-- ADVANCEMENT / JUDGESHIP
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "law_judgeship",
-		minAge = 40, maxAge = 65,
-		weight = 10, oneTime = true,
-		emoji = "👨‍⚖️", title = "Judgeship Offered!",
+		id = "legal_partnership",
+		minAge = 32, maxAge = 50,
+		weight = 15, oneTime = true,
+		emoji = "🏛️", title = "Partnership Offer!",
 		category = "work",
-		requiresFlag = "winning_lawyer",
+		requiresFlag = "biglaw",
+		text = "After years of grinding, offered PARTNER at the firm! Your name on the door! But more hours. What do you do?",
+		choices = {
+			{ text = "✅ Accept partnership", effects = { Happiness = 25, Money = 500000, Health = -5 }, resultText = "PARTNER! Equity stake! Massive income! You've made it!", setFlags = {"law_partner", "made_it"} },
+			{ text = "🏠 Leave for work-life balance", effects = { Happiness = 20, Money = 150000, Health = 10 }, resultText = "Left Big Law for sanity. In-house counsel! Normal hours!", setFlag = "in_house_counsel" },
+			{ text = "⚖️ Switch to public service", effects = { Happiness = 22, Money = 80000 }, resultText = "Enough money-chasing. Time to do meaningful work.", setFlag = "public_service_lawyer" },
+			{ text = "🏛️ Start your own firm", effects = { Happiness = 18, Money = 100000 }, resultText = "Your own name, your own rules! Risky but liberating!", setFlag = "own_firm" },
+		},
+	},
+	
+	{
+		id = "legal_judgeship",
+		minAge = 45, maxAge = 70,
+		weight = 10, oneTime = true,
+		emoji = "⚖️", title = "Judicial Appointment!",
+		category = "work",
+		requiresFlag = "famous_lawyer",
 		getDynamicData = function()
-			local courts = {"municipal court", "state court", "federal district court", "appeals court"}
+			local courts = {"state court", "federal district court", "appellate court"}
 			return { court = courts[math.random(#courts)] }
 		end,
-		text = "You're being considered for a %court% judgeship!",
+		text = "Nominated for %court% judge! Lifetime appointment possibility! The Senate/governor approval pending!",
 		choices = {
-			{ text = "👨‍⚖️ Your Honor!", effects = { Happiness = 40, Money = 150000 }, resultText = "Robes. Gavel. Judge YOU presiding. Incredible achievement!", clearFlags = {"big_law", "prosecutor", "public_defender"}, setFlags = {"judge", "judicial"} },
-			{ text = "⚖️ Heavy responsibility", effects = { Happiness = 30, Money = 150000, Smarts = 5 }, resultText = "Lives in your hands. Sentences you deliver. Weighty.", clearFlags = {"big_law", "prosecutor", "public_defender"}, setFlag = "judge" },
-			{ text = "🏛️ Lifetime appointment", effects = { Happiness = 35, Money = 160000 }, resultText = "Federal judge! Appointed for life! Ultimate job security!", clearFlags = {"big_law", "prosecutor", "public_defender"}, setFlags = {"federal_judge", "lifetime_appointment"} },
-			{ text = "🙅 Stay an advocate", effects = { Happiness = 15 }, resultText = "You love arguing cases. Being neutral isn't for you." },
+			{ text = "🏛️ Accept with honor", effects = { Happiness = 40, Money = 200000, Looks = 5 }, resultText = "Confirmed! Your Honor! Robes and gavel! Dream achieved!", setFlags = {"judge", "judicial"}, clearFlags = {"attorney", "trial_lawyer"} },
+			{ text = "📋 Survive confirmation", effects = { Happiness = 30, Money = 180000 }, resultText = "Tough hearing but confirmed! Now dispensing justice!", setFlag = "judge" },
+			{ text = "❌ Nomination fails", effects = { Happiness = -20 }, resultText = "Political opposition sank it. Devastating but return to practice." },
+			{ text = "🙅 Decline the nomination", effects = { Happiness = 10 }, resultText = "Not ready to give up advocacy. Continued practicing." },
 		},
 	},
 	
 	{
-		id = "law_landmark_ruling",
-		minAge = 45, maxAge = 75,
-		weight = 8, oneTime = true,
-		emoji = "📜", title = "Landmark Ruling!",
+		id = "legal_supreme_court",
+		minAge = 50, maxAge = 75,
+		weight = 3, oneTime = true,
+		emoji = "🏛️", title = "SUPREME COURT?!",
 		category = "work",
 		requiresFlag = "judge",
-		text = "A case before you could set precedent. Your ruling will be studied for decades.",
+		text = "The President wants to nominate you for THE SUPREME COURT! The highest honor in law! What do you do?",
 		choices = {
-			{ text = "⚖️ Historic decision", effects = { Happiness = 40, Smarts = 10 }, resultText = "Your ruling changed the law. Textbooks will quote you. Legal history made.", setFlag = "landmark_judge" },
-			{ text = "📚 Carefully reasoned", effects = { Happiness = 35, Smarts = 8 }, resultText = "Your legal reasoning was airtight. Upheld on appeal. Proud.", setFlag = "respected_judge" },
-			{ text = "🔥 Controversial", effects = { Happiness = 20, Looks = -3 }, resultText = "Half the country loves you, half hates you. But you called it as you saw it.", setFlags = {"landmark_judge", "controversial"} },
-			{ text = "😔 Overturned", effects = { Happiness = -15, Smarts = 3 }, resultText = "Appeals court reversed you. Stings. But that's the system." },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- LEGACY
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "law_supreme_court",
-		minAge = 50, maxAge = 70,
-		weight = 3, oneTime = true,
-		emoji = "🏛️", title = "SUPREME COURT!",
-		category = "work",
-		requiresFlag = "federal_judge",
-		text = "The President wants to nominate you to the SUPREME COURT!",
-		choices = {
-			{ text = "🏛️ Confirmed!", effects = { Happiness = 60, Money = 250000, Looks = 10, Smarts = 10 }, resultText = "JUSTICE YOU! Highest court in the land! Legacy for the ages!", setFlags = {"supreme_court", "justice"} },
-			{ text = "🎤 Brutal hearings", effects = { Happiness = 30, Money = 250000, Health = -10 }, resultText = "Confirmation was ugly but you made it. Justice at last.", setFlags = {"supreme_court", "justice"} },
-			{ text = "❌ Nomination failed", effects = { Happiness = -30 }, resultText = "Political opposition tanked you. Heartbreaking. So close to history." },
-			{ text = "🙅 Declined nomination", effects = { Happiness = 10, Health = 5 }, resultText = "The spotlight, the politics... not worth it. Happy where you are." },
-		},
-	},
-	
-	{
-		id = "law_retirement_legacy",
-		minAge = 60, maxAge = 80,
-		weight = 15, oneTime = true,
-		emoji = "⚖️", title = "Legal Legacy",
-		category = "work",
-		requiresFlag = "lawyer",
-		getDynamicData = function()
-			local years = math.random(30, 45)
-			local cases = math.random(100, 1000)
-			return { years = years, cases = cases }
-		end,
-		text = "After %years% years and %cases% cases. Reflecting on your legal career.",
-		choices = {
-			{ text = "⚖️ Justice served", effects = { Happiness = 35 }, resultText = "You fought for what was right. Made a difference. That's enough.", setFlag = "retired_lawyer" },
-			{ text = "🏫 Law school named after you", effects = { Happiness = 45, Looks = 5 }, resultText = "Your name on the building. Training future lawyers. Immortalized.", setFlags = {"retired_lawyer", "legal_legend"} },
-			{ text = "📚 Wrote legal textbook", effects = { Happiness = 35, Money = 100000, Smarts = 5 }, resultText = "Your casebook trains thousands of law students. Knowledge lives on.", setFlag = "retired_lawyer" },
-			{ text = "👨‍👩‍👧 Family of lawyers", effects = { Happiness = 38 }, resultText = "Your child became a lawyer too. The tradition continues.", setFlags = {"retired_lawyer", "legal_dynasty"} },
+			{ text = "✅ Accept the honor", effects = { Happiness = 50, Money = 300000, Looks = 10 }, resultText = "SUPREME COURT JUSTICE! Shaping law for generations! LEGENDARY!", setFlag = "scotus" },
+			{ text = "😰 Survive brutal hearings", effects = { Happiness = 35, Money = 280000, Health = -10 }, resultText = "They dug into EVERYTHING. Confirmed but traumatized. Worth it?", setFlag = "scotus" },
+			{ text = "❌ Withdraw nomination", effects = { Happiness = -15 }, resultText = "Too much scrutiny. Withdrew before confirmation. Privacy preserved." },
+			{ text = "💔 Not confirmed", effects = { Happiness = -30 }, resultText = "Senate rejected you. Public humiliation. But still a respected judge." },
 		},
 	},
 }

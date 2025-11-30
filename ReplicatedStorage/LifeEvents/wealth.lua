@@ -1,7 +1,7 @@
 -- LifeEvents/wealth.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- WEALTH & MONEY EVENTS
--- Investments, Windfalls, Financial Crises, Lottery, Inheritance - Money life
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,245 +11,188 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- CHILDHOOD MONEY LESSONS
+	-- EARLY MONEY LESSONS
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "wealth_allowance",
-		minAge = 6, maxAge = 14,
-		weight = 30, oneTime = true,
-		emoji = "💰", title = "Allowance!",
+		minAge = 8, maxAge = 14,
+		weight = 25, oneTime = true,
+		emoji = "💰", title = "Getting Allowance!",
 		category = "family",
 		getDynamicData = function()
 			local amounts = {5, 10, 15, 20}
 			return { amount = amounts[math.random(#amounts)] }
 		end,
-		text = "Your parents start giving you $%amount% weekly allowance!",
+		text = "Parents giving you $%amount%/week allowance! What do you do with it?",
 		choices = {
-			{ text = "🐷 Save it all!", effects = { Happiness = 8, Money = 500, Smarts = 5 }, resultText = "Piggy bank getting heavy! Learning to save early!", setFlag = "saver" },
-			{ text = "🍬 Spend it all!", effects = { Happiness = 15, Money = 0 }, resultText = "Candy, toys, games! Money gone instantly! But so fun!" },
-			{ text = "💵 Half and half", effects = { Happiness = 10, Money = 200, Smarts = 3 }, resultText = "Balance! Some saving, some spending. Smart approach!", setFlag = "balanced_finances" },
-			{ text = "📈 Invested in stocks", effects = { Happiness = 5, Money = 1000, Smarts = 8 }, resultText = "Parent helped you buy fractional shares! Learning investing young!", setFlags = {"saver", "young_investor"} },
+			{ text = "🐷 Save it all", effects = { Smarts = 8, Happiness = 5 }, resultText = "Piggy bank growing! Learning to save! Good habits early!", setFlag = "saver" },
+			{ text = "🍬 Spend immediately", effects = { Happiness = 10 }, resultText = "Candy! Toys! Games! Living in the moment!" },
+			{ text = "💰 Save half, spend half", effects = { Smarts = 5, Happiness = 8 }, resultText = "Balance! Enjoying AND saving! Smart approach!", setFlag = "balanced_spender" },
+			{ text = "📈 Ask to invest it", effects = { Smarts = 12, Happiness = 5, Money = 20 }, resultText = "Parents opened a savings account! Interest! Compound growth!", setFlags = {"investor_mindset", "saver"} },
 		},
 	},
-	
-	{
-		id = "wealth_birthday_money",
-		minAge = 8, maxAge = 18,
-		weight = 25, cooldown = 3,
-		emoji = "🎂", title = "Birthday Money!",
-		category = "family",
-		getDynamicData = function()
-			local amounts = {50, 100, 200, 500}
-			return { amount = amounts[math.random(#amounts)] }
-		end,
-		text = "Grandparents gave you $%amount% for your birthday!",
-		choices = {
-			{ text = "🎮 Video games!", effects = { Happiness = 15, Money = 0 }, resultText = "Got exactly what you wanted! Thanks grandma!" },
-			{ text = "🏦 Bank it!", effects = { Happiness = 5, Money = 500, Smarts = 3 }, resultText = "Into savings! Compound interest here we come!", setFlag = "saver" },
-			{ text = "👕 New clothes", effects = { Happiness = 12, Money = 0, Looks = 3 }, resultText = "Looking fresh! Fashion upgrade!" },
-			{ text = "📚 Bought stocks", effects = { Happiness = 8, Money = 800, Smarts = 8 }, resultText = "Grandma would be proud! Your Disney shares are growing!", setFlag = "young_investor" },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- YOUNG ADULT FINANCES
-	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "wealth_first_paycheck",
-		minAge = 16, maxAge = 22,
-		weight = 25, oneTime = true,
+		minAge = 15, maxAge = 18,
+		weight = 20, oneTime = true,
 		emoji = "💵", title = "First Paycheck!",
 		category = "work",
 		getDynamicData = function()
-			local amounts = {200, 400, 600, 800}
+			local amounts = {300, 400, 500, 600}
 			return { amount = amounts[math.random(#amounts)] }
 		end,
-		text = "Your first REAL paycheck! $%amount% for YOUR work!",
+		text = "First real paycheck: $%amount%! Earned with your own labor! What do you do?",
 		choices = {
-			{ text = "🤑 Feeling rich!", effects = { Happiness = 20, Money = 600 }, resultText = "YOUR money! Earned by YOU! The independence feels amazing!", setFlag = "first_income" },
-			{ text = "😔 Taxes hurt", effects = { Happiness = 8, Money = 400, Smarts = 5 }, resultText = "Gross vs net is painful to learn. Where did 30% go?!", setFlag = "first_income" },
-			{ text = "🏦 Started 401k", effects = { Happiness = 10, Money = 300, Smarts = 8 }, resultText = "Employer match! Free money! Retirement at 16!", setFlags = {"first_income", "retirement_saver"} },
-			{ text = "💸 Gone in a day", effects = { Happiness = 15, Money = 0 }, resultText = "Spent it all immediately! Worth it! (Probably not)" },
-		},
-	},
-	
-	{
-		id = "wealth_credit_card",
-		minAge = 18, maxAge = 30,
-		weight = 25, oneTime = true,
-		emoji = "💳", title = "First Credit Card!",
-		category = "work",
-		getDynamicData = function()
-			local limits = {500, 1000, 2500, 5000}
-			return { limit = limits[math.random(#limits)] }
-		end,
-		text = "Approved for a credit card! $%limit% limit! Power and danger!",
-		choices = {
-			{ text = "📈 Build credit wisely", effects = { Happiness = 10, Money = 0, Smarts = 8 }, resultText = "Small purchases, pay in full. Credit score climbing!", setFlag = "good_credit" },
-			{ text = "💸 Maxed it immediately", effects = { Happiness = 15, Money = -2000 }, resultText = "Bought everything! Now paying 24% interest! Oops!", setFlag = "credit_card_debt" },
-			{ text = "🔒 Emergency only", effects = { Happiness = 5, Smarts = 5 }, resultText = "Keeping it for emergencies. Responsible.", setFlag = "good_credit" },
-			{ text = "✂️ Cut it up", effects = { Happiness = 8, Smarts = 3 }, resultText = "Too tempting. Cash only lifestyle. Avoiding debt!", setFlag = "debt_free" },
-		},
-	},
-	
-	{
-		id = "wealth_student_loans",
-		minAge = 18, maxAge = 25,
-		weight = 25, oneTime = true,
-		emoji = "📚", title = "Student Loan Reality",
-		category = "school",
-		getDynamicData = function()
-			local amounts = {20000, 50000, 100000, 150000}
-			return { amount = amounts[math.random(#amounts)] }
-		end,
-		text = "You owe $%amount% in student loans. Payments starting soon.",
-		choices = {
-			{ text = "😰 Drowning in debt", effects = { Happiness = -15, Money = -50000 }, resultText = "Monthly payments crushing you. Decades to pay off. The American dream?", setFlag = "student_debt" },
-			{ text = "💪 Aggressive payoff", effects = { Happiness = 5, Money = -30000, Smarts = 5 }, resultText = "Living frugally to destroy this debt. Freedom in 5 years!", setFlag = "paying_debt" },
-			{ text = "📋 Income-based plan", effects = { Happiness = -5, Money = -20000, Smarts = 3 }, resultText = "Manageable payments but... paying forever.", setFlag = "student_debt" },
-			{ text = "🎉 Forgiveness program", effects = { Happiness = 25, Money = 0 }, resultText = "Public service loan forgiveness! 10 years of service, debt gone!", clearFlag = "student_debt", setFlag = "debt_free" },
+			{ text = "🏦 Open savings account", effects = { Smarts = 10, Money = 200 }, resultText = "Bank account opened! Building financial foundation!", setFlag = "has_savings" },
+			{ text = "🛍️ Shopping spree!", effects = { Happiness = 15, Money = -200 }, resultText = "New clothes! Gadgets! Feels good to spend YOUR money!" },
+			{ text = "📱 Buy something wanted forever", effects = { Happiness = 12, Money = -300 }, resultText = "Finally got that thing! Earned it yourself! So satisfying!" },
+			{ text = "👨‍👩‍👧 Give some to family", effects = { Happiness = 10, Smarts = 3 }, resultText = "Helped out at home. Growing up! Responsibility!", setFlag = "generous" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- INVESTMENTS
+	-- INVESTING
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "wealth_stock_market",
-		minAge = 20, maxAge = 70,
-		weight = 25, cooldown = 3,
-		emoji = "📈", title = "Stock Market Move!",
-		category = "work",
+		minAge = 18, maxAge = 70,
+		weight = 20, cooldown = 3,
+		emoji = "📈", title = "Stock Market Opportunity!",
+		category = "social",
 		getDynamicData = function()
-			local stocks = {"tech stocks", "index funds", "a meme stock", "blue chips", "a startup IPO"}
-			return { investment = stocks[math.random(#stocks)] }
+			local tips = {"a friend's hot tip", "your own research", "a viral social media post", "a financial advisor"}
+			return { source = tips[math.random(#tips)] }
 		end,
-		text = "You invested in %investment%. The market is moving!",
+		text = "Based on %source%, there's a stock investment opportunity! Put money in?",
 		choices = {
-			{ text = "📈 Doubled your money!", effects = { Happiness = 30, Money = 50000 }, resultText = "STONKS! 100% gain! Timing is everything!", setFlag = "investor" },
-			{ text = "📉 Lost half", effects = { Happiness = -20, Money = -25000 }, resultText = "Market crashed right after you bought. Painful lesson.", setFlag = "investor" },
-			{ text = "📊 Steady gains", effects = { Happiness = 15, Money = 10000, Smarts = 5 }, resultText = "7% annual return. Boring but effective. Long game.", setFlags = {"investor", "patient_investor"} },
-			{ text = "🚀 10x return!", effects = { Happiness = 40, Money = 200000 }, resultText = "MASSIVE gains! Picked the right one! Financial freedom closer!", setFlags = {"investor", "lucky_investor"} },
+			{ text = "💰 Invest heavily", effects = { Money = 5000, Happiness = 15 }, resultText = "IT WENT UP! Made money! Feeling like a genius!", setFlag = "stock_investor" },
+			{ text = "📉 Invest and lose", effects = { Money = -3000, Happiness = -12 }, resultText = "Stock tanked. Lost money. Ouch. That's the market." },
+			{ text = "🤏 Small investment", effects = { Money = 500, Happiness = 8 }, resultText = "Modest gains! Playing it safe worked out!", setFlag = "cautious_investor" },
+			{ text = "🙅 Stay out of market", effects = { Happiness = 3, Smarts = 3 }, resultText = "Didn't invest. Missed the gains but also avoided the risk." },
 		},
 	},
 	
 	{
 		id = "wealth_crypto",
 		minAge = 18, maxAge = 60,
-		weight = 20, cooldown = 3,
-		emoji = "🪙", title = "Crypto Investment!",
-		category = "work",
+		weight = 18, cooldown = 4,
+		emoji = "🪙", title = "Crypto Investment?",
+		category = "social",
 		getDynamicData = function()
-			local cryptos = {"Bitcoin", "Ethereum", "a meme coin", "an NFT project", "a new altcoin"}
-			return { crypto = cryptos[math.random(#cryptos)] }
+			local coins = {"Bitcoin", "Ethereum", "a random altcoin", "a meme coin"}
+			return { coin = coins[math.random(#coins)] }
 		end,
-		text = "You invested in %crypto%. Crypto is volatile!",
+		text = "Everyone's talking about %coin%! FOMO is real! Do you invest?",
 		choices = {
-			{ text = "🌙 To the moon!", effects = { Happiness = 35, Money = 100000 }, resultText = "MASSIVE gains! Crypto millionaire! Diamond hands paid off!", setFlags = {"crypto_investor", "crypto_winner"} },
-			{ text = "💀 Rug pulled", effects = { Happiness = -25, Money = -30000 }, resultText = "Scam coin. Developers disappeared. Money gone. Lesson expensive.", setFlag = "crypto_burned" },
-			{ text = "📉 Bear market", effects = { Happiness = -15, Money = -20000 }, resultText = "Down 70%. Still holding. Maybe it'll come back?", setFlag = "crypto_holder" },
-			{ text = "💰 Sold at peak", effects = { Happiness = 30, Money = 80000, Smarts = 5 }, resultText = "Timed it perfectly! Cashed out before crash! Rare win!", setFlag = "crypto_winner" },
+			{ text = "🚀 Go big!", effects = { Money = 20000, Happiness = 25 }, resultText = "TO THE MOON! 10x gains! You're a crypto genius!", setFlags = {"crypto_rich", "investor"} },
+			{ text = "📉 Bought the top", effects = { Money = -8000, Happiness = -20 }, resultText = "Crashed right after you bought. Classic. REKT.", setFlag = "crypto_loss" },
+			{ text = "🤏 Small fun investment", effects = { Money = 1000, Happiness = 10 }, resultText = "Made a bit! Didn't risk too much! Smart gambling!", setFlag = "crypto_dabbler" },
+			{ text = "🙅 Too risky for me", effects = { Happiness = 5, Smarts = 5 }, resultText = "Stayed out of the madness. Slept well at night.", setFlag = "crypto_skeptic" },
 		},
 	},
 	
 	{
 		id = "wealth_real_estate",
 		minAge = 25, maxAge = 65,
-		weight = 20, cooldown = 5,
-		emoji = "🏠", title = "Real Estate Investment!",
-		category = "work",
+		weight = 15, cooldown = 5,
+		emoji = "🏠", title = "Real Estate Opportunity!",
+		category = "social",
 		getDynamicData = function()
-			local properties = {"rental property", "a duplex", "commercial building", "vacation rental", "fixer-upper"}
-			return { property = properties[math.random(#properties)] }
+			local properties = {"a fixer-upper", "rental property", "vacant land", "a condo"}
+			local prices = {150000, 200000, 250000, 300000}
+			return { property = properties[math.random(#properties)], price = prices[math.random(#prices)] }
 		end,
-		text = "Opportunity to invest in a %property%!",
+		text = "Opportunity to buy %property% for $%price%! Real estate builds wealth! Do you buy?",
 		choices = {
-			{ text = "🏠 Cash flowing!", effects = { Happiness = 25, Money = 30000 }, resultText = "Rental income exceeds mortgage! Passive income achieved!", setFlags = {"landlord", "real_estate_investor"} },
-			{ text = "😤 Nightmare tenants", effects = { Happiness = -15, Money = -10000 }, resultText = "Destroyed the place. Eviction process. Being a landlord is hard.", setFlag = "landlord" },
-			{ text = "📈 Property doubled!", effects = { Happiness = 30, Money = 200000 }, resultText = "Market went crazy! Your property worth twice what you paid!", setFlags = {"landlord", "property_rich"} },
-			{ text = "🏚️ Money pit", effects = { Happiness = -20, Money = -50000 }, resultText = "Repairs never end. Hemorrhaging money. Should have rented.", setFlag = "bad_investment" },
+			{ text = "🏠 Buy it!", effects = { Money = 50000, Happiness = 18 }, resultText = "Great investment! Property appreciated! Building wealth!", setFlags = {"property_owner", "real_estate_investor"} },
+			{ text = "🔨 Buy and flip", effects = { Money = 30000, Happiness = 15, Health = -5 }, resultText = "Fixed it up and sold for profit! Hard work paid off!", setFlag = "house_flipper" },
+			{ text = "📉 Market crashed after", effects = { Money = -40000, Happiness = -20 }, resultText = "Bought at the peak. Value dropped. Underwater on mortgage.", setFlag = "bad_investment" },
+			{ text = "🙅 Can't afford it", effects = { Happiness = -5 }, resultText = "Not in a position to buy. Watching others build wealth. Frustrating." },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- WINDFALLS & LOSSES
+	-- WINDFALLS
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "wealth_inheritance",
 		minAge = 25, maxAge = 70,
-		weight = 15, oneTime = true,
-		emoji = "💝", title = "Inheritance!",
+		weight = 10, oneTime = true,
+		emoji = "📜", title = "Inheritance!",
 		category = "family",
 		getDynamicData = function()
-			local amounts = {10000, 50000, 200000, 500000, 1000000}
-			local relatives = {"grandparent", "distant relative", "aunt/uncle", "family friend"}
-			return { amount = amounts[math.random(#amounts)], relative = relatives[math.random(#relatives)] }
+			local amounts = {10000, 50000, 100000, 500000}
+			local sources = {"grandparent", "distant relative", "family friend", "great aunt"}
+			return { amount = amounts[math.random(#amounts)], source = sources[math.random(#sources)] }
 		end,
-		text = "Your %relative% passed away and left you $%amount% in their will!",
+		text = "Your %source% passed away and left you $%amount%! Unexpected inheritance! What do you do?",
 		choices = {
-			{ text = "😢 Bittersweet", effects = { Happiness = 10, Money = 200000 }, resultText = "Miss them. But grateful for the gift. Will honor their memory.", setFlag = "inherited" },
-			{ text = "🏠 Buy a house!", effects = { Happiness = 25, Money = 0 }, resultText = "Down payment sorted! First home! Thank you!", setFlags = {"inherited", "homeowner"} },
-			{ text = "📈 Invest it all", effects = { Happiness = 15, Money = 300000, Smarts = 5 }, resultText = "Let it grow! Their gift will multiply!", setFlags = {"inherited", "investor"} },
-			{ text = "💸 Spent it fast", effects = { Happiness = 20, Money = 0 }, resultText = "Cars, trips, stuff! Fun but... probably should have saved some." },
+			{ text = "🏦 Save/invest it all", effects = { Money = 50000, Smarts = 8 }, resultText = "Secured the future! Honoring their memory wisely!", setFlags = {"inherited_wealth", "responsible"} },
+			{ text = "🛍️ Treat yourself", effects = { Money = 20000, Happiness = 15 }, resultText = "Bought nice things! Life's short! They'd want you happy!", setFlag = "inherited_wealth" },
+			{ text = "🏠 Down payment on house", effects = { Money = 0, Happiness = 20 }, resultText = "Finally a homeowner! Their gift made it possible!", setFlags = {"inherited_wealth", "homeowner"} },
+			{ text = "❤️ Give some to charity", effects = { Money = 30000, Happiness = 18, Smarts = 3 }, resultText = "Donated in their name. Kept some. Perfect balance.", setFlags = {"inherited_wealth", "charitable"} },
 		},
 	},
 	
 	{
-		id = "wealth_lottery",
-		minAge = 18, maxAge = 90,
+		id = "wealth_lottery_win",
+		minAge = 18, maxAge = 80,
 		weight = 3, oneTime = true,
 		emoji = "🎰", title = "LOTTERY WINNER!",
 		category = "social",
 		getDynamicData = function()
-			local amounts = {100000, 1000000, 10000000, 100000000}
+			local amounts = {100000, 500000, 1000000, 5000000}
 			return { amount = amounts[math.random(#amounts)] }
 		end,
-		text = "YOU WON THE LOTTERY! $%amount%!!! THIS CAN'T BE REAL!",
+		text = "YOU WON THE LOTTERY! $%amount%! (After taxes) Life-changing money! What do you do?!",
 		choices = {
-			{ text = "🤑 INSTANT MILLIONAIRE!", effects = { Happiness = 50, Money = 5000000 }, resultText = "Life changed FOREVER! Never working again! DREAMS COME TRUE!", setFlags = {"lottery_winner", "wealthy"} },
-			{ text = "😰 Too much attention", effects = { Happiness = 30, Money = 4000000, Health = -5 }, resultText = "Everyone wants a piece. Family drama. Friends weird now.", setFlags = {"lottery_winner", "wealthy", "lottery_curse"} },
-			{ text = "🤫 Stay quiet", effects = { Happiness = 40, Money = 4500000, Smarts = 5 }, resultText = "Told nobody. Hired lawyers. Smart winner!", setFlags = {"lottery_winner", "wealthy", "smart_winner"} },
-			{ text = "🎉 Quit job dramatically!", effects = { Happiness = 45, Money = 5000000 }, resultText = "Told your boss EXACTLY what you think! FREEDOM!", setFlags = {"lottery_winner", "wealthy"} },
+			{ text = "🏦 Hire financial advisor", effects = { Money = 500000, Happiness = 30, Smarts = 10 }, resultText = "Smart! Protected the money! Set for life!", setFlags = {"lottery_winner", "wealthy", "smart_winner"} },
+			{ text = "🎉 Tell everyone!", effects = { Money = 200000, Happiness = 20 }, resultText = "Friends and family asking for loans... money disappearing fast...", setFlags = {"lottery_winner", "money_problems"} },
+			{ text = "🙊 Keep it secret", effects = { Money = 400000, Happiness = 35, Smarts = 8 }, resultText = "Quiet wealth. No one knows. Peace of mind.", setFlags = {"lottery_winner", "wealthy", "secret_millionaire"} },
+			{ text = "💸 Blow it all", effects = { Money = 0, Happiness = 25 }, resultText = "Cars! Parties! Trips! And... it's gone. Classic lottery winner.", setFlags = {"lottery_winner", "broke_again"} },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- FINANCIAL STRUGGLES
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "wealth_debt_crisis",
+		minAge = 22, maxAge = 60,
+		weight = 20, cooldown = 5,
+		emoji = "💳", title = "Debt Problem!",
+		category = "family",
+		getDynamicData = function()
+			local amounts = {5000, 15000, 30000, 50000}
+			return { amount = amounts[math.random(#amounts)] }
+		end,
+		text = "Credit card debt hit $%amount%! Interest eating you alive! What do you do?",
+		choices = {
+			{ text = "📋 Create strict budget", effects = { Happiness = 8, Money = 5000, Smarts = 8 }, resultText = "Rice and beans! No fun! But debt shrinking! Discipline!", setFlags = {"debt_fighter", "budgeter"} },
+			{ text = "🏦 Balance transfer", effects = { Happiness = 5, Money = 3000, Smarts = 5 }, resultText = "0% APR for 18 months! Breathing room! Pay it down!", setFlag = "debt_strategy" },
+			{ text = "😔 Minimum payments only", effects = { Happiness = -10, Money = -5000 }, resultText = "Barely keeping up. Debt growing. This is a trap." },
+			{ text = "💼 Get second job", effects = { Happiness = -5, Money = 10000, Health = -8 }, resultText = "Working ALL the time. But debt going down FAST!", setFlags = {"debt_fighter", "workaholic"} },
 		},
 	},
 	
 	{
 		id = "wealth_bankruptcy",
-		minAge = 25, maxAge = 70,
-		weight = 10, oneTime = true,
-		emoji = "📉", title = "Bankruptcy",
-		category = "work",
-		requiresFlag = "credit_card_debt",
-		text = "Debt is overwhelming. Bankruptcy might be the only option.",
+		minAge = 25, maxAge = 65,
+		weight = 8, oneTime = true,
+		emoji = "📉", title = "Bankruptcy Decision",
+		category = "family",
+		requiresFlag = "debt_fighter",
+		text = "Debt is overwhelming. Bankruptcy might be the only way out. What do you do?",
 		choices = {
-			{ text = "💔 Filed Chapter 7", effects = { Happiness = -25, Money = 0, Smarts = 3 }, resultText = "Debts discharged but credit destroyed. Starting over at zero.", clearFlag = "credit_card_debt", setFlag = "bankrupt" },
-			{ text = "📋 Chapter 13 plan", effects = { Happiness = -15, Money = -20000 }, resultText = "Payment plan. 5 years of tight budgets. But keeping assets.", setFlag = "restructuring" },
-			{ text = "💪 Dug out manually", effects = { Happiness = 10, Money = -30000, Health = -10 }, resultText = "Three jobs. No sleep. Paid it all off. Never again.", clearFlags = {"credit_card_debt"}, setFlags = {"debt_free", "resilient"} },
-			{ text = "😔 Devastated", effects = { Happiness = -30, Health = -10 }, resultText = "Financial ruin. Shame. Depression. Need help.", setFlags = {"bankrupt", "depressed"} },
-		},
-	},
-	
-	{
-		id = "wealth_scammed",
-		minAge = 18, maxAge = 90,
-		weight = 15, cooldown = 5,
-		emoji = "🚨", title = "Scammed!",
-		category = "social",
-		getDynamicData = function()
-			local scams = {"phishing email", "romance scam", "investment fraud", "identity theft", "phone scam"}
-			local amounts = {1000, 5000, 20000, 50000}
-			return { scam = scams[math.random(#scams)], amount = amounts[math.random(#amounts)] }
-		end,
-		text = "You fell victim to a %scam%! Lost $%amount%!",
-		choices = {
-			{ text = "😭 Devastated", effects = { Happiness = -25, Money = -20000 }, resultText = "How could you be so stupid? The shame is crushing.", setFlag = "scam_victim" },
-			{ text = "🚔 Reported it", effects = { Happiness = -15, Money = -15000, Smarts = 5 }, resultText = "Filed police report. Probably won't get money back but... tried.", setFlag = "scam_victim" },
-			{ text = "💳 Bank helped", effects = { Happiness = -5, Money = -5000 }, resultText = "Fraud protection! Got most of it back! Always use credit cards!" },
-			{ text = "😤 Learned lesson", effects = { Happiness = -10, Money = -10000, Smarts = 8 }, resultText = "Expensive education. Never again. More cautious now.", setFlags = {"scam_victim", "cautious"} },
+			{ text = "⚖️ File Chapter 7", effects = { Happiness = 10, Money = 0 }, resultText = "Debts discharged! Fresh start! But credit destroyed for 7 years.", setFlag = "bankruptcy_survivor", clearFlag = "debt_fighter" },
+			{ text = "📋 Chapter 13 plan", effects = { Happiness = 5, Money = -5000 }, resultText = "Structured repayment plan. Keeping some assets. Crawling out.", setFlag = "bankruptcy_survivor" },
+			{ text = "💪 Refuse, keep fighting", effects = { Happiness = -10, Health = -10, Money = -10000 }, resultText = "Pride over pragmatism. The struggle continues. Exhausting." },
+			{ text = "🤝 Negotiate with creditors", effects = { Happiness = 8, Money = 5000 }, resultText = "They agreed to reduced payments! Avoiding bankruptcy!", clearFlag = "debt_fighter", setFlag = "debt_negotiator" },
 		},
 	},
 	
@@ -259,53 +202,32 @@ module.events = {
 	
 	{
 		id = "wealth_first_million",
-		minAge = 30, maxAge = 80,
+		minAge = 30, maxAge = 70,
 		weight = 8, oneTime = true,
-		emoji = "💎", title = "MILLIONAIRE!",
-		category = "work",
-		requiresFlag = "investor",
-		text = "Your net worth just crossed $1,000,000! You're a MILLIONAIRE!",
-		choices = {
-			{ text = "🎉 Life goal achieved!", effects = { Happiness = 40, Smarts = 5 }, resultText = "Seven figures! All those years of saving and investing paid off!", setFlag = "millionaire" },
-			{ text = "📊 Just on paper", effects = { Happiness = 25, Smarts = 5 }, resultText = "Net worth high but can't touch most of it. Still working.", setFlag = "millionaire" },
-			{ text = "🎯 Want more", effects = { Happiness = 20 }, resultText = "Million isn't enough anymore. When does it end?", setFlags = {"millionaire", "money_hungry"} },
-			{ text = "💝 Give some away", effects = { Happiness = 35, Money = -50000 }, resultText = "Gave to charity. Million doesn't change who you are.", setFlags = {"millionaire", "generous"} },
-		},
-	},
-	
-	{
-		id = "wealth_fire",
-		minAge = 35, maxAge = 60,
-		weight = 5, oneTime = true,
-		emoji = "🔥", title = "FIRE Achieved!",
-		category = "work",
-		requiresFlag = "millionaire",
-		getDynamicData = function()
-			local ages = {"35", "40", "45", "50"}
-			return { age = ages[math.random(#ages)] }
-		end,
-		text = "Financial Independence, Retire Early! You hit your FIRE number at %age%!",
-		choices = {
-			{ text = "🏖️ Never working again!", effects = { Happiness = 45, Health = 10 }, resultText = "RETIRED! Passive income covers everything! Freedom!", setFlags = {"fire_achieved", "early_retirement"} },
-			{ text = "🤔 But what now?", effects = { Happiness = 25, Smarts = 5 }, resultText = "Financially free but... purpose? What do you DO all day?", setFlags = {"fire_achieved", "purposeless"} },
-			{ text = "💼 Keep working anyway", effects = { Happiness = 30, Money = 100000 }, resultText = "Don't need to work. Choose to. That's the real freedom.", setFlags = {"fire_achieved", "working_optional"} },
-			{ text = "🌍 Travel forever", effects = { Happiness = 40, Health = 5 }, resultText = "Sold everything. Living around the world. True freedom!", setFlags = {"fire_achieved", "nomad"} },
-		},
-	},
-	
-	{
-		id = "wealth_generational",
-		minAge = 55, maxAge = 90,
-		weight = 10, oneTime = true,
-		emoji = "👨‍👩‍👧", title = "Generational Wealth",
-		category = "family",
+		emoji = "💰", title = "MILLIONAIRE!",
+		category = "social",
 		requiresFlag = "wealthy",
-		text = "You've built enough wealth to pass down to future generations. Legacy planning time.",
+		text = "Your net worth just crossed ONE MILLION DOLLARS! How do you feel?",
 		choices = {
-			{ text = "📋 Trust fund", effects = { Happiness = 30, Smarts = 5 }, resultText = "Set up trusts. Kids and grandkids will be secure. Legacy sealed.", setFlag = "dynasty" },
-			{ text = "💝 Giving pledge", effects = { Happiness = 35, Money = -500000 }, resultText = "Giving most of it away. Family gets enough, rest helps the world.", setFlag = "philanthropist" },
-			{ text = "🏫 Education fund", effects = { Happiness = 28, Money = -200000 }, resultText = "Scholarships for family AND community. Knowledge is real wealth.", setFlag = "education_legacy" },
-			{ text = "😤 Kids earn their own", effects = { Happiness = 20, Smarts = 3 }, resultText = "Giving them values not cash. They'll build their own fortune.", setFlag = "tough_love" },
+			{ text = "🎉 Celebrate!", effects = { Happiness = 35, Money = -5000 }, resultText = "Champagne! Nice dinner! You made it! MILLIONAIRE!", setFlags = {"millionaire", "celebrating"} },
+			{ text = "🎯 Eyes on next goal", effects = { Happiness = 20, Smarts = 5 }, resultText = "One down, ten million to go! Keep building!", setFlags = {"millionaire", "ambitious"} },
+			{ text = "🙏 Stay humble", effects = { Happiness = 25, Smarts = 3 }, resultText = "Grateful but not arrogant. Money doesn't change who you are.", setFlags = {"millionaire", "humble"} },
+			{ text = "❤️ Give back", effects = { Happiness = 30, Money = -50000 }, resultText = "Donated significantly! Helping others with your success!", setFlags = {"millionaire", "philanthropist"} },
+		},
+	},
+	
+	{
+		id = "wealth_retirement_ready",
+		minAge = 55, maxAge = 70,
+		weight = 15, oneTime = true,
+		emoji = "🏖️", title = "Retirement Numbers!",
+		category = "family",
+		text = "Financial advisor says you can retire comfortably! All those years of saving! Do you pull the trigger?",
+		choices = {
+			{ text = "✅ Retire now!", effects = { Happiness = 40, Health = 10 }, resultText = "RETIRED! No more alarm clocks! Living the dream!", setFlags = {"retired", "financially_free"} },
+			{ text = "📈 One more year", effects = { Happiness = 20, Money = 50000 }, resultText = "One more year of income! Padding the nest egg!", setFlag = "working_retiree" },
+			{ text = "🔄 Semi-retirement", effects = { Happiness = 30, Money = 30000, Health = 5 }, resultText = "Part-time! Best of both worlds! Still engaged!", setFlags = {"semi_retired", "financially_free"} },
+			{ text = "😰 Not confident enough", effects = { Happiness = 10, Smarts = 3 }, resultText = "What if the money runs out? Keeping working for security." },
 		},
 	},
 }

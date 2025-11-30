@@ -1,7 +1,7 @@
 -- LifeEvents/random_encounters.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- RANDOM ENCOUNTER EVENTS
--- Life doesn't always go your way - varied outcomes, risks, and surprises
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,7 +11,7 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- STRAY ANIMAL ENCOUNTERS (With realistic varied outcomes!)
+	-- STRAY ANIMAL ENCOUNTERS
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
@@ -21,32 +21,31 @@ module.events = {
 		emoji = "🐱", title = "Stray Cat!",
 		category = "social",
 		getDynamicData = function()
-			local conditions = {"skinny and hungry", "friendly but dirty", "hissing and scared", "injured", "with kittens"}
+			local conditions = {"skinny and hungry", "hissing and scared", "friendly but dirty", "injured"}
 			return { condition = conditions[math.random(#conditions)] }
 		end,
-		text = "You found a stray cat that looks %condition% in your neighborhood.",
+		text = "You found a stray cat that looks %condition%. What do you do?",
 		choices = {
 			{ 
 				text = "🏥 Take it to a shelter", 
-				effects = { Happiness = 5 }, 
-				resultText = "The shelter thanked you. The cat will get care.",
-				setFlag = "helped_animal"
+				effects = { Happiness = 8, Smarts = 2 }, 
+				resultText = "The shelter thanked you! They said the cat will find a good home."
 			},
 			{ 
-				text = "🏠 Try to adopt it", 
-				effects = { Happiness = 10 }, 
-				resultText = "You adopted the stray! Meet your new furry friend!",
+				text = "🏠 Try to take it home", 
+				effects = { Happiness = 12, Money = -200 }, 
+				resultText = "New pet! Had to get food, litter, and vet checkup. Worth it!",
 				setFlag = "has_pet"
 			},
 			{ 
-				text = "🍖 Feed it and let it go", 
-				effects = { Happiness = 3 }, 
-				resultText = "You gave it some food. It might come back tomorrow."
+				text = "🍖 Try to feed it", 
+				effects = { Happiness = -8, Health = -10 }, 
+				resultText = "OUCH! The scared cat scratched your hand badly when you reached for it! Bleeding!"
 			},
 			{ 
 				text = "🤲 Try to pet it",
-				effects = { Happiness = -5, Health = -8 },
-				resultText = "OUCH! The scared cat scratched you badly! Should've been more careful."
+				effects = { Health = -12, Happiness = -8 },
+				resultText = "BAD IDEA! The cat bit you and ran. That might need a tetanus shot..."
 			},
 		},
 	},
@@ -58,31 +57,31 @@ module.events = {
 		emoji = "🐕", title = "Stray Dog!",
 		category = "social",
 		getDynamicData = function()
-			local conditions = {"friendly and waggy", "nervous and growling", "limping", "covered in mud", "wearing a broken collar"}
+			local conditions = {"friendly and waggy", "growling nervously", "limping", "wearing a broken collar"}
 			return { condition = conditions[math.random(#conditions)] }
 		end,
-		text = "A stray dog approaches you. It looks %condition%.",
+		text = "A stray dog approaches you. It looks %condition%. What do you do?",
 		choices = {
 			{ 
-				text = "🏥 Call animal control", 
-				effects = { Happiness = 2, Smarts = 2 }, 
-				resultText = "Animal control came and took the dog. Safe for everyone."
+				text = "📞 Call animal control", 
+				effects = { Happiness = 3, Smarts = 3 }, 
+				resultText = "They came and took the dog. Safe for everyone. Right call."
 			},
 			{ 
 				text = "🏠 Take it home", 
-				effects = { Happiness = 12 }, 
-				resultText = "You've got a new best friend! Time for vet visit and supplies.",
+				effects = { Happiness = 15, Money = -300 }, 
+				resultText = "New best friend! Vet visit, food, and supplies needed. So worth it!",
 				setFlag = "has_pet"
 			},
 			{ 
-				text = "🔍 Check for owner",
-				effects = { Happiness = 8, Smarts = 3 },
-				resultText = "Found the owner via the chip! They were so grateful!"
+				text = "🤲 Approach slowly",
+				effects = { Health = -18, Happiness = -12 },
+				resultText = "The dog snapped! It bit your arm HARD. Hospital visit needed. Dogs can be unpredictable!"
 			},
 			{ 
-				text = "🤲 Approach carefully",
-				effects = { Health = -15, Happiness = -10 },
-				resultText = "The dog bit you! It was more scared than you thought. Hospital trip needed."
+				text = "🚶 Just walk away",
+				effects = { Happiness = -2 },
+				resultText = "You left it alone. Hope someone else helps. Slight guilt."
 			},
 		},
 	},
@@ -97,7 +96,6 @@ module.events = {
 			local animals = {
 				{ type = "raccoon", emoji = "🦝" },
 				{ type = "fox", emoji = "🦊" },
-				{ type = "deer", emoji = "🦌" },
 				{ type = "skunk", emoji = "🦨" },
 				{ type = "snake", emoji = "🐍" },
 			}
@@ -107,67 +105,66 @@ module.events = {
 		getDynamicEmoji = function(data)
 			return data.animalEmoji or "🦊"
 		end,
-		text = "You encountered a %animal% in an unexpected place!",
+		text = "You encountered a %animal% in an unexpected place! What do you do?",
 		choices = {
 			{ 
-				text = "📸 Take a photo from distance", 
-				effects = { Happiness = 8, Smarts = 2 }, 
-				resultText = "Great shot! Shared on social media. Nature is amazing!"
+				text = "📸 Take photo from distance", 
+				effects = { Happiness = 10, Smarts = 3 }, 
+				resultText = "Got a great shot! Posted it online. Nature is amazing!"
 			},
 			{ 
 				text = "🚶 Slowly back away", 
-				effects = { Happiness = 2, Smarts = 4 }, 
-				resultText = "Smart move. You left the animal alone and it wandered off."
+				effects = { Happiness = 3, Smarts = 5 }, 
+				resultText = "Smart! You left it alone and nothing bad happened."
 			},
 			{ 
 				text = "🤲 Try to get closer",
-				effects = { Health = -12, Happiness = -8 },
-				resultText = "BAD IDEA. The animal attacked in self-defense. You're hurt!"
+				effects = { Health = -20, Happiness = -15 },
+				resultText = "TERRIBLE IDEA! It attacked in self-defense! You're bleeding and might need rabies shots!"
 			},
 			{ 
 				text = "😱 Run away screaming",
-				effects = { Happiness = -3, Health = -2 },
-				resultText = "You tripped while running! Scraped knee and bruised ego."
+				effects = { Happiness = -5, Health = -5 },
+				resultText = "You tripped while running! Scraped up your knee and hands. Embarrassing."
 			},
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- STRANGER ENCOUNTERS (Mixed outcomes)
+	-- STRANGER ENCOUNTERS
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "m_stranger_needs_help",
 		minAge = 16, maxAge = 70,
 		weight = 30, cooldown = 2,
-		emoji = "🆘", title = "Stranger Asking for Help",
+		emoji = "🆘", title = "Stranger Needs Help",
 		category = "social",
 		getDynamicData = function()
-			local situations = {"car broke down", "phone died and needs to call someone", "needs directions", "dropped groceries everywhere", "locked out of their car"}
+			local situations = {"car broke down", "phone died and needs a call", "needs directions", "dropped all their groceries"}
 			return { situation = situations[math.random(#situations)] }
 		end,
-		text = "A stranger approaches you - their %situation%. They're asking for help.",
+		text = "A stranger approaches - their %situation%. They're asking for help. What do you do?",
 		choices = {
 			{ 
 				text = "🤝 Help them out", 
-				effects = { Happiness = 8, Smarts = 2 }, 
-				resultText = "You helped and they were very grateful! Good karma!",
-				setFlag = "helpful"
+				effects = { Happiness = 10, Smarts = 2 }, 
+				resultText = "They were so grateful! Made you feel good. Karma points!"
 			},
 			{ 
-				text = "🙅 Too busy, sorry",
-				effects = { Happiness = -2 },
-				resultText = "You walked away. Hope someone else helped them."
+				text = "🙅 Too busy, walk away",
+				effects = { Happiness = -5 },
+				resultText = "You said no. Their disappointed face lingers in your mind."
 			},
 			{ 
-				text = "📞 Call for help instead",
-				effects = { Happiness = 4, Smarts = 3 },
-				resultText = "You called professionals to help. Smart and safe approach."
+				text = "💰 Offer money",
+				effects = { Money = -150, Happiness = -10 },
+				resultText = "It was a SCAM! They took your money and ran. Con artists everywhere!"
 			},
 			{
-				text = "💰 Help but get scammed",
-				effects = { Money = -200, Happiness = -10, Smarts = 2 },
-				resultText = "It was a scam! They took your money and ran. Lesson learned."
+				text = "📞 Call someone for them",
+				effects = { Happiness = 6, Smarts = 3 },
+				resultText = "Called a tow truck/friend for them. Helpful but kept safe distance."
 			},
 		},
 	},
@@ -176,29 +173,29 @@ module.events = {
 		id = "m_road_rage_encounter",
 		minAge = 16, maxAge = 70,
 		weight = 20, cooldown = 3,
-		emoji = "😠", title = "Road Rage Incident",
+		emoji = "😠", title = "Road Rage!",
 		category = "social",
-		text = "Someone is aggressively honking and yelling at you in traffic!",
+		text = "Someone is FURIOUS at you in traffic! Honking, yelling, gesturing! What do you do?",
 		choices = {
 			{ 
-				text = "😤 Yell back", 
-				effects = { Happiness = -8, Health = -5 }, 
-				resultText = "It escalated! They got out of the car. Things got ugly."
+				text = "😤 Yell back at them", 
+				effects = { Happiness = -15, Health = -10 }, 
+				resultText = "It ESCALATED! They got out of their car. Things got physical. Bad decision!"
 			},
 			{ 
-				text = "🤷 Ignore them", 
-				effects = { Happiness = 2, Smarts = 4 }, 
-				resultText = "You stayed calm. They eventually drove off still angry."
+				text = "🤷 Ignore completely", 
+				effects = { Happiness = 5, Smarts = 5 }, 
+				resultText = "Didn't engage. They eventually drove off still angry. You stayed calm. Win."
 			},
 			{ 
-				text = "👋 Apologetic wave", 
-				effects = { Happiness = 4, Smarts = 3 }, 
-				resultText = "The wave defused the situation. They calmed down."
+				text = "👋 Wave apologetically", 
+				effects = { Happiness = 6, Smarts = 3 }, 
+				resultText = "A simple wave defused everything. They calmed down and drove away."
 			},
 			{
-				text = "📞 Call police",
-				effects = { Happiness = -2, Smarts = 5 },
-				resultText = "Reported the aggressive driver. Safety first."
+				text = "🖕 Make it worse",
+				effects = { Health = -20, Money = -500, Happiness = -20 },
+				resultText = "HUGE MISTAKE! They followed you, confronted you. Got into a fight. Cops called."
 			},
 		},
 	},
@@ -210,32 +207,30 @@ module.events = {
 		emoji = "👛", title = "Found a Wallet!",
 		category = "social",
 		getDynamicData = function()
-			local amount = math.random(50, 500)
+			local amount = math.random(100, 400)
 			return { amount = amount }
 		end,
-		text = "You found a wallet on the ground with $%amount% cash and ID inside!",
+		text = "You found a wallet with $%amount% cash and ID inside! What do you do?",
 		choices = {
 			{ 
 				text = "🏛️ Turn it in to police", 
-				effects = { Happiness = 8, Smarts = 3 }, 
-				resultText = "You did the right thing. The owner was so thankful!",
-				setFlag = "honest"
+				effects = { Happiness = 10, Smarts = 3 }, 
+				resultText = "Right thing to do! Officer said the owner will be contacted."
 			},
 			{ 
-				text = "📞 Contact the owner", 
-				effects = { Happiness = 12, Money = 50 }, 
-				resultText = "Found them and returned it. They gave you a reward!",
-				setFlag = "honest"
+				text = "📞 Try to contact owner", 
+				effects = { Happiness = 15, Money = 50 }, 
+				resultText = "Found them on social media! They were SO grateful! Gave you a reward!"
 			},
 			{ 
-				text = "💰 Keep the cash...",
-				effects = { Money = 200, Happiness = -5, Smarts = -2 },
-				resultText = "You kept it. Guilt lingers. Someone's having a bad day."
+				text = "💰 Keep the cash",
+				effects = { Money = 200, Happiness = -10, Smarts = -3 },
+				resultText = "Took the money... someone is having a terrible day because of you. Guilt."
 			},
 			{
-				text = "💸 Keep it all",
-				effects = { Money = 300, Happiness = -8 },
-				resultText = "You took everything. The guilt is real. Was it worth it?"
+				text = "💸 Keep everything",
+				effects = { Money = 350, Happiness = -15 },
+				resultText = "You stole from someone. Credit cards, everything. Karma's coming for you."
 			},
 		},
 	},
@@ -250,28 +245,27 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🚗", title = "Flat Tire!",
 		category = "social",
-		text = "Your car got a flat tire! You're stranded on the side of the road.",
+		text = "Your tire just blew out! You're on the side of the road. What do you do?",
 		choices = {
 			{ 
 				text = "🔧 Change it yourself", 
-				effects = { Happiness = 4, Smarts = 4 }, 
-				resultText = "You did it! Dirty but proud. Self-sufficiency!",
-				setFlag = "handy"
+				effects = { Happiness = 8, Smarts = 5, Health = -3 }, 
+				resultText = "You did it! Took a while and got dirty, but back on the road!"
 			},
 			{ 
-				text = "📞 Call for help",
-				effects = { Happiness = 2, Money = -100 },
-				resultText = "Roadside assistance came. Cost you but you're moving again."
+				text = "📞 Call roadside assistance",
+				effects = { Happiness = 3, Money = -150 },
+				resultText = "Help arrived in an hour. Cost money but no effort. Easy."
 			},
 			{
-				text = "🔧 Try and fail",
-				effects = { Happiness = -6, Health = -3, Money = -150 },
-				resultText = "You hurt your back trying and still had to call for help. Ouch."
+				text = "🔧 Try but mess it up",
+				effects = { Happiness = -10, Health = -8, Money = -200 },
+				resultText = "Jack slipped! Hurt your hand. Had to call for help anyway. Ouch."
 			},
 			{
-				text = "👍 Stranger helps you",
-				effects = { Happiness = 8, Smarts = 2 },
-				resultText = "A kind stranger stopped and helped you change it. Faith in humanity restored!"
+				text = "👍 Flag down help",
+				effects = { Happiness = 10, Smarts = 2 },
+				resultText = "A kind stranger stopped and helped! Refused any money. Faith in humanity!"
 			},
 		},
 	},
@@ -283,66 +277,65 @@ module.events = {
 		emoji = "🔦", title = "Power Outage!",
 		category = "family",
 		getDynamicData = function()
-			local durations = {"a few hours", "overnight", "two days", "a week"}
+			local durations = {"a few hours", "overnight", "two days"}
 			return { duration = durations[math.random(#durations)] }
 		end,
-		text = "The power went out and stayed out for %duration%!",
+		text = "Power's out! Looks like it might be %duration%. What do you do?",
 		choices = {
 			{ 
-				text = "🏕️ Adventure mode!", 
-				effects = { Happiness = 8, Smarts = 3 }, 
-				resultText = "Candles, board games, quality time! Made the best of it!",
-				setFlag = "adaptable"
+				text = "🏕️ Make it an adventure!", 
+				effects = { Happiness = 12, Smarts = 3 }, 
+				resultText = "Candles, board games, telling stories! Actually had a great time!"
 			},
 			{ 
-				text = "😤 Super frustrating",
-				effects = { Happiness = -8 },
-				resultText = "Everything spoiled in the fridge. Work disrupted. ANNOYING."
+				text = "😤 Just be miserable",
+				effects = { Happiness = -10, Health = -3 },
+				resultText = "Sat in the dark complaining. Phone died. Food spoiled. Awful."
 			},
 			{
 				text = "🏨 Go to a hotel",
-				effects = { Happiness = 4, Money = -250 },
-				resultText = "Escaped the darkness with modern amenities. Worth it."
+				effects = { Happiness = 6, Money = -200 },
+				resultText = "Checked in somewhere with power. Watched TV in comfort. Worth it."
 			},
 			{
-				text = "🧊 Freezer disaster",
-				effects = { Happiness = -6, Money = -200 },
-				resultText = "Lost hundreds of dollars in frozen food. Power company isn't paying."
+				text = "😴 Just sleep through it",
+				effects = { Happiness = 3, Health = 5 },
+				resultText = "Went to bed early. Woke up and power was back. Easiest solution!"
 			},
 		},
 	},
 	
 	{
-		id = "m_package_theft",
+		id = "m_package_stolen",
 		minAge = 18, maxAge = 80,
 		weight = 20, cooldown = 4,
-		emoji = "📦", title = "Package Stolen!",
+		emoji = "📦", title = "Package Missing!",
 		category = "family",
 		getDynamicData = function()
-			local items = {"new phone", "expensive gift", "work equipment", "birthday present", "collector's item"}
+			local items = {"new phone", "birthday gift", "work equipment", "expensive order"}
 			return { item = items[math.random(#items)] }
 		end,
-		text = "Your %item% package was stolen from your doorstep!",
+		text = "Your %item% package should be here but it's gone! What do you do?",
 		choices = {
 			{ 
-				text = "📹 Check camera footage", 
-				effects = { Happiness = 4, Smarts = 3 }, 
-				resultText = "Got the thief on camera! Filed a police report."
+				text = "📹 Check doorbell camera", 
+				effects = { Happiness = 5, Smarts = 4 }, 
+				resultText = "Got the thief on video! Filed police report with evidence."
 			},
 			{ 
-				text = "😤 Livid!", 
-				effects = { Happiness = -10, Health = -2 }, 
-				resultText = "The rage! Blood pressure spiked. So unfair!"
-			},
-			{
-				text = "💰 File insurance claim",
-				effects = { Happiness = 2, Money = -50 },
-				resultText = "Deductible hurt but got most of it back."
-			},
-			{
-				text = "🎁 Neighbor saved it!",
+				text = "🏃 Ask neighbors",
 				effects = { Happiness = 10 },
-				resultText = "Your neighbor grabbed it before thieves could! Good neighbors are gold!"
+				resultText = "Neighbor grabbed it for you before thieves could! Good neighbors are gold!"
+			},
+			{
+				text = "😤 Rage on social media",
+				effects = { Happiness = -8, Smarts = -3 },
+				resultText = "Ranted online. Didn't solve anything. Package still gone. Feel worse."
+			},
+			{
+				text = "📞 Contact seller",
+				effects = { Happiness = 3, Money = 0 },
+				resultText = "They're sending a replacement! Took a week but got it eventually."
 			},
 		},
 	},
@@ -355,180 +348,171 @@ module.events = {
 		category = "family",
 		getDynamicData = function()
 			local problems = {
-				{ type = "burst pipe", cost = math.random(500, 2000) },
-				{ type = "AC died in summer", cost = math.random(300, 1500) },
-				{ type = "roof leak", cost = math.random(500, 3000) },
-				{ type = "clogged sewer", cost = math.random(200, 800) },
-				{ type = "electrical issue", cost = math.random(200, 1000) },
+				{ type = "burst pipe", desc = "water everywhere!" },
+				{ type = "AC broke", desc = "in the middle of summer!" },
+				{ type = "toilet overflowing", desc = "bathroom disaster!" },
 			}
 			local chosen = problems[math.random(#problems)]
-			return { problem = chosen.type, cost = chosen.cost }
+			return { problem = chosen.type, desc = chosen.desc }
 		end,
-		text = "Home emergency: %problem%! This needs immediate attention!",
+		text = "%problem% - %desc% What do you do?",
 		choices = {
 			{ 
-				text = "🔧 DIY fix attempt", 
-				effects = { Happiness = -4, Money = -100 }, 
-				resultText = "You tried your best but made it worse. Had to call pros anyway."
+				text = "🔧 Try to fix it yourself", 
+				effects = { Money = -50, Health = -5, Happiness = -8 }, 
+				resultText = "Made it worse! Water damage. Had to call a pro anyway. Expensive lesson."
 			},
 			{ 
-				text = "📞 Call professionals",
-				effects = { Happiness = -2, Money = -1000 },
-				resultText = "Fixed properly but your wallet hurts. Homeownership is expensive."
+				text = "📞 Call a professional",
+				effects = { Money = -800, Happiness = 5 },
+				resultText = "Fixed properly but wallet hurts. Homeownership is expensive."
 			},
 			{
-				text = "🔧 DIY success!",
-				effects = { Happiness = 8, Money = -50, Smarts = 4 },
-				resultText = "YouTube tutorial saved you thousands! You fixed it yourself!",
-				setFlag = "handy"
+				text = "📺 YouTube how to fix it",
+				effects = { Money = -100, Happiness = 10, Smarts = 5 },
+				resultText = "Tutorial worked! Fixed it yourself! Saved hundreds! Skills unlocked!"
 			},
 			{
-				text = "🏠 Insurance covers it",
-				effects = { Happiness = 6, Money = -500 },
-				resultText = "Thank goodness for insurance! Only paid the deductible."
+				text = "👨‍👩‍👧 Call family for help",
+				effects = { Happiness = 8, Money = -50 },
+				resultText = "Dad/uncle came and helped fix it! Just bought them pizza. Family comes through!"
 			},
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- LUCKY/UNLUCKY EVENTS
+	-- GAMBLING / LUCK - Action is the gamble itself
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "m_lottery_scratch",
 		minAge = 18, maxAge = 80,
 		weight = 15, cooldown = 3,
-		emoji = "🎰", title = "Lottery Scratch Ticket!",
+		emoji = "🎰", title = "Buy Scratch Ticket?",
 		category = "social",
-		text = "You bought a scratch-off lottery ticket. Scratching now...",
+		text = "You're at the gas station and see lottery scratch tickets. $5 each. What do you do?",
 		choices = {
 			{ 
-				text = "💰 Small win!", 
-				effects = { Happiness = 8, Money = 50 }, 
-				resultText = "Won $50! Not bad! Treating yourself to dinner!"
+				text = "🎟️ Buy one ticket", 
+				effects = { Happiness = -3, Money = -5 }, 
+				resultText = "Nothing. Like usual. Threw away $5."
 			},
 			{ 
-				text = "🎉 Decent win!",
-				effects = { Happiness = 15, Money = 500 },
-				resultText = "WOW! $500! This made your week!"
+				text = "🎟️🎟️ Buy a few",
+				effects = { Happiness = 8, Money = 45 },
+				resultText = "Won $50! Actually came out ahead this time! Lucky day!"
 			},
 			{
-				text = "😔 Lost again",
-				effects = { Happiness = -4, Money = -10 },
-				resultText = "Nothing. Like usual. The house always wins."
+				text = "💸 Buy a bunch",
+				effects = { Money = -50, Happiness = -8 },
+				resultText = "Spent $50, won $5. The house always wins. What were you thinking?"
 			},
 			{
-				text = "🤑 BIG JACKPOT!",
-				effects = { Happiness = 25, Money = 10000 },
-				resultText = "OH MY GOD! $10,000 WINNER! This is INSANE!",
-				setFlag = "lottery_winner"
+				text = "🙅 Save your money",
+				effects = { Smarts = 3, Money = 0 },
+				resultText = "Walked away. Smart choice. Gambling is a tax on hope."
 			},
 		},
 	},
 	
 	{
-		id = "m_random_act_of_kindness",
-		minAge = 10, maxAge = 100,
-		weight = 20, cooldown = 3,
-		emoji = "❤️", title = "Random Act of Kindness!",
+		id = "m_casino_trip",
+		minAge = 21, maxAge = 80,
+		weight = 12, cooldown = 5,
+		emoji = "🎰", title = "Casino Night!",
 		category = "social",
-		getDynamicData = function()
-			local acts = {"paid for your coffee", "helped you carry groceries", "let you go first in line", "complimented your outfit", "gave you their parking spot"}
-			return { act = acts[math.random(#acts)] }
-		end,
-		text = "A stranger %act%! A small gesture that brightened your day.",
+		text = "Friends want to hit the casino! You've got some money. What do you do?",
 		choices = {
 			{ 
-				text = "😊 Made my day!", 
-				effects = { Happiness = 10 }, 
-				resultText = "Faith in humanity restored! What a sweet moment!"
+				text = "🎰 Set a strict limit", 
+				effects = { Happiness = 8, Money = -100 }, 
+				resultText = "Lost your limit but had fun and stopped. Responsible gambling!"
+			},
+			{ 
+				text = "🎲 Go all in!",
+				effects = { Money = -2000, Happiness = -20 },
+				resultText = "DISASTER! Lost way more than you should have. Why didn't you stop?!"
+			},
+			{
+				text = "🍹 Just watch and drink",
+				effects = { Happiness = 6, Money = -50 },
+				resultText = "Watched friends gamble while sipping drinks. Entertainment without the risk!"
+			},
+			{
+				text = "🍀 Trust your luck",
+				effects = { Money = 500, Happiness = 15 },
+				resultText = "WON $500! Quit while ahead! Best casino trip ever!"
+			},
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- GOOD/BAD ENCOUNTERS
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_random_kindness",
+		minAge = 10, maxAge = 100,
+		weight = 20, cooldown = 3,
+		emoji = "❤️", title = "Stranger's Kindness!",
+		category = "social",
+		getDynamicData = function()
+			local acts = {"paid for your coffee", "helped carry your groceries", "gave you their parking spot", "complimented you"}
+			return { act = acts[math.random(#acts)] }
+		end,
+		text = "A stranger %act%! A small gesture that brightened your day. What do you do?",
+		choices = {
+			{ 
+				text = "😊 Thank them warmly", 
+				effects = { Happiness = 12 }, 
+				resultText = "You connected for a moment. Both of you smiling. Beautiful human moment."
 			},
 			{ 
 				text = "🔄 Pay it forward",
-				effects = { Happiness = 12, Money = -20 },
-				resultText = "You helped someone else in return. The kindness chain continues!",
-				setFlag = "kind_soul"
+				effects = { Happiness = 15, Money = -20 },
+				resultText = "Did something kind for someone else! The chain continues!"
 			},
 			{
-				text = "🤔 Suspicious...",
+				text = "🤔 Be suspicious",
 				effects = { Happiness = 2, Smarts = 2 },
-				resultText = "Was it genuine or did they want something? Either way, nothing bad happened."
+				resultText = "Waited for the catch... there wasn't one. Maybe people are good sometimes."
+			},
+			{
+				text = "😶 Just walk away",
+				effects = { Happiness = -3 },
+				resultText = "Didn't even acknowledge them. They looked disappointed. Rude."
 			},
 		},
 	},
 	
 	{
-		id = "m_bad_weather_stuck",
+		id = "m_bad_weather_caught",
 		minAge = 10, maxAge = 100,
 		weight = 20, cooldown = 4,
-		emoji = "🌧️", title = "Caught in Bad Weather!",
+		emoji = "🌧️", title = "Caught in Rain!",
 		category = "social",
-		getDynamicData = function()
-			local weather = {
-				{ type = "sudden rainstorm", emoji = "🌧️" },
-				{ type = "freak hailstorm", emoji = "🌨️" },
-				{ type = "surprise snowstorm", emoji = "❄️" },
-				{ type = "intense thunderstorm", emoji = "⛈️" },
-			}
-			local chosen = weather[math.random(#weather)]
-			return { weatherType = chosen.type, weatherEmoji = chosen.emoji }
-		end,
-		getDynamicEmoji = function(data)
-			return data.weatherEmoji or "🌧️"
-		end,
-		text = "You got caught outside in a %weatherType% without preparation!",
+		text = "Sudden downpour! You're outside with no umbrella! What do you do?",
 		choices = {
 			{ 
-				text = "🏠 Found shelter quickly", 
-				effects = { Happiness = 4 }, 
-				resultText = "Made it to safety! A bit wet but okay."
+				text = "🏃 Run for cover", 
+				effects = { Happiness = 3, Health = -2 }, 
+				resultText = "Made it to shelter! A bit wet but okay."
 			},
 			{ 
-				text = "🌧️ Completely soaked",
-				effects = { Happiness = -6, Health = -5 },
-				resultText = "Drenched to the bone. Caught a cold from this. Miserable."
+				text = "🌧️ Just walk through it",
+				effects = { Happiness = -8, Health = -10 },
+				resultText = "SOAKED! Caught a cold from this. Miserable for days."
 			},
 			{
-				text = "🚗 Car got damaged",
-				effects = { Happiness = -10, Money = -800 },
-				resultText = "Hail damage to your car! Insurance claim incoming."
+				text = "☕ Duck into a café",
+				effects = { Happiness = 8, Money = -15 },
+				resultText = "Cozy coffee while watching the rain! Actually nice!"
 			},
 			{
-				text = "☕ Made it to a café",
-				effects = { Happiness = 6, Money = -15 },
-				resultText = "Cozy café wait! The storm outside made it extra peaceful."
-			},
-		},
-	},
-	
-	{
-		id = "m_traffic_accident_witness",
-		minAge = 16, maxAge = 80,
-		weight = 15, cooldown = 5,
-		emoji = "🚨", title = "Witnessed an Accident!",
-		category = "social",
-		text = "You witnessed a car accident! People might be hurt!",
-		choices = {
-			{ 
-				text = "📞 Call 911 immediately", 
-				effects = { Happiness = 4, Smarts = 4 }, 
-				resultText = "First responders came quickly. Your call helped!",
-				setFlag = "quick_thinker"
-			},
-			{ 
-				text = "🏃 Rush to help",
-				effects = { Happiness = 6, Health = -5 },
-				resultText = "You helped pull someone from the wreck. Hero moment! But you got hurt."
-			},
-			{
-				text = "😰 Frozen in shock",
-				effects = { Happiness = -8, Health = -2 },
-				resultText = "Couldn't move. The trauma lingers. Might need to talk to someone."
-			},
-			{
-				text = "🎥 Record for evidence",
-				effects = { Happiness = 2, Smarts = 5 },
-				resultText = "Your video helped police and insurance. Practical thinking."
+				text = "🤝 Share stranger's umbrella",
+				effects = { Happiness = 10 },
+				resultText = "They offered! Had a nice chat walking together. New friend maybe?",
+				addRelationship = { category = "friends", dynamicNameKey = nil, startingRelationship = 40, type = "acquaintance" }
 			},
 		},
 	},
@@ -537,29 +521,29 @@ module.events = {
 		id = "m_wrong_food_order",
 		minAge = 10, maxAge = 80,
 		weight = 25, cooldown = 2,
-		emoji = "🍔", title = "Wrong Food Order!",
+		emoji = "🍔", title = "Wrong Order!",
 		category = "social",
-		text = "The restaurant gave you completely the wrong order!",
+		text = "Restaurant gave you completely the wrong food! What do you do?",
 		choices = {
 			{ 
 				text = "🗣️ Politely ask to fix it", 
-				effects = { Happiness = 4 }, 
-				resultText = "They fixed it and gave you a free dessert for the trouble!"
+				effects = { Happiness = 6 }, 
+				resultText = "They fixed it and gave free dessert for the trouble! Nice!"
 			},
 			{ 
 				text = "🤷 Eat it anyway",
-				effects = { Happiness = 2 },
-				resultText = "Actually... this is pretty good! Happy accident!"
+				effects = { Happiness = -5, Health = -12 },
+				resultText = "Had something you didn't know you were ALLERGIC to! Reaction! Hospital trip!"
 			},
 			{
-				text = "😤 Demand a manager",
-				effects = { Happiness = -2, Smarts = -2 },
-				resultText = "Got your refund but everyone thinks you're 'that person' now."
+				text = "😤 Demand manager",
+				effects = { Happiness = -3, Smarts = -2 },
+				resultText = "Made a scene. Got your refund but everyone thinks you're 'that person'."
 			},
 			{
-				text = "🤢 Allergic reaction!",
-				effects = { Happiness = -15, Health = -15, Money = -200 },
-				resultText = "You ate it without checking - severe allergic reaction! Hospital trip!"
+				text = "📱 Leave bad review",
+				effects = { Happiness = -5, Smarts = -3 },
+				resultText = "Wrote an angry review without talking to them. Petty. Didn't fix anything."
 			},
 		},
 	},
@@ -568,34 +552,64 @@ module.events = {
 		id = "m_celebrity_sighting",
 		minAge = 10, maxAge = 80,
 		weight = 10, cooldown = 5,
-		emoji = "⭐", title = "Celebrity Sighting!",
+		emoji = "⭐", title = "Celebrity Spotted!",
 		category = "social",
 		getDynamicData = function()
-			local celebrities = {"a famous actor", "a popular singer", "a sports star", "a famous influencer", "a local news anchor"}
+			local celebrities = {"a famous actor", "a popular singer", "a sports star", "a famous influencer"}
 			return { celeb = celebrities[math.random(#celebrities)] }
 		end,
 		text = "You spotted %celeb% in public! What do you do?",
 		choices = {
 			{ 
 				text = "📸 Ask for a selfie", 
-				effects = { Happiness = 15, Looks = 2 }, 
-				resultText = "They said yes! Best photo ever! Social media going crazy!",
-				setFlag = "met_celebrity"
+				effects = { Happiness = 18, Looks = 3 }, 
+				resultText = "They said YES! Got an amazing photo! Social media going crazy!"
 			},
 			{ 
-				text = "👋 Just wave and smile",
+				text = "👋 Wave and smile",
 				effects = { Happiness = 8 },
 				resultText = "They waved back! Cool moment. Respectful interaction."
 			},
 			{
-				text = "😬 They ignored you",
-				effects = { Happiness = -5 },
-				resultText = "You tried to say hi but they walked right past. Ouch."
+				text = "🏃 Run up to them",
+				effects = { Happiness = -10, Looks = -3 },
+				resultText = "Security stopped you! Embarrassing. They looked uncomfortable. Bad move."
 			},
 			{
-				text = "🤐 Don't bother them",
-				effects = { Happiness = 4, Smarts = 3 },
-				resultText = "Celebrities are people too. Nice spotting, kept it cool."
+				text = "🤐 Leave them alone",
+				effects = { Happiness = 5, Smarts = 3 },
+				resultText = "Celebrities are people too. Let them have their moment. Classy choice."
+			},
+		},
+	},
+	
+	{
+		id = "m_witness_crime",
+		minAge = 16, maxAge = 80,
+		weight = 10, cooldown = 6,
+		emoji = "🚨", title = "Witnessed a Crime!",
+		category = "social",
+		text = "You just saw someone commit a crime! They didn't see you. What do you do?",
+		choices = {
+			{ 
+				text = "📞 Call 911", 
+				effects = { Happiness = 8, Smarts = 5 }, 
+				resultText = "Reported it safely. Police came. You helped justice. Good citizen."
+			},
+			{ 
+				text = "📱 Record evidence",
+				effects = { Happiness = 5, Smarts = 4 },
+				resultText = "Got video evidence! Gave it to police. Case solved because of you!"
+			},
+			{
+				text = "🦸 Try to intervene",
+				effects = { Health = -20, Happiness = -15 },
+				resultText = "They saw you and attacked! You got hurt badly. Leave this to police next time!"
+			},
+			{
+				text = "🚶 Walk away",
+				effects = { Happiness = -10, Smarts = -3 },
+				resultText = "Did nothing. The guilt eats at you. Someone got hurt because you didn't act."
 			},
 		},
 	},

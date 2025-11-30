@@ -1,7 +1,7 @@
 -- LifeEvents/disasters.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- DISASTERS, EXTREME WEATHER, AND ACCIDENTS
--- Not everything goes smoothly - varied outcomes with real consequences
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,47 +11,36 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- EXTREME WEATHER EVENTS (Varied outcomes!)
+	-- EXTREME WEATHER EVENTS
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "d_severe_storm",
 		minAge = 5, maxAge = 100,
 		weight = 25, cooldown = 4,
-		emoji = "⛈️", title = "Severe Storm!",
+		emoji = "⛈️", title = "Severe Storm Warning!",
 		category = "family",
-		getDynamicData = function()
-			local storms = {
-				{ type = "thunderstorm with hail", emoji = "⛈️" },
-				{ type = "severe thunderstorm", emoji = "🌩️" },
-				{ type = "windstorm", emoji = "💨" },
-				{ type = "ice storm", emoji = "🧊" },
-			}
-			local chosen = storms[math.random(#storms)]
-			return { stormType = chosen.type, stormEmoji = chosen.emoji }
-		end,
-		getDynamicEmoji = function(data) return data.stormEmoji or "⛈️" end,
-		text = "A %stormType% hits your area! Power flickering, trees swaying dangerously!",
+		text = "A severe storm is approaching! Thunder rumbling, sky turning dark. What do you do?",
 		choices = {
 			{ 
-				text = "🏠 Stayed safe inside", 
-				effects = { Happiness = 4 }, 
-				resultText = "Rode it out at home. Everything's fine! Just some scary noises."
+				text = "🏠 Stay inside and wait it out", 
+				effects = { Happiness = 2 }, 
+				resultText = "Smart choice! Storm passed without incident. A bit scary but safe."
 			},
 			{ 
-				text = "💥 Tree fell on house!", 
-				effects = { Money = -8000, Happiness = -15, Health = -5 }, 
-				resultText = "Massive tree crashed through the roof! Insurance nightmare. Months of repairs."
+				text = "🚗 Try to drive home quickly", 
+				effects = { Money = -3000, Happiness = -12, Health = -5 }, 
+				resultText = "Bad idea! A tree fell on your car while driving. You're okay but the car is totaled."
 			},
 			{ 
-				text = "🚗 Car damaged", 
-				effects = { Money = -3000, Happiness = -10 }, 
-				resultText = "Hail or debris destroyed your car. Rental while getting it fixed."
+				text = "📱 Keep watching TV/phone", 
+				effects = { Happiness = -8, Money = -500 }, 
+				resultText = "Should've paid attention! Power surge fried your electronics when lightning hit nearby."
 			},
 			{ 
-				text = "⚡ Power out for days", 
-				effects = { Money = -500, Happiness = -8 }, 
-				resultText = "A week without power! Lost all the food in the fridge. Miserable."
+				text = "🔦 Prepare emergency supplies", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "Good thinking! Power went out but you were ready with flashlights and food."
 			},
 		},
 	},
@@ -60,36 +49,35 @@ module.events = {
 		id = "d_tornado_warning",
 		minAge = 5, maxAge = 100,
 		weight = 15, cooldown = 6,
-		emoji = "🌪️", title = "Tornado Warning!",
+		emoji = "🌪️", title = "TORNADO WARNING!",
 		category = "family",
-		text = "TORNADO WARNING! Sirens blaring! You need to take shelter immediately!",
+		text = "SIRENS BLARING! A tornado has been spotted! You need to act NOW!",
 		choices = {
 			{ 
-				text = "🏠 Made it to shelter!", 
-				effects = { Happiness = 8, Health = 2 }, 
-				resultText = "Basement saved you! Tornado touched down nearby. So grateful to be safe!"
+				text = "🏠 Get to the basement!", 
+				effects = { Happiness = 8 }, 
+				resultText = "You made it! Tornado touched down nearby but you were safe underground. Close call!"
 			},
 			{ 
-				text = "💔 House destroyed", 
-				effects = { Money = -50000, Happiness = -35, Health = -10 }, 
-				resultText = "Direct hit. Your home is gone. Everything you owned... insurance will help but... devastating.",
-				setFlag = "lost_home"
+				text = "📸 Try to film it", 
+				effects = { Health = -25, Happiness = -20, Money = -5000 }, 
+				resultText = "STUPID DECISION! Flying debris hit you. Hospitalized with serious injuries. Not worth the video."
 			},
 			{ 
-				text = "🚗 Escaped in car", 
-				effects = { Happiness = -5, Health = -3 }, 
-				resultText = "Drove away just in time! Terrifying experience. Your neighborhood is damaged."
+				text = "🚗 Try to outrun it", 
+				effects = { Health = -10, Money = -15000, Happiness = -15 }, 
+				resultText = "Terrible choice! Car flipped by the wind. You survived but barely. Car is gone."
 			},
 			{ 
-				text = "😰 Minor damage", 
-				effects = { Money = -5000, Happiness = -8 }, 
-				resultText = "Tornado passed close. Lost fence, shingles, some windows. Could've been worse."
+				text = "🛁 Get in bathtub with mattress", 
+				effects = { Happiness = 5, Health = -2 }, 
+				resultText = "No basement but you improvised! House damaged but you're alive!"
 			},
 		},
 	},
 	
 	{
-		id = "d_hurricane_season",
+		id = "d_hurricane_approaching",
 		minAge = 10, maxAge = 100,
 		weight = 15, cooldown = 6,
 		emoji = "🌀", title = "Hurricane Approaching!",
@@ -98,30 +86,27 @@ module.events = {
 			local categories = {1, 2, 3, 4}
 			return { category = categories[math.random(#categories)] }
 		end,
-		text = "Category %category% hurricane heading your way! Evacuate or shelter in place?",
+		text = "Category %category% hurricane making landfall tomorrow! Evacuation orders issued. What do you do?",
 		choices = {
 			{ 
-				text = "🚗 Evacuated safely", 
-				effects = { Money = -2000, Happiness = 4 }, 
-				resultText = "Got out in time. Hotel for a week. House still standing when you returned!",
-				setFlag = "evacuated_hurricane"
+				text = "🚗 Evacuate now", 
+				effects = { Money = -2000, Happiness = 5 }, 
+				resultText = "You left early and avoided the chaos. Hotel stay was expensive but home survived. Good call!"
 			},
 			{ 
-				text = "🏠 Rode it out", 
+				text = "🏠 Ride it out at home", 
+				effects = { Health = -15, Happiness = -20, Money = -25000 }, 
+				resultText = "BAD CHOICE! Storm surge flooded your house. Trapped on the roof until rescue. Lost almost everything."
+			},
+			{ 
+				text = "🔨 Board up windows and stay", 
 				effects = { Happiness = -10, Health = -5 }, 
-				resultText = "Terrifying night! House held but it was INTENSE. Never again."
+				resultText = "The preparation helped but it was TERRIFYING. Minor damage. You got lucky."
 			},
 			{ 
-				text = "🌊 Flooding damage", 
-				effects = { Money = -30000, Happiness = -25 }, 
-				resultText = "Storm surge flooded the first floor. Everything destroyed. Rebuilding begins.",
-				setFlag = "home_flooded"
-			},
-			{ 
-				text = "💪 Prepared well!", 
-				effects = { Happiness = 6, Money = -500 }, 
-				resultText = "Generator, supplies, boards on windows. Made it through like a pro!",
-				setFlag = "storm_prepper"
+				text = "🏃 Wait too long to leave", 
+				effects = { Health = -5, Money = -500, Happiness = -15 }, 
+				resultText = "Roads jammed! Stuck in traffic during the storm. Terrifying experience but survived."
 			},
 		},
 	},
@@ -130,31 +115,29 @@ module.events = {
 		id = "d_wildfire_threat",
 		minAge = 10, maxAge = 100,
 		weight = 12, cooldown = 6,
-		emoji = "🔥", title = "Wildfire Warning!",
+		emoji = "🔥", title = "Wildfire Approaching!",
 		category = "family",
-		text = "Wildfire burning near your area! Evacuation might be necessary!",
+		text = "Wildfire is burning toward your area! Smoke visible in the sky. What do you do?",
 		choices = {
 			{ 
-				text = "🚗 Evacuated early", 
-				effects = { Money = -1500, Happiness = 2 }, 
-				resultText = "Got out before the roads jammed. Hotel for a few days. Home is safe!",
-				setFlag = "evacuated_fire"
+				text = "🚗 Evacuate immediately", 
+				effects = { Money = -1500, Happiness = 8 }, 
+				resultText = "Left early with important documents. Home survived! The firefighters saved your neighborhood."
 			},
 			{ 
-				text = "🏠 Home survived!", 
-				effects = { Happiness = 10, Health = -3 }, 
-				resultText = "Fire came within a mile! Smoke was awful. But the house made it!"
+				text = "💧 Stay and defend with hose", 
+				effects = { Health = -20, Money = -50000, Happiness = -30 }, 
+				resultText = "Foolish! Fire moved too fast. Had to flee with nothing. Lost your home. You barely escaped alive."
 			},
 			{ 
-				text = "🔥 Lost everything", 
-				effects = { Money = -100000, Happiness = -40, Health = -10 }, 
-				resultText = "The fire took your home. Photos, memories, everything. Only insurance and starting over.",
-				setFlag = "lost_home_fire"
+				text = "📦 Pack valuables then leave", 
+				effects = { Money = -1000, Happiness = 3 }, 
+				resultText = "Took time to grab photos and documents. Made it out. House had some damage but standing."
 			},
 			{ 
-				text = "🚒 Firefighters saved it", 
-				effects = { Happiness = 8, Money = -500 }, 
-				resultText = "They created firebreaks and sprayed your house. Heroes saved your home!"
+				text = "🤷 Ignore the warnings", 
+				effects = { Health = -30, Money = -80000, Happiness = -35 }, 
+				resultText = "CATASTROPHIC MISTAKE! Surrounded by fire. Emergency helicopter rescue. Lost everything. Nearly died."
 			},
 		},
 	},
@@ -165,27 +148,27 @@ module.events = {
 		weight = 20, cooldown = 4,
 		emoji = "🌊", title = "Flash Flood!",
 		category = "family",
-		text = "Heavy rain caused a flash flood! Water rising fast!",
+		text = "Water rising FAST! Streets turning into rivers! What do you do?",
 		choices = {
 			{ 
-				text = "🏔️ Got to high ground", 
-				effects = { Happiness = 4 }, 
-				resultText = "Smart move! Watched the water rise from safety. Close call!"
+				text = "🏔️ Get to higher ground", 
+				effects = { Happiness = 5 }, 
+				resultText = "Smart move! Watched the flood from safety. Your car got flooded but you're alive!"
 			},
 			{ 
-				text = "🚗 Car swept away!", 
-				effects = { Money = -15000, Happiness = -20, Health = -5 }, 
-				resultText = "Tried to drive through it. NEVER drive through floods! Lost the car, barely escaped."
+				text = "🚗 Drive through the water", 
+				effects = { Health = -20, Money = -20000, Happiness = -25 }, 
+				resultText = "NEVER DO THIS! Car swept away. You almost drowned. Rescued by emergency services. Car is gone."
 			},
 			{ 
-				text = "🏠 Basement flooded", 
-				effects = { Money = -8000, Happiness = -15 }, 
-				resultText = "Water rushed in. Everything stored down there is ruined. Weeks of cleanup."
+				text = "🏠 Go to second floor", 
+				effects = { Happiness = -10, Money = -15000 }, 
+				resultText = "First floor flooded. Safe upstairs but everything below is destroyed."
 			},
 			{ 
-				text = "🛟 Rescued by boat!", 
-				effects = { Happiness = -10, Health = -3 }, 
-				resultText = "Had to be rescued! Terrifying. Grateful for first responders."
+				text = "🆘 Call for help", 
+				effects = { Happiness = -5, Health = -3 }, 
+				resultText = "Rescue boat came! Scary but you're safe. Home has water damage but you're okay."
 			},
 		},
 	},
@@ -194,34 +177,33 @@ module.events = {
 		id = "d_blizzard",
 		minAge = 5, maxAge = 100,
 		weight = 20, cooldown = 4,
-		emoji = "❄️", title = "Massive Blizzard!",
+		emoji = "❄️", title = "Blizzard Warning!",
 		category = "family",
 		getDynamicData = function()
-			local inches = math.random(12, 36)
+			local inches = math.random(18, 36)
 			return { inches = inches }
 		end,
-		text = "BLIZZARD! %inches% inches of snow expected! Travel impossible!",
+		text = "%inches% inches of snow expected! White-out conditions! What do you do?",
 		choices = {
 			{ 
-				text = "☕ Cozy snow day!", 
-				effects = { Happiness = 10 }, 
-				resultText = "Stocked up on supplies! Hot cocoa, movies, watching it fall. Actually nice!",
-				setFlag = "snow_lover"
+				text = "🏠 Stock up and stay home", 
+				effects = { Happiness = 8, Money = -100 }, 
+				resultText = "Cozy inside with food and warmth! Actually kind of nice watching it fall."
 			},
 			{ 
-				text = "🥶 Pipes froze!", 
-				effects = { Money = -3000, Happiness = -12 }, 
-				resultText = "Pipes burst from the cold! Water damage and no heat. Nightmare!"
+				text = "🚗 Try to drive somewhere", 
+				effects = { Health = -15, Money = -2000, Happiness = -15 }, 
+				resultText = "TERRIBLE IDEA! Car went off road. Stranded for hours. Frostbite on your fingers. Tow truck cost a fortune."
 			},
 			{ 
-				text = "🚗 Stranded!", 
-				effects = { Health = -8, Happiness = -15 }, 
-				resultText = "Got stuck trying to drive. Hours in the cold before rescue. Hypothermia scare."
+				text = "😤 Go to work anyway", 
+				effects = { Health = -8, Happiness = -10 }, 
+				resultText = "Got stuck at work for 2 days! Sleeping on office floor. Boss didn't even appreciate it."
 			},
 			{ 
-				text = "🏠 Snowed in for days", 
-				effects = { Happiness = -5, Money = -200 }, 
-				resultText = "Couldn't leave the house for 4 days. Ran low on supplies. Cabin fever!"
+				text = "🔥 Check the heating", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "Good thinking! Found an issue before it became a problem. Warm and safe!"
 			},
 		},
 	},
@@ -230,35 +212,33 @@ module.events = {
 		id = "d_earthquake",
 		minAge = 5, maxAge = 100,
 		weight = 10, cooldown = 8,
-		emoji = "🏚️", title = "Earthquake!",
+		emoji = "🏚️", title = "EARTHQUAKE!",
 		category = "family",
 		getDynamicData = function()
-			local magnitudes = {4.5, 5.0, 5.5, 6.0, 6.5}
+			local magnitudes = {4.5, 5.5, 6.0, 6.5}
 			return { magnitude = magnitudes[math.random(#magnitudes)] }
 		end,
-		text = "EARTHQUAKE! Magnitude %magnitude%! The ground is shaking violently!",
+		text = "The ground is SHAKING! Magnitude %magnitude% earthquake! What do you do?",
 		choices = {
 			{ 
-				text = "🛏️ Duck and cover!", 
-				effects = { Happiness = 2, Health = 2 }, 
-				resultText = "Under a doorframe! Shaking stopped. Some stuff fell but everyone's okay!"
+				text = "🛏️ Drop, cover, and hold", 
+				effects = { Happiness = 5, Health = 2 }, 
+				resultText = "Textbook response! You got under a sturdy table. Some things fell but you're uninjured!"
 			},
 			{ 
-				text = "🏚️ Structural damage", 
-				effects = { Money = -25000, Happiness = -20 }, 
-				resultText = "House is damaged. Cracks in foundation. Engineers say it's still safe but... repairs needed."
+				text = "🏃 Run outside", 
+				effects = { Health = -15, Happiness = -10 }, 
+				resultText = "Bad move! A brick from the building hit you on the way out. Injured but alive."
 			},
 			{ 
-				text = "💔 Total destruction", 
-				effects = { Money = -80000, Happiness = -35, Health = -10 }, 
-				resultText = "Building collapsed. You escaped but... home is gone. Red-tagged. Homeless.",
-				setFlag = "lost_home_quake"
+				text = "🚪 Stand in doorway", 
+				effects = { Health = -5, Happiness = -3 }, 
+				resultText = "Old advice, not the best. Door swung and hit you. Minor injuries."
 			},
 			{ 
-				text = "😰 Traumatic experience", 
-				effects = { Happiness = -15, Health = -5 }, 
-				resultText = "Minor damage but the fear... can't sleep. Every small shake triggers panic.",
-				setFlag = "earthquake_anxiety"
+				text = "😱 Freeze and panic", 
+				effects = { Health = -8, Happiness = -12 }, 
+				resultText = "Stuff fell on you while frozen in fear. Nothing serious but shaken up badly."
 			},
 		},
 	},
@@ -273,350 +253,316 @@ module.events = {
 			local temp = math.random(105, 118)
 			return { temperature = temp }
 		end,
-		text = "Heat wave! %temperature%°F outside! Dangerously hot!",
+		text = "%temperature%°F outside! Dangerous heat advisory in effect. What do you do?",
 		choices = {
 			{ 
-				text = "❄️ AC working great!", 
-				effects = { Happiness = 4, Money = -200 }, 
-				resultText = "Stayed cool inside. Electric bill will be brutal but alive!",
+				text = "🏠 Stay inside with AC", 
+				effects = { Happiness = 4, Money = -150 }, 
+				resultText = "Cranked the AC! Electric bill will hurt but you survived the heat wave safely."
 			},
 			{ 
-				text = "💀 AC broke down!", 
-				effects = { Health = -10, Happiness = -15, Money = -1500 }, 
-				resultText = "AC died on the hottest day! Heat exhaustion. Emergency repair costs."
+				text = "🏃 Go for a run anyway", 
+				effects = { Health = -25, Happiness = -15 }, 
+				resultText = "HEATSTROKE! Collapsed during the run. Ambulance called. You could have died!"
 			},
 			{ 
-				text = "🏊 Pool/beach day!", 
-				effects = { Happiness = 8, Health = 2 }, 
-				resultText = "Found water! Beat the heat! Actually fun despite the danger."
+				text = "🏊 Go to the pool/beach", 
+				effects = { Happiness = 10, Health = 3 }, 
+				resultText = "Perfect choice! Stayed cool in the water. Actually a great day!"
 			},
 			{ 
-				text = "🥵 Heatstroke scare", 
-				effects = { Health = -20, Happiness = -12 }, 
-				resultText = "Got overheated. Dizzy, nauseous. Almost needed hospital. Stay hydrated!"
+				text = "🛠️ Work outside anyway", 
+				effects = { Health = -15, Money = 100, Happiness = -8 }, 
+				resultText = "Heat exhaustion! Dizzy, nauseous. Had to stop. Not worth the money."
 			},
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- ACCIDENTS AND EMERGENCIES
+	-- ACCIDENTS - Player actions lead to outcomes
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "d_car_accident",
+		id = "d_car_accident_oncoming",
 		minAge = 16, maxAge = 85,
 		weight = 20, cooldown = 4,
-		emoji = "🚗", title = "Car Accident!",
+		emoji = "🚗", title = "Accident About to Happen!",
 		category = "family",
-		getDynamicData = function()
-			local fault = {"your fault", "other driver's fault", "weather-related", "unavoidable"}
-			return { fault = fault[math.random(#fault)] }
-		end,
-		text = "Car accident! It was %fault%.",
+		text = "A car is swerving toward you! Split second to react!",
 		choices = {
 			{ 
-				text = "🙏 Everyone's okay", 
-				effects = { Happiness = 4, Money = -500 }, 
-				resultText = "Just car damage. Insurance handled it. Lucky escape!"
+				text = "🔀 Swerve to avoid", 
+				effects = { Money = -1000, Happiness = -5 }, 
+				resultText = "You avoided them but hit a guardrail. Car damaged but you're okay!"
 			},
 			{ 
-				text = "🤕 Minor injuries", 
-				effects = { Health = -10, Money = -2000, Happiness = -8 }, 
-				resultText = "Whiplash, bruises. Could've been worse. Healing."
+				text = "🛑 Slam the brakes", 
+				effects = { Health = -10, Money = -3000, Happiness = -10 }, 
+				resultText = "Couldn't stop in time! Collision. Whiplash and car damage. Other driver's fault - insurance fight ahead."
 			},
 			{ 
-				text = "🏥 Serious injuries", 
-				effects = { Health = -25, Money = -15000, Happiness = -20 }, 
-				resultText = "Hospitalized. Long recovery ahead. Life-changing moment."
+				text = "📯 Honk and hope", 
+				effects = { Health = -20, Money = -15000, Happiness = -20 }, 
+				resultText = "They didn't react! Major collision. You're injured, car totaled. Months of recovery ahead."
 			},
 			{ 
-				text = "⚖️ Lawsuit incoming", 
-				effects = { Money = -5000, Happiness = -15 }, 
-				resultText = "Other party suing. Lawyers. Stress. This will drag on."
+				text = "🚗 Accelerate through", 
+				effects = { Happiness = 5, Health = 2 }, 
+				resultText = "Quick thinking! Punched it and barely got past them. Heart pounding but safe!"
 			},
 		},
 	},
 	
 	{
-		id = "d_house_fire",
+		id = "d_house_fire_starts",
 		minAge = 10, maxAge = 100,
 		weight = 10, cooldown = 8,
-		emoji = "🔥", title = "House Fire!",
+		emoji = "🔥", title = "Fire in the House!",
 		category = "family",
-		getDynamicData = function()
-			local causes = {"electrical", "kitchen accident", "candle", "heater malfunction", "unknown"}
-			return { cause = causes[math.random(#causes)] }
-		end,
-		text = "FIRE! Your home is on fire! Cause: %cause%!",
+		text = "You smell smoke! There's a fire starting in your home! What do you do?",
 		choices = {
 			{ 
-				text = "🚒 Put out quickly!", 
-				effects = { Money = -5000, Happiness = -10 }, 
-				resultText = "Fire department came fast! Kitchen damaged but house saved!"
+				text = "🚪 Get everyone out NOW", 
+				effects = { Happiness = 5, Money = -10000 }, 
+				resultText = "Everyone escaped! Fire department arrived. Kitchen destroyed but house saved. Insurance covers it."
 			},
 			{ 
-				text = "🐕 Rescued pets first!", 
-				effects = { Happiness = 4, Health = -5 }, 
-				resultText = "Got the pets out! Some smoke inhalation but everyone's alive!"
+				text = "🧯 Try to put it out", 
+				effects = { Health = -5, Money = -3000, Happiness = 2 }, 
+				resultText = "Grabbed the extinguisher! Fire was small enough - you stopped it! Minor damage only."
 			},
 			{ 
-				text = "🔥 Major damage", 
-				effects = { Money = -40000, Happiness = -25 }, 
-				resultText = "Half the house is destroyed. Months of rebuilding. Everything in storage."
+				text = "📦 Save valuables first", 
+				effects = { Health = -15, Money = -40000, Happiness = -25 }, 
+				resultText = "Wasted critical time! Fire spread. You got out but house is destroyed. Stuff isn't worth your life!"
 			},
 			{ 
-				text = "💔 Total loss", 
-				effects = { Money = -80000, Happiness = -35, Health = -10 }, 
-				resultText = "It's all gone. Standing there watching it burn... nothing left.",
-				setFlag = "lost_home_fire"
+				text = "🐕 Find the pets", 
+				effects = { Health = -10, Happiness = 10 }, 
+				resultText = "Found them and got out! Smoke inhalation but everyone alive - pets included! Worth it."
 			},
 		},
 	},
 	
 	{
-		id = "d_medical_emergency",
-		minAge = 20, maxAge = 100,
+		id = "d_medical_emergency_witness",
+		minAge = 15, maxAge = 100,
 		weight = 15, cooldown = 5,
-		emoji = "🚑", title = "Medical Emergency!",
+		emoji = "🚑", title = "Someone Collapsed!",
 		category = "health",
-		getDynamicData = function()
-			local emergencies = {"severe allergic reaction", "chest pains", "stroke symptoms", "sudden collapse", "appendicitis"}
-			return { emergency = emergencies[math.random(#emergencies)] }
-		end,
-		text = "Medical emergency! %emergency%! Calling 911!",
+		text = "Someone just collapsed in front of you! They're not responsive! What do you do?",
 		choices = {
 			{ 
-				text = "🏥 Saved by quick action!", 
-				effects = { Health = 5, Money = -3000, Happiness = 8 }, 
-				resultText = "Got help fast! Doctors said timing saved you. Grateful to be alive!",
-				setFlag = "near_death_experience"
+				text = "📞 Call 911 immediately", 
+				effects = { Happiness = 10, Smarts = 3 }, 
+				resultText = "Help arrived quickly! Your fast action may have saved their life. Real hero moment!"
 			},
 			{ 
-				text = "💊 Long recovery ahead", 
-				effects = { Health = -15, Money = -15000, Happiness = -10 }, 
-				resultText = "Survived but it was serious. Months of recovery. Life changed."
+				text = "💓 Start CPR", 
+				effects = { Happiness = 15, Health = -2 }, 
+				resultText = "You knew CPR! Kept them going until paramedics arrived. They survived because of YOU!"
 			},
 			{ 
-				text = "😌 False alarm mostly", 
-				effects = { Health = 2, Money = -1000, Happiness = -2 }, 
-				resultText = "Scary but not as serious as feared. Still, wake-up call!"
+				text = "😨 Freeze up", 
+				effects = { Happiness = -15, Health = -3 }, 
+				resultText = "Couldn't move. Someone else called 911. The guilt of freezing haunts you."
 			},
 			{ 
-				text = "💔 Critical condition", 
-				effects = { Health = -30, Money = -50000, Happiness = -25 }, 
-				resultText = "Touch and go. ICU. Family worried sick. But you pulled through.",
-				setFlag = "survived_critical"
+				text = "👀 Look for others to help", 
+				effects = { Happiness = 5 }, 
+				resultText = "Found a nurse nearby who took over! They handled it. Good thinking finding help!"
 			},
 		},
 	},
 	
 	{
-		id = "d_robbery",
-		minAge = 16, maxAge = 85,
+		id = "d_robbery_confrontation",
+		minAge = 16, maxAge = 70,
 		weight = 12, cooldown = 5,
-		emoji = "🔫", title = "Robbery!",
+		emoji = "🔫", title = "You're Being Robbed!",
 		category = "social",
-		getDynamicData = function()
-			local locations = {"on the street", "at an ATM", "in a parking lot", "walking home"}
-			return { location = locations[math.random(#locations)] }
-		end,
-		text = "You're being robbed %location%! Someone demands your valuables!",
+		text = "Someone is demanding your wallet and phone! They look serious! What do you do?",
 		choices = {
 			{ 
-				text = "💰 Gave them everything", 
-				effects = { Money = -500, Happiness = -10 }, 
-				resultText = "Handed over wallet and phone. Lost money but stayed safe. Stuff can be replaced."
+				text = "💰 Hand everything over", 
+				effects = { Money = -500, Happiness = -8 }, 
+				resultText = "Smart. Gave them what they wanted and they ran. Stuff can be replaced, you can't."
 			},
 			{ 
-				text = "🏃 Ran away!", 
-				effects = { Happiness = -5, Health = 2 }, 
-				resultText = "Bolted and escaped! Heart pounding. Never been so scared. But safe!"
+				text = "👊 Fight back", 
+				effects = { Health = -25, Money = -200, Happiness = -15 }, 
+				resultText = "They had a weapon! You got hurt badly. Hospital trip. Not worth it."
 			},
 			{ 
-				text = "💪 Fought back", 
-				effects = { Health = -15, Happiness = -8 }, 
-				resultText = "Got hurt fighting them off. They ran but... hospital trip. Not worth it."
+				text = "🏃 RUN!", 
+				effects = { Happiness = 5, Health = 2 }, 
+				resultText = "You bolted and escaped! Heart racing but kept everything and you're safe!"
 			},
 			{ 
-				text = "📞 Witness called 911", 
-				effects = { Happiness = 6 }, 
-				resultText = "Someone nearby called cops who arrived fast! Robber caught! Faith restored!"
+				text = "😱 Scream for help", 
+				effects = { Happiness = 3 }, 
+				resultText = "People came running! The robber fled. Witnesses helped identify them to police."
 			},
 		},
 	},
 	
 	{
-		id = "d_burglary",
+		id = "d_home_intruder",
 		minAge = 18, maxAge = 100,
-		weight = 15, cooldown = 6,
-		emoji = "🏠", title = "Home Burglarized!",
+		weight = 10, cooldown = 6,
+		emoji = "🏠", title = "Intruder in Your Home!",
 		category = "family",
-		text = "You came home to find your house broken into! Someone was here!",
+		text = "You hear someone breaking in downstairs! You're home! What do you do?",
 		choices = {
 			{ 
-				text = "💻 Electronics stolen", 
-				effects = { Money = -5000, Happiness = -15 }, 
-				resultText = "TV, laptop, game systems - all gone. Violation of your space. Angry and upset."
+				text = "📞 Call 911 and hide", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "Stayed quiet, cops came fast. Intruder fled when they heard sirens. You're safe!"
 			},
 			{ 
-				text = "💍 Valuables gone", 
-				effects = { Money = -10000, Happiness = -20 }, 
-				resultText = "Jewelry, cash, irreplaceable items. Insurance won't cover sentimental value."
+				text = "⚾ Grab something to defend", 
+				effects = { Health = -10, Happiness = -5 }, 
+				resultText = "Confronted them! Got into a fight. They ran but you got hurt. Scary."
 			},
 			{ 
-				text = "🔒 Security system helped!", 
-				effects = { Happiness = 4, Money = -500 }, 
-				resultText = "Alarm scared them off! Minor loss. Getting better security now.",
-				setFlag = "has_security"
+				text = "🪟 Escape out window", 
+				effects = { Happiness = 8, Health = -2 }, 
+				resultText = "Got out safely! Minor scrapes from the window but called cops from neighbor's house."
 			},
 			{ 
-				text = "🐕 Dog scared them off!", 
-				effects = { Happiness = 6 }, 
-				resultText = "Good boy/girl! Your dog scared the burglar away! Treats for them!",
-				requiresFlag = "has_pet"
+				text = "📢 Make lots of noise", 
+				effects = { Happiness = 3 }, 
+				resultText = "Started yelling and turning on lights! They fled immediately. Didn't want confrontation!"
+			},
+		},
+	},
+	
+	{
+		id = "d_choking",
+		minAge = 10, maxAge = 100,
+		weight = 15, cooldown = 5,
+		emoji = "😨", title = "Someone's Choking!",
+		category = "health",
+		text = "Someone at your table is choking! They can't breathe! What do you do?",
+		choices = {
+			{ 
+				text = "💪 Heimlich maneuver", 
+				effects = { Happiness = 15, Smarts = 3 }, 
+				resultText = "You knew what to do! Dislodged the food. They're okay! You saved their life!"
+			},
+			{ 
+				text = "😱 Panic and yell for help", 
+				effects = { Happiness = -5, Health = -2 }, 
+				resultText = "Someone else helped while you panicked. They're okay but you feel useless."
+			},
+			{ 
+				text = "🥤 Give them water", 
+				effects = { Happiness = -10, Smarts = -3 }, 
+				resultText = "WRONG! That made it worse! Luckily someone else did Heimlich. Learn first aid!"
+			},
+			{ 
+				text = "👋 Back slaps", 
+				effects = { Happiness = 10, Health = 2 }, 
+				resultText = "Five firm back blows worked! Food came out. Quick thinking!"
 			},
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- AFTERMATH AND RECOVERY EVENTS
+	-- AFTERMATH EVENTS - Still action-based
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "d_insurance_claim",
+		id = "d_insurance_battle",
 		minAge = 18, maxAge = 100,
 		weight = 20, cooldown = 4,
-		emoji = "📋", title = "Insurance Claim Battle",
+		emoji = "📋", title = "Insurance Claim Time",
 		category = "family",
-		text = "Filed an insurance claim after the disaster. Now the waiting game...",
+		requiresFlag = "lost_home",
+		text = "Insurance company is giving you the runaround on your claim. What do you do?",
 		choices = {
 			{ 
-				text = "💰 Full coverage!", 
-				effects = { Money = 30000, Happiness = 15 }, 
-				resultText = "Insurance came through! Full payment! Can rebuild and recover!"
+				text = "📞 Keep calling and pushing", 
+				effects = { Happiness = 8, Money = 25000 }, 
+				resultText = "Persistence paid off! After 47 calls, they approved full coverage!"
 			},
 			{ 
-				text = "📋 Partial payment", 
-				effects = { Money = 10000, Happiness = -5 }, 
-				resultText = "They found every loophole. Got some money but not enough. Frustrating."
+				text = "⚖️ Hire a lawyer", 
+				effects = { Money = 35000, Happiness = 5 }, 
+				resultText = "Lawyer got you more than expected! Their fee was worth it."
 			},
 			{ 
-				text = "❌ Claim denied!", 
-				effects = { Happiness = -20 }, 
-				resultText = "DENIED! Fine print exclusions. Fighting it but... might need a lawyer."
+				text = "😔 Accept their low offer", 
+				effects = { Money = 10000, Happiness = -10 }, 
+				resultText = "Took the lowball. Not enough but you were tired of fighting."
 			},
 			{ 
-				text = "⚖️ Had to sue them", 
-				effects = { Money = 20000, Happiness = -8 }, 
-				resultText = "Lawyer fought and won! Got paid but what a battle. Insurance companies..."
+				text = "📺 Go to local news", 
+				effects = { Money = 40000, Happiness = 12 }, 
+				resultText = "Story went viral! Insurance paid up FAST to avoid PR nightmare. Power of media!"
 			},
 		},
 	},
 	
 	{
-		id = "d_community_help",
-		minAge = 10, maxAge = 100,
-		weight = 15, cooldown = 5,
-		emoji = "❤️", title = "Community Support",
-		category = "social",
-		text = "After the disaster, your community rallied to help!",
-		choices = {
-			{ 
-				text = "🤝 Neighbors incredible", 
-				effects = { Happiness = 15 }, 
-				resultText = "People you barely knew showed up to help. Food, shelter, supplies. Humanity is good.",
-				setFlag = "community_helped"
-			},
-			{ 
-				text = "💵 GoFundMe success", 
-				effects = { Happiness = 12, Money = 10000 }, 
-				resultText = "Friends and strangers donated! Overwhelmed by the generosity!"
-			},
-			{ 
-				text = "🏠 Temporary housing", 
-				effects = { Happiness = 8, Money = -1000 }, 
-				resultText = "Church/community center set up shelter. Grateful for the roof."
-			},
-			{ 
-				text = "💔 Felt alone", 
-				effects = { Happiness = -10 }, 
-				resultText = "No one came. Had to figure it out alone. Who do you have in your corner?"
-			},
-		},
-	},
-	
-	{
-		id = "d_ptsd_aftermath",
+		id = "d_trauma_aftermath",
 		minAge = 15, maxAge = 100,
 		weight = 15, cooldown = 6,
-		emoji = "😰", title = "Trauma Response",
+		emoji = "😰", title = "Dealing with Trauma",
 		category = "health",
-		text = "After what happened, you're struggling with trauma. The memories won't fade.",
+		text = "After everything that happened, you're struggling. Nightmares, anxiety, flashbacks. What do you do?",
 		choices = {
 			{ 
-				text = "💬 Got therapy", 
-				effects = { Health = 8, Happiness = 10, Money = -2000 }, 
-				resultText = "Professional help is making a difference. Processing the trauma. Healing.",
-				setFlag = "in_therapy"
+				text = "💬 See a therapist", 
+				effects = { Health = 12, Happiness = 10, Money = -1500 }, 
+				resultText = "Professional help is working. Processing the trauma. Slowly healing."
 			},
 			{ 
-				text = "👨‍👩‍👧 Family support", 
+				text = "🍺 Drink to forget", 
+				effects = { Health = -15, Happiness = -10, Money = -500 }, 
+				resultText = "Made everything worse. Developing a problem now. Need real help."
+			},
+			{ 
+				text = "💪 Push through alone", 
+				effects = { Health = -5, Happiness = -8 }, 
+				resultText = "Struggling. Some days okay, some days terrible. Should probably talk to someone."
+			},
+			{ 
+				text = "👨‍👩‍👧 Lean on family", 
 				effects = { Happiness = 8, Health = 5 }, 
-				resultText = "Leaning on loved ones. Not alone in this. Slowly getting better."
-			},
-			{ 
-				text = "😔 Struggling hard", 
-				effects = { Happiness = -15, Health = -8 }, 
-				resultText = "Nightmares. Anxiety. Can't function normally. Need to seek help.",
-				setFlag = "trauma_struggling"
-			},
-			{ 
-				text = "💪 Building resilience", 
-				effects = { Happiness = 6, Smarts = 5 }, 
-				resultText = "Using this to grow stronger. What doesn't kill you... taking control.",
-				setFlag = "resilient"
+				resultText = "Family support is helping. Not alone in this. Healing together."
 			},
 		},
 	},
 	
 	{
-		id = "d_close_call",
-		minAge = 10, maxAge = 100,
-		weight = 20, cooldown = 3,
-		emoji = "😮", title = "Close Call!",
-		category = "social",
-		getDynamicData = function()
-			local calls = {
-				"almost got hit by a car",
-				"nearly fell from a height",
-				"almost choked on food",
-				"barely avoided a falling object",
-				"slipped but caught yourself",
-			}
-			return { closecall = calls[math.random(#calls)] }
-		end,
-		text = "Whoa! You %closecall%! That was WAY too close!",
+		id = "d_rebuild_decision",
+		minAge = 25, maxAge = 100,
+		weight = 12, cooldown = 8,
+		emoji = "🏗️", title = "Rebuilding After Disaster",
+		category = "family",
+		requiresFlag = "lost_home",
+		text = "Your home was destroyed. Time to decide what's next. What do you do?",
 		choices = {
 			{ 
-				text = "😰 Heart still pounding", 
-				effects = { Happiness = -5 }, 
-				resultText = "So close to disaster! Can't stop thinking about what almost happened."
+				text = "🏗️ Rebuild on same land", 
+				effects = { Money = -50000, Happiness = 10 }, 
+				resultText = "Rebuilding. It'll be better than before. Making this YOUR home again."
 			},
 			{ 
-				text = "🙏 Grateful to be alive", 
-				effects = { Happiness = 10, Smarts = 2 }, 
-				resultText = "Life flashed before your eyes. Appreciating every moment now!"
+				text = "🚚 Move somewhere new", 
+				effects = { Money = -20000, Happiness = 8 }, 
+				resultText = "Fresh start in a new place. Maybe that disaster was a sign to change."
 			},
 			{ 
-				text = "😂 Laughed it off", 
-				effects = { Happiness = 4 }, 
-				resultText = "Once the fear passed... actually kind of funny? Wild story to tell!"
+				text = "👨‍👩‍👧 Move in with family", 
+				effects = { Happiness = 5, Money = 10000 }, 
+				resultText = "Family took you in. Saving money while figuring out next steps."
 			},
 			{ 
-				text = "⚠️ More careful now", 
-				effects = { Smarts = 5, Happiness = 2 }, 
-				resultText = "Wake-up call! Being more aware and careful. Safety first.",
-				setFlag = "safety_conscious"
+				text = "🏢 Rent for now", 
+				effects = { Happiness = 3, Money = -5000 }, 
+				resultText = "Temporary apartment while you decide. No rush. Take your time."
 			},
 		},
 	},

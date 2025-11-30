@@ -1,7 +1,7 @@
 -- LifeEvents/career_business.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- BUSINESS & ENTREPRENEURSHIP CAREER EVENTS
--- Startups, Corporate Ladder, CEOs, Moguls - The hustle life
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,321 +11,252 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- EARLY ENTREPRENEURIAL SPIRIT
+	-- EARLY BUSINESS INSTINCTS
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "biz_childhood_lemonade",
 		minAge = 7, maxAge = 12,
-		weight = 30, oneTime = true,
-		emoji = "🍋", title = "Lemonade Stand!",
-		category = "work",
-		text = "You want to start a lemonade stand in the neighborhood!",
+		weight = 25, oneTime = true,
+		emoji = "🍋", title = "Lemonade Stand Idea!",
+		category = "school",
+		text = "Hot summer day! You want to set up a lemonade stand. What do you do?",
 		choices = {
-			{ text = "💰 Made good money!", effects = { Happiness = 12, Money = 50, Smarts = 5 }, resultText = "$50 in a day! You're a natural entrepreneur!", setFlag = "business_minded" },
-			{ text = "📊 Learned about business", effects = { Happiness = 8, Smarts = 8 }, resultText = "Expenses, profit margins... business is fascinating!", setFlag = "business_minded" },
-			{ text = "😅 Nobody came", effects = { Happiness = -3, Smarts = 3 }, resultText = "Location matters. Lesson learned." },
-			{ text = "🏆 Best on the block!", effects = { Happiness = 15, Money = 100 }, resultText = "Dominated the competition! Other kids couldn't keep up!", setFlags = {"business_minded", "competitive"} },
+			{ text = "🍋 Premium lemonade $2!", effects = { Happiness = 15, Money = 50, Smarts = 5 }, resultText = "Sold out! Made $50! The business instinct is STRONG!", setFlag = "entrepreneur_spirit" },
+			{ text = "🏪 Undercut with $0.25", effects = { Happiness = 10, Money = 20 }, resultText = "Sold tons but barely made money. Learned about margins!" },
+			{ text = "📢 Big marketing push", effects = { Happiness = 12, Money = 35, Smarts = 5 }, resultText = "Signs everywhere! Customers came! Marketing works!", setFlag = "entrepreneur_spirit" },
+			{ text = "😤 Too much work", effects = { Happiness = 5 }, resultText = "Gave up after an hour. Business isn't for everyone." },
 		},
 	},
 	
 	{
-		id = "biz_teen_hustle",
-		minAge = 14, maxAge = 18,
-		weight = 25, cooldown = 3,
-		emoji = "💼", title = "Teen Side Hustle!",
+		id = "biz_teen_job",
+		minAge = 14, maxAge = 17,
+		weight = 25, cooldown = 2,
+		emoji = "🍔", title = "First Job Opportunity!",
 		category = "work",
 		getDynamicData = function()
-			local hustles = {"reselling sneakers", "tutoring younger kids", "lawn care business", "social media management", "selling crafts online"}
-			return { hustle = hustles[math.random(#hustles)] }
+			local jobs = {"fast food", "grocery store", "movie theater", "retail"}
+			return { jobType = jobs[math.random(#jobs)] }
 		end,
-		text = "You started %hustle% to make some extra money!",
+		text = "Got a job at %jobType%! Your first REAL job. How do you approach it?",
 		choices = {
-			{ text = "💰 Killing it!", effects = { Happiness = 15, Money = 2000, Smarts = 5 }, resultText = "Making more than most adults! Hustle pays off!", setFlag = "entrepreneur" },
-			{ text = "📈 Scaling up!", effects = { Happiness = 12, Money = 1000, Smarts = 8 }, resultText = "Hired friends to help. You're building something!", setFlags = {"entrepreneur", "manager"} },
-			{ text = "😅 Barely breaking even", effects = { Happiness = 3, Smarts = 5 }, resultText = "Hard work for little reward. But you're learning." },
-			{ text = "❌ Had to shut down", effects = { Happiness = -5, Smarts = 3 }, resultText = "Didn't work out. Failure is part of the journey." },
+			{ text = "💪 Work hard, learn fast", effects = { Happiness = 10, Money = 500, Smarts = 5 }, resultText = "Promoted to shift lead already! Boss loves your work ethic!", setFlag = "strong_work_ethic" },
+			{ text = "🤷 Just collect paycheck", effects = { Happiness = 5, Money = 400 }, resultText = "Did the minimum. Got paid. No promotions but whatever." },
+			{ text = "🧠 Study the business", effects = { Happiness = 8, Money = 400, Smarts = 8 }, resultText = "Watched how everything works. Valuable learning experience!", setFlag = "business_observer" },
+			{ text = "😤 Quit after week 1", effects = { Happiness = -5, Money = 50 }, resultText = "Couldn't handle it. Quit before first paycheck. Rough start." },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- STARTUP FOUNDER PATH
+	-- COLLEGE & EARLY CAREER
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "biz_college_major",
+		minAge = 18, maxAge = 19,
+		weight = 20, oneTime = true,
+		emoji = "🎓", title = "Choosing Your Major!",
+		category = "school",
+		text = "Time to declare a major! What do you choose?",
+		choices = {
+			{ text = "💼 Business/Finance", effects = { Smarts = 8, Happiness = 5 }, resultText = "The traditional path! Learning accounting, marketing, management!", setFlags = {"business_major", "college_student"} },
+			{ text = "🔬 STEM field", effects = { Smarts = 12, Happiness = 3 }, resultText = "Hard but valuable! Technical skills are in demand!", setFlags = {"stem_major", "college_student"} },
+			{ text = "🎨 Follow your passion", effects = { Happiness = 15, Smarts = 5 }, resultText = "Studying what you love! Happy but uncertain career path.", setFlag = "college_student" },
+			{ text = "🤷 Undeclared", effects = { Happiness = 8, Smarts = 3 }, resultText = "Still figuring it out! Exploring options.", setFlag = "college_student" },
+		},
+	},
+	
+	{
+		id = "biz_first_internship",
+		minAge = 19, maxAge = 22,
+		weight = 25, oneTime = true,
+		emoji = "👔", title = "Internship Interview!",
+		category = "work",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			local companies = {"Goldman Sachs", "McKinsey", "Google", "JP Morgan", "Deloitte"}
+			return { company = companies[math.random(#companies)] }
+		end,
+		text = "Interview at %company%! Big opportunity! How do you prepare?",
+		choices = {
+			{ text = "📚 Research everything", effects = { Happiness = 20, Money = 15000, Smarts = 5 }, resultText = "Nailed every question! HIRED! Dream internship secured!", setFlags = {"elite_intern", "resume_builder"} },
+			{ text = "😎 Wing it on charm", effects = { Happiness = 5, Money = 5000 }, resultText = "Got a different offer. Not prestigious but it's something.", setFlag = "intern" },
+			{ text = "😰 Nervous mess", effects = { Happiness = -10 }, resultText = "Blanked on questions. Rejection email came fast. Ouch." },
+			{ text = "🤝 Network beforehand", effects = { Happiness = 18, Money = 12000, Smarts = 5 }, resultText = "Inside connection helped! Got the job! Networking works!", setFlags = {"elite_intern", "networker"} },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CORPORATE LADDER
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "biz_first_corporate_job",
+		minAge = 22, maxAge = 28,
+		weight = 20, oneTime = true,
+		emoji = "💼", title = "First Real Job Offer!",
+		category = "work",
+		getDynamicData = function()
+			local salaries = {55000, 65000, 75000, 85000}
+			return { salary = salaries[math.random(#salaries)] }
+		end,
+		text = "Job offer! $%salary% per year! Do you take it?",
+		choices = {
+			{ text = "✅ Accept immediately", effects = { Happiness = 15, Money = 5000 }, resultText = "EMPLOYED! First day jitters! Career officially begins!", setFlags = {"employed", "corporate_worker"} },
+			{ text = "📋 Negotiate higher", effects = { Happiness = 18, Money = 8000, Smarts = 5 }, resultText = "Got $10k more! Always negotiate! Strong start!", setFlags = {"employed", "corporate_worker", "negotiator"} },
+			{ text = "🙅 Hold out for better", effects = { Happiness = -10, Money = -5000 }, resultText = "Turned it down. Job market dried up. Now desperate. Bad call." },
+			{ text = "🤔 Ask for more time", effects = { Happiness = 8, Money = 6000 }, resultText = "Used the time to get another offer! Leverage worked!", setFlags = {"employed", "corporate_worker"} },
+		},
+	},
+	
+	{
+		id = "biz_office_politics",
+		minAge = 23, maxAge = 50,
+		weight = 25, cooldown = 3,
+		emoji = "🐍", title = "Office Politics!",
+		category = "work",
+		requiresFlag = "corporate_worker",
+		text = "A coworker is taking credit for YOUR work to the boss! What do you do?",
+		choices = {
+			{ text = "📧 Email proof to boss", effects = { Happiness = 10, Smarts = 5 }, resultText = "Receipts don't lie! Boss knows the truth now! Credit restored!" },
+			{ text = "😤 Confront them publicly", effects = { Happiness = -10, Looks = -3 }, resultText = "Made a scene! Now YOU look bad. Should've been strategic." },
+			{ text = "🤐 Let it slide", effects = { Happiness = -15, Smarts = -3 }, resultText = "They keep doing it. You're invisible. This will hurt your career." },
+			{ text = "🎯 Work directly with boss", effects = { Happiness = 12, Smarts = 8 }, resultText = "Started sending updates directly. No middleman. Smart move!", setFlag = "savvy_worker" },
+		},
+	},
+	
+	{
+		id = "biz_promotion_opportunity",
+		minAge = 25, maxAge = 45,
+		weight = 20, cooldown = 3,
+		emoji = "📈", title = "Promotion Opening!",
+		category = "work",
+		requiresFlag = "corporate_worker",
+		text = "Management position opened up! Multiple people want it. What do you do?",
+		choices = {
+			{ text = "📊 Build a case", effects = { Happiness = 20, Money = 25000, Smarts = 5 }, resultText = "Presented your accomplishments! GOT THE PROMOTION! Manager now!", setFlags = {"manager", "promoted"} },
+			{ text = "🤝 Lobby decision makers", effects = { Happiness = 15, Money = 20000 }, resultText = "Relationships paid off! Promoted! Politics matter!", setFlags = {"manager", "political_player"} },
+			{ text = "🤷 Hope they notice me", effects = { Happiness = -15 }, resultText = "They didn't. Someone else got it. You have to advocate for yourself!" },
+			{ text = "😰 Don't apply", effects = { Happiness = -10, Smarts = -3 }, resultText = "Too scared to try. Watched someone less qualified get it. Regret." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- ENTREPRENEURSHIP PATH
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "biz_startup_idea",
-		minAge = 20, maxAge = 45,
-		weight = 20, oneTime = true,
-		emoji = "💡", title = "Million Dollar Idea!",
+		minAge = 22, maxAge = 45,
+		weight = 15, oneTime = true,
+		emoji = "💡", title = "Big Startup Idea!",
 		category = "work",
-		requiresFlag = "business_minded",
+		requiresFlag = "entrepreneur_spirit",
 		getDynamicData = function()
-			local ideas = {
-				"an app that connects local service providers",
-				"a sustainable fashion marketplace",
-				"an AI-powered productivity tool",
-				"a subscription box for niche hobbies",
-				"a platform for freelance professionals",
-			}
-			return { idea = ideas[math.random(#ideas)] }
+			local ideas = {"an app that", "a service that", "a platform that", "a product that"}
+			local solutions = {"saves people time", "connects communities", "solves a daily problem", "makes life easier"}
+			return { ideaType = ideas[math.random(#ideas)], solution = solutions[math.random(#solutions)] }
 		end,
-		text = "You have an idea for %idea%! This could be huge!",
+		text = "You have an idea for %ideaType% %solution%! Could be big! What do you do?",
 		choices = {
-			{ text = "🚀 Quit job and build it!", effects = { Happiness = 15, Money = -20000 }, resultText = "All in! Savings depleted but the dream is alive!", setFlag = "startup_founder" },
-			{ text = "🌙 Build it nights/weekends", effects = { Happiness = 5, Health = -5, Smarts = 5 }, resultText = "No sleep but making progress. Safe approach.", setFlag = "startup_founder" },
-			{ text = "🤝 Find a co-founder", effects = { Happiness = 12, Smarts = 3 }, resultText = "Found someone as crazy as you! Partnership formed!", setFlags = {"startup_founder", "has_cofounder"} },
-			{ text = "📋 Too risky", effects = { Happiness = -5 }, resultText = "Filed the idea away. Maybe someday..." },
+			{ text = "🚀 Quit job and build it", effects = { Happiness = 15, Money = -30000 }, resultText = "All in! Scary but exciting! No salary but pursuing the dream!", setFlags = {"startup_founder", "entrepreneur"} },
+			{ text = "🌙 Build it on the side", effects = { Happiness = 12, Health = -5 }, resultText = "Nights and weekends! Exhausting but keeping the safety net!", setFlags = {"side_hustle", "entrepreneur"} },
+			{ text = "🤝 Find a cofounder", effects = { Happiness = 15, Smarts = 5 }, resultText = "Found a perfect partner! Complementary skills! Let's go!", setFlags = {"startup_founder", "entrepreneur", "has_cofounder"} },
+			{ text = "📝 Just file it away", effects = { Happiness = -5 }, resultText = "Great ideas need execution. This one just sits in a notebook..." },
 		},
 	},
 	
 	{
-		id = "biz_pitch_competition",
-		minAge = 20, maxAge = 50,
-		weight = 25, cooldown = 3,
-		emoji = "🎤", title = "Pitch Competition!",
+		id = "biz_seeking_funding",
+		minAge = 23, maxAge = 50,
+		weight = 20, oneTime = true,
+		emoji = "💰", title = "Investor Meeting!",
 		category = "work",
 		requiresFlag = "startup_founder",
 		getDynamicData = function()
-			local competitions = {"a local startup event", "TechCrunch Disrupt", "Y Combinator Demo Day", "a university competition", "Shark Tank auditions"}
-			return { competition = competitions[math.random(#competitions)] }
+			local vcs = {"Sequoia", "Andreessen Horowitz", "Y Combinator", "a wealthy angel"}
+			local amounts = {500000, 1000000, 2000000}
+			return { investor = vcs[math.random(#vcs)], amount = amounts[math.random(#amounts)] }
 		end,
-		text = "You're presenting your startup at %competition%!",
+		text = "Pitching to %investor%! Asking for $%amount%! How do you pitch?",
 		choices = {
-			{ text = "🏆 Won first place!", effects = { Happiness = 25, Money = 50000, Smarts = 5 }, resultText = "Investors are calling! You crushed it!", setFlag = "funded_startup" },
-			{ text = "💰 Got seed funding!", effects = { Happiness = 20, Money = 100000 }, resultText = "An investor believed in you! $100K seed round!", setFlag = "funded_startup" },
-			{ text = "📊 Good feedback", effects = { Happiness = 8, Smarts = 5 }, resultText = "Didn't win but learned what to improve." },
-			{ text = "😰 Bombed the pitch", effects = { Happiness = -15, Health = -3 }, resultText = "Froze up. Stumbled over words. Crushing defeat." },
+			{ text = "📊 Data-driven pitch", effects = { Happiness = 25, Money = 1000000, Smarts = 5 }, resultText = "They loved the metrics! FUNDED! Check is in the mail!", setFlags = {"funded_startup", "vc_backed"} },
+			{ text = "🎯 Vision and passion", effects = { Happiness = 20, Money = 500000 }, resultText = "They believed in YOU! Smaller check but you have a champion!", setFlag = "funded_startup" },
+			{ text = "😰 Freeze in the meeting", effects = { Happiness = -15 }, resultText = "Couldn't articulate your vision. Pass. Practice more." },
+			{ text = "😤 Overvalue the company", effects = { Happiness = -10, Smarts = 3 }, resultText = "Asked for too much. They walked. Know your worth but be realistic." },
 		},
 	},
 	
 	{
-		id = "biz_series_a",
-		minAge = 22, maxAge = 50,
-		weight = 15, oneTime = true,
-		emoji = "📈", title = "Series A Funding!",
+		id = "biz_startup_success",
+		minAge = 25, maxAge = 55,
+		weight = 12, oneTime = true,
+		emoji = "🚀", title = "Startup Taking Off!",
 		category = "work",
 		requiresFlag = "funded_startup",
-		getDynamicData = function()
-			local amount = math.random(2, 10)
-			return { amount = amount }
-		end,
-		text = "VCs want to invest $%amount% MILLION in your company!",
+		text = "Your startup is growing FAST! Revenue up 500%! Big companies want to talk! What do you do?",
 		choices = {
-			{ text = "💰 Take the money!", effects = { Happiness = 30, Money = 500000 }, resultText = "Funded! Time to scale! Hired 20 people!", setFlags = {"venture_backed", "ceo"} },
-			{ text = "📋 Negotiate hard", effects = { Happiness = 25, Money = 600000, Smarts = 5 }, resultText = "Better terms, kept more equity. Smart move!", setFlags = {"venture_backed", "ceo"} },
-			{ text = "🤔 Bootstrap instead", effects = { Happiness = 10, Smarts = 5 }, resultText = "Turned down the money. Keeping full control.", setFlag = "bootstrapped" },
-			{ text = "⚠️ Lost control", effects = { Happiness = 5, Money = 400000 }, resultText = "Took bad terms. VCs now control the board.", setFlags = {"venture_backed", "lost_control"} },
+			{ text = "💰 Sell the company!", effects = { Happiness = 35, Money = 10000000 }, resultText = "ACQUIRED! Eight-figure exit! You're a MILLIONAIRE!", setFlags = {"successful_exit", "millionaire"} },
+			{ text = "🚀 Keep building!", effects = { Happiness = 25, Money = 500000, Smarts = 5 }, resultText = "Turned down the offer! Going for BILLION dollar company!", setFlag = "unicorn_pursuit" },
+			{ text = "📈 Take company public", effects = { Happiness = 30, Money = 20000000 }, resultText = "IPO! On the stock market! Paper wealth through the roof!", setFlags = {"public_company", "ceo"} },
+			{ text = "💼 Hire CEO to run it", effects = { Happiness = 20, Money = 3000000 }, resultText = "Brought in professional management. Less control, more free time." },
 		},
 	},
 	
 	{
 		id = "biz_startup_failure",
-		minAge = 22, maxAge = 55,
-		weight = 20, cooldown = 5,
-		emoji = "📉", title = "Startup Failing!",
+		minAge = 23, maxAge = 50,
+		weight = 25, oneTime = true,
+		emoji = "📉", title = "Startup Struggling...",
 		category = "work",
 		requiresFlag = "startup_founder",
-		text = "Runway is running out. Revenue isn't growing. The startup is dying.",
+		text = "It's not working. Running out of money. Team losing faith. What do you do?",
 		choices = {
-			{ text = "🔄 Pivot!", effects = { Happiness = 5, Smarts = 8 }, resultText = "Completely changed direction. New product, new market. Saved it!", setFlag = "pivoted" },
-			{ text = "💔 Shut it down", effects = { Happiness = -25, Money = -50000, Smarts = 5 }, resultText = "Called the investors. Laid off the team. It's over. Devastating.", clearFlags = {"startup_founder", "funded_startup"}, setFlag = "failed_founder" },
-			{ text = "🤝 Get acquired", effects = { Happiness = 5, Money = 100000 }, resultText = "Bigger company bought you out. Not the dream but not zero.", clearFlag = "startup_founder", setFlag = "acqui_hired" },
-			{ text = "💪 One more push", effects = { Happiness = -10, Health = -10, Money = -30000 }, resultText = "Poured everything in. Either this works or you're done." },
-		},
-	},
-	
-	{
-		id = "biz_ipo",
-		minAge = 28, maxAge = 60,
-		weight = 5, oneTime = true,
-		emoji = "🔔", title = "IPO DAY!",
-		category = "work",
-		requiresFlag = "venture_backed",
-		getDynamicData = function()
-			local valuation = math.random(500, 5000)
-			return { valuation = valuation }
-		end,
-		text = "YOUR COMPANY IS GOING PUBLIC! Valued at $%valuation% MILLION!",
-		choices = {
-			{ text = "🔔 Ring the bell!", effects = { Happiness = 50, Money = 10000000, Looks = 5 }, resultText = "You rang the NYSE bell! You're worth hundreds of millions! DREAM ACHIEVED!", setFlags = {"ipo_founder", "ultra_wealthy"} },
-			{ text = "😭 Tears of joy", effects = { Happiness = 45, Money = 8000000 }, resultText = "From a garage to the stock market. Unbelievable journey.", setFlags = {"ipo_founder", "ultra_wealthy"} },
-			{ text = "📉 Stock tanked", effects = { Happiness = 10, Money = 2000000 }, resultText = "IPO flopped. Still rich but not what you dreamed.", setFlag = "ipo_founder" },
-			{ text = "🎉 Party like crazy", effects = { Happiness = 40, Money = 7000000, Health = -5 }, resultText = "The celebration lasted a week! You made it!", setFlags = {"ipo_founder", "ultra_wealthy"} },
+			{ text = "💪 Pivot the business", effects = { Happiness = 8, Smarts = 8 }, resultText = "New direction! The pivot is working! Second chance!", setFlag = "pivot_survivor" },
+			{ text = "🚪 Shut it down", effects = { Happiness = -20, Money = -50000 }, resultText = "Painful but necessary. Learned SO much. Will try again.", clearFlag = "startup_founder" },
+			{ text = "🙏 One more fundraise", effects = { Happiness = 5, Money = 200000 }, resultText = "Found believers! Got bridge funding! Living to fight another day!", setFlag = "scrappy_survivor" },
+			{ text = "😔 Give up and get a job", effects = { Happiness = -15, Money = 50000 }, resultText = "Back to corporate. Dream over. But stability is nice...", clearFlag = "startup_founder", setFlag = "ex_founder" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- CORPORATE LADDER PATH
+	-- EXECUTIVE LEVEL
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "biz_first_promotion",
-		minAge = 24, maxAge = 40,
-		weight = 30, cooldown = 3,
-		emoji = "📈", title = "Promotion Opportunity!",
+		id = "biz_c_suite",
+		minAge = 35, maxAge = 60,
+		weight = 12, oneTime = true,
+		emoji = "👔", title = "C-Suite Opportunity!",
 		category = "work",
-		requiresFlag = "employed",
+		requiresFlag = "manager",
 		getDynamicData = function()
-			local titles = {"Senior Associate", "Team Lead", "Manager", "Director", "VP"}
+			local titles = {"CFO", "COO", "CMO", "CTO"}
 			return { title = titles[math.random(#titles)] }
 		end,
-		text = "There's an opening for %title%. You're in the running!",
+		text = "Offered the %title% position at a major company! Executive level! What do you do?",
 		choices = {
-			{ text = "💼 Got it!", effects = { Happiness = 20, Money = 15000, Smarts = 3 }, resultText = "PROMOTED! New title, better pay, bigger office!", setFlag = "management" },
-			{ text = "😔 Passed over", effects = { Happiness = -15, Smarts = 2 }, resultText = "They gave it to someone else. Politics." },
-			{ text = "🤝 Negotiated hard", effects = { Happiness = 18, Money = 20000, Smarts = 5 }, resultText = "Got the promotion AND a bigger raise than offered!", setFlag = "management" },
-			{ text = "🏃 Quit instead", effects = { Happiness = 5, Money = -5000 }, resultText = "If they don't see your value, someone else will.", clearFlag = "employed" },
-		},
-	},
-	
-	{
-		id = "biz_backstabbed",
-		minAge = 25, maxAge = 55,
-		weight = 20, cooldown = 4,
-		emoji = "🗡️", title = "Office Backstabbing!",
-		category = "work",
-		requiresFlag = "management",
-		getDynamicData = function()
-			return { traitorName = LifeEvents.randomFirstName() }
-		end,
-		text = "%traitorName% took credit for your work and got YOUR promotion!",
-		choices = {
-			{ text = "😤 Confront them", effects = { Happiness = 5, Smarts = 3 }, resultText = "Called them out in front of leadership. Risky but satisfying." },
-			{ text = "📧 Document everything", effects = { Happiness = 2, Smarts = 8 }, resultText = "Building a case. Your time will come.", setFlag = "cautious" },
-			{ text = "🤝 Play the game", effects = { Happiness = -5, Smarts = 5 }, resultText = "Corporate politics. Two can play at that.", setFlag = "political" },
-			{ text = "💔 Devastated", effects = { Happiness = -20, Health = -5 }, resultText = "Betrayed by someone you trusted. The corporate world is cruel." },
-		},
-	},
-	
-	{
-		id = "biz_ceo_offer",
-		minAge = 40, maxAge = 60,
-		weight = 8, oneTime = true,
-		emoji = "👔", title = "CEO Position Offered!",
-		category = "work",
-		requiresFlag = "management",
-		getDynamicData = function()
-			local companies = {"a Fortune 500 company", "a growing tech firm", "an established retailer", "a major bank", "a healthcare company"}
-			return { company = companies[math.random(#companies)] }
-		end,
-		text = "The board of %company% wants YOU as their next CEO!",
-		choices = {
-			{ text = "💼 Accept!", effects = { Happiness = 35, Money = 2000000 }, resultText = "You're the CEO! Corner office, private jet, golden parachute!", setFlags = {"ceo", "executive"} },
-			{ text = "📋 Negotiate package", effects = { Happiness = 30, Money = 3000000, Smarts = 5 }, resultText = "Better salary, more equity, signing bonus. Well played!", setFlags = {"ceo", "executive"} },
-			{ text = "🤔 Too much pressure", effects = { Happiness = 5, Smarts = 3 }, resultText = "Turned it down. The golden handcuffs aren't worth the stress." },
-			{ text = "😰 Imposter syndrome", effects = { Happiness = 15, Money = 1500000 }, resultText = "Took it but... do you deserve this? The doubt is real.", setFlags = {"ceo", "imposter_syndrome"} },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- BUSINESS STRUGGLES & ETHICS
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "biz_layoffs",
-		minAge = 30, maxAge = 65,
-		weight = 20, cooldown = 4,
-		emoji = "📉", title = "Layoffs Decision",
-		category = "work",
-		requiresFlag = "management",
-		getDynamicData = function()
-			local people = math.random(10, 100)
-			return { people = people }
-		end,
-		text = "Company needs to cut costs. You have to lay off %people% people.",
-		choices = {
-			{ text = "😔 Do it humanely", effects = { Happiness = -15, Smarts = 3 }, resultText = "Gave good severance. It's still awful but you did it right." },
-			{ text = "😤 Refuse and resign", effects = { Happiness = -5, Money = -50000 }, resultText = "You couldn't fire people. Quit on principle.", clearFlags = {"management", "employed"} },
-			{ text = "💼 Just business", effects = { Happiness = -5, Smarts = -2 }, resultText = "Cold but necessary. The bottom line matters.", setFlag = "ruthless" },
-			{ text = "😭 Hardest day ever", effects = { Happiness = -25, Health = -5 }, resultText = "Looking people in the eye and ending their careers. Haunting." },
+			{ text = "✅ Accept immediately", effects = { Happiness = 30, Money = 500000 }, resultText = "Chief Officer! Corner office! Stock options! You've made it!", setFlags = {"c_suite", "executive"} },
+			{ text = "📋 Negotiate hard", effects = { Happiness = 25, Money = 750000, Smarts = 5 }, resultText = "Better package! More equity! Smart negotiation!", setFlags = {"c_suite", "executive"} },
+			{ text = "🤔 Stay at current company", effects = { Happiness = 10, Money = 100000 }, resultText = "Loyalty has value. They appreciate you even more now." },
+			{ text = "🚀 Counter with CEO demand", effects = { Happiness = -10 }, resultText = "Overreached. Offer withdrawn. Know when to push and when to accept." },
 		},
 	},
 	
 	{
 		id = "biz_ethical_dilemma",
-		minAge = 25, maxAge = 65,
+		minAge = 30, maxAge = 65,
 		weight = 20, cooldown = 4,
-		emoji = "⚖️", title = "Ethical Dilemma",
+		emoji = "⚖️", title = "Ethical Dilemma!",
 		category = "work",
-		requiresFlag = "management",
-		text = "Your boss wants you to do something unethical to hit quarterly numbers.",
+		requiresFlag = "corporate_worker",
+		text = "Boss wants you to do something legally gray that will make the company millions. What do you do?",
 		choices = {
-			{ text = "🙅 Refuse", effects = { Happiness = 10, Smarts = 5 }, resultText = "Stood your ground. Might have killed your career but kept your soul.", setFlag = "ethical" },
-			{ text = "📧 Whistleblow", effects = { Happiness = 5, Money = -20000, Smarts = 5 }, resultText = "Reported it. Legal battle ahead but doing the right thing.", setFlags = {"whistleblower", "ethical"} },
-			{ text = "😔 Comply reluctantly", effects = { Happiness = -15, Money = 10000 }, resultText = "Did it. Hate yourself. But kept the job.", setFlag = "compromised" },
-			{ text = "💰 Ask for more money", effects = { Happiness = -10, Money = 30000, Smarts = -3 }, resultText = "If you're going to sell out, at least get paid well.", setFlag = "corrupt" },
-		},
-	},
-	
-	{
-		id = "biz_bankruptcy",
-		minAge = 30, maxAge = 70,
-		weight = 10, oneTime = true,
-		emoji = "💸", title = "Business Bankruptcy",
-		category = "work",
-		requiresFlag = "startup_founder",
-		text = "Your business is bankrupt. Debts overwhelming. It's over.",
-		choices = {
-			{ text = "💔 Lost everything", effects = { Happiness = -35, Money = -100000, Health = -10 }, resultText = "Years of work gone. Starting from nothing again.", clearFlags = {"startup_founder", "ceo"}, setFlag = "bankrupt" },
-			{ text = "📚 Learn from failure", effects = { Happiness = -15, Smarts = 10 }, resultText = "Failure is the best teacher. You'll come back stronger.", setFlag = "resilient" },
-			{ text = "🤝 File Chapter 11", effects = { Happiness = -10, Money = -50000 }, resultText = "Restructuring instead of liquidating. Fighting to survive." },
-			{ text = "😰 Depression hits", effects = { Happiness = -40, Health = -15 }, resultText = "Can't get out of bed. Lost everything you built. Need help.", setFlags = {"bankrupt", "depressed"} },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- BUSINESS SUCCESS & LEGACY
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "biz_forbes_list",
-		minAge = 35, maxAge = 80,
-		weight = 5, oneTime = true,
-		emoji = "📰", title = "Forbes List!",
-		category = "work",
-		requiresFlag = "ultra_wealthy",
-		getDynamicData = function()
-			local ranking = math.random(50, 400)
-			return { ranking = ranking }
-		end,
-		text = "You made the Forbes Billionaires list! Ranked #%ranking%!",
-		choices = {
-			{ text = "🎉 Made it!", effects = { Happiness = 40, Looks = 5 }, resultText = "Billionaire status confirmed! The world knows your name!", setFlag = "billionaire" },
-			{ text = "🎯 Want higher", effects = { Happiness = 15, Smarts = 3 }, resultText = "Not satisfied yet. Eyes on the top 10.", setFlag = "billionaire" },
-			{ text = "🤫 Prefer privacy", effects = { Happiness = 20 }, resultText = "Don't like the attention. Too many people asking for money now.", setFlag = "billionaire" },
-			{ text = "💝 Time to give back", effects = { Happiness = 30, Money = -10000000 }, resultText = "Started a foundation. Giving away half your wealth.", setFlags = {"billionaire", "philanthropist"} },
-		},
-	},
-	
-	{
-		id = "biz_legacy",
-		minAge = 55, maxAge = 85,
-		weight = 15, oneTime = true,
-		emoji = "🏛️", title = "Building Your Legacy",
-		category = "work",
-		requiresFlag = "ceo",
-		text = "Thinking about what you'll leave behind. What kind of legacy do you want?",
-		choices = {
-			{ text = "🏫 Fund a school", effects = { Happiness = 25, Money = -5000000, Smarts = 5 }, resultText = "A business school bears your name. Educating future entrepreneurs.", setFlag = "legacy_builder" },
-			{ text = "🏥 Build a hospital", effects = { Happiness = 30, Money = -10000000, Health = 5 }, resultText = "Saving lives even after you're gone. Meaningful legacy.", setFlag = "legacy_builder" },
-			{ text = "👨‍👩‍👧 Family wealth", effects = { Happiness = 20, Smarts = 3 }, resultText = "Trust funds, family office. Generations will be secure.", setFlag = "dynasty_builder" },
-			{ text = "🌍 Environmental cause", effects = { Happiness = 25, Money = -3000000 }, resultText = "Fighting climate change. The planet needs help.", setFlags = {"legacy_builder", "environmentalist"} },
-		},
-	},
-	
-	{
-		id = "biz_retirement",
-		minAge = 50, maxAge = 75,
-		weight = 20, oneTime = true,
-		emoji = "🏖️", title = "Time to Retire?",
-		category = "work",
-		requiresFlag = "ceo",
-		text = "You've achieved everything. Is it time to step back?",
-		choices = {
-			{ text = "🏖️ Golden retirement", effects = { Happiness = 25, Health = 10 }, resultText = "Sold the company. Beaches, golf, grandkids. You earned it.", clearFlag = "ceo", setFlag = "retired_ceo" },
-			{ text = "💼 Never stop", effects = { Happiness = 10, Health = -5 }, resultText = "Retire? What would you even do? Keep building." },
-			{ text = "📚 Write memoirs", effects = { Happiness = 20, Money = 500000, Smarts = 5 }, resultText = "Your story needs to be told. Bestseller incoming.", setFlags = {"retired_ceo", "author"} },
-			{ text = "🎓 Teach next generation", effects = { Happiness = 22, Money = -100000 }, resultText = "Guest lecturer, mentor, advisor. Sharing everything you learned.", setFlags = {"retired_ceo", "mentor"} },
+			{ text = "🚨 Report it", effects = { Happiness = 15, Money = -20000, Smarts = 5 }, resultText = "Whistleblower protections kicked in. Right thing to do. Career complicated.", setFlag = "whistleblower" },
+			{ text = "🙅 Refuse quietly", effects = { Happiness = 8, Money = -10000 }, resultText = "Declined without drama. Passed over for promotion. Sleep well though." },
+			{ text = "✅ Do it anyway", effects = { Happiness = -10, Money = 100000, Smarts = -5 }, resultText = "Made the money. Soul feels dirty. Hope it doesn't come back to bite you.", setFlag = "morally_compromised" },
+			{ text = "📋 Get it in writing first", effects = { Happiness = 5, Smarts = 10 }, resultText = "CYA move! If it blows up, you're protected. Smart but still risky." },
 		},
 	},
 }

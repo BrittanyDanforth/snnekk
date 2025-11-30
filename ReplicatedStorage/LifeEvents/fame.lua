@@ -1,7 +1,7 @@
 -- LifeEvents/fame.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- FAME & CELEBRITY EVENTS
--- Social Media, Influencers, Reality TV, Paparazzi - The spotlight life
+-- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = require(script.Parent.init)
@@ -11,277 +11,238 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- SOCIAL MEDIA JOURNEY
+	-- EARLY FAME / SOCIAL MEDIA
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "fame_first_viral",
-		minAge = 13, maxAge = 50,
-		weight = 15, oneTime = true,
-		emoji = "📱", title = "Your First Viral Moment!",
+		minAge = 13, maxAge = 35,
+		weight = 20, oneTime = true,
+		emoji = "📱", title = "Post Going Viral!",
 		category = "social",
 		getDynamicData = function()
-			local content = {"a funny video", "a hot take tweet", "a dance challenge", "a cooking fail", "a pet video", "an embarrassing moment"}
-			local views = math.random(100, 5000)
-			return { content = content[math.random(#content)], views = views }
+			local types = {"a funny video", "a photo", "a hot take", "a dance", "a meme you made"}
+			return { postType = types[math.random(#types)] }
 		end,
-		text = "You posted %content% and it got %views%K views! Going viral!",
+		text = "You posted %postType% and it's BLOWING UP! 100k views and climbing! What do you do?",
 		choices = {
-			{ text = "😲 This is insane!", effects = { Happiness = 25, Looks = 3 }, resultText = "Notifications blowing up! People sharing it everywhere! VIRAL!", setFlags = {"went_viral", "social_media_presence"} },
-			{ text = "📈 Capitalize on it!", effects = { Happiness = 20, Money = 1000, Smarts = 5 }, resultText = "Quick follow-up content! Growing the audience! Smart move!", setFlags = {"went_viral", "content_creator"} },
-			{ text = "😰 Wrong kind of attention", effects = { Happiness = -10, Looks = -3 }, resultText = "It went viral for the WRONG reasons. Memes about you. Mortifying.", setFlag = "viral_embarrassment" },
-			{ text = "🤷 Delete it", effects = { Happiness = 5 }, resultText = "Too much attention. Deleted everything. Privacy matters." },
+			{ text = "📈 Ride the wave!", effects = { Happiness = 25, Looks = 5 }, resultText = "Posted more! Building followers! Influencer arc begins!", setFlags = {"viral_creator", "social_media_famous"} },
+			{ text = "😱 Delete from embarrassment", effects = { Happiness = -10 }, resultText = "Took it down! Too much attention! But screenshots live forever..." },
+			{ text = "💰 Try to monetize", effects = { Happiness = 15, Money = 500 }, resultText = "Brands reaching out! Small sponsorship! Making money from content!", setFlags = {"viral_creator", "content_monetizer"} },
+			{ text = "🤷 Ignore it", effects = { Happiness = 5 }, resultText = "One-hit wonder. Didn't capitalize. Followers came and went." },
 		},
 	},
 	
 	{
-		id = "fame_influencer_journey",
-		minAge = 16, maxAge = 40,
-		weight = 20, cooldown = 3,
-		emoji = "⭐", title = "Influencer Growth!",
-		category = "work",
-		requiresFlag = "content_creator",
-		getDynamicData = function()
-			local followers = math.random(10, 500)
-			local platforms = {"TikTok", "Instagram", "YouTube", "Twitch", "Twitter"}
-			return { followers = followers, platform = platforms[math.random(#platforms)] }
-		end,
-		text = "You hit %followers%K followers on %platform%! Growing fast!",
+		id = "fame_influencer_grind",
+		minAge = 15, maxAge = 40,
+		weight = 18, cooldown = 3,
+		emoji = "📸", title = "Influencer Life!",
+		category = "social",
+		requiresFlag = "viral_creator",
+		text = "Building your following! Content creation is exhausting. The algorithm demands constant posts! What's your approach?",
 		choices = {
-			{ text = "📊 Full-time creator!", effects = { Happiness = 25, Money = 50000 }, resultText = "Quit your job! Living the dream! Content is life now!", setFlags = {"influencer", "full_time_creator"} },
-			{ text = "💰 Brand deals rolling in!", effects = { Happiness = 22, Money = 30000 }, resultText = "Sponsors want you! Getting paid to post! Wild!", setFlags = {"influencer", "sponsored"} },
-			{ text = "😰 Burnout incoming", effects = { Happiness = -5, Health = -5 }, resultText = "Algorithm pressure! Always creating! Can't stop or you'll die!", setFlags = {"influencer", "creator_burnout"} },
-			{ text = "🎯 Stayed authentic", effects = { Happiness = 20, Smarts = 5 }, resultText = "Didn't sell out. Slower growth but real community.", setFlags = {"influencer", "authentic"} },
+			{ text = "📱 Post everything daily", effects = { Happiness = 10, Looks = 5, Health = -8 }, resultText = "Followers growing! But no privacy, no breaks. Is this sustainable?", setFlags = {"influencer", "always_on"} },
+			{ text = "🎯 Quality over quantity", effects = { Happiness = 15, Looks = 3 }, resultText = "Fewer posts but better. Audience respects it. Growing slower but loyal!", setFlags = {"influencer", "quality_creator"} },
+			{ text = "😔 Burning out", effects = { Happiness = -15, Health = -10 }, resultText = "The constant performance is exhausting. Taking a break. Followers disappointed." },
+			{ text = "💼 Hire a team", effects = { Happiness = 18, Money = -5000, Looks = 5 }, resultText = "Manager, photographer, editor! Professional operation! Scaling up!", setFlags = {"influencer", "professional_creator"} },
 		},
 	},
+	
+	{
+		id = "fame_brand_deal",
+		minAge = 18, maxAge = 50,
+		weight = 15, cooldown = 3,
+		emoji = "💰", title = "Brand Deal Offer!",
+		category = "social",
+		requiresFlag = "influencer",
+		getDynamicData = function()
+			local brands = {"a makeup brand", "a fashion company", "an energy drink", "a tech company", "a fitness brand"}
+			local amounts = {5000, 15000, 30000, 50000}
+			return { brand = brands[math.random(#brands)], amount = amounts[math.random(#amounts)] }
+		end,
+		text = "%brand% wants to sponsor you! $%amount% for posts and promotion! What do you do?",
+		choices = {
+			{ text = "✅ Take the money!", effects = { Happiness = 20, Money = 25000, Looks = 3 }, resultText = "Easy money! Posts did well! They want more!", setFlags = {"sponsored", "sellout"} },
+			{ text = "📋 Negotiate higher", effects = { Happiness = 18, Money = 40000 }, resultText = "Got way more! Know your worth! They needed you!", setFlag = "sponsored" },
+			{ text = "🙅 Doesn't fit my brand", effects = { Happiness = 8, Smarts = 5 }, resultText = "Turned it down. Audience respects authenticity. Right call?", setFlag = "authentic_creator" },
+			{ text = "⚠️ Bad product, took deal", effects = { Happiness = -10, Money = 20000, Looks = -5 }, resultText = "Product was garbage. Followers mad. Lost trust for money. Worth it?" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- RISING FAME
+	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "fame_million_followers",
 		minAge = 16, maxAge = 50,
-		weight = 8, oneTime = true,
-		emoji = "💫", title = "ONE MILLION FOLLOWERS!",
-		category = "work",
+		weight = 10, oneTime = true,
+		emoji = "🎉", title = "1 MILLION FOLLOWERS!",
+		category = "social",
 		requiresFlag = "influencer",
-		text = "1,000,000 followers! You're officially a major influencer!",
+		text = "You just hit ONE MILLION FOLLOWERS! Verification badge! How do you celebrate?",
 		choices = {
-			{ text = "🎉 MEGA INFLUENCER!", effects = { Happiness = 40, Money = 200000, Looks = 5 }, resultText = "Seven figures of fans! Brand deals worth hundreds of thousands! MADE IT!", setFlags = {"mega_influencer", "famous"} },
-			{ text = "🔔 YouTube play button!", effects = { Happiness = 35, Money = 150000 }, resultText = "Gold play button in hand! Real recognition! Dreams come true!", setFlags = {"mega_influencer", "youtuber"} },
-			{ text = "😰 Can't handle it", effects = { Happiness = 15, Money = 100000, Health = -10 }, resultText = "Too much. Can't read comments. Anxiety through the roof.", setFlags = {"mega_influencer", "overwhelmed"} },
-			{ text = "💎 Built a business", effects = { Happiness = 30, Money = 500000, Smarts = 8 }, resultText = "Launched merch, courses, app! Diversified! Real CEO!", setFlags = {"mega_influencer", "creator_ceo"} },
+			{ text = "🎉 Big celebration post", effects = { Happiness = 35, Looks = 10 }, resultText = "Thanked everyone! Massive engagement! Celebrity status!", setFlags = {"mega_influencer", "verified"} },
+			{ text = "💰 Announce merch drop", effects = { Happiness = 25, Money = 100000 }, resultText = "Sold out in minutes! Your brand is REAL now!", setFlags = {"mega_influencer", "merch_empire"} },
+			{ text = "❤️ Charity livestream", effects = { Happiness = 30, Looks = 8 }, resultText = "Raised $50k for charity! Used platform for good!", setFlags = {"mega_influencer", "charitable_influencer"} },
+			{ text = "🤷 Just another number", effects = { Happiness = 15, Smarts = 3 }, resultText = "Stayed humble. Numbers don't define you. But still cool!" },
 		},
 	},
 	
-	-- ═══════════════════════════════════════════════════════════════
-	-- REALITY TV
-	-- ═══════════════════════════════════════════════════════════════
-	
 	{
-		id = "fame_reality_show",
+		id = "fame_reality_show_offer",
 		minAge = 18, maxAge = 45,
-		weight = 10, oneTime = true,
-		emoji = "📺", title = "Reality TV Casting!",
-		category = "work",
+		weight = 12, oneTime = true,
+		emoji = "📺", title = "Reality Show Offer!",
+		category = "social",
+		requiresFlag = "mega_influencer",
 		getDynamicData = function()
-			local shows = {"a dating show", "a competition show", "a house show", "a talent show", "a makeover show"}
+			local shows = {"a dating show", "a competition show", "a lifestyle documentary", "a house show"}
 			return { show = shows[math.random(#shows)] }
 		end,
-		text = "Producers want you for %show%! National TV exposure!",
+		text = "Producers want you on %show%! National TV exposure! But cameras EVERYWHERE. Do you do it?",
 		choices = {
-			{ text = "⭐ Became the star!", effects = { Happiness = 30, Money = 50000, Looks = 8 }, resultText = "Fan favorite! Everyone knows your catchphrase! Reality TV legend!", setFlags = {"reality_star", "famous"} },
-			{ text = "😈 Villain edit", effects = { Happiness = 10, Money = 30000, Looks = -5 }, resultText = "They made you the villain! Hate-famous but... still famous?", setFlags = {"reality_star", "controversial"} },
-			{ text = "💔 Eliminated early", effects = { Happiness = -10, Money = 5000 }, resultText = "First one out. Brief fame. Back to normal life." },
-			{ text = "🏆 Won the whole thing!", effects = { Happiness = 45, Money = 250000, Looks = 10 }, resultText = "WINNER! Prize money! Career launched! Set for life!", setFlags = {"reality_champion", "famous"} },
-		},
-	},
-	
-	{
-		id = "fame_dating_show_love",
-		minAge = 21, maxAge = 40,
-		weight = 8, oneTime = true,
-		emoji = "💕", title = "Reality TV Romance!",
-		category = "social",
-		requiresFlag = "reality_star",
-		getDynamicData = function()
-			return { loverName = LifeEvents.randomFirstName() }
-		end,
-		text = "You fell in love with %loverName% on the show! Cameras caught everything!",
-		choices = {
-			{ text = "💍 Still together!", effects = { Happiness = 35, Looks = 3 }, resultText = "Defied the odds! Reality TV couple that actually lasted! People magazine!", setFlags = {"reality_couple", "famous_relationship"}, addRelationship = { category = "romantic", dynamicNameKey = "loverName", startingRelationship = 85, type = "partner" } },
-			{ text = "💔 Broke up on camera", effects = { Happiness = -15, Looks = -2 }, resultText = "Filmed the breakup for season 2. Humiliating. But ratings gold." },
-			{ text = "📰 Tabloid obsession", effects = { Happiness = 10, Money = 20000 }, resultText = "Your relationship is public property now. Exhausting but lucrative.", setFlags = {"tabloid_couple"}, addRelationship = { category = "romantic", dynamicNameKey = "loverName", startingRelationship = 70, type = "partner" } },
-			{ text = "🤫 Kept it private", effects = { Happiness = 25 }, resultText = "Stopped filming your relationship. Some things aren't content.", addRelationship = { category = "romantic", dynamicNameKey = "loverName", startingRelationship = 75, type = "partner" } },
+			{ text = "📺 Sign up!", effects = { Happiness = 25, Money = 50000, Looks = 8 }, resultText = "TV STAR! Millions watching! Fame exploded!", setFlags = {"reality_star", "tv_famous"} },
+			{ text = "😈 Create drama", effects = { Happiness = 15, Money = 70000, Looks = 10 }, resultText = "Villain edit! Hate-famous! But everyone knows your name!", setFlags = {"reality_star", "infamous"} },
+			{ text = "😇 Be authentic", effects = { Happiness = 30, Money = 40000, Looks = 5 }, resultText = "Fan favorite! Real personality shone through! Loved!", setFlags = {"reality_star", "beloved"} },
+			{ text = "🙅 Turn it down", effects = { Happiness = 10, Smarts = 5 }, resultText = "Privacy over fame. Some things money can't buy." },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- DEALING WITH FAME
+	-- DARK SIDE OF FAME
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "fame_paparazzi",
-		minAge = 18, maxAge = 70,
+		minAge = 18, maxAge = 60,
 		weight = 20, cooldown = 3,
-		emoji = "📸", title = "Paparazzi!",
+		emoji = "📸", title = "Paparazzi Everywhere!",
 		category = "social",
-		requiresFlag = "famous",
-		text = "Paparazzi everywhere! Can't go anywhere without being photographed!",
+		requiresFlag = "tv_famous",
+		text = "Can't go anywhere without photographers! No privacy! How do you handle it?",
 		choices = {
-			{ text = "😤 Confronted them", effects = { Happiness = -5, Looks = -3 }, resultText = "Yelled at them. Now THAT's the story. Angry celeb meltdown.", setFlag = "paparazzi_incident" },
-			{ text = "🕶️ Master of disguise", effects = { Happiness = 10, Smarts = 5 }, resultText = "Wigs, sunglasses, decoys. Can still have a life sometimes.", setFlag = "privacy_savvy" },
-			{ text = "📸 Posed and smiled", effects = { Happiness = 5, Looks = 5 }, resultText = "Give them what they want. Control the narrative. Media trained.", setFlag = "media_trained" },
-			{ text = "😔 It's exhausting", effects = { Happiness = -15, Health = -5 }, resultText = "No privacy. No normal moments. Fame has a price." },
+			{ text = "😎 Embrace it, pose", effects = { Happiness = 10, Looks = 8 }, resultText = "If they're gonna shoot, give them good shots! Control the narrative!" },
+			{ text = "😤 Confront them", effects = { Happiness = -15, Looks = -5 }, resultText = "Got aggressive. Video went viral. Bad look. They win." },
+			{ text = "🥸 Master of disguise", effects = { Happiness = 15, Smarts = 5 }, resultText = "Wigs, glasses, decoy cars! Living like a spy! Kind of fun!" },
+			{ text = "😔 It's exhausting", effects = { Happiness = -20, Health = -5 }, resultText = "The constant surveillance is draining. Fame has a price.", setFlag = "fame_weary" },
 		},
 	},
 	
 	{
 		id = "fame_cancel_culture",
 		minAge = 16, maxAge = 60,
-		weight = 15, cooldown = 4,
+		weight = 15, cooldown = 5,
 		emoji = "🚫", title = "Getting Cancelled!",
 		category = "social",
-		requiresFlag = "famous",
+		requiresFlag = "mega_influencer",
 		getDynamicData = function()
-			local reasons = {"old tweets resurfaced", "a hot mic moment leaked", "controversial opinion", "association with problematic person", "tone deaf post"}
+			local reasons = {"old tweets surfaced", "a bad joke", "a misunderstanding", "something you actually did wrong"}
 			return { reason = reasons[math.random(#reasons)] }
 		end,
-		text = "CANCELLED! %reason%! #IsOverParty trending! Sponsors dropping!",
+		text = "#YouAreOverParty trending! %reason%! Sponsors dropping! Career at risk! What do you do?",
 		choices = {
-			{ text = "📱 Apologized sincerely", effects = { Happiness = -10, Looks = -3, Smarts = 5 }, resultText = "Owned it. Learned from it. Slow comeback possible.", setFlag = "survived_cancel" },
-			{ text = "😤 Doubled down", effects = { Happiness = 5, Looks = -5, Money = -50000 }, resultText = "Refused to apologize! Lost mainstream but gained loyal fans.", setFlags = {"controversial", "uncancellable"} },
-			{ text = "😔 Disappeared", effects = { Happiness = -25, Health = -10 }, resultText = "Off social media. The mob won. Mental health destroyed.", setFlags = {"cancelled", "retired_fame"} },
-			{ text = "🎭 Comeback era", effects = { Happiness = 15, Money = 30000 }, resultText = "Year later, apology tour, documentary. Public loves a redemption arc!", setFlags = {"survived_cancel", "comeback"} },
+			{ text = "📱 Sincere apology video", effects = { Happiness = 8, Looks = 5 }, resultText = "Owned it. Apologized genuinely. Some forgave. Survived.", setFlag = "scandal_survivor" },
+			{ text = "⚖️ Deny everything", effects = { Happiness = -10, Looks = -8 }, resultText = "Made it worse. Evidence against you. Deeper in the hole." },
+			{ text = "🤐 Go silent, wait it out", effects = { Happiness = -5 }, resultText = "Disappeared for months. Internet moved on. Quietly returned.", setFlag = "scandal_survivor" },
+			{ text = "😤 Attack the critics", effects = { Happiness = -20, Looks = -15, Money = -50000 }, resultText = "TERRIBLE IDEA! Doubled the backlash! Reputation destroyed!", setFlag = "cancelled" },
 		},
 	},
 	
 	{
 		id = "fame_stalker",
-		minAge = 18, maxAge = 70,
-		weight = 10, cooldown = 5,
-		emoji = "😰", title = "Stalker Situation",
-		category = "social",
-		requiresFlag = "famous",
-		text = "Someone's been following you. Showing up everywhere. Police involved.",
-		choices = {
-			{ text = "🚔 Restraining order", effects = { Happiness = -15, Money = -10000, Health = -5 }, resultText = "Legal protection but... the fear doesn't go away.", setFlag = "stalker_victim" },
-			{ text = "🔐 Full security now", effects = { Happiness = -10, Money = -50000 }, resultText = "Bodyguards everywhere. Necessary but isolating.", setFlags = {"security_detail"} },
-			{ text = "😱 Terrifying close call", effects = { Happiness = -25, Health = -15 }, resultText = "They got too close. Will never feel safe again.", setFlags = {"stalker_victim", "trauma"} },
-			{ text = "😔 Questioning fame", effects = { Happiness = -20, Smarts = 5 }, resultText = "Is this worth it? Fame came at the cost of feeling safe." },
-		},
-	},
-	
-	{
-		id = "fame_substance_abuse",
 		minAge = 18, maxAge = 60,
-		weight = 15, cooldown = 5,
-		emoji = "💊", title = "Fame's Dark Side",
-		category = "health",
-		requiresFlag = "famous",
-		text = "The pressure. The parties. The access. Substances becoming a problem.",
+		weight = 12, cooldown = 5,
+		emoji = "😨", title = "Stalker Problem!",
+		category = "social",
+		requiresFlag = "tv_famous",
+		text = "Someone is stalking you. Showing up everywhere. Sending creepy messages. This is scary. What do you do?",
 		choices = {
-			{ text = "🏥 Got help early", effects = { Happiness = 10, Health = 10, Smarts = 5 }, resultText = "Recognized the signs. Went to rehab. Saved yourself.", setFlag = "recovery" },
-			{ text = "😔 Spiraling", effects = { Happiness = -30, Health = -20, Money = -100000 }, resultText = "Lost control. Tabloid headlines. Career in jeopardy.", setFlags = {"addiction", "tabloid_fodder"} },
-			{ text = "🎤 Spoke publicly about it", effects = { Happiness = 15, Health = 5, Looks = 3 }, resultText = "Used platform to help others. Destigmatizing. Brave.", setFlags = {"recovery", "mental_health_advocate"} },
-			{ text = "💔 Lost someone close", effects = { Happiness = -35, Health = -10 }, resultText = "Wake up call in the worst way. Never again. For them.", setFlags = {"recovery", "grief"} },
+			{ text = "👮 Go to police", effects = { Happiness = 5, Money = -5000 }, resultText = "Filed reports. Restraining order. Security hired. Safe but shaken.", setFlag = "stalker_survivor" },
+			{ text = "🔐 Beef up security", effects = { Happiness = 8, Money = -20000 }, resultText = "Bodyguards, new locks, cameras. Living in a fortress. Is this worth it?" },
+			{ text = "🏠 Move to new place", effects = { Happiness = 3, Money = -50000 }, resultText = "Relocated. New address secret. Starting over. Fame has costs." },
+			{ text = "😰 Live in fear", effects = { Happiness = -25, Health = -15 }, resultText = "Constant anxiety. Can't enjoy anything. The price of fame.", setFlag = "trauma" },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- FAME ACHIEVEMENTS
+	-- PEAK FAME
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
 		id = "fame_award_show",
-		minAge = 18, maxAge = 70,
-		weight = 12, cooldown = 3,
+		minAge = 20, maxAge = 60,
+		weight = 10, oneTime = true,
 		emoji = "🏆", title = "Award Nomination!",
-		category = "work",
-		requiresFlag = "famous",
+		category = "social",
+		requiresFlag = "mega_influencer",
 		getDynamicData = function()
-			local awards = {"People's Choice", "MTV Award", "Grammy", "Emmy", "Oscar", "Golden Globe"}
+			local awards = {"Social Media Personality", "Influencer of the Year", "Breakout Star", "Fan Favorite"}
 			return { award = awards[math.random(#awards)] }
 		end,
-		text = "You're nominated for a %award%! Red carpet awaits!",
+		text = "Nominated for %award% at a major awards show! Red carpet! How do you show up?",
 		choices = {
-			{ text = "🏆 WON!", effects = { Happiness = 45, Money = 100000, Looks = 10 }, resultText = "YOUR NAME CALLED! Speech time! Holding the trophy! PEAK FAME!", setFlags = {"award_winner", "legendary"} },
-			{ text = "📸 Best dressed!", effects = { Happiness = 30, Looks = 8, Money = 50000 }, resultText = "Your outfit went viral! Fashion icon status!", setFlag = "style_icon" },
-			{ text = "😊 Honor to be nominated", effects = { Happiness = 20, Looks = 3 }, resultText = "Didn't win but... being there is incredible. Next time." },
-			{ text = "🎤 Memorable speech", effects = { Happiness = 40, Smarts = 5 }, resultText = "Your acceptance speech moved millions. More than the award.", setFlags = {"award_winner", "eloquent"} },
+			{ text = "👗 Iconic outfit", effects = { Happiness = 30, Looks = 15, Money = -10000 }, resultText = "STUNNING! Everyone talking about your look! Fashion moment!", setFlags = {"award_winner", "fashion_icon"} },
+			{ text = "🎤 Memorable speech", effects = { Happiness = 35, Smarts = 5 }, resultText = "WON! Speech went viral! Cemented your legacy!", setFlag = "award_winner" },
+			{ text = "😭 Emotional moment", effects = { Happiness = 38, Looks = 5 }, resultText = "Tears of joy! Authentic reaction! Internet loved it!", setFlag = "award_winner" },
+			{ text = "😔 Didn't win", effects = { Happiness = -10 }, resultText = "Lost to someone else. Smiled through it. Next time." },
 		},
 	},
 	
 	{
-		id = "fame_documentary",
-		minAge = 25, maxAge = 70,
-		weight = 10, oneTime = true,
-		emoji = "🎬", title = "Documentary About You!",
-		category = "work",
-		requiresFlag = "mega_influencer",
+		id = "fame_talk_show",
+		minAge = 18, maxAge = 60,
+		weight = 15, cooldown = 3,
+		emoji = "🎤", title = "Talk Show Interview!",
+		category = "social",
+		requiresFlag = "tv_famous",
 		getDynamicData = function()
-			local streamers = {"Netflix", "HBO", "Amazon", "YouTube", "Hulu"}
-			return { streamer = streamers[math.random(#streamers)] }
+			local shows = {"Jimmy Fallon", "Jimmy Kimmel", "a morning show", "a podcast with millions of listeners"}
+			return { show = shows[math.random(#shows)] }
 		end,
-		text = "%streamer% wants to make a documentary about your life!",
+		text = "Invited on %show%! National audience! How do you approach the interview?",
 		choices = {
-			{ text = "📺 Revealing everything", effects = { Happiness = 25, Money = 500000, Smarts = 3 }, resultText = "Raw and honest. Critics loved it. New respect earned.", setFlags = {"documentary_subject", "legacy"} },
-			{ text = "😰 Too invasive", effects = { Happiness = -10, Money = 300000 }, resultText = "They dug too deep. Regret participating. Some things should stay private." },
-			{ text = "💰 Record payday", effects = { Happiness = 30, Money = 2000000 }, resultText = "Controlled the narrative AND got paid! Win-win!", setFlags = {"documentary_subject", "smart_celebrity"} },
-			{ text = "🎬 Career resurgence", effects = { Happiness = 35, Looks = 5 }, resultText = "New generation discovered you! Relevance restored!", setFlags = {"documentary_subject", "comeback"} },
-		},
-	},
-	
-	{
-		id = "fame_hall_of_fame_social",
-		minAge = 30, maxAge = 70,
-		weight = 5, oneTime = true,
-		emoji = "⭐", title = "Social Media Pioneer",
-		category = "work",
-		requiresFlag = "mega_influencer",
-		text = "You're being recognized as a pioneer of social media! First generation of influencers!",
-		choices = {
-			{ text = "🏆 Legacy secured", effects = { Happiness = 40, Looks = 5 }, resultText = "Interviews about the early days. You helped create an industry.", setFlag = "pioneer" },
-			{ text = "📚 Wrote the book", effects = { Happiness = 35, Money = 500000, Smarts = 5 }, resultText = "Your guide to building a following is a bestseller!", setFlags = {"pioneer", "author"} },
-			{ text = "🎓 Teaching others", effects = { Happiness = 30, Money = 200000 }, resultText = "Consulting, courses, mentoring. Passing on what you learned.", setFlags = {"pioneer", "mentor"} },
-			{ text = "😔 Bittersweet", effects = { Happiness = 20, Smarts = 5 }, resultText = "Pioneer of an industry that broke your mental health. Complicated legacy." },
+			{ text = "😂 Be hilarious", effects = { Happiness = 25, Looks = 8 }, resultText = "Had the host and audience dying! Clip went viral! More invites coming!" },
+			{ text = "💬 Open up emotionally", effects = { Happiness = 20, Looks = 5 }, resultText = "Shared real story. Connected with viewers. Humanized your image." },
+			{ text = "🤐 Play it safe", effects = { Happiness = 10, Smarts = 3 }, resultText = "Kept it professional. Nothing memorable but nothing bad either." },
+			{ text = "😬 Made it awkward", effects = { Happiness = -15, Looks = -5 }, resultText = "Nervous! Weird answers! Became a meme for all the wrong reasons." },
 		},
 	},
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- FADING FAME / LEGACY
+	-- LEGACY / LATE FAME
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "fame_relevance",
-		minAge = 30, maxAge = 60,
-		weight = 20, cooldown = 4,
-		emoji = "📉", title = "Fading Relevance",
+		id = "fame_staying_relevant",
+		minAge = 30, maxAge = 55,
+		weight = 18, cooldown = 4,
+		emoji = "📉", title = "Relevance Fading...",
 		category = "social",
-		requiresFlag = "famous",
-		getDynamicData = function()
-			local reasons = {"younger creators taking over", "algorithm changes", "platform dying", "content feels dated", "audience grew up"}
-			return { reason = reasons[math.random(#reasons)] }
-		end,
-		text = "Numbers dropping. %reason%. Are your 15 minutes over?",
+		requiresFlag = "mega_influencer",
+		text = "New, younger stars taking over. Your engagement dropping. The spotlight moving on. What do you do?",
 		choices = {
-			{ text = "🔄 Reinvented!", effects = { Happiness = 20, Looks = 3, Smarts = 5 }, resultText = "New platform, new style, new audience! Evolution is survival!", setFlag = "reinvented" },
-			{ text = "😔 Accepting it", effects = { Happiness = -5, Smarts = 5 }, resultText = "Good run. Not everyone stays famous forever. Moving on.", setFlag = "former_famous" },
-			{ text = "😤 Desperate content", effects = { Happiness = -10, Looks = -5 }, resultText = "Doing anything for views. Dignity fading. Is it worth it?" },
-			{ text = "💼 Business pivot", effects = { Happiness = 15, Money = 100000, Smarts = 8 }, resultText = "Built a business while famous. Fame was a means to an end.", setFlags = {"business_owner", "smart_exit"} },
+			{ text = "🔄 Reinvent yourself", effects = { Happiness = 20, Looks = 5 }, resultText = "New platform! New content style! Comeback tour! Still got it!", setFlag = "reinvented" },
+			{ text = "📺 Pivot to traditional media", effects = { Happiness = 15, Money = 100000 }, resultText = "TV hosting gig! Books! Mainstream legitimacy! Evolved!", setFlag = "mainstream_crossover" },
+			{ text = "🏖️ Enjoy what you built", effects = { Happiness = 25, Health = 10 }, resultText = "Made your money. Had your moment. Time to enjoy life.", setFlag = "graceful_exit" },
+			{ text = "😔 Desperately cling on", effects = { Happiness = -15, Looks = -5 }, resultText = "Trying too hard. Sad content. Becoming a cautionary tale.", setFlag = "washed_up" },
 		},
 	},
 	
 	{
-		id = "fame_legacy_reflection",
-		minAge = 50, maxAge = 90,
-		weight = 15, oneTime = true,
-		emoji = "📖", title = "Fame Legacy",
+		id = "fame_legacy",
+		minAge = 40, maxAge = 80,
+		weight = 12, oneTime = true,
+		emoji = "⭐", title = "Fame Legacy",
 		category = "social",
-		requiresFlag = "famous",
-		text = "Looking back on your time in the spotlight. What did it all mean?",
+		requiresFlag = "award_winner",
+		text = "Looking back at your journey from nobody to famous. What will your legacy be?",
 		choices = {
-			{ text = "🌟 Changed the game", effects = { Happiness = 35, Smarts = 5 }, resultText = "You influenced culture. People quote you. Impact is immortal.", setFlag = "cultural_icon" },
-			{ text = "💔 Cost too much", effects = { Happiness = -10, Smarts = 8 }, resultText = "Missed too much. Relationships sacrificed. Fame isn't free." },
-			{ text = "😊 Worth every moment", effects = { Happiness = 40 }, resultText = "The experiences, the connections, the platform. No regrets. Magic life.", setFlag = "gratful_celebrity" },
-			{ text = "📚 Wrote memoirs", effects = { Happiness = 30, Money = 1000000, Smarts = 5 }, resultText = "Your story in your words. Bestseller. Final control of the narrative.", setFlags = {"memoirist", "author"} },
+			{ text = "❤️ Helped others rise", effects = { Happiness = 35 }, resultText = "Mentored new creators. Used platform to lift people up. Respected.", setFlag = "mentor_legend" },
+			{ text = "💼 Built an empire", effects = { Happiness = 30, Money = 500000 }, resultText = "Brands, investments, businesses. Fame became fortune. Mogul status.", setFlag = "mogul" },
+			{ text = "🎭 The art mattered most", effects = { Happiness = 32, Smarts = 5 }, resultText = "Content that mattered. Creative legacy. Remembered for the work.", setFlag = "artistic_legacy" },
+			{ text = "😌 Lived authentically", effects = { Happiness = 40 }, resultText = "Stayed true to yourself throughout. Rare in this industry. Admired.", setFlag = "authentic_legend" },
 		},
 	},
 }
