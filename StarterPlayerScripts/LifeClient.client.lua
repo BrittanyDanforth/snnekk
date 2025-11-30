@@ -1730,105 +1730,202 @@ end
 
 -- Track previous state for change detection
 local previousState = {}
+local firstSync = true
 
 SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
-	if state then
-		-- Calculate deltas for result popup
-		local deltas = {}
-		if previousState.Happiness and state.Happiness then
-			deltas.happiness = state.Happiness - previousState.Happiness
-		end
-		if previousState.Health and state.Health then
-			deltas.health = state.Health - previousState.Health
-		end
-		if previousState.Smarts and state.Smarts then
-			deltas.smarts = state.Smarts - previousState.Smarts
-		end
-		if previousState.Looks and state.Looks then
-			deltas.looks = state.Looks - previousState.Looks
-		end
-		if previousState.Money and state.Money then
-			deltas.money = state.Money - previousState.Money
-		end
-
-		-- Update current state
-		for k, v in pairs(state) do
-			currentState[k] = v
-			previousState[k] = v
-		end
-		if state.Stats then
-			for k, v in pairs(state.Stats) do
-				currentState[k] = v
-				previousState[k] = v
-			end
-		end
-
-		-- Also copy Age directly if it's in the state
-		if state.Age then
-			currentState.Age = state.Age
-		end
-
-		-- Update all screen instances with latest state
-		if occupationScreenInstance and occupationScreenInstance.updateState then
-			occupationScreenInstance:updateState(currentState)
-		end
-		if assetsScreenInstance and assetsScreenInstance.updateState then
-			assetsScreenInstance:updateState(currentState)
-		end
-		if relationshipsScreenInstance and relationshipsScreenInstance.updateState then
-			relationshipsScreenInstance:updateState(currentState)
-		end
-		if activitiesScreenInstance and activitiesScreenInstance.updateState then
-			activitiesScreenInstance:updateState(currentState)
-		end
-
-		if storyPathsScreenInstance and storyPathsScreenInstance.visible then
-			storyPathsScreenInstance:updateUI()
-		end
-
-		-- Show result popup if we have result data from server
-		if resultData and resultData.showPopup then
-			showResultPopup({
-				emoji = resultData.emoji or "📋",
-				title = resultData.title or "Result",
-				body = resultData.body or lastFeedText or "Life continues...",
-				happiness = resultData.happiness or deltas.happiness,
-				health = resultData.health or deltas.health,
-				smarts = resultData.smarts or deltas.smarts,
-				looks = resultData.looks or deltas.looks,
-				money = resultData.money or deltas.money,
-			})
-		elseif deltas.health and deltas.health < -10 then
-			-- Auto-show popup for significant negative health
-			shakeScreen(8, 0.3)
-			flashScreen(C.Red, 0.6, 0.3)
-		elseif deltas.money and deltas.money > 10000 then
-			-- Flash green for big money gains
-			flashScreen(C.Green, 0.7, 0.3)
+	if not state then return end
+	
+	print("[LifeClient] SyncState received - Name:", state.Name or "NIL", "Age:", state.Age, "FeedText:", lastFeedText or "nil")
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 1: DETECT IF THIS IS A NEW LIFE (BEFORE updating currentState)
+	-- ═══════════════════════════════════════════════════════════════
+	local isNewLife = false
+	
+	-- Method 1: Explicit "new life" message from server (resetPlayerLife sends this)
+	if lastFeedText == "A new life begins..." then
+		isNewLife = true
+		print("[LifeClient] ✅ New life detected via message")
+	end
+	
+	-- Method 2: Old state had a name, new state doesn't -> this is a restart
+	if not isNewLife and currentState and currentState.Name and (not state.Name or state.Name == "") then
+		isNewLife = true
+		print("[LifeClient] ✅ New life detected: old name existed, new name is nil")
+	end
+	
+	-- Method 3: First sync with no name = new life
+	if firstSync then
+		firstSync = false
+		if not state.Name or state.Name == "" then
+			isNewLife = true
+			print("[LifeClient] ✅ New life detected: first sync with no name")
 		end
 	end
-
-	updateFromState()
-	if lastFeedText and not (resultData and resultData.showPopup) then
-		addFeedEntry(lastFeedText)
+	
+	-- Method 4: Age is 0 and no name = definitely new life
+	if (state.Age == 0 or state.Age == nil) and (not state.Name or state.Name == "") then
+		isNewLife = true
+		print("[LifeClient] ✅ New life detected: Age 0 with no name")
 	end
-
-	-- Check if this is a new life (server reset player state)
-	-- If state has no name and Age is 0, reset intro flags for new game
-	if not currentState.Name and (currentState.Age == 0 or currentState.Age == nil) then
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 2: HANDLE NEW LIFE RESET
+	-- ═══════════════════════════════════════════════════════════════
+	if isNewLife then
+		print("[LifeClient] 🔄 RESETTING CLIENT FOR NEW LIFE...")
+		
+		-- Reset all intro/game flags
 		introComplete = false
-		hasShownAgeHint = false
 		selectedGender = nil
-		-- Clear the feed for new life
+		awaitingEvent = false
+		hasShownAgeHint = false
+		
+		-- Clear pending minigame state
+		pendingMinigameEventId = nil
+		pendingMinigameChoiceIndex = nil
+		
+		-- Clear feed entries
+		feedEntryCount = 0
 		for _, child in ipairs(feedScroll:GetChildren()) do
 			if child:IsA("Frame") then
 				child:Destroy()
 			end
 		end
-		feedEntryCount = 0
+		
+		-- Reset previous state tracking
+		previousState = {}
+		
+		-- Update currentState with new state
+		currentState = {
+			Name = nil,
+			Age = state.Age or 0,
+			Money = state.Money or 0,
+			Happiness = state.Happiness or 50,
+			Health = state.Health or 100,
+			Smarts = state.Smarts or 50,
+			Looks = state.Looks or 50,
+			Gender = nil,
+		}
+		
+		-- Reset header UI
+		nameLabel.Text = "New Life"
+		ageYearLabel.Text = string.format("Age %d • %d", state.Age or 0, 2025)
+		moneyLabel.Text = formatMoney(state.Money or 0)
+		avatarEmoji.Text = "👶"
+		
+		-- Reset stats UI
+		for key, card in pairs(statCards) do
+			local val = state[key] or (state.Stats and state.Stats[key]) or 50
+			card.percentLabel.Text = val .. "%"
+			card.barFill.Size = UDim2.new(math.clamp(val/100, 0, 1), 0, 1, 0)
+		end
+		
+		-- Hide any lingering modals
+		if hideResultPopup then 
+			pcall(hideResultPopup) 
+		end
+		if hideEvent then 
+			pcall(hideEvent) 
+		end
+		hideTutorial()
+		
+		-- SHOW INTRO MODAL (gender + name selection)
+		print("[LifeClient] 🎭 Showing intro modal...")
+		showIntro()
+		
+		-- Early return - don't process as normal sync
+		return
 	end
 	
-	if not introComplete and not currentState.Name then
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 3: NORMAL (NON-RESET) SYNC HANDLING
+	-- ═══════════════════════════════════════════════════════════════
+	
+	-- Calculate deltas for result popup
+	local deltas = {}
+	if previousState.Happiness and state.Happiness then
+		deltas.happiness = state.Happiness - previousState.Happiness
+	end
+	if previousState.Health and state.Health then
+		deltas.health = state.Health - previousState.Health
+	end
+	if previousState.Smarts and state.Smarts then
+		deltas.smarts = state.Smarts - previousState.Smarts
+	end
+	if previousState.Looks and state.Looks then
+		deltas.looks = state.Looks - previousState.Looks
+	end
+	if previousState.Money and state.Money then
+		deltas.money = state.Money - previousState.Money
+	end
+
+	-- Update current state
+	for k, v in pairs(state) do
+		currentState[k] = v
+		previousState[k] = v
+	end
+	if state.Stats then
+		for k, v in pairs(state.Stats) do
+			currentState[k] = v
+			previousState[k] = v
+		end
+	end
+
+	-- Also copy Age directly if it's in the state
+	if state.Age then
+		currentState.Age = state.Age
+	end
+
+	-- Update all screen instances with latest state
+	if occupationScreenInstance and occupationScreenInstance.updateState then
+		occupationScreenInstance:updateState(currentState)
+	end
+	if assetsScreenInstance and assetsScreenInstance.updateState then
+		assetsScreenInstance:updateState(currentState)
+	end
+	if relationshipsScreenInstance and relationshipsScreenInstance.updateState then
+		relationshipsScreenInstance:updateState(currentState)
+	end
+	if activitiesScreenInstance and activitiesScreenInstance.updateState then
+		activitiesScreenInstance:updateState(currentState)
+	end
+
+	if storyPathsScreenInstance and storyPathsScreenInstance.visible then
+		storyPathsScreenInstance:updateUI()
+	end
+
+	-- Show result popup if we have result data from server
+	if resultData and resultData.showPopup then
+		showResultPopup({
+			emoji = resultData.emoji or "📋",
+			title = resultData.title or "Result",
+			body = resultData.body or lastFeedText or "Life continues...",
+			happiness = resultData.happiness or deltas.happiness,
+			health = resultData.health or deltas.health,
+			smarts = resultData.smarts or deltas.smarts,
+			looks = resultData.looks or deltas.looks,
+			money = resultData.money or deltas.money,
+		})
+	elseif deltas.health and deltas.health < -10 then
+		-- Auto-show popup for significant negative health
+		shakeScreen(8, 0.3)
+		flashScreen(C.Red, 0.6, 0.3)
+	elseif deltas.money and deltas.money > 10000 then
+		-- Flash green for big money gains
+		flashScreen(C.Green, 0.7, 0.3)
+	end
+
+	-- Update UI from state
+	updateFromState()
+	
+	-- Add feed entry
+	if lastFeedText and lastFeedText ~= "" and not (resultData and resultData.showPopup) then
+		addFeedEntry(lastFeedText)
+	end
+	
+	-- Check if intro should be shown (shouldn't normally happen here, but safety check)
+	if not introComplete and (not currentState.Name or currentState.Name == "") then
 		showIntro()
 	elseif currentState.Name and introOverlay.Visible then
 		hideIntro()
