@@ -7798,25 +7798,48 @@ local function loadModularEvents()
 	local LifeEventsModule = nil
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	
-	-- Method 1: Direct child of ReplicatedStorage
+	-- Method 1: Find LifeEvents folder and require its init module
 	local lifeEventsFolder = ReplicatedStorage:FindFirstChild("LifeEvents")
 	if lifeEventsFolder then
-		local success, result = pcall(function()
-			return require(lifeEventsFolder)
-		end)
-		if success then
-			LifeEventsModule = result
-			print("[EventLibrary] ✅ Found LifeEvents via ReplicatedStorage:FindFirstChild")
+		-- In Roblox, folders with an "init" ModuleScript inside can be required
+		-- But sometimes we need to explicitly find the init module
+		local initModule = lifeEventsFolder:FindFirstChild("init")
+		if initModule and initModule:IsA("ModuleScript") then
+			local success, result = pcall(function()
+				return require(initModule)
+			end)
+			if success then
+				LifeEventsModule = result
+				print("[EventLibrary] ✅ Found LifeEvents via init module inside folder")
+			else
+				print("[EventLibrary] ⚠️ Found init module but failed to require:", result)
+			end
 		else
-			print("[EventLibrary] ⚠️ Found LifeEvents folder but failed to require:", result)
+			-- Try requiring the folder directly (works if Roblox auto-detects init)
+			local success, result = pcall(function()
+				return require(lifeEventsFolder)
+			end)
+			if success then
+				LifeEventsModule = result
+				print("[EventLibrary] ✅ Found LifeEvents via folder require")
+			else
+				print("[EventLibrary] ⚠️ Found LifeEvents folder but no init module. Children:")
+				for _, child in ipairs(lifeEventsFolder:GetChildren()) do
+					print("    -", child.Name, "(" .. child.ClassName .. ")")
+				end
+			end
 		end
 	end
 	
-	-- Method 2: WaitForChild with longer timeout
+	-- Method 2: WaitForChild with init module lookup
 	if not LifeEventsModule then
 		local success, result = pcall(function()
 			local folder = script.Parent:WaitForChild("LifeEvents", 5)
 			if folder then
+				local initMod = folder:FindFirstChild("init")
+				if initMod and initMod:IsA("ModuleScript") then
+					return require(initMod)
+				end
 				return require(folder)
 			end
 			return nil
@@ -7827,10 +7850,15 @@ local function loadModularEvents()
 		end
 	end
 	
-	-- Method 3: Try requiring directly by path
+	-- Method 3: Try requiring directly by path with init
 	if not LifeEventsModule then
 		local success, result = pcall(function()
-			return require(ReplicatedStorage.LifeEvents)
+			local folder = ReplicatedStorage.LifeEvents
+			local initMod = folder:FindFirstChild("init")
+			if initMod then
+				return require(initMod)
+			end
+			return require(folder)
 		end)
 		if success then
 			LifeEventsModule = result

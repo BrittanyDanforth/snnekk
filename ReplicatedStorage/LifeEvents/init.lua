@@ -28,8 +28,18 @@ local VALIDATE_ON_LOAD = true -- Validate events when loading (catches errors ea
 -- Debug info about script location
 print("[LifeEvents] ═══════════════════════════════════════════")
 print("[LifeEvents] Script:", script:GetFullName())
-print("[LifeEvents] Parent:", script.Parent and script.Parent:GetFullName() or "nil")
-print("[LifeEvents] Children:", #script:GetChildren())
+print("[LifeEvents] Parent (container folder):", script.Parent and script.Parent:GetFullName() or "nil")
+print("[LifeEvents] Script children:", #script:GetChildren())
+if script.Parent then
+	print("[LifeEvents] Sibling modules in folder:", #script.Parent:GetChildren() - 1) -- -1 for init itself
+	if DEBUG_MODE then
+		for _, sibling in ipairs(script.Parent:GetChildren()) do
+			if sibling ~= script then
+				print("[LifeEvents]   -", sibling.Name, "(" .. sibling.ClassName .. ")")
+			end
+		end
+	end
+end
 
 ----------------------------------------------------------------------
 -- NAME & DATA GENERATORS (Shared across all event modules)
@@ -349,30 +359,58 @@ local function loadModule(moduleName)
 	-- Try multiple ways to find the module
 	local moduleScript = nil
 	
-	-- Method 1: WaitForChild (works when this script is a folder's init)
-	local success1, child = pcall(function()
-		return script:WaitForChild(moduleName, 2)
-	end)
-	if success1 and child then
-		moduleScript = child
+	-- In Roblox, when init.lua becomes a ModuleScript named "init" inside a folder,
+	-- script refers to the init ModuleScript, and script.Parent is the folder.
+	-- The sibling modules are children of script.Parent, not script.
+	
+	local container = script.Parent -- This is the LifeEvents folder
+	
+	-- Method 1: FindFirstChild on parent folder (siblings of init)
+	if container then
+		moduleScript = container:FindFirstChild(moduleName)
 	end
 	
-	-- Method 2: FindFirstChild (faster, no wait)
+	-- Method 2: WaitForChild on parent folder with timeout
+	if not moduleScript and container then
+		local success1, child = pcall(function()
+			return container:WaitForChild(moduleName, 2)
+		end)
+		if success1 and child then
+			moduleScript = child
+		end
+	end
+	
+	-- Method 3: Check if script itself has children (for different folder structures)
 	if not moduleScript then
 		moduleScript = script:FindFirstChild(moduleName)
 	end
 	
-	-- Method 3: Check parent (in case we're in a different structure)
-	if not moduleScript and script.Parent then
-		local parentFolder = script.Parent:FindFirstChild("LifeEvents")
-		if parentFolder then
-			moduleScript = parentFolder:FindFirstChild(moduleName)
+	-- Method 4: Look in ReplicatedStorage.LifeEvents directly
+	if not moduleScript then
+		local success, result = pcall(function()
+			local rs = game:GetService("ReplicatedStorage")
+			local lifeEventsFolder = rs:FindFirstChild("LifeEvents")
+			if lifeEventsFolder then
+				return lifeEventsFolder:FindFirstChild(moduleName)
+			end
+			return nil
+		end)
+		if success and result then
+			moduleScript = result
 		end
 	end
 	
 	if not moduleScript then
 		if DEBUG_MODE then
-			warn("[LifeEvents] Module not found:", moduleName)
+			warn("[LifeEvents] Module not found:", moduleName, "- looked in:", container and container:GetFullName() or "nil")
+		end
+		return nil
+	end
+	
+	-- Make sure it's a ModuleScript before requiring
+	if not moduleScript:IsA("ModuleScript") then
+		if DEBUG_MODE then
+			warn("[LifeEvents] Found", moduleName, "but it's a", moduleScript.ClassName, "not a ModuleScript")
 		end
 		return nil
 	end
