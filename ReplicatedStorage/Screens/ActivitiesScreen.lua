@@ -12,11 +12,14 @@ local F = UI.Fonts
 local ActivitiesScreen = {}
 ActivitiesScreen.__index = ActivitiesScreen
 
--- Remotes
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
-local DoActivity = remotesFolder and remotesFolder:WaitForChild("DoActivity", 15)
-local CommitCrime = remotesFolder and remotesFolder:WaitForChild("CommitCrime", 15)
-local DoPrisonAction = remotesFolder and remotesFolder:WaitForChild("DoPrisonAction", 15)
+-- Remotes (optimized - fast lookup)
+local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes") or ReplicatedStorage:WaitForChild("LifeRemotes", 3)
+local function getRemote(name)
+	return remotesFolder and (remotesFolder:FindFirstChild(name) or remotesFolder:WaitForChild(name, 1))
+end
+local DoActivity = getRemote("DoActivity")
+local CommitCrime = getRemote("CommitCrime")
+local DoPrisonAction = getRemote("DoPrisonAction")
 
 -- Activity Data - Must match server's Activities IDs!
 local MindBody = {

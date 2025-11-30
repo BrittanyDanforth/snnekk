@@ -12,15 +12,18 @@ local F = UI.Fonts
 local OccupationScreen = {}
 OccupationScreen.__index = OccupationScreen
 
--- Remotes
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
-local ApplyForJob = remotesFolder and remotesFolder:WaitForChild("ApplyForJob", 15)
-local QuitJob = remotesFolder and remotesFolder:WaitForChild("QuitJob", 15)
-local EnrollEducation = remotesFolder and remotesFolder:WaitForChild("EnrollEducation", 15)
-local DoWork = remotesFolder and remotesFolder:WaitForChild("DoWork", 15)
-local RequestPromotion = remotesFolder and remotesFolder:WaitForChild("RequestPromotion", 15)
-local RequestRaise = remotesFolder and remotesFolder:WaitForChild("RequestRaise", 15)
-local GetCareerInfo = remotesFolder and remotesFolder:WaitForChild("GetCareerInfo", 15)
+-- Remotes (optimized - fast lookup)
+local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes") or ReplicatedStorage:WaitForChild("LifeRemotes", 3)
+local function getRemote(name)
+	return remotesFolder and (remotesFolder:FindFirstChild(name) or remotesFolder:WaitForChild(name, 1))
+end
+local ApplyForJob = getRemote("ApplyForJob")
+local QuitJob = getRemote("QuitJob")
+local EnrollEducation = getRemote("EnrollEducation")
+local DoWork = getRemote("DoWork")
+local RequestPromotion = getRemote("RequestPromotion")
+local RequestRaise = getRemote("RequestRaise")
+local GetCareerInfo = getRemote("GetCareerInfo")
 
 -- Job Categories for filtering
 local JobCategories = {

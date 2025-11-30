@@ -21,10 +21,13 @@ local function logWarn(...)
 	warn("[StoryPathsScreen]", ...)
 end
 
--- Remotes
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
-local StartPath = remotesFolder and remotesFolder:WaitForChild("StartPath", 15)
-local DoPathAction = remotesFolder and remotesFolder:WaitForChild("DoPathAction", 15)
+-- Remotes (optimized - fast lookup)
+local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes") or ReplicatedStorage:WaitForChild("LifeRemotes", 3)
+local function getRemote(name)
+	return remotesFolder and (remotesFolder:FindFirstChild(name) or remotesFolder:WaitForChild(name, 1))
+end
+local StartPath = getRemote("StartPath")
+local DoPathAction = getRemote("DoPathAction")
 
 -- Story Paths Data
 local Paths = {

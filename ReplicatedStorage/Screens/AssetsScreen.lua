@@ -21,13 +21,16 @@ local function logWarn(...)
 	warn("[AssetsScreen]", ...)
 end
 
--- Remotes
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
-local BuyProperty = remotesFolder and remotesFolder:WaitForChild("BuyProperty", 15)
-local BuyVehicle = remotesFolder and remotesFolder:WaitForChild("BuyVehicle", 15)
-local BuyItem = remotesFolder and remotesFolder:WaitForChild("BuyItem", 15)
-local SellAsset = remotesFolder and remotesFolder:WaitForChild("SellAsset", 15)
-local Gamble = remotesFolder and remotesFolder:WaitForChild("Gamble", 15)
+-- Remotes (optimized - fast lookup)
+local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes") or ReplicatedStorage:WaitForChild("LifeRemotes", 3)
+local function getRemote(name)
+	return remotesFolder and (remotesFolder:FindFirstChild(name) or remotesFolder:WaitForChild(name, 1))
+end
+local BuyProperty = getRemote("BuyProperty")
+local BuyVehicle = getRemote("BuyVehicle")
+local BuyItem = getRemote("BuyItem")
+local SellAsset = getRemote("SellAsset")
+local Gamble = getRemote("Gamble")
 
 -- Asset Data - MUST match server IDs in LifeRemoteHandlers!
 local Properties = {

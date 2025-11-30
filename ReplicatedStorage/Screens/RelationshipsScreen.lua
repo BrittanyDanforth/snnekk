@@ -21,9 +21,12 @@ local function logWarn(...)
 	warn("[RelationshipsScreen]", ...)
 end
 
--- Remotes
-local remotesFolder = ReplicatedStorage:WaitForChild("LifeRemotes", 30)
-local DoInteraction = remotesFolder and remotesFolder:WaitForChild("DoInteraction", 15)
+-- Remotes (optimized - fast lookup)
+local remotesFolder = ReplicatedStorage:FindFirstChild("LifeRemotes") or ReplicatedStorage:WaitForChild("LifeRemotes", 3)
+local function getRemote(name)
+	return remotesFolder and (remotesFolder:FindFirstChild(name) or remotesFolder:WaitForChild(name, 1))
+end
+local DoInteraction = getRemote("DoInteraction")
 
 -- Relationship Actions
 local FamilyActions = {
