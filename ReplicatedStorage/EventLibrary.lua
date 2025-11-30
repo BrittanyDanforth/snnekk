@@ -7785,12 +7785,63 @@ local events = {
 -- Try to load modular events from LifeEvents system
 local modularEventsLoaded = 0
 local function loadModularEvents()
-	local success, LifeEventsModule = pcall(function()
-		return require(script.Parent:WaitForChild("LifeEvents", 1))
-	end)
+	-- Try multiple ways to find LifeEvents module
+	local LifeEventsModule = nil
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	
-	if success and LifeEventsModule then
-		local modularEvents = LifeEventsModule.getEvents()
+	-- Method 1: Direct child of ReplicatedStorage
+	local lifeEventsFolder = ReplicatedStorage:FindFirstChild("LifeEvents")
+	if lifeEventsFolder then
+		local success, result = pcall(function()
+			return require(lifeEventsFolder)
+		end)
+		if success then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEvents via ReplicatedStorage:FindFirstChild")
+		else
+			print("[EventLibrary] ⚠️ Found LifeEvents folder but failed to require:", result)
+		end
+	end
+	
+	-- Method 2: WaitForChild with longer timeout
+	if not LifeEventsModule then
+		local success, result = pcall(function()
+			local folder = script.Parent:WaitForChild("LifeEvents", 5)
+			if folder then
+				return require(folder)
+			end
+			return nil
+		end)
+		if success and result then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEvents via WaitForChild")
+		end
+	end
+	
+	-- Method 3: Try requiring directly by path
+	if not LifeEventsModule then
+		local success, result = pcall(function()
+			return require(ReplicatedStorage.LifeEvents)
+		end)
+		if success then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEvents via direct path")
+		end
+	end
+	
+	-- Try backup module if main module failed
+	if not LifeEventsModule then
+		local success, result = pcall(function()
+			return require(ReplicatedStorage:FindFirstChild("LifeEventsBackup"))
+		end)
+		if success and result then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEventsBackup module!")
+		end
+	end
+	
+	if LifeEventsModule then
+		local modularEvents = LifeEventsModule.getEvents and LifeEventsModule.getEvents() or {}
 		if modularEvents and #modularEvents > 0 then
 			-- Track IDs to avoid duplicates
 			local existingIds = {}
@@ -7809,9 +7860,16 @@ local function loadModularEvents()
 			end
 			
 			print("[EventLibrary] ✅ Loaded", modularEventsLoaded, "modular events from LifeEvents system")
+			print("[EventLibrary] 📊 Total events now:", #events)
+		else
+			print("[EventLibrary] ⚠️ LifeEvents module found but returned no events")
 		end
 	else
 		print("[EventLibrary] ℹ️ LifeEvents module not found - using legacy events only")
+		print("[EventLibrary] 📂 Available children in ReplicatedStorage:")
+		for _, child in ipairs(ReplicatedStorage:GetChildren()) do
+			print("  -", child.Name, "(" .. child.ClassName .. ")")
+		end
 	end
 end
 

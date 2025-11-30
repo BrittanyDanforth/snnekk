@@ -22,8 +22,14 @@ local LifeEvents = {}
 -- CONFIG
 ----------------------------------------------------------------------
 
-local DEBUG_MODE = false -- Set to true for verbose loading logs
+local DEBUG_MODE = true -- Set to true for verbose loading logs
 local VALIDATE_ON_LOAD = true -- Validate events when loading (catches errors early)
+
+-- Debug info about script location
+print("[LifeEvents] ═══════════════════════════════════════════")
+print("[LifeEvents] Script:", script:GetFullName())
+print("[LifeEvents] Parent:", script.Parent and script.Parent:GetFullName() or "nil")
+print("[LifeEvents] Children:", #script:GetChildren())
 
 ----------------------------------------------------------------------
 -- NAME & DATA GENERATORS (Shared across all event modules)
@@ -340,12 +346,44 @@ local moduleStats = {} -- Track events per module
 
 -- Load a single module safely
 local function loadModule(moduleName)
+	-- Try multiple ways to find the module
+	local moduleScript = nil
+	
+	-- Method 1: WaitForChild (works when this script is a folder's init)
+	local success1, child = pcall(function()
+		return script:WaitForChild(moduleName, 2)
+	end)
+	if success1 and child then
+		moduleScript = child
+	end
+	
+	-- Method 2: FindFirstChild (faster, no wait)
+	if not moduleScript then
+		moduleScript = script:FindFirstChild(moduleName)
+	end
+	
+	-- Method 3: Check parent (in case we're in a different structure)
+	if not moduleScript and script.Parent then
+		local parentFolder = script.Parent:FindFirstChild("LifeEvents")
+		if parentFolder then
+			moduleScript = parentFolder:FindFirstChild(moduleName)
+		end
+	end
+	
+	if not moduleScript then
+		if DEBUG_MODE then
+			warn("[LifeEvents] Module not found:", moduleName)
+		end
+		return nil
+	end
+	
+	-- Require the found module
 	local success, result = pcall(function()
-		return require(script:WaitForChild(moduleName))
+		return require(moduleScript)
 	end)
 	
 	if not success then
-		warn("[LifeEvents] Failed to load module:", moduleName, "-", result)
+		warn("[LifeEvents] Failed to require module:", moduleName, "-", result)
 		return nil
 	end
 	
@@ -411,6 +449,10 @@ function LifeEvents.loadAllModules()
 	
 	print("[LifeEvents] ═══════════════════════════════════════════")
 	print("[LifeEvents] Loading event modules...")
+	print("[LifeEvents] Available children of script:")
+	for _, child in ipairs(script:GetChildren()) do
+		print("  -", child.Name, "(" .. child.ClassName .. ")")
+	end
 	
 	for _, moduleName in ipairs(MODULE_LIST) do
 		local moduleData = loadModule(moduleName)
