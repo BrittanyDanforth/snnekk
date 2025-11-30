@@ -3607,7 +3607,7 @@ local events = {
 	},
 	
 	{
-		id = "food_poisoning",
+		id = "bad_food_illness",
 		minAge = 10, maxAge = 80,
 		weight = 5, cooldown = 5,
 		emoji = "🤢", title = "Food Poisoning",
@@ -6423,7 +6423,7 @@ local events = {
 		end,
 		text = "You've won the Formula 1 World Championship! The pinnacle of motorsport!",
 		choices = {
-			{ text = "👑 I AM THE CHAMPION!", effects = { Happiness = 100, Money = 5000000 }, resultText = "F1 WORLD CHAMPION! Your name is etched in history forever!", setFlag = "f1_champion" },
+			{ text = "👑 I AM THE CHAMPION!", effects = { Happiness = 50, Money = 5000000 }, resultText = "F1 WORLD CHAMPION! Your name is etched in history forever!", setFlag = "f1_champion" },
 		},
 	},
 	
@@ -6449,12 +6449,12 @@ local events = {
 		requires = function(state) return state.Flags and state.Flags.f1_driver end,
 		getDynamicData = function()
 			local teams = {"Red Bull Racing", "Ferrari", "Mercedes", "McLaren", "Aston Martin"}
-			return { newTeam = teams[math.random(#teams)], salary = math.random(5, 20) * 1000000 }
+			return { newTeam = teams[math.random(#teams)] }
 		end,
-		text = "%newTeam% wants to sign you! They're offering $%salary%!",
+		text = "%newTeam% wants to sign you! They're offering a massive contract!",
 		choices = {
-			{ text = "📝 Sign with them", effects = { Happiness = 10, Money = 10000000 }, resultText = "New team, new chapter!" },
-			{ text = "🤝 Stay loyal", effects = { Happiness = 5 }, resultText = "You're committed to your current team." },
+			{ text = "📝 Sign with them", effects = { Happiness = 10, Money = 8000000 }, resultText = "New team, new chapter! The signing bonus alone is life-changing." },
+			{ text = "🤝 Stay loyal", effects = { Happiness = 5, Money = 2000000 }, resultText = "Your team rewarded your loyalty with a bonus." },
 		},
 	},
 	
@@ -7398,7 +7398,7 @@ local events = {
 	},
 	
 	{
-		id = "prison_parole_hearing",
+		id = "prison_parole_opportunity",
 		minAge = 18, maxAge = 100,
 		weight = 20, cooldown = 20, oneTime = false,
 		emoji = "⚖️", title = "Parole Hearing!",
@@ -7643,7 +7643,7 @@ local events = {
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
-		id = "fugitive_close_call",
+		id = "fugitive_police_encounter",
 		minAge = 16, maxAge = 80,
 		weight = 40, cooldown = 3,
 		emoji = "🚨", title = "Close Call!",
@@ -7672,7 +7672,7 @@ local events = {
 	},
 	
 	{
-		id = "fugitive_new_identity",
+		id = "fugitive_identity_papers",
 		minAge = 18, maxAge = 70,
 		weight = 20, cooldown = 30, oneTime = true,
 		emoji = "🪪", title = "New Identity",
@@ -7690,7 +7690,7 @@ local events = {
 	},
 	
 	{
-		id = "fugitive_recaptured",
+		id = "fugitive_caught_again",
 		minAge = 16, maxAge = 100,
 		weight = 15, cooldown = 10,
 		emoji = "🔒", title = "RECAPTURED!",
@@ -9086,7 +9086,7 @@ local earlyLifeEvents = {
 		},
 	},
 	{
-		id = "toddler_picky_eater",
+		id = "toddler_veggie_battle",
 		minAge = 2, maxAge = 5,
 		weight = 35,
 		emoji = "🥦", title = "Veggie Standoff!",
@@ -9609,7 +9609,7 @@ local diverseEvents = {
 		},
 	},
 	{
-		id = "turf_war",
+		id = "street_turf_battle",
 		minAge = 15, maxAge = 35,
 		weight = 12, cooldown = 2,
 		emoji = "⚔️", title = "Turf War",
@@ -9685,7 +9685,7 @@ local diverseEvents = {
 		},
 	},
 	{
-		id = "science_fair",
+		id = "school_science_project",
 		minAge = 10, maxAge = 18,
 		weight = 20, cooldown = 3,
 		emoji = "🔬", title = "Science Fair!",
@@ -9868,7 +9868,7 @@ local diverseEvents = {
 		},
 	},
 	{
-		id = "gym_membership",
+		id = "new_gym_opened",
 		minAge = 16, maxAge = 70,
 		weight = 20, cooldown = 3,
 		emoji = "🏋️", title = "Gym Life",
@@ -9898,7 +9898,7 @@ local diverseEvents = {
 	-- SOCIAL/RELATIONSHIP EVENTS
 	-- ═══════════════════════════════════════════════════════════
 	{
-		id = "surprise_party",
+		id = "friends_surprise_party",
 		minAge = 10, maxAge = 80,
 		weight = 15, cooldown = 5,
 		emoji = "🎉", title = "Surprise Party!",
@@ -10013,7 +10013,7 @@ local diverseEvents = {
 	-- RANDOM LIFE EVENTS (MORE VARIETY)
 	-- ═══════════════════════════════════════════════════════════
 	{
-		id = "found_money",
+		id = "lucky_money_find",
 		minAge = 8, maxAge = 80,
 		weight = 15, cooldown = 4,
 		emoji = "💵", title = "Lucky Find!",
@@ -10056,7 +10056,7 @@ local diverseEvents = {
 		},
 	},
 	{
-		id = "random_kindness",
+		id = "stranger_kindness",
 		minAge = 5, maxAge = 80,
 		weight = 20, cooldown = 3,
 		emoji = "💝", title = "Random Kindness",
@@ -10103,7 +10103,7 @@ local diverseEvents = {
 	-- TRAVEL & ADVENTURE EVENTS
 	-- ═══════════════════════════════════════════════════════════
 	{
-		id = "travel_opportunity",
+		id = "cheap_flight_deal",
 		minAge = 18, maxAge = 70,
 		weight = 12, cooldown = 3,
 		emoji = "✈️", title = "Travel Opportunity!",
@@ -10344,7 +10344,7 @@ local moreEvents = {
 		},
 	},
 	{
-		id = "talent_show",
+		id = "community_talent_show",
 		minAge = 8, maxAge = 30,
 		weight = 15, cooldown = 4,
 		emoji = "🎤", title = "Talent Show!",
@@ -10468,7 +10468,7 @@ local moreEvents = {
 		},
 	},
 	{
-		id = "volunteer_opportunity",
+		id = "local_volunteer_work",
 		minAge = 12, maxAge = 80,
 		weight = 15, cooldown = 4,
 		emoji = "🤝", title = "Volunteer Work",
