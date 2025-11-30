@@ -9,11 +9,11 @@ local LifeEvents = require(script.Parent)
 local module = {}
 
 module.events = {
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- EARLY CRIMINAL TENDENCIES
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_criminal_awakening",
 		minAge = 12, maxAge = 18,
@@ -28,7 +28,7 @@ module.events = {
 			{ text = "🤔 Just testing limits", effects = { Happiness = 3 }, resultText = "You're just exploring. Not committed." },
 		},
 	},
-	
+
 	{
 		id = "m_first_theft",
 		minAge = 10, maxAge = 16,
@@ -48,7 +48,7 @@ module.events = {
 			{ text = "🎯 Want bigger scores", effects = { Happiness = 4 }, resultText = "Small stuff is for amateurs.", setFlags = {"petty_thief", "ambitious_thief"} },
 		},
 	},
-	
+
 	{
 		id = "m_gang_encounter",
 		minAge = 14, maxAge = 25,
@@ -68,11 +68,11 @@ module.events = {
 			{ text = "😤 Get aggressive", effects = { Health = -10, Happiness = -5 }, resultText = "Bad move. They taught you a lesson." },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- GANG PROGRESSION
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_gang_initiation",
 		minAge = 14, maxAge = 30,
@@ -92,7 +92,7 @@ module.events = {
 			{ text = "🤔 Ask for something else", effects = { Smarts = 2, Happiness = 2 }, resultText = "They gave you a different task. You're in.", setFlag = "gang_member" },
 		},
 	},
-	
+
 	{
 		id = "m_gang_first_job",
 		minAge = 14, maxAge = 35,
@@ -111,7 +111,7 @@ module.events = {
 			{ text = "❌ Fail the mission", effects = { Happiness = -10, Health = -10 }, resultText = "The gang doesn't tolerate failure." },
 		},
 	},
-	
+
 	{
 		id = "m_gang_promotion_soldier",
 		minAge = 16, maxAge = 40,
@@ -126,7 +126,7 @@ module.events = {
 			{ text = "🤔 What's expected?", effects = { Smarts = 3, Happiness = 5, Money = 3000 }, resultText = "You learned the responsibilities first.", setFlag = "gang_soldier" },
 		},
 	},
-	
+
 	{
 		id = "m_gang_promotion_captain",
 		minAge = 20, maxAge = 50,
@@ -141,7 +141,7 @@ module.events = {
 			{ text = "🤝 Share power", effects = { Happiness = 8, Money = 8000, Smarts = 3 }, resultText = "You co-captain with another. Political move.", setFlag = "gang_captain" },
 		},
 	},
-	
+
 	{
 		id = "m_underboss_opportunity",
 		minAge = 25, maxAge = 60,
@@ -160,7 +160,7 @@ module.events = {
 			{ text = "🔪 Why stop there?", effects = { Happiness = 10, Smarts = -3 }, resultText = "You're plotting to take it all...", setFlags = {"underboss", "plotting_takeover"} },
 		},
 	},
-	
+
 	{
 		id = "m_become_boss",
 		minAge = 30, maxAge = 70,
@@ -180,11 +180,11 @@ module.events = {
 			{ text = "🔪 Eliminate rivals first", effects = { Happiness = 15, Health = -10 }, resultText = "You secured power through violence.", setFlags = {"crime_boss", "ruthless_boss"} },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- CRIMINAL OPERATIONS
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_drug_dealing",
 		minAge = 16, maxAge = 60,
@@ -203,7 +203,7 @@ module.events = {
 			{ text = "🚔 Cops showed up!", effects = { Health = -5, Happiness = -10 }, resultText = "You barely escaped! Too close." },
 		},
 	},
-	
+
 	{
 		id = "m_heist_planning",
 		minAge = 18, maxAge = 55,
@@ -227,7 +227,7 @@ module.events = {
 			{ text = "🙅 Too risky", effects = { Happiness = -3, Smarts = 3 }, resultText = "You sat this one out." },
 		},
 	},
-	
+
 	{
 		id = "m_gang_war",
 		minAge = 16, maxAge = 50,
@@ -246,7 +246,7 @@ module.events = {
 			{ text = "🏃 Lay low", effects = { Happiness = -5, Health = 2 }, resultText = "You avoided the bloodshed. Some call it cowardice." },
 		},
 	},
-	
+
 	{
 		id = "m_money_laundering",
 		minAge = 20, maxAge = 60,
@@ -265,11 +265,11 @@ module.events = {
 			{ text = "🚔 Feds investigate", effects = { Money = -10000, Happiness = -15 }, resultText = "Lawyers fees and frozen assets. Disaster." },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- CRIMINAL CONSEQUENCES
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_arrested_crime",
 		minAge = 14, maxAge = 70,
@@ -288,7 +288,7 @@ module.events = {
 			{ text = "🐀 Cooperate", effects = { Happiness = -15, Smarts = -3 }, resultText = "You gave up names. Sentence reduced, but...", setFlag = "snitch" },
 		},
 	},
-	
+
 	{
 		id = "m_trial_crime",
 		minAge = 14, maxAge = 70,
@@ -308,7 +308,7 @@ module.events = {
 			{ text = "⚖️ Plea deal", effects = { Happiness = -10 }, resultText = "Reduced sentence. Still prison time.", setFlag = "in_prison" },
 		},
 	},
-	
+
 	{
 		id = "m_betrayal_crime",
 		minAge = 18, maxAge = 60,
@@ -326,7 +326,7 @@ module.events = {
 			{ text = "🏃 Go into hiding", effects = { Happiness = -8, Money = -5000 }, resultText = "You disappeared for a while.", setFlag = "laying_low" },
 		},
 	},
-	
+
 	{
 		id = "m_near_death_crime",
 		minAge = 16, maxAge = 60,
@@ -341,11 +341,11 @@ module.events = {
 			{ text = "🔥 Time for payback", effects = { Health = -5, Happiness = 5 }, resultText = "They'll regret not finishing the job.", setFlag = "seeking_revenge" },
 		},
 	},
-	
+
 	-- ═══════════════════════════════════════════════════════════════
 	-- GOING LEGIT / REDEMPTION
 	-- ═══════════════════════════════════════════════════════════════
-	
+
 	{
 		id = "m_go_legit",
 		minAge = 25, maxAge = 60,
@@ -360,7 +360,7 @@ module.events = {
 			{ text = "🔙 Can't escape", effects = { Happiness = -10 }, resultText = "They don't let you just leave. You're in for life." },
 		},
 	},
-	
+
 	{
 		id = "m_federal_witness",
 		minAge = 20, maxAge = 60,
