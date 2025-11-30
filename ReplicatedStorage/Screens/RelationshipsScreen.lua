@@ -716,18 +716,28 @@ function RelationshipsScreen:populateFriends()
 	
 	local friends = {}
 	local rels = self:getRelationships()
+	
+	-- Debug: Log all relationships and what we're filtering
+	log("populateFriends() - Scanning relationships...")
+	local totalRels = 0
 	for id, rel in pairs(rels) do
-		if rel.type == "friend" then
+		totalRels = totalRels + 1
+		local relType = type(rel) == "table" and rel.type or "NOT_A_TABLE"
+		log("  Found:", id, "Type:", relType, "Name:", type(rel) == "table" and rel.name or "N/A")
+		
+		if type(rel) == "table" and rel.type == "friend" then
 			table.insert(friends, {
 				id = id,
 				name = rel.name,
-				role = "Friend",
+				role = rel.role or "Friend",
 				relationship = rel.relationship or 60,
 				age = rel.age or self:getAge(),
 				alive = rel.alive ~= false
 			})
+			log("  ✅ Added friend:", rel.name)
 		end
 	end
+	log("populateFriends() - Total relationships:", totalRels, "Friends found:", #friends)
 	
 	-- Make friend card
 	local makeCard = Instance.new("Frame")

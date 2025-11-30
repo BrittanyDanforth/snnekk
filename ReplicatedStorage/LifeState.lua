@@ -57,15 +57,10 @@ function LifeState.new(player)
 	-- Story Flags (for branching narrative)
 	self.Flags = {}
 	
-	-- Relationships (BitLife-style organized by category)
-	self.Relationships = {
-		family = {},      -- parents, siblings, children, spouse
-		friends = {},     -- friends, best friends
-		lovers = {},      -- romantic interests, partners
-		coworkers = {},   -- work colleagues
-		classmates = {},  -- school/university classmates
-		enemies = {},     -- people who hate you
-	}
+	-- Relationships (FLAT dictionary format for UI compatibility)
+	-- RelationshipsScreen expects: state.Relationships["friend_123"] = { type = "friend", name = "...", ... }
+	-- Valid types: "friend", "romance", "family", "enemy"
+	self.Relationships = {}
 	
 	-- Career & Job System
 	self.Career = {
@@ -277,66 +272,121 @@ end
 
 ----------------------------------------------------------------------
 -- RELATIONSHIP MANAGEMENT
+-- Uses FLAT dictionary format: Relationships["friend_123"] = { type = "friend", name = "...", ... }
+-- Valid types: "friend", "romance", "family", "enemy"
 ----------------------------------------------------------------------
 
-function LifeState:AddRelationship(category, person)
-	if not self.Relationships[category] then
-		self.Relationships[category] = {}
-	end
+-- Type mapping for backwards compatibility with category-based calls
+local typeFromCategory = {
+	friends = "friend",
+	friend = "friend",
+	family = "family",
+	romance = "romance",
+	lovers = "romance",
+	enemies = "enemy",
+	enemy = "enemy",
+	coworkers = "friend",
+	classmates = "friend",
+}
+
+function LifeState:AddRelationship(categoryOrType, person)
+	-- Map category to standard type
+	local standardType = typeFromCategory[categoryOrType] or "friend"
 	
-	-- Generate ID if not present
-	if not person.id then
-		person.id = category .. "_" .. #self.Relationships[category] + 1 .. "_" .. tick()
-	end
+	-- Generate unique ID
+	local uniqueId = person.id or (standardType .. "_" .. tostring(tick()) .. "_" .. tostring(math.random(1000, 9999)))
 	
-	-- Set defaults
-	person.relationship = person.relationship or 50
-	person.met = person.met or self.Age
-	person.alive = person.alive ~= false
+	-- Create relationship entry in flat format
+	local entry = {
+		type = standardType,
+		name = person.name or "Unknown",
+		role = person.role or (standardType == "friend" and "Friend" or standardType == "romance" and "Partner" or standardType == "family" and "Family" or "Enemy"),
+		relationship = person.relationship or 50,
+		age = person.age or self.Age,
+		met = person.met or self.Age,
+		alive = person.alive ~= false,
+		subtype = person.subtype or categoryOrType,  -- Keep original category for reference
+		gender = person.gender,
+	}
 	
-	table.insert(self.Relationships[category], person)
-	return person
+	self.Relationships[uniqueId] = entry
+	return entry, uniqueId
 end
 
-function LifeState:GetRelationship(category, personId)
-	if not self.Relationships[category] then return nil end
-	
-	for _, person in ipairs(self.Relationships[category]) do
-		if person.id == personId then
-			return person
-		end
+function LifeState:GetRelationship(idOrType, personId)
+	-- If called with old category style: GetRelationship("friends", "friend_123")
+	-- Just look up by personId directly
+	if personId then
+		return self.Relationships[personId]
 	end
-	return nil
+	-- If called with just an ID
+	return self.Relationships[idOrType]
 end
 
-function LifeState:ModifyRelationship(category, personId, delta)
-	local person = self:GetRelationship(category, personId)
+function LifeState:GetRelationshipById(personId)
+	return self.Relationships[personId]
+end
+
+function LifeState:ModifyRelationship(personId, delta, category)
+	-- Support both old style: ModifyRelationship("friends", "friend_123", 10)
+	-- And new style: ModifyRelationship("friend_123", 10)
+	local actualId = personId
+	local actualDelta = delta
+	if type(delta) == "string" then
+		-- Old style call with category first
+		actualId = delta
+		actualDelta = category or 0
+	end
+	
+	local person = self.Relationships[actualId]
 	if person then
-		person.relationship = clamp((person.relationship or 50) + delta, 0, 100)
+		person.relationship = clamp((person.relationship or 50) + actualDelta, 0, 100)
 		return person.relationship
 	end
 	return nil
 end
 
-function LifeState:GetRandomRelationship(category)
-	if not self.Relationships[category] then return nil end
-	local alive = {}
-	for _, person in ipairs(self.Relationships[category]) do
-		if person.alive ~= false then
-			table.insert(alive, person)
+function LifeState:GetRandomRelationship(relType)
+	-- Get a random relationship of a specific type (friend, romance, family, enemy)
+	local matches = {}
+	for id, person in pairs(self.Relationships) do
+		if person.alive ~= false and (not relType or person.type == relType) then
+			table.insert(matches, { id = id, person = person })
 		end
 	end
-	return pickRandom(alive)
+	return pickRandom(matches)
+end
+
+function LifeState:GetRelationshipsByType(relType)
+	-- Get all relationships of a specific type
+	local results = {}
+	for id, person in pairs(self.Relationships) do
+		if person.type == relType then
+			table.insert(results, { id = id, person = person })
+		end
+	end
+	return results
 end
 
 function LifeState:GetAllRelationships()
 	local all = {}
-	for category, people in pairs(self.Relationships) do
-		for _, person in ipairs(people) do
-			table.insert(all, { category = category, person = person })
-		end
+	for id, person in pairs(self.Relationships) do
+		table.insert(all, { id = id, person = person, type = person.type })
 	end
 	return all
+end
+
+function LifeState:RemoveRelationship(personId)
+	self.Relationships[personId] = nil
+end
+
+function LifeState:HasRelationshipOfType(relType)
+	for _, person in pairs(self.Relationships) do
+		if person.type == relType and person.alive ~= false then
+			return true
+		end
+	end
+	return false
 end
 
 ----------------------------------------------------------------------

@@ -955,29 +955,77 @@ function EventRunner.applyChoice(
 	-- ═══════════════════════════════════════════════════════════════
 	-- STEP 11: ADD RELATIONSHIP
 	-- ═══════════════════════════════════════════════════════════════
-	if choice.addRelationship and state.Relationships then
+	-- RelationshipsScreen expects FLAT dictionary format with these exact types:
+	-- "friend", "romance", "family", "enemy"
+	-- Format: state.Relationships["friend_123456"] = { type = "friend", name = "...", ... }
+	if choice.addRelationship then
+		state.Relationships = state.Relationships or {}
 		local relData = choice.addRelationship
-		local category = relData.category or "friends"
-		if not state.Relationships[category] then
-			state.Relationships[category] = {}
-		end
 		
+		-- Determine the standard relationship type for UI display
+		-- Map categories/types to the 4 standard types the UI expects
+		local typeMapping = {
+			friends = "friend",
+			friend = "friend",
+			best_friend = "friend",
+			childhood_friend = "friend",
+			school_friend = "friend",
+			club_friend = "friend",
+			camp_friend = "friend",
+			daycare_friend = "friend",
+			kindergarten_friend = "friend",
+			study_buddy = "friend",
+			neighbor = "friend",
+			reformed_bully_friend = "friend",
+			preschool_friend = "friend",
+			classmates = "friend",
+			coworkers = "friend",
+			romance = "romance",
+			lovers = "romance",
+			partner = "romance",
+			dating = "romance",
+			spouse = "romance",
+			family = "family",
+			parent = "family",
+			sibling = "family",
+			child = "family",
+			enemies = "enemy",
+			enemy = "enemy",
+			rival = "enemy",
+		}
+		
+		local category = relData.category or "friends"
+		local relType = relData.type or category
+		local standardType = typeMapping[relType] or typeMapping[category] or "friend"
+		
+		-- Get the name from dynamic data or use provided name
 		local personName = relData.name
 		if relData.dynamicNameKey and dynamicData and dynamicData[relData.dynamicNameKey] then
 			personName = tostring(dynamicData[relData.dynamicNameKey])
 		end
 		
+		-- Generate unique ID using the standard type
+		local uniqueId = standardType .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
+		
+		-- Create the relationship entry in FLAT DICTIONARY format
+		-- This matches what RelationshipsScreen.lua expects
 		local newPerson = {
-			id = category .. "_" .. #state.Relationships[category] + 1 .. "_" .. (os.time or tick)(),
+			type = standardType,  -- Must be exactly: "friend", "romance", "family", or "enemy"
 			name = personName or "Unknown",
+			role = relData.role or (standardType == "friend" and "Friend" or standardType == "romance" and "Partner" or standardType == "family" and "Family" or "Rival"),
 			relationship = relData.startingRelationship or 50,
+			age = relData.age or state.Age or 18,
 			met = state.Age or 0,
 			alive = true,
-			type = relData.type or category,
+			subtype = relType,  -- Keep original type as subtype for reference
 		}
 		
-		table.insert(state.Relationships[category], newPerson)
+		-- Store in flat dictionary format (NOT nested arrays)
+		state.Relationships[uniqueId] = newPerson
 		results.relationshipAdded = newPerson
+		results.relationshipId = uniqueId
+		
+		print("[EventRunner] Added relationship:", uniqueId, "Type:", standardType, "Name:", personName)
 	end
 
 	-- ═══════════════════════════════════════════════════════════════

@@ -47,16 +47,40 @@ end
 -- RELATIONSHIP CHECK HELPERS
 ----------------------------------------------------------------------
 
--- Check if player has any friends (flag-based)
+-- Check if player has any friends (checks both flags AND actual relationships)
 local function hasFriend(state)
+	-- Check flags first (fast path)
 	local f = state.Flags or {}
-	return f.has_best_friend or f.has_friend or f.social_butterfly or f.friendly
+	if f.has_best_friend or f.has_friend or f.social_butterfly or f.friendly then
+		return true
+	end
+	-- Also check actual relationships (flat dictionary format)
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if rel.type == "friend" and rel.alive ~= false then
+				return true
+			end
+		end
+	end
+	return false
 end
 
--- Check if player has a romantic partner
+-- Check if player has a romantic partner (checks both flags AND actual relationships)
 local function hasPartner(state)
+	-- Check flags first (fast path)
 	local f = state.Flags or {}
-	return f.married or f.engaged or f.in_relationship or f.dating
+	if f.married or f.engaged or f.in_relationship or f.dating then
+		return true
+	end
+	-- Also check actual relationships (flat dictionary format)
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if rel.type == "romance" and rel.alive ~= false then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 -- Check if player has coworkers (has a job)
@@ -79,15 +103,33 @@ local function hasSibling(state)
 end
 
 -- Get a random friend name from relationships if available, otherwise generate one
+-- Works with FLAT dictionary format: state.Relationships["friend_123"] = { type = "friend", name = "..." }
 local function getFriendName(state)
 	-- Try to get from actual relationships first
-	if state.Relationships and state.Relationships.friends and #state.Relationships.friends > 0 then
-		local friend = state.Relationships.friends[math.random(#state.Relationships.friends)]
-		if friend and friend.name then
-			return friend.name
+	if state.Relationships then
+		local friends = {}
+		for id, rel in pairs(state.Relationships) do
+			if rel.type == "friend" and rel.alive ~= false and rel.name then
+				table.insert(friends, rel.name)
+			end
+		end
+		if #friends > 0 then
+			return friends[math.random(#friends)]
 		end
 	end
 	-- Fallback to random name
+	return randomName()
+end
+
+-- Get a random partner name from relationships if available
+local function getPartnerName(state)
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if rel.type == "romance" and rel.alive ~= false and rel.name then
+				return rel.name
+			end
+		end
+	end
 	return randomName()
 end
 

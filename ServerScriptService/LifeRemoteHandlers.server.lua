@@ -2325,12 +2325,12 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 		local partnerName = getRandomName(partnerGender)
 		local partnerAge = math.max(18, age + math.random(-5, 5))
 		
-		-- Add to relationships
+		-- Add to relationships (FLAT DICTIONARY FORMAT)
 		if lifeState then
 			lifeState.Relationships = lifeState.Relationships or {}
-			local id = "partner_" .. os.time()
+			local id = "romance_" .. tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
 			lifeState.Relationships[id] = {
-				type = "romance",
+				type = "romance",  -- Must be exactly "romance" for UI to show it
 				name = partnerName,
 				role = "Dating",
 				age = partnerAge,
@@ -2338,6 +2338,15 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 				alive = true,
 				gender = partnerGender,
 			}
+			print("[LifeRemoteHandlers] ✅ Created new partner:", id, "Name:", partnerName, "Type:", lifeState.Relationships[id].type)
+			
+			-- Also set flags so events know
+			if lifeState.Flags then
+				lifeState.Flags.dating = true
+				lifeState.Flags.in_relationship = true
+			end
+		else
+			print("[LifeRemoteHandlers] ❌ ERROR: No lifeState to add partner to!")
 		end
 		
 		syncStateToClient(player)
@@ -2352,12 +2361,12 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 		local friendName = getRandomName(friendGender)
 		local friendAge = math.max(5, age + math.random(-3, 3))
 		
-		-- Add to relationships
+		-- Add to relationships (FLAT DICTIONARY FORMAT)
 		if lifeState then
 			lifeState.Relationships = lifeState.Relationships or {}
-			local id = "friend_" .. os.time()
+			local id = "friend_" .. tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
 			lifeState.Relationships[id] = {
-				type = "friend",
+				type = "friend",  -- Must be exactly "friend" for UI to show it
 				name = friendName,
 				role = "Friend",
 				age = friendAge,
@@ -2365,6 +2374,14 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 				alive = true,
 				gender = friendGender,
 			}
+			print("[LifeRemoteHandlers] ✅ Created new friend:", id, "Name:", friendName, "Type:", lifeState.Relationships[id].type)
+			
+			-- Also set the has_friend flag so events know
+			if lifeState.Flags then
+				lifeState.Flags.has_friend = true
+			end
+		else
+			print("[LifeRemoteHandlers] ❌ ERROR: No lifeState to add friend to!")
 		end
 		
 		syncStateToClient(player)
@@ -2441,9 +2458,22 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 		modifyStat(player, "Happiness", math.floor(statChange / 3))
 	end
 	
+	-- UPDATE THE PERSON'S RELATIONSHIP VALUE if interacting with a specific person
+	local personName = nil
+	if personId and lifeState and lifeState.Relationships then
+		local person = lifeState.Relationships[personId]
+		if person then
+			personName = person.name
+			-- Modify the relationship value
+			local currentRel = person.relationship or 50
+			person.relationship = math.clamp(currentRel + statChange, 0, 100)
+			print("[LifeRemoteHandlers] Updated relationship with", personName, "by", statChange, "to", person.relationship)
+		end
+	end
+	
 	syncStateToClient(player)
 	
-	-- Generate result message
+	-- Generate result message (include person name if available)
 	local messages = {
 		hug = isSuccess and "The hug was warm and comforting!" or "They seemed distant...",
 		talk = isSuccess and "You had a great conversation!" or "The conversation was a bit awkward.",
@@ -2461,9 +2491,17 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 		prank = isSuccess and "The prank was hilarious!" or "The prank backfired.",
 		ignore = "You ignored them successfully.",
 		vacation = isSuccess and "The vacation was incredible! Great bonding time." or "The vacation had some rough moments.",
+		betray = isSuccess and "Betrayal complete. How does it feel?" or "They saw it coming.",
+		ghost = "You've ghosted them. They'll get the message eventually.",
 	}
 	
 	local message = messages[actionId] or (isSuccess and "It went well!" or "It didn't go as planned...")
+	
+	-- Add relationship change info to message
+	if personName and statChange ~= 0 then
+		local changeText = statChange > 0 and (" (+" .. statChange .. " relationship)") or (" (" .. statChange .. " relationship)")
+		message = message .. changeText
+	end
 	
 	return { 
 		success = isSuccess, 
