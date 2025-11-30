@@ -3126,9 +3126,6 @@ _G.ResetExtendedState = function(player)
 		JailYearsLeft = 0,
 	}
 	
-	-- Also reset career data
-	CareerProgression[player.UserId] = nil
-	
 	print("[LifeRemoteHandlers] Reset extended state for new life:", player.Name)
 end
 

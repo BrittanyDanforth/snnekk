@@ -211,11 +211,16 @@ local function resetPlayerLife(player)
 	
 	-- Reset extended state in LifeRemoteHandlers (jobs, education, assets, prison)
 	if _G.ResetExtendedState then
-		_G.ResetExtendedState(player)
-		print("[LifeManager] Reset extended state")
+		local ok, err = pcall(_G.ResetExtendedState, player)
+		if ok then
+			print("[LifeManager] Reset extended state")
+		else
+			warn("[LifeManager] Failed to reset extended state:", err)
+		end
 	end
 	
 	-- Sync the fresh state to client (will show intro screen again)
+	-- THIS MUST HAPPEN even if extended state reset failed
 	print("[LifeManager] Syncing state to client...")
 	local serialized = serializeState(newState, player)
 	SyncState:FireClient(player, serialized, "A new life begins...", nil)
