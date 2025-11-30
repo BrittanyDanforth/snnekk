@@ -258,22 +258,23 @@ local events = {
 		id = "first_pet_encounter",
 		minAge = 2, maxAge = 6,
 		weight = 35, oneTime = true,
-		emoji = "🐕", title = "Meeting a Pet",
+		emoji = "🐾", title = "Meeting a Pet",  -- Changed to paw print as default
 		category = "family",
 		getDynamicData = function()
 			local petData = {
-				{ type = "dog", emoji = "🐕" },
-				{ type = "cat", emoji = "🐱" },
+				{ type = "puppy", emoji = "🐶" },
+				{ type = "kitten", emoji = "🐱" },
 				{ type = "hamster", emoji = "🐹" },
-				{ type = "goldfish", emoji = "🐟" },
+				{ type = "goldfish", emoji = "🐠" },
+				{ type = "bunny", emoji = "🐰" },
 			}
 			local chosen = petData[math.random(#petData)]
 			return { petType = chosen.type, petEmoji = chosen.emoji }
 		end,
 		getDynamicEmoji = function(data)
-			return data.petEmoji or "🐕"
+			return data.petEmoji or "🐾"
 		end,
-		text = "Your family got a pet %petType%!",
+		text = "Your family got a pet %petType%! %petEmoji%",
 		choices = {
 			{ text = "🤗 Love it!", effects = { Happiness = 8 }, resultText = "You and your pet are inseparable!", setFlag = "animal_lover" },
 			{ text = "😨 Scared of it", effects = { Happiness = -3 }, resultText = "Pets aren't for everyone." },
@@ -3682,13 +3683,22 @@ local events = {
 		id = "find_pet",
 		minAge = 8, maxAge = 70,
 		weight = 5, oneTime = true,
-		emoji = "🐕", title = "Stray Pet",
+		emoji = "🐾", title = "Stray Pet",
 		category = "social",
 		getDynamicData = function()
-			local pets = {"dog", "cat", "kitten", "puppy"}
-			return { petType = pets[math.random(#pets)] }
+			local petData = {
+				{ type = "dog", emoji = "🐕" },
+				{ type = "cat", emoji = "🐱" },
+				{ type = "kitten", emoji = "🐱" },
+				{ type = "puppy", emoji = "🐶" },
+			}
+			local chosen = petData[math.random(#petData)]
+			return { petType = chosen.type, petEmoji = chosen.emoji }
 		end,
-		text = "A friendly stray %petType% followed you home!",
+		getDynamicEmoji = function(data)
+			return data.petEmoji or "🐾"
+		end,
+		text = "A friendly stray %petType% followed you home! %petEmoji%",
 		choices = {
 			{ text = "🏠 Keep it!", effects = { Happiness = 15, Money = -200 }, resultText = "You have a new best friend!", setFlag = "pet_owner" },
 			{ text = "🏥 Take to shelter", effects = { Happiness = 5, Smarts = 3 }, resultText = "You did the responsible thing. Hope they find a home." },
@@ -10202,13 +10212,22 @@ local diverseEvents = {
 		id = "stray_animal",
 		minAge = 8, maxAge = 70,
 		weight = 15, cooldown = 4,
-		emoji = "🐕", title = "Stray Found!",
+		emoji = "🐾", title = "Stray Found!",
 		category = "life",
 		getDynamicData = function()
-			local animals = {"dog", "cat", "kitten", "puppy"}
-			return { animal = animals[math.random(#animals)] }
+			local animalData = {
+				{ type = "dog", emoji = "🐕" },
+				{ type = "cat", emoji = "🐱" },
+				{ type = "kitten", emoji = "🐱" },
+				{ type = "puppy", emoji = "🐶" },
+			}
+			local chosen = animalData[math.random(#animalData)]
+			return { animal = chosen.type, animalEmoji = chosen.emoji }
 		end,
-		text = "You found a stray %animal%! It looks hungry and scared.",
+		getDynamicEmoji = function(data)
+			return data.animalEmoji or "🐾"
+		end,
+		text = "You found a stray %animal%! %animalEmoji% It looks hungry and scared.",
 		choices = {
 			{ text = "🏠 Adopt it!", effects = { Happiness = 15, Money = -500 }, resultText = "You have a new best friend!", setFlags = {"pet_owner", "animal_lover"}, addAsset = { type = "item", id = "rescue_pet", name = "Rescue Pet", value = 0 } },
 			{ text = "🏥 Take to shelter", effects = { Happiness = 5 }, resultText = "They'll find it a good home." },

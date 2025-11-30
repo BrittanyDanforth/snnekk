@@ -1073,7 +1073,7 @@ ageText.ZIndex = 17
 ageText.Parent = ageButton
 
 local tutorialRing = Instance.new("Frame")
-tutorialRing.Size = UDim2.new(1, 26, 1, 26)
+tutorialRing.Size = UDim2.new(1, 30, 1, 30)
 tutorialRing.AnchorPoint = Vector2.new(0.5, 0.5)
 tutorialRing.Position = UDim2.fromScale(0.5, 0.5)
 tutorialRing.BackgroundTransparency = 1
@@ -1081,7 +1081,7 @@ tutorialRing.Visible = false
 tutorialRing.ZIndex = 14
 tutorialRing.Parent = ageBtnContainer
 corner(tutorialRing, 60)
-stroke(tutorialRing, 3, 0, C.Red)
+stroke(tutorialRing, 4, 0, C.White) -- Changed to WHITE and thicker for visibility
 
 ----------------------------------------------------------------
 -- TUTORIAL OVERLAY
@@ -1108,17 +1108,19 @@ tutLayout.Parent = tutTextCont
 
 local tutLines = {
 	"👇",
-	"Press Age to grow older one year at a time.",
-	"Make choices as you go.",
-	"Live your best (or worst) life.",
+	"Tap the AGE button to grow older!",
+	"Make choices as events happen.",
+	"Live your best (or worst) life!",
 }
 for i, line in ipairs(tutLines) do
 	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, 0, 0, i == 1 and 32 or 20)
+	lbl.Size = UDim2.new(1, 0, 0, i == 1 and 40 or 28)
 	lbl.BackgroundTransparency = 1
-	lbl.Font = i == 1 and F.Body or F.Medium
-	lbl.TextSize = i == 1 and 28 or 15
-	lbl.TextColor3 = i == 2 and C.Yellow or C.White
+	lbl.Font = i == 1 and F.Body or F.Title
+	lbl.TextSize = i == 1 and 36 or 20  -- BIGGER text
+	lbl.TextColor3 = C.Gray900  -- DARK text for visibility
+	lbl.TextStrokeColor3 = C.White
+	lbl.TextStrokeTransparency = 0.5  -- White outline for contrast
 	lbl.Text = line
 	lbl.LayoutOrder = i
 	lbl.Parent = tutTextCont
@@ -1129,16 +1131,28 @@ showTutorial = function()
 	hasShownAgeHint = true
 	tutorialOverlay.Visible = true
 	tutorialRing.Visible = true
-	local pulse = TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	
+	-- Pulse the ring stroke for attention
+	local pulse = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
 	local s = tutorialRing:FindFirstChildOfClass("UIStroke")
 	if s then
-		tween(s, pulse, { Transparency = 0.6 })
+		s.Color = C.White -- Ensure it's white
+		s.Thickness = 4
+		tween(s, pulse, { Transparency = 0.4, Thickness = 6 })
 	end
+	
+	-- Also scale pulse the ring for extra visibility
+	local scalePulse = TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	tween(tutorialRing, scalePulse, { 
+		Size = UDim2.new(1, 38, 1, 38) 
+	})
 end
 
 hideTutorial = function()
 	tutorialOverlay.Visible = false
 	tutorialRing.Visible = false
+	-- Reset ring size for next time
+	tutorialRing.Size = UDim2.new(1, 30, 1, 30)
 end
 
 ----------------------------------------------------------------
@@ -1574,9 +1588,44 @@ nameBtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 nameBtnLayout.Padding = UDim.new(0, 12)
 nameBtnLayout.Parent = nameBtns
 
-local maleNames   = { "James Wilson", "Marcus Chen", "David Thompson" }
-local femaleNames = { "Emma Rodriguez", "Sophia Kim", "Olivia Brown" }
+-- Name pools for randomization
+local maleFirstNames = { "James", "Marcus", "David", "Michael", "Daniel", "Alexander", "William", "Benjamin", "Lucas", "Henry", "Ethan", "Noah", "Liam", "Mason", "Oliver", "Aiden", "Jackson", "Sebastian", "Elijah", "Jayden" }
+local femaleFirstNames = { "Emma", "Sophia", "Olivia", "Ava", "Isabella", "Mia", "Charlotte", "Amelia", "Harper", "Evelyn", "Abigail", "Emily", "Luna", "Ella", "Avery", "Sofia", "Camila", "Aria", "Scarlett", "Penelope" }
+local lastNames = { "Wilson", "Chen", "Thompson", "Rodriguez", "Kim", "Brown", "Johnson", "Williams", "Garcia", "Martinez", "Davis", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "White", "Harris", "Clark", "Lewis" }
+
+local currentMaleNames = {}
+local currentFemaleNames = {}
 local nameColors  = { C.Green, Color3.fromRGB(234, 179, 8), C.Orange }
+
+-- Function to generate random names
+local function generateRandomNames()
+	currentMaleNames = {}
+	currentFemaleNames = {}
+	
+	-- Shuffle and pick 3 unique male names
+	local usedMale = {}
+	for i = 1, 3 do
+		local firstName, lastName
+		repeat
+			firstName = maleFirstNames[math.random(#maleFirstNames)]
+			lastName = lastNames[math.random(#lastNames)]
+		until not usedMale[firstName .. lastName]
+		usedMale[firstName .. lastName] = true
+		table.insert(currentMaleNames, firstName .. " " .. lastName)
+	end
+	
+	-- Shuffle and pick 3 unique female names
+	local usedFemale = {}
+	for i = 1, 3 do
+		local firstName, lastName
+		repeat
+			firstName = femaleFirstNames[math.random(#femaleFirstNames)]
+			lastName = lastNames[math.random(#lastNames)]
+		until not usedFemale[firstName .. lastName]
+		usedFemale[firstName .. lastName] = true
+		table.insert(currentFemaleNames, firstName .. " " .. lastName)
+	end
+end
 
 for i = 1, 3 do
 	local nameBtn = Instance.new("TextButton")
@@ -1605,13 +1654,20 @@ for i = 1, 3 do
 	nameBtn.MouseButton1Click:Connect(function()
 		local chosenName = nameBtn.Text:match("^.-%s(.+)$") or nameBtn.Text
 		SetLifeInfo:FireServer(chosenName, selectedGender)
+		
+		-- Store gender in currentState immediately so avatar updates correctly
+		currentState.Gender = selectedGender
+		
 		introComplete = true
 		hideIntro()
+		
+		-- Force update avatar right away
+		updateFromState()
 	end)
 end
 
 updateNameButtons = function()
-	local names = selectedGender == "Male" and maleNames or femaleNames
+	local names = selectedGender == "Male" and currentMaleNames or currentFemaleNames
 	local emoji = selectedGender == "Male" and "👨" or "👩"
 	for _, child in ipairs(nameBtns:GetChildren()) do
 		if child:IsA("TextButton") then
@@ -1653,27 +1709,82 @@ for _, g in ipairs(genderData) do
 	btn.MouseButton1Click:Connect(function()
 		selectedGender = g.gender
 		genderTitle.Text = "Now, pick someone to become"
-		genderBtns.Visible = false
-		nameBtns.Visible  = true
-		updateNameButtons()
+		
+		-- Smooth fade transition from gender to names
+		for _, genderBtn in ipairs(genderBtns:GetChildren()) do
+			if genderBtn:IsA("TextButton") then
+				tween(genderBtn, TweenInfo.new(0.15), { BackgroundTransparency = 1, TextTransparency = 1 })
+			end
+		end
+		
+		task.delay(0.15, function()
+			genderBtns.Visible = false
+			nameBtns.Visible  = true
+			
+			-- Reset gender buttons for next time
+			for _, genderBtn in ipairs(genderBtns:GetChildren()) do
+				if genderBtn:IsA("TextButton") then
+					genderBtn.BackgroundTransparency = 0
+					genderBtn.TextTransparency = 0
+				end
+			end
+			
+			updateNameButtons()
+			
+			-- Fade in name buttons
+			for _, nameBtn in ipairs(nameBtns:GetChildren()) do
+				if nameBtn:IsA("TextButton") then
+					nameBtn.BackgroundTransparency = 1
+					nameBtn.TextTransparency = 1
+					tween(nameBtn, TweenInfo.new(0.2), { BackgroundTransparency = 0, TextTransparency = 0 })
+				end
+			end
+		end)
 	end)
 end
 
 showIntro = function()
 	if introComplete then return end
+	
+	-- Generate fresh random names each time intro is shown
+	generateRandomNames()
+	
+	-- Reset intro UI state
 	introOverlay.Visible = true
+	introOverlay.BackgroundTransparency = 0.5
+	introContent.Position = UDim2.fromScale(0.5, 0.5)
+	
 	showBlur()
 	genderTitle.Text = "Start by picking a gender"
 	genderBtns.Visible = true
-	nameBtns.Visible  = false
+	nameBtns.Visible = false
+	
+	-- Fade in animation
+	introContent.Position = UDim2.new(0.5, 0, 0.55, 0)
+	tween(introContent, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.fromScale(0.5, 0.5)
+	})
 end
 
 hideIntro = function()
-	introOverlay.Visible = false
+	-- Smooth fade out animation
+	local fadeTime = 0.25
+	
+	tween(introContent, TweenInfo.new(fadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(0.5, 0, 0.45, 0)
+	})
+	tween(introOverlay, TweenInfo.new(fadeTime), {
+		BackgroundTransparency = 1
+	})
+	
 	hideBlur()
-	if not hasShownAgeHint then
-		task.delay(0.5, showTutorial)
-	end
+	
+	task.delay(fadeTime, function()
+		introOverlay.Visible = false
+		if not hasShownAgeHint then
+			task.delay(0.3, showTutorial)
+		end
+	end)
 end
 
 genderBtns.ChildAdded:Connect(function() end)
@@ -1702,16 +1813,25 @@ local function updateFromState()
 	moneyLabel.Text = formatMoney(currentState.Money or 0)
 
 	-- Gender-aware avatar emoji selection
-	local isFemale = currentState.Gender == "Female"
-	if currentState.Age < 3 then
+	-- Use currentState.Gender, fallback to selectedGender (local variable from intro)
+	local gender = currentState.Gender or selectedGender
+	local isFemale = (gender == "Female")
+	
+	local age = currentState.Age or 0
+	if age < 3 then
+		-- Baby - same emoji for both genders
 		avatarEmoji.Text = "👶"
-	elseif currentState.Age < 13 then
+	elseif age < 13 then
+		-- Child
 		avatarEmoji.Text = isFemale and "👧" or "👦"
-	elseif currentState.Age < 20 then
-		avatarEmoji.Text = isFemale and "👩" or "👨"
-	elseif currentState.Age < 60 then
+	elseif age < 20 then
+		-- Teen
+		avatarEmoji.Text = isFemale and "👩‍🦰" or "👨‍🦱"
+	elseif age < 60 then
+		-- Adult
 		avatarEmoji.Text = isFemale and "👩" or "👨"
 	else
+		-- Senior
 		avatarEmoji.Text = isFemale and "👵" or "👴"
 	end
 

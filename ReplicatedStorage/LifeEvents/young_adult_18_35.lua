@@ -550,7 +550,7 @@ module.events = {
 			return { petType = chosen.type, petName = names[math.random(#names)], petEmoji = chosen.emoji, petKind = chosen.petKind }
 		end,
 		getDynamicEmoji = function(data)
-			return data.petEmoji or "🐕"
+			return data.petEmoji or "🐾"
 		end,
 		text = "You visit an animal shelter. A cute %petType% named %petName% looks at you with hopeful eyes. %petEmoji%",
 		choices = {

@@ -361,14 +361,25 @@ module.events = {
 		id = "m_first_pet_encounter",
 		minAge = 2, maxAge = 6,
 		weight = 30, oneTime = true,
-		emoji = "🐕", title = "Meeting a Pet",
+		emoji = "🐾", title = "Meeting a Pet",
 		category = "family",
 		getDynamicData = function()
-			local pets = {"puppy", "kitten", "hamster", "goldfish", "bunny", "parakeet"}
+			local petData = {
+				{ type = "puppy", emoji = "🐶" },
+				{ type = "kitten", emoji = "🐱" },
+				{ type = "hamster", emoji = "🐹" },
+				{ type = "goldfish", emoji = "🐠" },
+				{ type = "bunny", emoji = "🐰" },
+				{ type = "parakeet", emoji = "🦜" },
+			}
+			local chosen = petData[math.random(#petData)]
 			local names = {"Max", "Buddy", "Luna", "Bella", "Charlie", "Coco"}
-			return { petType = pets[math.random(#pets)], petName = names[math.random(#names)] }
+			return { petType = chosen.type, petName = names[math.random(#names)], petEmoji = chosen.emoji }
 		end,
-		text = "Your family got a %petType% named %petName%! Your first real pet!",
+		getDynamicEmoji = function(data)
+			return data.petEmoji or "🐾"
+		end,
+		text = "Your family got a %petType% named %petName%! %petEmoji% Your first real pet!",
 		choices = {
 			{ text = "🤗 Love them!", effects = { Happiness = 10 }, resultText = "You and %petName% are inseparable! Best friends forever!", setFlag = "animal_lover" },
 			{ text = "😨 Scared of it", effects = { Happiness = -4 }, resultText = "%petName% scares you. Maybe you'll warm up eventually." },
