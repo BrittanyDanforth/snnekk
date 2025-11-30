@@ -217,6 +217,101 @@ module.events = {
 			{ text = "🎓 Get an AI-focused degree", effects = { Smarts = 20, Money = -50000 }, resultText = "Back to school for ML masters! Investing in the future!", setFlags = {"ai_specialist", "grad_student"} },
 		},
 	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- BUG BOUNTY & SECURITY
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "tech_bug_bounty",
+		minAge = 18, maxAge = 45,
+		weight = 18, cooldown = 2,
+		emoji = "🐛", title = "Bug Bounty Hunt!",
+		category = "work",
+		showResultPopup = true,
+		getDynamicData = function()
+			local companies = {"a major bank", "a social media company", "a tech giant", "a crypto exchange", "a gaming platform"}
+			local rewards = {1000, 2500, 5000, 10000, 15000}
+			return { company = companies[math.random(#companies)], reward = rewards[math.random(#rewards)] }
+		end,
+		text = "%company% is offering $%reward% for finding security bugs in their website. Do you try?",
+		choices = {
+			{ 
+				text = "👨‍💻 Hunt for bugs (minigame!)", 
+				requires = { Smarts = 40 },
+				effects = { Smarts = 3 },
+				minigame = {
+					id = "typing",
+					difficulty = "medium",
+					rewardOnSuccess = { Money = 5000, Smarts = 5 },
+					rewardOnFail = { Happiness = -5 },
+				},
+				chanceSuccess = 0.6,
+				effectsOnSuccess = { Money = 5000, Happiness = 15 },
+				resultTextSuccess = "FOUND A CRITICAL VULNERABILITY! $%reward% deposited! Bug bounty hunter status: ACTIVE! 💰",
+				effectsOnFail = { Happiness = -8 },
+				resultTextFail = "Searched for hours but found nothing exploitable. Someone else probably got the bugs first.",
+				setFlag = "bug_bounty_hunter"
+			},
+			{ 
+				text = "📚 Study their systems first", 
+				effects = { Smarts = 5, Happiness = 2 },
+				chanceSuccess = 0.7,
+				effectsOnSuccess = { Money = 2000, Happiness = 10 },
+				resultTextSuccess = "Research paid off! Found a low-severity bug! Small payout but it's honest work!",
+				effectsOnFail = { Happiness = -3 },
+				resultTextFail = "Learned a lot but didn't find any bugs this time. Next time!",
+				setFlag = "security_researcher"
+			},
+			{ 
+				text = "🙅 Too risky, skip it", 
+				effects = { Happiness = 2 }, 
+				resultText = "Probably wise. Bug bounties are competitive and time-consuming." 
+			},
+		},
+	},
+	
+	{
+		id = "tech_freelance_gig",
+		minAge = 20, maxAge = 50,
+		weight = 20, cooldown = 2,
+		emoji = "💻", title = "Freelance Opportunity!",
+		category = "work",
+		requiresFlag = "programmer",
+		showResultPopup = true,
+		getDynamicData = function()
+			local projects = {"build a website", "create a mobile app", "set up a database", "automate some tasks"}
+			local payments = {500, 1500, 3000, 5000}
+			return { project = projects[math.random(#projects)], payment = payments[math.random(#payments)] }
+		end,
+		text = "Someone on a freelance platform wants you to %project% for $%payment%. Take the job?",
+		choices = {
+			{ 
+				text = "✅ Accept the gig!", 
+				effects = { Health = -3 }, -- Work is tiring
+				chanceSuccess = 0.75,
+				effectsOnSuccess = { Money = 3000, Happiness = 12, Smarts = 3 },
+				resultTextSuccess = "Delivered on time! Client is THRILLED! 5-star review! More gigs coming!",
+				effectsOnFail = { Happiness = -10, Money = -500 },
+				resultTextFail = "Project scope creeped. Client unhappy. Partial payment. Lesson learned about contracts.",
+				setFlag = "freelancer"
+			},
+			{ 
+				text = "📋 Negotiate higher rate", 
+				effects = { Smarts = 2 },
+				chanceSuccess = 0.5,
+				effectsOnSuccess = { Money = 5000, Happiness = 15 },
+				resultTextSuccess = "They agreed to pay more! Your skills are worth it! 💰",
+				effectsOnFail = { Happiness = -5 },
+				resultTextFail = "They said no and found someone cheaper. Maybe too aggressive.",
+			},
+			{ 
+				text = "❌ Too busy, decline", 
+				effects = { Happiness = 3 }, 
+				resultText = "Passed on this one. Work-life balance matters." 
+			},
+		},
+	},
 }
 
 return module

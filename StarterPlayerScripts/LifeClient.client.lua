@@ -48,6 +48,7 @@ local SubmitChoice   = remotesFolder:WaitForChild("SubmitChoice")
 local SyncState      = remotesFolder:WaitForChild("SyncState")
 local SetLifeInfo    = remotesFolder:WaitForChild("SetLifeInfo")
 local MinigameResult = remotesFolder:WaitForChild("MinigameResult", 5)
+local MinigameStart  = remotesFolder:WaitForChild("MinigameStart", 5)
 
 ----------------------------------------------------------------
 -- STATE
@@ -1498,6 +1499,15 @@ hideEvent = function()
 
 	t.Completed:Connect(function()
 		eventOverlay.Visible = false
+		
+		-- Reset event UI elements for next event
+		eventEmoji.Text = "🙂"
+		eventTitle.Text = ""
+		eventBody.Text = ""
+		eventAvatarEmoji.Text = "👤"
+		eventNameLbl.Text = ""
+		relationLbl.Text = ""
+		eventHeader.Visible = false
 	end)
 end
 
@@ -1868,6 +1878,64 @@ PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
 		question         = eventData.question,
 	})
 end)
+
+----------------------------------------------------------------
+-- MINIGAME START HANDLER (Server triggers minigame)
+----------------------------------------------------------------
+
+if MinigameStart then
+	MinigameStart.OnClientEvent:Connect(function(config)
+		print("[LifeClient] 🎮 Server triggered minigame:", config.id)
+		
+		-- Hide the event overlay during minigame
+		if eventOverlay.Visible then
+			hideEvent()
+		end
+		
+		-- Store pending info
+		pendingMinigameEventId = config.eventId
+		pendingMinigameChoiceIndex = config.choiceIndex
+		
+		-- Run the minigame
+		if minigamesInstance and minigamesInstance.play then
+			minigamesInstance:play(config.id, function(won, data)
+				print("[LifeClient] 🎮 Minigame completed:", won and "WON" or "LOST")
+				
+				-- Send result back to server
+				if MinigameResult then
+					MinigameResult:FireServer(won, {
+						eventId = config.eventId,
+						choiceIndex = config.choiceIndex,
+						score = data and data.score or 0,
+					})
+				end
+				
+				-- Clear pending
+				pendingMinigameEventId = nil
+				pendingMinigameChoiceIndex = nil
+				
+				-- Visual feedback
+				if won then
+					flashScreen(C.Green, 0.7, 0.3)
+				else
+					flashScreen(C.Red, 0.6, 0.3)
+					shakeScreen(6, 0.2)
+				end
+			end)
+		else
+			-- No minigame module - just auto-complete as failure
+			warn("[LifeClient] ⚠️ No minigame module available, auto-failing")
+			if MinigameResult then
+				MinigameResult:FireServer(false, {
+					eventId = config.eventId,
+					choiceIndex = config.choiceIndex,
+				})
+			end
+			pendingMinigameEventId = nil
+			pendingMinigameChoiceIndex = nil
+		end
+	end)
+end
 
 ----------------------------------------------------------------
 -- AGE BUTTON LOGIC

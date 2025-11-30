@@ -533,30 +533,54 @@ module.events = {
 		id = "m_pet_adoption",
 		minAge = 22, maxAge = 35,
 		weight = 25, oneTime = true,
-		emoji = "🐕", title = "Adopting a Pet!",
+		emoji = "🏠", title = "Pet Shelter Visit",
 		category = "family",
+		showResultPopup = true,
 		getDynamicData = function()
 			local petData = {
-				{ type = "rescue dog", emoji = "🐕" },
-				{ type = "cat", emoji = "🐱" },
-				{ type = "puppy", emoji = "🐶" },
-				{ type = "kitten", emoji = "🐱" },
-				{ type = "rabbit", emoji = "🐰" },
-				{ type = "bird", emoji = "🐦" },
+				{ type = "rescue dog", emoji = "🐕", petKind = "Dog" },
+				{ type = "cat", emoji = "🐱", petKind = "Cat" },
+				{ type = "puppy", emoji = "🐶", petKind = "Dog" },
+				{ type = "kitten", emoji = "🐱", petKind = "Cat" },
+				{ type = "rabbit", emoji = "🐰", petKind = "Rabbit" },
+				{ type = "bird", emoji = "🐦", petKind = "Bird" },
 			}
 			local chosen = petData[math.random(#petData)]
 			local names = {"Max", "Luna", "Charlie", "Bella", "Cooper", "Lucy", "Milo", "Daisy"}
-			return { petType = chosen.type, petName = names[math.random(#names)], petEmoji = chosen.emoji }
+			return { petType = chosen.type, petName = names[math.random(#names)], petEmoji = chosen.emoji, petKind = chosen.petKind }
 		end,
 		getDynamicEmoji = function(data)
 			return data.petEmoji or "🐕"
 		end,
-		text = "You adopted a %petType% named %petName%!",
+		text = "You visit an animal shelter. A cute %petType% named %petName% looks at you with hopeful eyes. %petEmoji%",
 		choices = {
-			{ text = "🥰 Best decision ever!", effects = { Happiness = 15 }, resultText = "%petName% is the love of your life! Unconditional love!", setFlags = {"has_pet", "pet_parent"} },
-			{ text = "😅 Didn't expect this much work", effects = { Happiness = 6, Money = -1000 }, resultText = "Pets are expensive and demanding. But worth it!", setFlags = {"has_pet", "pet_parent"} },
-			{ text = "📸 Instagram star", effects = { Happiness = 10, Looks = 2 }, resultText = "%petName% has more followers than you!", setFlags = {"has_pet", "pet_parent"} },
-			{ text = "🏃 Exercise buddy!", effects = { Happiness = 10, Health = 6 }, resultText = "Daily walks! You're both getting fit!", setFlags = {"has_pet", "pet_parent", "active"} },
+			{ 
+				text = "❤️ Adopt them!", 
+				effects = { Happiness = 15, Money = -200 }, 
+				resultText = "You adopted %petName%! Welcome to the family, little one! 🥰",
+				setFlags = {"has_pet", "pet_parent"},
+				worldActions = {
+					{ type = "spawnPet", petType = "%petKind%" },
+				},
+			},
+			{ 
+				text = "🤔 Maybe another pet", 
+				effects = { Happiness = 5, Money = -200 }, 
+				chanceSuccess = 0.7,
+				resultTextSuccess = "You found an even cuter pet and adopted them! Perfect match!",
+				resultTextFail = "After looking around, you couldn't find a better fit. You left empty-handed.",
+				setFlags = {"has_pet", "pet_parent"},
+			},
+			{ 
+				text = "📅 Come back later", 
+				effects = { Happiness = -3 }, 
+				resultText = "You left without adopting. %petName%'s sad eyes haunt you...",
+			},
+			{ 
+				text = "😬 Not ready for a pet", 
+				effects = { Happiness = 2, Smarts = 2 }, 
+				resultText = "Responsible choice. Pets are a big commitment!",
+			},
 		},
 	},
 	

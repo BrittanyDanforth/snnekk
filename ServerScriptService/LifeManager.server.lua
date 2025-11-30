@@ -572,8 +572,46 @@ RequestAgeUp.OnServerEvent:Connect(function(player)
 end)
 
 ----------------------------------------------------------------
--- EVENT CHOICE HANDLING
+-- EVENT CHOICE HANDLING (COMPLETE OVERHAUL)
 ----------------------------------------------------------------
+
+-- Create MinigameStart remote for triggering minigames on client
+local MinigameStart = getRemote("MinigameStart")
+
+-- Process world actions from event results
+local function processWorldActions(player, worldActions, dynamicData)
+	if not worldActions or type(worldActions) ~= "table" then return end
+	
+	for _, action in ipairs(worldActions) do
+		if action.type == "spawnPet" then
+			-- Spawn a pet for the player
+			if _G.SpawnLifePetForPlayer then
+				_G.SpawnLifePetForPlayer(player, action.petType or "Dog")
+			end
+			print("[LifeManager] Spawned pet:", action.petType)
+			
+		elseif action.type == "playSfx" then
+			-- Play sound effect (client will handle)
+			local PlaySfx = remotesFolder:FindFirstChild("PlaySfx")
+			if PlaySfx then
+				PlaySfx:FireClient(player, action.sfxName)
+			end
+			
+		elseif action.type == "screenEffect" then
+			-- Screen shake, flash, etc.
+			local ScreenEffect = remotesFolder:FindFirstChild("ScreenEffect")
+			if ScreenEffect then
+				ScreenEffect:FireClient(player, action.effectName, action.params)
+			end
+			
+		elseif action.type == "unlockAchievement" then
+			-- Unlock achievement
+			if _G.UnlockAchievement then
+				_G.UnlockAchievement(player, action.achievementId)
+			end
+		end
+	end
+end
 
 SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	local state = getLife(player)
@@ -621,91 +659,135 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		return
 	end
 
-	local choice = choices[choiceIndex]
-	if not choice then
+	local choiceDef = choices[choiceIndex]
+	if not choiceDef then
 		pushState(player, state, "Choice not found.")
 		return
 	end
+	
+	local dynamicData = pending.dynamicData or {}
 
-	-- Check if choice triggers a minigame
-	if choice.minigame then
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 1: CHECK REQUIREMENTS BEFORE PROCESSING
+	-- ═══════════════════════════════════════════════════════════════
+	local meetsReqs, reqError = EventRunner.checkChoiceRequirements(state, choiceDef)
+	if not meetsReqs then
+		pushState(player, state, "❌ " .. (reqError or "Requirements not met"))
+		return
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 2: CHECK IF MINIGAME NEEDS TO BE TRIGGERED FIRST
+	-- ═══════════════════════════════════════════════════════════════
+	if choiceDef.minigame and not pending.minigameCompleted then
 		-- Store choice for after minigame completes
 		pending.choiceIndex = choiceIndex
-		-- Client will handle minigame, then send MinigameResult
-		return
+		
+		-- Build minigame config
+		local minigameConfig
+		if type(choiceDef.minigame) == "table" then
+			minigameConfig = {
+				id = choiceDef.minigame.id or "typing",
+				difficulty = choiceDef.minigame.difficulty or "medium",
+				eventId = eventId,
+				choiceIndex = choiceIndex,
+				rewardOnSuccess = choiceDef.minigame.rewardOnSuccess,
+				rewardOnFail = choiceDef.minigame.rewardOnFail,
+			}
+		else
+			minigameConfig = {
+				id = choiceDef.minigame,
+				difficulty = "medium",
+				eventId = eventId,
+				choiceIndex = choiceIndex,
+			}
+		end
+		
+		-- Fire minigame to client
+		print("[LifeManager] Triggering minigame:", minigameConfig.id)
+		MinigameStart:FireClient(player, minigameConfig)
+		return -- Wait for MinigameResult
 	end
 
-	-- Apply choice immediately
-	local dynamicData = pending.dynamicData or {}
-	
-	-- Debug: verify choice exists
-	local choiceDef = eventDef.choices and eventDef.choices[choiceIndex]
-	if not choiceDef or type(choiceDef) ~= "table" then
-		warn("[LifeManager] Invalid choice at index", choiceIndex, "for event", eventDef.id)
-		pendingEvents[player] = nil
-		pushState(player, state, "Choice error.")
-		return
-	end
-	
-	-- Store state before applying choice for delta calculation
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 3: STORE STATE BEFORE APPLYING CHOICE
+	-- ═══════════════════════════════════════════════════════════════
 	local beforeHappiness = state.Stats.Happiness or 50
 	local beforeHealth = state.Stats.Health or 100
 	local beforeSmarts = state.Stats.Smarts or 50
 	local beforeLooks = state.Stats.Looks or 50
 	local beforeMoney = state.Money or 0
-	
-	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 4: APPLY CHOICE (with RNG if applicable)
+	-- ═══════════════════════════════════════════════════════════════
+	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, nil)
 	
 	if err then
-		pushState(player, state, "Error: " .. tostring(err))
+		pushState(player, state, "❌ " .. tostring(err))
 		pendingEvents[player] = nil
 		return
 	end
 
-	-- Clear pending event
-	pendingEvents[player] = nil
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 5: PROCESS WORLD ACTIONS
+	-- ═══════════════════════════════════════════════════════════════
+	if results.worldActions then
+		processWorldActions(player, results.worldActions, dynamicData)
+	end
 
-	local feedText = results and results.resultText or "Something happened..."
-	state:AddFeed(feedText)
-	
-	-- Handle asset additions from events (e.g., midlife crisis sports car)
-	local choiceDef = eventDef.choices[choiceIndex]
-	if choiceDef and choiceDef.addAsset then
-		local assetData = choiceDef.addAsset
-		print("[LifeManager] Adding asset from event:", assetData.id, "type:", assetData.type)
-		
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 6: HANDLE ASSET ADDITIONS
+	-- ═══════════════════════════════════════════════════════════════
+	local assetToAdd = results.addAsset or choiceDef.addAsset
+	if assetToAdd and results.wasSuccess ~= false then
+		print("[LifeManager] Adding asset from event:", assetToAdd.id, "type:", assetToAdd.type)
 		if _G.AddAssetFromEvent then
-			_G.AddAssetFromEvent(player, assetData)
+			_G.AddAssetFromEvent(player, assetToAdd)
 		end
 	end
-	
-	-- Handle job assignments from events (e.g., becoming a teacher, hacker, etc.)
-	if choiceDef and choiceDef.setJob then
-		local jobData = choiceDef.setJob
-		print("[LifeManager] Setting job from event:", jobData.id, "title:", jobData.title)
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 7: HANDLE JOB ASSIGNMENTS
+	-- ═══════════════════════════════════════════════════════════════
+	local jobToSet = results.setJob or choiceDef.setJob
+	if jobToSet and results.wasSuccess ~= false then
+		print("[LifeManager] Setting job from event:", jobToSet.id, "title:", jobToSet.title)
 		
-		-- Process dynamic text in job fields (e.g., %school% -> actual school name)
-		local processedCompany = jobData.company or "Company"
+		local processedCompany = jobToSet.company or "Company"
 		if processedCompany and dynamicData then
 			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
 		end
 		
 		if _G.SetPlayerJob then
 			_G.SetPlayerJob(player, {
-				id = jobData.id,
-				title = jobData.title,
+				id = jobToSet.id,
+				title = jobToSet.title,
 				company = processedCompany,
-				salary = jobData.salary or 30000,
-				requirement = jobData.requirement,
-				storyFlag = choiceDef.setFlag or jobData.storyFlag,
+				salary = jobToSet.salary or 30000,
+				requirement = jobToSet.requirement,
+				storyFlag = choiceDef.setFlag or jobToSet.storyFlag,
 			})
 		end
 	end
-	
-	-- Sync prison state from flags (handles recapture, release, etc.)
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 8: SYNC PRISON STATE
+	-- ═══════════════════════════════════════════════════════════════
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
 	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 9: CLEAR PENDING EVENT
+	-- ═══════════════════════════════════════════════════════════════
+	pendingEvents[player] = nil
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 10: BUILD RESULT FEEDBACK
+	-- ═══════════════════════════════════════════════════════════════
+	local feedText = results and results.resultText or "Something happened..."
+	state:AddFeed(feedText)
 	
 	-- Calculate actual deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
@@ -714,26 +796,40 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
 	local moneyDelta = (state.Money or 0) - beforeMoney
 	
-	-- Only show popup for SIGNIFICANT events (milestone, big changes, or flags set)
+	-- Determine if result is significant enough for popup
 	local isSignificant = eventDef.milestone 
 		or eventDef.showResultPopup
-		or math.abs(happinessDelta) >= 15
-		or math.abs(healthDelta) >= 15
-		or math.abs(moneyDelta) >= 5000
+		or math.abs(happinessDelta) >= 10  -- Lowered threshold
+		or math.abs(healthDelta) >= 10
+		or math.abs(moneyDelta) >= 1000    -- Lowered threshold
 		or (#(results.flagsSet or {}) > 0)
+		or results.wasSuccess == false     -- Always show failures
 	
 	local resultData = nil
 	if isSignificant then
+		-- Add success/fail indicator to title
+		local resultEmoji = eventDef.emoji or "📋"
+		local resultTitle = eventDef.title or "Result"
+		
+		if results.wasSuccess == false then
+			resultEmoji = "❌"
+			resultTitle = resultTitle .. " - Failed"
+		elseif results.wasSuccess == true and (choiceDef.chanceSuccess or choiceDef.minigame) then
+			resultEmoji = "✅"
+			resultTitle = resultTitle .. " - Success!"
+		end
+		
 		resultData = {
 			showPopup = true,
-			emoji = eventDef.emoji or "📋",
-			title = eventDef.title or "Result",
+			emoji = resultEmoji,
+			title = resultTitle,
 			body = feedText,
 			happiness = happinessDelta ~= 0 and happinessDelta or nil,
 			health = healthDelta ~= 0 and healthDelta or nil,
 			smarts = smartsDelta ~= 0 and smartsDelta or nil,
 			looks = looksDelta ~= 0 and looksDelta or nil,
 			money = moneyDelta ~= 0 and moneyDelta or nil,
+			wasSuccess = results.wasSuccess,
 		}
 	end
 	
@@ -741,7 +837,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 end)
 
 ----------------------------------------------------------------
--- MINIGAME RESULT HANDLING
+-- MINIGAME RESULT HANDLING (OVERHAULED)
 ----------------------------------------------------------------
 
 MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameData)
@@ -759,14 +855,17 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	local eventDef = pending.eventDef
 	local choiceIndex = pending.choiceIndex
 	local dynamicData = pending.dynamicData or {}
+	local choiceDef = eventDef.choices and eventDef.choices[choiceIndex]
 	
 	-- Store state before
 	local beforeHappiness = state.Stats.Happiness or 50
 	local beforeHealth = state.Stats.Health or 100
+	local beforeSmarts = state.Stats.Smarts or 50
+	local beforeLooks = state.Stats.Looks or 50
 	local beforeMoney = state.Money or 0
 
-	-- Apply choice with minigame bonus if won
-	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData)
+	-- Apply choice WITH the minigame result (true = won, false = lost)
+	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, minigameSuccess)
 	
 	if err then
 		pushState(player, state, "Error: " .. tostring(err))
@@ -774,25 +873,67 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 		return
 	end
 
-	-- Modify results based on minigame success
-	local feedText = results.resultText or "Something happened..."
-	local bonusMoney = 0
-	local bonusHappiness = 0
-	
-	if minigameSuccess then
-		-- Bonus for winning minigame
-		if results.effects and results.effects.Money then
-			bonusMoney = math.floor(math.abs(results.effects.Money) * 0.5)
-			state.Money = (state.Money or 0) + bonusMoney
+	-- Apply minigame-specific rewards if defined
+	if choiceDef and choiceDef.minigame and type(choiceDef.minigame) == "table" then
+		local mgConfig = choiceDef.minigame
+		if minigameSuccess and mgConfig.rewardOnSuccess then
+			for stat, delta in pairs(mgConfig.rewardOnSuccess) do
+				if stat == "Money" then
+					state.Money = (state.Money or 0) + delta
+				elseif state.Stats[stat] then
+					state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + delta, 0, 100)
+				end
+			end
+		elseif not minigameSuccess and mgConfig.rewardOnFail then
+			for stat, delta in pairs(mgConfig.rewardOnFail) do
+				if stat == "Money" then
+					state.Money = (state.Money or 0) + delta
+				elseif state.Stats[stat] then
+					state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + delta, 0, 100)
+				end
+			end
 		end
-		bonusHappiness = 10
-		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + bonusHappiness, 0, 100)
+	end
+
+	-- Build result text
+	local feedText = results.resultText or "Something happened..."
+	if minigameSuccess then
 		feedText = feedText .. " 🎮 Minigame mastered!"
 	else
-		-- Penalty for losing minigame
-		bonusHappiness = -10
-		state.Stats.Happiness = math.clamp((state.Stats.Happiness or 50) + bonusHappiness, 0, 100)
 		feedText = feedText .. " 🎮 Minigame failed..."
+	end
+
+	-- Process world actions if minigame won
+	if minigameSuccess and results.worldActions then
+		processWorldActions(player, results.worldActions, dynamicData)
+	end
+
+	-- Handle asset additions if minigame won
+	local assetToAdd = results.addAsset or (choiceDef and choiceDef.addAsset)
+	if assetToAdd and minigameSuccess then
+		print("[LifeManager] Adding asset from minigame win:", assetToAdd.id)
+		if _G.AddAssetFromEvent then
+			_G.AddAssetFromEvent(player, assetToAdd)
+		end
+	end
+
+	-- Handle job assignments if minigame won
+	local jobToSet = results.setJob or (choiceDef and choiceDef.setJob)
+	if jobToSet and minigameSuccess then
+		print("[LifeManager] Setting job from minigame win:", jobToSet.id)
+		local processedCompany = jobToSet.company or "Company"
+		if processedCompany and dynamicData then
+			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
+		end
+		if _G.SetPlayerJob then
+			_G.SetPlayerJob(player, {
+				id = jobToSet.id,
+				title = jobToSet.title,
+				company = processedCompany,
+				salary = jobToSet.salary or 30000,
+				requirement = jobToSet.requirement,
+			})
+		end
 	end
 
 	-- Clear pending event
@@ -800,7 +941,7 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 
 	state:AddFeed(feedText)
 	
-	-- Sync prison state from flags (handles recapture, release, etc.)
+	-- Sync prison state
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
 	end
@@ -808,17 +949,22 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	-- Calculate total deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
 	local healthDelta = (state.Stats.Health or 100) - beforeHealth
+	local smartsDelta = (state.Stats.Smarts or 50) - beforeSmarts
+	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
 	local moneyDelta = (state.Money or 0) - beforeMoney
 	
-	-- Minigames always show result popup (they're special)
+	-- Minigames always show result popup
 	local resultData = {
 		showPopup = true,
 		emoji = minigameSuccess and "🏆" or "😞",
-		title = minigameSuccess and "Success!" or "Failed",
+		title = minigameSuccess and "Minigame Success!" or "Minigame Failed",
 		body = feedText,
 		happiness = happinessDelta ~= 0 and happinessDelta or nil,
 		health = healthDelta ~= 0 and healthDelta or nil,
+		smarts = smartsDelta ~= 0 and smartsDelta or nil,
+		looks = looksDelta ~= 0 and looksDelta or nil,
 		money = moneyDelta ~= 0 and moneyDelta or nil,
+		wasSuccess = minigameSuccess,
 	}
 	
 	pushState(player, state, feedText, resultData)

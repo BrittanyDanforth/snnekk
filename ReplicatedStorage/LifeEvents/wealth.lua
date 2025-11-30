@@ -62,16 +62,40 @@ module.events = {
 		weight = 20, cooldown = 3,
 		emoji = "📈", title = "Stock Market Opportunity!",
 		category = "social",
+		showResultPopup = true,
 		getDynamicData = function()
 			local tips = {"a friend's hot tip", "your own research", "a viral social media post", "a financial advisor"}
 			return { source = tips[math.random(#tips)] }
 		end,
-		text = "Based on %source%, there's a stock investment opportunity! Put money in?",
+		text = "Based on %source%, there's a stock investment opportunity! How much do you invest?",
 		choices = {
-			{ text = "💰 Invest heavily", effects = { Money = 5000, Happiness = 15 }, resultText = "IT WENT UP! Made money! Feeling like a genius!", setFlag = "stock_investor" },
-			{ text = "📉 Invest and lose", effects = { Money = -3000, Happiness = -12 }, resultText = "Stock tanked. Lost money. Ouch. That's the market." },
-			{ text = "🤏 Small investment", effects = { Money = 500, Happiness = 8 }, resultText = "Modest gains! Playing it safe worked out!", setFlag = "cautious_investor" },
-			{ text = "🙅 Stay out of market", effects = { Happiness = 3, Smarts = 3 }, resultText = "Didn't invest. Missed the gains but also avoided the risk." },
+			{ 
+				text = "💰 Invest heavily ($5000)", 
+				requires = { Money = 5000 },
+				effects = { Money = -5000 }, -- Risk the money
+				chanceSuccess = 0.55,
+				effectsOnSuccess = { Money = 12000, Happiness = 18 },
+				resultTextSuccess = "IT WENT UP! Made $7000 profit! Feeling like a genius! 📈",
+				effectsOnFail = { Money = -3000, Happiness = -12 },
+				resultTextFail = "Stock tanked. Lost $8000 total. Ouch. That's the market. 📉",
+				setFlag = "stock_investor" 
+			},
+			{ 
+				text = "🤏 Small investment ($1000)", 
+				requires = { Money = 1000 },
+				effects = { Money = -1000 },
+				chanceSuccess = 0.6,
+				effectsOnSuccess = { Money = 2500, Happiness = 10 },
+				resultTextSuccess = "Nice modest gains! Made $1500 profit! Playing it safe worked!",
+				effectsOnFail = { Money = -500, Happiness = -5 },
+				resultTextFail = "Lost $1500 total. At least you didn't bet big.",
+				setFlag = "cautious_investor" 
+			},
+			{ 
+				text = "🙅 Stay out of market", 
+				effects = { Happiness = 3, Smarts = 3 }, 
+				resultText = "Didn't invest. Either missed gains or dodged losses. Sleep well!" 
+			},
 		},
 	},
 	
@@ -81,16 +105,41 @@ module.events = {
 		weight = 18, cooldown = 4,
 		emoji = "🪙", title = "Crypto Investment?",
 		category = "social",
+		showResultPopup = true,
 		getDynamicData = function()
 			local coins = {"Bitcoin", "Ethereum", "a random altcoin", "a meme coin"}
 			return { coin = coins[math.random(#coins)] }
 		end,
-		text = "Everyone's talking about %coin%! FOMO is real! Do you invest?",
+		text = "Everyone's talking about %coin%! FOMO is real! How much do you put in?",
 		choices = {
-			{ text = "🚀 Go big!", effects = { Money = 20000, Happiness = 25 }, resultText = "TO THE MOON! 10x gains! You're a crypto genius!", setFlags = {"crypto_rich", "investor"} },
-			{ text = "📉 Bought the top", effects = { Money = -8000, Happiness = -20 }, resultText = "Crashed right after you bought. Classic. REKT.", setFlag = "crypto_loss" },
-			{ text = "🤏 Small fun investment", effects = { Money = 1000, Happiness = 10 }, resultText = "Made a bit! Didn't risk too much! Smart gambling!", setFlag = "crypto_dabbler" },
-			{ text = "🙅 Too risky for me", effects = { Happiness = 5, Smarts = 5 }, resultText = "Stayed out of the madness. Slept well at night.", setFlag = "crypto_skeptic" },
+			{ 
+				text = "🚀 YOLO big ($10,000)!", 
+				requires = { Money = 10000 },
+				effects = { Money = -10000 },
+				chanceSuccess = 0.4, -- Crypto is risky!
+				effectsOnSuccess = { Money = 50000, Happiness = 30 },
+				resultTextSuccess = "TO THE MOON! 5x gains! You're a crypto genius! Diamond hands! 💎🙌",
+				effectsOnFail = { Money = -8000, Happiness = -20 },
+				resultTextFail = "Crashed 80% right after you bought. Classic. REKT. Paper hands? Should've held? Who knows.",
+				setFlags = {"crypto_investor"} 
+			},
+			{ 
+				text = "🤏 Small fun money ($500)", 
+				requires = { Money = 500 },
+				effects = { Money = -500 },
+				chanceSuccess = 0.5,
+				effectsOnSuccess = { Money = 2000, Happiness = 12 },
+				resultTextSuccess = "Made 4x! Not life-changing but fun! Smart gambling!",
+				effectsOnFail = { Money = -400, Happiness = -5 },
+				resultTextFail = "Lost most of it. At least it was just fun money.",
+				setFlag = "crypto_dabbler" 
+			},
+			{ 
+				text = "🙅 Too risky for me", 
+				effects = { Happiness = 5, Smarts = 5 }, 
+				resultText = "Stayed out of the madness. Slept well at night. Maybe you missed gains. Maybe you dodged a bullet.", 
+				setFlag = "crypto_skeptic" 
+			},
 		},
 	},
 	
@@ -100,17 +149,46 @@ module.events = {
 		weight = 15, cooldown = 5,
 		emoji = "🏠", title = "Real Estate Opportunity!",
 		category = "social",
+		showResultPopup = true,
 		getDynamicData = function()
 			local properties = {"a fixer-upper", "rental property", "vacant land", "a condo"}
 			local prices = {150000, 200000, 250000, 300000}
 			return { property = properties[math.random(#properties)], price = prices[math.random(#prices)] }
 		end,
-		text = "Opportunity to buy %property% for $%price%! Real estate builds wealth! Do you buy?",
+		text = "Opportunity to buy %property% for $%price%! Real estate builds wealth! Do you invest?",
 		choices = {
-			{ text = "🏠 Buy it!", effects = { Money = 50000, Happiness = 18 }, resultText = "Great investment! Property appreciated! Building wealth!", setFlags = {"property_owner", "real_estate_investor"} },
-			{ text = "🔨 Buy and flip", effects = { Money = 30000, Happiness = 15, Health = -5 }, resultText = "Fixed it up and sold for profit! Hard work paid off!", setFlag = "house_flipper" },
-			{ text = "📉 Market crashed after", effects = { Money = -40000, Happiness = -20 }, resultText = "Bought at the peak. Value dropped. Underwater on mortgage.", setFlag = "bad_investment" },
-			{ text = "🙅 Can't afford it", effects = { Happiness = -5 }, resultText = "Not in a position to buy. Watching others build wealth. Frustrating." },
+			{ 
+				text = "🏠 Buy it!", 
+				requires = { Money = 30000 },
+				effects = { Money = -30000 }, -- Down payment
+				chanceSuccess = 0.65,
+				effectsOnSuccess = { Money = 80000, Happiness = 18 },
+				resultTextSuccess = "Great investment! Property appreciated! Made $50k profit! Building wealth!",
+				effectsOnFail = { Money = -40000, Happiness = -15 },
+				resultTextFail = "Market crashed right after you bought. Property value dropped. Lost money. Bad timing!",
+				setFlags = {"property_owner", "real_estate_investor"} 
+			},
+			{ 
+				text = "🔨 Buy cheap and flip", 
+				requires = { Money = 20000 },
+				effects = { Money = -20000, Health = -5 },
+				chanceSuccess = 0.55,
+				effectsOnSuccess = { Money = 60000, Happiness = 15 },
+				resultTextSuccess = "Fixed it up and sold for profit! Hard work paid off!",
+				effectsOnFail = { Money = -10000, Happiness = -10 },
+				resultTextFail = "Renovation costs exploded. Sold at a loss. House flipping is risky!",
+				setFlag = "house_flipper" 
+			},
+			{ 
+				text = "📉 Wait for better timing", 
+				effects = { Smarts = 3, Happiness = 2 }, 
+				resultText = "Staying out for now. Patience might pay off later." 
+			},
+			{ 
+				text = "🙅 Can't afford it", 
+				effects = { Happiness = -3 }, 
+				resultText = "Not in a position to buy. Maybe next time." 
+			},
 		},
 	},
 	

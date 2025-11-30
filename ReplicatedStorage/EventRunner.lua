@@ -695,14 +695,114 @@ function EventRunner.buildClientPayload(eventDef: EventDef, state: LifeState): (
 end
 
 ----------------------------------------------------------------------
--- APPLY CHOICE + EFFECTS + NARRATIVE
+-- APPLY CHOICE + EFFECTS + NARRATIVE (COMPLETE OVERHAUL)
 ----------------------------------------------------------------------
+
+-- Helper to apply effects to state
+local function applyEffectsToState(state: LifeState, effects: EffectsMap?, resultsTracker)
+	if not effects or type(effects) ~= "table" then return end
+	
+	for stat, delta in pairs(effects) do
+		if type(delta) == "number" then
+			if stat == "Money" then
+				state.Money = (state.Money or 0) + delta
+				resultsTracker.effects.Money = (resultsTracker.effects.Money or 0) + delta
+			elseif stat == "Happiness" then
+				local current = (state.Stats and state.Stats.Happiness) or state.Happiness or 50
+				local newVal = clampStat(current + delta)
+				if state.Stats then state.Stats.Happiness = newVal end
+				state.Happiness = newVal
+				resultsTracker.effects.Happiness = (resultsTracker.effects.Happiness or 0) + delta
+			elseif stat == "Health" then
+				local current = (state.Stats and state.Stats.Health) or state.Health or 50
+				local newVal = clampStat(current + delta)
+				if state.Stats then state.Stats.Health = newVal end
+				state.Health = newVal
+				resultsTracker.effects.Health = (resultsTracker.effects.Health or 0) + delta
+			elseif stat == "Smarts" then
+				local current = (state.Stats and state.Stats.Smarts) or state.Smarts or 50
+				local newVal = clampStat(current + delta)
+				if state.Stats then state.Stats.Smarts = newVal end
+				state.Smarts = newVal
+				resultsTracker.effects.Smarts = (resultsTracker.effects.Smarts or 0) + delta
+			elseif stat == "Looks" then
+				local current = (state.Stats and state.Stats.Looks) or state.Looks or 50
+				local newVal = clampStat(current + delta)
+				if state.Stats then state.Stats.Looks = newVal end
+				state.Looks = newVal
+				resultsTracker.effects.Looks = (resultsTracker.effects.Looks or 0) + delta
+			end
+		end
+	end
+end
+
+-- Check if player meets requirements for a choice
+function EventRunner.checkChoiceRequirements(state: LifeState, choice): (boolean, string?)
+	-- Check stat requirements (e.g., { Smarts = 40, Money = 5000 })
+	if choice.requires and type(choice.requires) == "table" then
+		for stat, minValue in pairs(choice.requires) do
+			local currentValue = 0
+			if stat == "Money" then
+				currentValue = state.Money or 0
+			elseif stat == "Age" then
+				currentValue = state.Age or 0
+			elseif state.Stats and state.Stats[stat] then
+				currentValue = state.Stats[stat]
+			elseif state[stat] then
+				currentValue = state[stat]
+			end
+			
+			if currentValue < minValue then
+				return false, string.format("Requires %s %d (you have %d)", stat, minValue, currentValue)
+			end
+		end
+	end
+	
+	-- Check required flags (must have ALL)
+	if choice.requiresFlags and type(choice.requiresFlags) == "table" then
+		local flags = state.Flags or {}
+		for _, reqFlag in ipairs(choice.requiresFlags) do
+			if not flags[reqFlag] then
+				return false, "Missing required flag: " .. reqFlag
+			end
+		end
+	end
+	
+	-- Check single required flag
+	if choice.requiresFlag and type(choice.requiresFlag) == "string" then
+		local flags = state.Flags or {}
+		if not flags[choice.requiresFlag] then
+			return false, "Missing required flag: " .. choice.requiresFlag
+		end
+	end
+	
+	-- Check blocked flags (must NOT have ANY)
+	if choice.blockedFlags and type(choice.blockedFlags) == "table" then
+		local flags = state.Flags or {}
+		for _, blockFlag in ipairs(choice.blockedFlags) do
+			if flags[blockFlag] then
+				return false, "Blocked by flag: " .. blockFlag
+			end
+		end
+	end
+	
+	-- Check single blocked flag
+	if choice.blockedFlag and type(choice.blockedFlag) == "string" then
+		local flags = state.Flags or {}
+		if flags[choice.blockedFlag] then
+			return false, "Blocked by flag: " .. choice.blockedFlag
+		end
+	end
+	
+	return true, nil
+end
 
 function EventRunner.applyChoice(
 	state: LifeState,
 	eventDef: EventDef,
 	choiceIndex: number,
-	dynamicData: DynamicData?
+	dynamicData: DynamicData?,
+	minigameResult: boolean? -- nil = no minigame, true = won, false = lost
 ): (ApplyChoiceResults?, string?)
 	if type(choiceIndex) ~= "number" then
 		return nil, "choiceIndex must be a number"
@@ -717,59 +817,67 @@ function EventRunner.applyChoice(
 		return nil, "Invalid choice at index " .. tostring(choiceIndex)
 	end
 
-	local results: ApplyChoiceResults = {
+	local results = {
 		effects = {},
 		flagsSet = {},
 		flagsCleared = {},
 		minigameTriggered = nil,
+		minigameConfig = nil,
+		worldActions = nil,
+		addAsset = nil,
+		setJob = nil,
 		resultText = "",
+		wasSuccess = nil, -- Track if RNG roll succeeded
 	}
 
-	-- Apply stat / money effects
-	if choice.effects and type(choice.effects) == "table" then
-		for stat, delta in pairs(choice.effects) do
-			if type(delta) == "number" then
-				if stat == "Money" then
-					state.Money = (state.Money or 0) + delta
-					results.effects.Money = (results.effects.Money or 0) + delta
-				elseif stat == "Happiness" then
-					local current = (state.Stats and state.Stats.Happiness) or state.Happiness or 50
-					local newVal = clampStat(current + delta)
-					if state.Stats then
-						state.Stats.Happiness = newVal
-					end
-					state.Happiness = newVal
-					results.effects.Happiness = (results.effects.Happiness or 0) + delta
-				elseif stat == "Health" then
-					local current = (state.Stats and state.Stats.Health) or state.Health or 50
-					local newVal = clampStat(current + delta)
-					if state.Stats then
-						state.Stats.Health = newVal
-					end
-					state.Health = newVal
-					results.effects.Health = (results.effects.Health or 0) + delta
-				elseif stat == "Smarts" then
-					local current = (state.Stats and state.Stats.Smarts) or state.Smarts or 50
-					local newVal = clampStat(current + delta)
-					if state.Stats then
-						state.Stats.Smarts = newVal
-					end
-					state.Smarts = newVal
-					results.effects.Smarts = (results.effects.Smarts or 0) + delta
-				elseif stat == "Looks" then
-					local current = (state.Stats and state.Stats.Looks) or state.Looks or 50
-					local newVal = clampStat(current + delta)
-					if state.Stats then
-						state.Stats.Looks = newVal
-					end
-					state.Looks = newVal
-					results.effects.Looks = (results.effects.Looks or 0) + delta
-				end
-			end
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 1: CHECK REQUIREMENTS
+	-- ═══════════════════════════════════════════════════════════════
+	local meetsRequirements, reqError = EventRunner.checkChoiceRequirements(state, choice)
+	if not meetsRequirements then
+		return nil, reqError
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 2: DETERMINE SUCCESS/FAIL (RNG or Minigame)
+	-- ═══════════════════════════════════════════════════════════════
+	local success = true -- Default to success
+	local usedRNG = false
+	
+	-- If minigame was played, use that result
+	if minigameResult ~= nil then
+		success = minigameResult
+	-- Otherwise check for chanceSuccess RNG
+	elseif choice.chanceSuccess ~= nil and type(choice.chanceSuccess) == "number" then
+		local roll = math.random()
+		success = roll < choice.chanceSuccess
+		usedRNG = true
+		print(string.format("[EventRunner] RNG roll: %.2f vs chance %.2f = %s", roll, choice.chanceSuccess, success and "SUCCESS" or "FAIL"))
+	end
+	
+	results.wasSuccess = success
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 3: APPLY BASE EFFECTS (always applied)
+	-- ═══════════════════════════════════════════════════════════════
+	applyEffectsToState(state, choice.effects, results)
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 4: APPLY SUCCESS OR FAIL EFFECTS
+	-- ═══════════════════════════════════════════════════════════════
+	if success then
+		if choice.effectsOnSuccess then
+			applyEffectsToState(state, choice.effectsOnSuccess, results)
+		end
+	else
+		if choice.effectsOnFail then
+			applyEffectsToState(state, choice.effectsOnFail, results)
 		end
 	end
 
-	-- Apply dynamic money callback if present
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 5: APPLY DYNAMIC MONEY CALLBACK
+	-- ═══════════════════════════════════════════════════════════════
 	if choice.getDynamicMoney and dynamicData then
 		local ok, amount = pcall(choice.getDynamicMoney, dynamicData)
 		if ok and type(amount) == "number" then
@@ -778,44 +886,75 @@ function EventRunner.applyChoice(
 		end
 	end
 
-	-- Set flags
-	if choice.setFlag then
-		state.Flags = state.Flags or {}
-		state.Flags[choice.setFlag] = true
-		table.insert(results.flagsSet, choice.setFlag)
-	end
-
-	-- Set multiple flags
-	if choice.setFlags and type(choice.setFlags) == "table" then
-		state.Flags = state.Flags or {}
-		for _, flag in ipairs(choice.setFlags) do
-			state.Flags[flag] = true
-			table.insert(results.flagsSet, flag)
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 6: SET/CLEAR FLAGS
+	-- ═══════════════════════════════════════════════════════════════
+	state.Flags = state.Flags or {}
+	
+	-- Only set flags if succeeded (or if no RNG/minigame involved)
+	if success or (not usedRNG and minigameResult == nil) then
+		if choice.setFlag then
+			state.Flags[choice.setFlag] = true
+			table.insert(results.flagsSet, choice.setFlag)
+		end
+		if choice.setFlags and type(choice.setFlags) == "table" then
+			for _, flag in ipairs(choice.setFlags) do
+				state.Flags[flag] = true
+				table.insert(results.flagsSet, flag)
+			end
 		end
 	end
-
-	-- Clear flags
+	
+	-- Always process clear flags
 	if choice.clearFlag then
-		state.Flags = state.Flags or {}
 		state.Flags[choice.clearFlag] = nil
 		table.insert(results.flagsCleared, choice.clearFlag)
 	end
-
-	-- Clear multiple flags
 	if choice.clearFlags and type(choice.clearFlags) == "table" then
-		state.Flags = state.Flags or {}
 		for _, flag in ipairs(choice.clearFlags) do
 			state.Flags[flag] = nil
 			table.insert(results.flagsCleared, flag)
 		end
 	end
 
-	-- Minigame trigger (if any)
-	if choice.minigame then
-		results.minigameTriggered = choice.minigame
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 7: MINIGAME TRIGGER (for deferred resolution)
+	-- ═══════════════════════════════════════════════════════════════
+	if choice.minigame and minigameResult == nil then
+		-- Minigame hasn't been played yet - flag it
+		if type(choice.minigame) == "table" then
+			results.minigameTriggered = choice.minigame.id or "generic"
+			results.minigameConfig = choice.minigame
+		else
+			results.minigameTriggered = choice.minigame
+			results.minigameConfig = { id = choice.minigame }
+		end
 	end
 	
-	-- Add relationship if specified
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 8: WORLD ACTIONS (spawn pet, play sound, etc.)
+	-- ═══════════════════════════════════════════════════════════════
+	if success and choice.worldActions then
+		results.worldActions = choice.worldActions
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 9: ADD ASSET (property, vehicle, item)
+	-- ═══════════════════════════════════════════════════════════════
+	if success and choice.addAsset then
+		results.addAsset = choice.addAsset
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 10: SET JOB
+	-- ═══════════════════════════════════════════════════════════════
+	if success and choice.setJob then
+		results.setJob = choice.setJob
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 11: ADD RELATIONSHIP
+	-- ═══════════════════════════════════════════════════════════════
 	if choice.addRelationship and state.Relationships then
 		local relData = choice.addRelationship
 		local category = relData.category or "friends"
@@ -823,7 +962,6 @@ function EventRunner.applyChoice(
 			state.Relationships[category] = {}
 		end
 		
-		-- Process dynamic name if available
 		local personName = relData.name
 		if relData.dynamicNameKey and dynamicData and dynamicData[relData.dynamicNameKey] then
 			personName = tostring(dynamicData[relData.dynamicNameKey])
@@ -842,16 +980,29 @@ function EventRunner.applyChoice(
 		results.relationshipAdded = newPerson
 	end
 
-	-- Explicit result text from choice, if given
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 12: BUILD RESULT TEXT
+	-- ═══════════════════════════════════════════════════════════════
 	local explicitResultText: string? = nil
-	if choice.result or choice.resultText then
-		local base = choice.result or choice.resultText
+	
+	-- Pick correct result text based on success/fail
+	if success then
+		local base = choice.resultTextSuccess or choice.resultText or choice.result
 		if base then
 			explicitResultText = EventRunner.processDynamicText(base, dynamicData)
 		end
+	else
+		local base = choice.resultTextFail or choice.resultText or choice.result
+		if base then
+			explicitResultText = EventRunner.processDynamicText(base, dynamicData)
+		end
+		-- Add failure indicator if not in text
+		if explicitResultText and not string.find(explicitResultText:lower(), "fail") and not string.find(explicitResultText:lower(), "didn't") then
+			-- Text doesn't indicate failure, maybe add context
+		end
 	end
 
-	-- Final narrative that the client will show in the life feed
+	-- Final narrative
 	results.resultText = EventRunner.buildNarrativeText(
 		state,
 		eventDef,
@@ -862,6 +1013,25 @@ function EventRunner.applyChoice(
 	)
 
 	return results, nil
+end
+
+-- Filter choices based on requirements (for client to gray out unavailable options)
+function EventRunner.filterAvailableChoices(state: LifeState, eventDef: EventDef): { [number]: { available: boolean, reason: string? } }
+	local availability = {}
+	
+	if not eventDef or not eventDef.choices then
+		return availability
+	end
+	
+	for i, choice in ipairs(eventDef.choices) do
+		local meetsReqs, reason = EventRunner.checkChoiceRequirements(state, choice)
+		availability[i] = {
+			available = meetsReqs,
+			reason = reason
+		}
+	end
+	
+	return availability
 end
 
 ----------------------------------------------------------------------
