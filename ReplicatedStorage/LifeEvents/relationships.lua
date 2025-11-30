@@ -113,7 +113,7 @@ module.events = {
 	},
 	
 	{
-		id = "m_divorce",
+		id = "m_divorce_general",
 		minAge = 25, maxAge = 70,
 		weight = 15, oneTime = false,
 		emoji = "💔", title = "Divorce",
