@@ -205,8 +205,8 @@ module.events = {
 		end,
 		text = "You hit it off with %friendName%! Potential new friend.",
 		choices = {
-			{ text = "🤝 Become friends!", effects = { Happiness = 8 }, resultText = "You made a new friend!" },
-			{ text = "📱 Exchange info", effects = { Happiness = 4 }, resultText = "Maybe you'll hang out sometime." },
+			{ text = "🤝 Become friends!", effects = { Happiness = 8 }, resultText = "You made a new friend!", addRelationship = { category = "friends", name = "%friendName%", relationship = 60 } },
+			{ text = "📱 Exchange info", effects = { Happiness = 4 }, resultText = "You exchanged contact info. %friendName% is now in your contacts!", addRelationship = { category = "friends", name = "%friendName%", relationship = 40 } },
 			{ text = "🤷 Nice to meet them", effects = { Happiness = 2 }, resultText = "Pleasant but not memorable." },
 		},
 	},

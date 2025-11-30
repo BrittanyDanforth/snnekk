@@ -323,12 +323,22 @@ module.events = {
 		category = "health",
 		getDynamicData = function()
 			local challenges = {"need a cane", "knee replacement", "hip issues", "balance concerns", "stairs are harder", "driving at night"}
-			return { challenge = challenges[math.random(#challenges)] }
+			local aids = {"walking cane", "walker", "wheelchair", "mobility scooter", "handrails installed"}
+			return { 
+				challenge = challenges[math.random(#challenges)],
+				aid = aids[math.random(#aids)],
+			}
 		end,
 		text = "Body's changing: %challenge%. Adapting to new limitations.",
 		choices = {
 			{ text = "💪 Staying active anyway!", effects = { Health = 4, Happiness = 6 }, resultText = "Modified activities but still moving! Not giving up!", setFlag = "adapted_mobility" },
 			{ text = "🏥 Medical help", effects = { Health = 6, Money = -5000 }, resultText = "Surgery/treatment helped! Getting around better!", setFlag = "adapted_mobility" },
+			{ text = "🦽 Get a walking aid", effects = function(dynamicData)
+				-- Actually changes something - reduces health decline, costs money
+				return { Health = 3, Happiness = 5, Money = -800 }
+			end, resultText = function(dynamicData)
+				return "You got a %aid%. It helps! Your mobility improved and you feel more independent."
+			end, setFlag = "using_walking_aid" },
 			{ text = "😤 Frustrated", effects = { Happiness = -6, Health = -2 }, resultText = "Independence slipping. It's hard to accept." },
 			{ text = "🤝 Accepting help", effects = { Happiness = 4, Smarts = 3 }, resultText = "Pride aside. Family and aids helping.", setFlag = "adapted_mobility" },
 		},

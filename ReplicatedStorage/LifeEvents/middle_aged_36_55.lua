@@ -321,14 +321,86 @@ module.events = {
 		category = "health",
 		getDynamicData = function()
 			local scares = {"suspicious test results", "chest pain scare", "scary symptoms", "emergency room visit", "waiting for biopsy results"}
-			return { scare = scares[math.random(#scares)] }
+			local isFalseAlarm = math.random() < 0.5 -- 50% chance
+			local needsTreatment = math.random() < 0.3 -- 30% chance
+			return { 
+				scare = scares[math.random(#scares)],
+				isFalseAlarm = isFalseAlarm,
+				needsTreatment = needsTreatment,
+			}
 		end,
 		text = "A %scare% has you facing your mortality. Life feels fragile.",
 		choices = {
-			{ text = "✅ False alarm!", effects = { Health = 2, Happiness = 15 }, resultText = "Thank goodness! Clean bill of health. Wake-up call.", setFlag = "health_scare_survivor" },
-			{ text = "🏥 Need treatment", effects = { Health = -10, Happiness = -10, Money = -20000 }, resultText = "Caught early. Treatment ahead but prognosis good.", setFlag = "health_battle" },
-			{ text = "🔄 Complete lifestyle change", effects = { Health = 8, Happiness = 6 }, resultText = "Scared you into taking care of yourself!", setFlags = {"health_scare_survivor", "health_focused"} },
-			{ text = "🙏 New perspective", effects = { Health = 4, Happiness = 8, Smarts = 5 }, resultText = "Every day is a gift. Prioritizing what matters.", setFlags = {"health_scare_survivor", "grateful"} },
+			{ 
+				text = "✅ False alarm!", 
+				effects = function(dynamicData)
+					if dynamicData and dynamicData.isFalseAlarm then
+						return { Health = 2, Happiness = 15 }
+					else
+						return { Health = -5, Happiness = -8 } -- Wasn't actually false alarm
+					end
+				end,
+				resultText = function(dynamicData)
+					if dynamicData and dynamicData.isFalseAlarm then
+						return "Thank goodness! Clean bill of health. Wake-up call."
+					else
+						return "You assumed it was nothing... but it wasn't. Health -5."
+					end
+				end,
+				setFlag = function(dynamicData)
+					return dynamicData and dynamicData.isFalseAlarm and "health_scare_survivor" or nil
+				end,
+			},
+			{ 
+				text = "🏥 Need treatment", 
+				effects = function(dynamicData)
+					if dynamicData and dynamicData.needsTreatment then
+						return { Health = -10, Happiness = -10, Money = -20000 }
+					else
+						return { Health = -3, Happiness = -5, Money = -5000 } -- Overreacted
+					end
+				end,
+				resultText = function(dynamicData)
+					if dynamicData and dynamicData.needsTreatment then
+						return "Caught early. Treatment ahead but prognosis good."
+					else
+						return "Turns out it wasn't that serious. But better safe than sorry. Money -5000."
+					end
+				end,
+				setFlag = function(dynamicData)
+					return dynamicData and dynamicData.needsTreatment and "health_battle" or nil
+				end,
+			},
+			{ 
+				text = "🔄 Complete lifestyle change", 
+				effects = function(dynamicData)
+					-- 70% chance it works, 30% chance you give up
+					if math.random() < 0.7 then
+						return { Health = 8, Happiness = 6 }
+					else
+						return { Health = 2, Happiness = -3 } -- Gave up after a month
+					end
+				end,
+				resultText = function(dynamicData)
+					if math.random() < 0.7 then
+						return "Scared you into taking care of yourself! Health +8."
+					else
+						return "You tried for a month but old habits die hard. Health +2."
+					end
+				end,
+				setFlags = function(dynamicData)
+					if math.random() < 0.7 then
+						return {"health_scare_survivor", "health_focused"}
+					end
+					return {}
+				end,
+			},
+			{ 
+				text = "🙏 New perspective", 
+				effects = { Health = 4, Happiness = 8, Smarts = 5 }, 
+				resultText = "Every day is a gift. Prioritizing what matters.", 
+				setFlags = {"health_scare_survivor", "grateful"} 
+			},
 		},
 	},
 	

@@ -1691,12 +1691,21 @@ local function updateFromState()
 	)
 	moneyLabel.Text = formatMoney(currentState.Money or 0)
 
-	avatarEmoji.Text =
-		(currentState.Age < 3  and "👶") or
-		(currentState.Age < 13 and "🧒") or
-		(currentState.Age < 20 and "🧑") or
-		(currentState.Age < 60 and "👨") or
-		"👴"
+	-- Gender-aware avatar emoji
+	local gender = currentState.Gender or "Unknown"
+	local isFemale = gender == "Female"
+	
+	if currentState.Age < 3 then
+		avatarEmoji.Text = "👶"
+	elseif currentState.Age < 13 then
+		avatarEmoji.Text = "🧒"
+	elseif currentState.Age < 20 then
+		avatarEmoji.Text = isFemale and "👧" or "🧑"
+	elseif currentState.Age < 60 then
+		avatarEmoji.Text = isFemale and "👩" or "👨"
+	else
+		avatarEmoji.Text = isFemale and "👵" or "👴"
+	end
 
 	for key, card in pairs(statCards) do
 		local val = currentState[key] or (currentState.Stats and currentState.Stats[key]) or 50

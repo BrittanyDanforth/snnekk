@@ -538,7 +538,21 @@ module.events = {
 		getDynamicData = function()
 			local pets = {"rescue dog", "cat", "puppy", "kitten", "rabbit", "bird"}
 			local names = {"Max", "Luna", "Charlie", "Bella", "Cooper", "Lucy", "Milo", "Daisy"}
-			return { petType = pets[math.random(#pets)], petName = names[math.random(#names)] }
+			local petType = pets[math.random(#pets)]
+			local petEmoji = "🐕" -- default
+			if petType == "cat" or petType == "kitten" then
+				petEmoji = "🐱"
+			elseif petType == "rabbit" then
+				petEmoji = "🐰"
+			elseif petType == "bird" then
+				petEmoji = "🐦"
+			elseif petType == "rescue dog" or petType == "puppy" then
+				petEmoji = "🐕"
+			end
+			return { petType = petType, petName = names[math.random(#names)], petEmoji = petEmoji }
+		end,
+		getDynamicEmoji = function(dynamicData)
+			return dynamicData and dynamicData.petEmoji or "🐕"
 		end,
 		text = "You adopted a %petType% named %petName%!",
 		choices = {

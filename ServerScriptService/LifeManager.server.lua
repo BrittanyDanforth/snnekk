@@ -510,7 +510,7 @@ local function ageUp(player)
 			isDeath = true,
 			lifeSummary = lifeSummary,
 			choices = {
-				{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
+				{ text = "🔄 Start New Life", effects = {}, resultText = "Begin again..." }
 			}
 		}
 		
@@ -694,6 +694,26 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 				storyFlag = choiceDef.setFlag or jobData.storyFlag,
 			})
 		end
+	end
+	
+	-- Handle relationship additions from events (e.g., making new friends)
+	if choiceDef and choiceDef.addRelationship then
+		local relData = choiceDef.addRelationship
+		local category = relData.category or "friends"
+		local name = relData.name or "Unknown"
+		
+		-- Process dynamic text in name (e.g., %friendName% -> actual name)
+		if name and dynamicData then
+			name = EventRunner.processDynamicText(name, dynamicData)
+		end
+		
+		-- Add to relationships
+		state:AddRelationship(category, {
+			name = name,
+			relationship = relData.relationship or 50,
+			met = state.Age or 0,
+		})
+		print("[LifeManager] Added relationship:", category, name)
 	end
 	
 	-- Sync prison state from flags (handles recapture, release, etc.)

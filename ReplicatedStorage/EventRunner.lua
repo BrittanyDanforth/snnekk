@@ -671,9 +671,18 @@ function EventRunner.buildClientPayload(eventDef: EventDef, state: LifeState): (
 		})
 	end
 
+	-- Use dynamic emoji if available
+	local finalEmoji = eventDef.emoji
+	if eventDef.getDynamicEmoji and dynamicData then
+		local ok, emoji = pcall(eventDef.getDynamicEmoji, dynamicData)
+		if ok and emoji then
+			finalEmoji = emoji
+		end
+	end
+
 	local payload: ClientEventPayload = {
 		id = eventDef.id,
-		emoji = eventDef.emoji,
+		emoji = finalEmoji,
 		title = eventDef.title,
 		text = processedText or eventDef.text,
 		category = eventDef.category,
@@ -716,9 +725,19 @@ function EventRunner.applyChoice(
 		resultText = "",
 	}
 
-	-- Apply stat / money effects
-	if choice.effects and type(choice.effects) == "table" then
-		for stat, delta in pairs(choice.effects) do
+	-- Apply stat / money effects (support both table and function)
+	local effectsToApply = choice.effects
+	if type(choice.effects) == "function" and dynamicData then
+		local ok, result = pcall(choice.effects, dynamicData)
+		if ok and type(result) == "table" then
+			effectsToApply = result
+		else
+			effectsToApply = {}
+		end
+	end
+	
+	if effectsToApply and type(effectsToApply) == "table" then
+		for stat, delta in pairs(effectsToApply) do
 			if type(delta) == "number" then
 				if stat == "Money" then
 					state.Money = (state.Money or 0) + delta
@@ -769,17 +788,37 @@ function EventRunner.applyChoice(
 		end
 	end
 
-	-- Set flags
-	if choice.setFlag then
+	-- Set flags (support both string and function)
+	local flagToSet = choice.setFlag
+	if type(choice.setFlag) == "function" and dynamicData then
+		local ok, result = pcall(choice.setFlag, dynamicData)
+		if ok and type(result) == "string" then
+			flagToSet = result
+		else
+			flagToSet = nil
+		end
+	end
+	
+	if flagToSet then
 		state.Flags = state.Flags or {}
-		state.Flags[choice.setFlag] = true
-		table.insert(results.flagsSet, choice.setFlag)
+		state.Flags[flagToSet] = true
+		table.insert(results.flagsSet, flagToSet)
 	end
 
-	-- Set multiple flags
-	if choice.setFlags and type(choice.setFlags) == "table" then
+	-- Set multiple flags (support both table and function)
+	local flagsToSet = choice.setFlags
+	if type(choice.setFlags) == "function" and dynamicData then
+		local ok, result = pcall(choice.setFlags, dynamicData)
+		if ok and type(result) == "table" then
+			flagsToSet = result
+		else
+			flagsToSet = {}
+		end
+	end
+	
+	if flagsToSet and type(flagsToSet) == "table" then
 		state.Flags = state.Flags or {}
-		for _, flag in ipairs(choice.setFlags) do
+		for _, flag in ipairs(flagsToSet) do
 			state.Flags[flag] = true
 			table.insert(results.flagsSet, flag)
 		end
@@ -806,11 +845,19 @@ function EventRunner.applyChoice(
 		results.minigameTriggered = choice.minigame
 	end
 
-	-- Explicit result text from choice, if given
+	-- Explicit result text from choice, if given (support both string and function)
 	local explicitResultText: string? = nil
 	if choice.result or choice.resultText then
 		local base = choice.result or choice.resultText
-		if base then
+		if type(base) == "function" and dynamicData then
+			local ok, result = pcall(base, dynamicData)
+			if ok and type(result) == "string" then
+				base = result
+			else
+				base = nil
+			end
+		end
+		if base and type(base) == "string" then
 			explicitResultText = EventRunner.processDynamicText(base, dynamicData)
 		end
 	end
