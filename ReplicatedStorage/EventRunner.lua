@@ -652,6 +652,15 @@ function EventRunner.buildClientPayload(eventDef: EventDef, state: LifeState): (
 	if eventDef.text then
 		processedText = EventRunner.processDynamicText(eventDef.text, dynamicData)
 	end
+	
+	-- Support dynamic emoji selection based on dynamicData
+	local processedEmoji = eventDef.emoji
+	if eventDef.getDynamicEmoji and dynamicData then
+		local emojiOk, dynEmoji = pcall(eventDef.getDynamicEmoji, dynamicData)
+		if emojiOk and dynEmoji then
+			processedEmoji = dynEmoji
+		end
+	end
 
 	local processedChoices: { ClientChoicePayload } = {}
 	for i, choice in ipairs(eventDef.choices or {}) do
@@ -673,7 +682,7 @@ function EventRunner.buildClientPayload(eventDef: EventDef, state: LifeState): (
 
 	local payload: ClientEventPayload = {
 		id = eventDef.id,
-		emoji = eventDef.emoji,
+		emoji = processedEmoji,
 		title = eventDef.title,
 		text = processedText or eventDef.text,
 		category = eventDef.category,
@@ -804,6 +813,33 @@ function EventRunner.applyChoice(
 	-- Minigame trigger (if any)
 	if choice.minigame then
 		results.minigameTriggered = choice.minigame
+	end
+	
+	-- Add relationship if specified
+	if choice.addRelationship and state.Relationships then
+		local relData = choice.addRelationship
+		local category = relData.category or "friends"
+		if not state.Relationships[category] then
+			state.Relationships[category] = {}
+		end
+		
+		-- Process dynamic name if available
+		local personName = relData.name
+		if relData.dynamicNameKey and dynamicData and dynamicData[relData.dynamicNameKey] then
+			personName = tostring(dynamicData[relData.dynamicNameKey])
+		end
+		
+		local newPerson = {
+			id = category .. "_" .. #state.Relationships[category] + 1 .. "_" .. (os.time or tick)(),
+			name = personName or "Unknown",
+			relationship = relData.startingRelationship or 50,
+			met = state.Age or 0,
+			alive = true,
+			type = relData.type or category,
+		}
+		
+		table.insert(state.Relationships[category], newPerson)
+		results.relationshipAdded = newPerson
 	end
 
 	-- Explicit result text from choice, if given

@@ -334,6 +334,252 @@ module.events = {
 		},
 	},
 	
+	-- MEANINGFUL MOBILITY EVENTS WITH REAL CONSEQUENCES
+	{
+		id = "m_mobility_aid_decision",
+		minAge = 68, maxAge = 88,
+		weight = 25, oneTime = true,
+		emoji = "🦯", title = "Mobility Aid Decision",
+		category = "health",
+		text = "Doctor recommends you start using a cane or walker. Your pride says no, safety says yes.",
+		choices = {
+			{ 
+				text = "🦯 Use the cane", 
+				effects = { Health = 10, Happiness = 2, Looks = -2 }, 
+				resultText = "Smart choice! Much safer getting around. You avoid falls that could end your independence.",
+				setFlag = "uses_mobility_aid"
+			},
+			{ 
+				text = "🦽 Get a nice walker", 
+				effects = { Health = 12, Happiness = 4, Money = -300 }, 
+				resultText = "Got a premium one with a seat! Actually quite useful. Rest when needed.",
+				setFlag = "uses_mobility_aid"
+			},
+			{ 
+				text = "💪 Refuse - I'm fine!", 
+				effects = { Happiness = 4, Health = -5 }, 
+				resultText = "Pride wins... for now. But you feel unsteady. This might come back to bite you.",
+				setFlag = "refused_mobility_aid"
+			},
+			{ 
+				text = "🏠 Just use it at home", 
+				effects = { Health = 5, Happiness = -2 }, 
+				resultText = "Compromise. Nobody sees you use it. Still risky outside though." 
+			},
+		},
+	},
+	
+	{
+		id = "m_fall_consequences",
+		minAge = 70, maxAge = 95,
+		weight = 35, cooldown = 4,
+		requiresFlag = "refused_mobility_aid",
+		emoji = "😰", title = "A Serious Fall!",
+		category = "health",
+		text = "You fell! Lost balance and went down hard. This is what they warned you about.",
+		choices = {
+			{ 
+				text = "🦴 Broken hip!", 
+				effects = { Health = -30, Happiness = -25, Money = -15000 }, 
+				resultText = "Hospital. Surgery. Months of rehab. Life changed in a second. Should have used that cane.",
+				setFlags = {"hip_injury", "uses_mobility_aid"},
+				clearFlag = "refused_mobility_aid"
+			},
+			{ 
+				text = "🤕 Concussion", 
+				effects = { Health = -20, Happiness = -15, Money = -5000 }, 
+				resultText = "Head hit the ground. Memory issues. Now you HAVE to use a walker.",
+				setFlags = {"head_injury", "uses_mobility_aid"},
+				clearFlag = "refused_mobility_aid"
+			},
+			{ 
+				text = "💪 Lucky - just bruises", 
+				effects = { Health = -8, Happiness = -6 }, 
+				resultText = "Got lucky this time! But it scared you. Maybe reconsider that cane?",
+				clearFlag = "refused_mobility_aid"
+			},
+			{ 
+				text = "📞 Couldn't get up - 911", 
+				effects = { Health = -15, Happiness = -20, Money = -3000 }, 
+				resultText = "Lay on the floor for 2 hours before help came. Terrifying. Using that aid now.",
+				setFlag = "uses_mobility_aid",
+				clearFlag = "refused_mobility_aid"
+			},
+		},
+	},
+	
+	{
+		id = "m_mobility_aid_benefits",
+		minAge = 70, maxAge = 95,
+		weight = 25, cooldown = 3,
+		requiresFlag = "uses_mobility_aid",
+		emoji = "😊", title = "Mobility Aid Working!",
+		category = "health",
+		text = "That mobility aid is actually making a big difference in your daily life!",
+		choices = {
+			{ 
+				text = "🚶 Walking more!", 
+				effects = { Health = 8, Happiness = 10 }, 
+				resultText = "With support, you're actually MORE active! Getting out more!"
+			},
+			{ 
+				text = "💪 Confidence returned", 
+				effects = { Happiness = 12, Health = 5 }, 
+				resultText = "No fear of falling! Going places you'd stopped visiting!"
+			},
+			{ 
+				text = "🌳 Enjoying walks again", 
+				effects = { Health = 10, Happiness = 15 }, 
+				resultText = "Back to your favorite park! Fresh air and independence!"
+			},
+			{ 
+				text = "😎 Got a stylish one", 
+				effects = { Happiness = 8, Looks = 3, Money = -200 }, 
+				resultText = "Upgraded to a sleek carbon fiber cane. Looking good!"
+			},
+		},
+	},
+	
+	{
+		id = "m_driving_decision",
+		minAge = 72, maxAge = 88,
+		weight = 25, oneTime = true,
+		emoji = "🚗", title = "Driving - Time to Quit?",
+		category = "health",
+		text = "Family is worried about your driving. Vision and reflexes aren't what they were.",
+		choices = {
+			{ 
+				text = "🔑 Give up the keys", 
+				effects = { Happiness = -15, Smarts = 5 }, 
+				resultText = "Hardest decision. But safer for everyone. Lost independence stings.",
+				setFlag = "gave_up_driving"
+			},
+			{ 
+				text = "🚙 Daytime only", 
+				effects = { Happiness = -5, Smarts = 3, Health = 5 }, 
+				resultText = "Compromise. No night driving, no highways. Still some freedom.",
+				setFlag = "limited_driving"
+			},
+			{ 
+				text = "🚕 Use rideshares", 
+				effects = { Happiness = 2, Money = -200, Smarts = 4 }, 
+				resultText = "Actually convenient! No parking, no stress. Uber is great!",
+				setFlag = "gave_up_driving"
+			},
+			{ 
+				text = "💪 I'm fine!", 
+				effects = { Happiness = 8, Health = -5 }, 
+				resultText = "Kept driving against advice. Pride over safety. What could go wrong?",
+				setFlag = "refused_stop_driving"
+			},
+		},
+	},
+	
+	{
+		id = "m_driving_incident",
+		minAge = 72, maxAge = 90,
+		weight = 30, cooldown = 5,
+		requiresFlag = "refused_stop_driving",
+		emoji = "🚨", title = "Driving Incident!",
+		category = "health",
+		text = "Something happened while driving. The family was right to be worried.",
+		choices = {
+			{ 
+				text = "💥 Fender bender", 
+				effects = { Money = -2000, Happiness = -10, Health = -3 }, 
+				resultText = "Hit a parked car. Insurance up. Family insisting you stop now.",
+				clearFlag = "refused_stop_driving"
+			},
+			{ 
+				text = "🚗 Got lost", 
+				effects = { Happiness = -15, Smarts = -2 }, 
+				resultText = "Couldn't find way home. Confusion set in. Scary moment.",
+				clearFlag = "refused_stop_driving"
+			},
+			{ 
+				text = "🚨 Police pulled you over", 
+				effects = { Money = -500, Happiness = -12 }, 
+				resultText = "Officer suggested you stop driving. Humiliating but maybe right.",
+				clearFlag = "refused_stop_driving"
+			},
+			{ 
+				text = "😰 Serious accident", 
+				effects = { Health = -20, Money = -10000, Happiness = -25 }, 
+				resultText = "Major crash. You're okay but... license is gone. It's over.",
+				setFlag = "gave_up_driving",
+				clearFlag = "refused_stop_driving"
+			},
+		},
+	},
+	
+	{
+		id = "m_exercise_for_seniors",
+		minAge = 65, maxAge = 85,
+		weight = 25, cooldown = 3,
+		emoji = "🏊", title = "Senior Exercise Options",
+		category = "health",
+		text = "Doctor says exercise is crucial but you need something joint-friendly.",
+		choices = {
+			{ 
+				text = "🏊 Water aerobics!", 
+				effects = { Health = 12, Happiness = 10, Money = -100 }, 
+				resultText = "Perfect low-impact! Made friends in class too! Life-changing!",
+				setFlag = "senior_exercise"
+			},
+			{ 
+				text = "🧘 Chair yoga", 
+				effects = { Health = 8, Happiness = 8 }, 
+				resultText = "Gentle stretching with support. Balance improving!",
+				setFlag = "senior_exercise"
+			},
+			{ 
+				text = "🚶 Daily walking", 
+				effects = { Health = 10, Happiness = 6 }, 
+				resultText = "Simple but effective! 30 minutes a day makes a difference!",
+				setFlag = "senior_exercise"
+			},
+			{ 
+				text = "🤷 Too tired", 
+				effects = { Health = -8, Happiness = -5 }, 
+				resultText = "Skipping exercise. Doctor disappointed. Strength fading faster."
+			},
+		},
+	},
+	
+	{
+		id = "m_home_safety_modifications",
+		minAge = 70, maxAge = 90,
+		weight = 20, oneTime = true,
+		emoji = "🏠", title = "Home Safety Upgrades",
+		category = "family",
+		text = "Time to make the house safer. Falls are the biggest risk at this age.",
+		choices = {
+			{ 
+				text = "🛁 Full bathroom upgrade", 
+				effects = { Health = 10, Money = -5000, Happiness = 8 }, 
+				resultText = "Grab bars, walk-in tub, non-slip everything! Peace of mind!",
+				setFlag = "home_modified"
+			},
+			{ 
+				text = "💡 Basic modifications", 
+				effects = { Health = 5, Money = -1000, Happiness = 4 }, 
+				resultText = "Better lighting, remove rugs, add rails. Much safer!",
+				setFlag = "home_modified"
+			},
+			{ 
+				text = "📲 Medical alert system", 
+				effects = { Health = 3, Money = -600, Happiness = 2 }, 
+				resultText = "Help button around your neck. Falls won't leave you stranded.",
+				setFlag = "has_medical_alert"
+			},
+			{ 
+				text = "🙅 House is fine", 
+				effects = { Happiness = 2, Health = -5 }, 
+				resultText = "No changes. Pride over practicality. Risky choice."
+			},
+		},
+	},
+	
 	{
 		id = "m_memory_concerns",
 		minAge = 72, maxAge = 90,

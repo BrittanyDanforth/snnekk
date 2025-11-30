@@ -1691,12 +1691,19 @@ local function updateFromState()
 	)
 	moneyLabel.Text = formatMoney(currentState.Money or 0)
 
-	avatarEmoji.Text =
-		(currentState.Age < 3  and "👶") or
-		(currentState.Age < 13 and "🧒") or
-		(currentState.Age < 20 and "🧑") or
-		(currentState.Age < 60 and "👨") or
-		"👴"
+	-- Gender-aware avatar emoji selection
+	local isFemale = currentState.Gender == "Female"
+	if currentState.Age < 3 then
+		avatarEmoji.Text = "👶"
+	elseif currentState.Age < 13 then
+		avatarEmoji.Text = isFemale and "👧" or "👦"
+	elseif currentState.Age < 20 then
+		avatarEmoji.Text = isFemale and "👩" or "👨"
+	elseif currentState.Age < 60 then
+		avatarEmoji.Text = isFemale and "👩" or "👨"
+	else
+		avatarEmoji.Text = isFemale and "👵" or "👴"
+	end
 
 	for key, card in pairs(statCards) do
 		local val = currentState[key] or (currentState.Stats and currentState.Stats[key]) or 50
@@ -1796,6 +1803,21 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 		addFeedEntry(lastFeedText)
 	end
 
+	-- Check if this is a new life (server reset player state)
+	-- If state has no name and Age is 0, reset intro flags for new game
+	if not currentState.Name and (currentState.Age == 0 or currentState.Age == nil) then
+		introComplete = false
+		hasShownAgeHint = false
+		selectedGender = nil
+		-- Clear the feed for new life
+		for _, child in ipairs(feedScroll:GetChildren()) do
+			if child:IsA("Frame") then
+				child:Destroy()
+			end
+		end
+		feedEntryCount = 0
+	end
+	
 	if not introComplete and not currentState.Name then
 		showIntro()
 	elseif currentState.Name and introOverlay.Visible then

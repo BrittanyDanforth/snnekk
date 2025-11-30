@@ -3109,6 +3109,29 @@ _G.GetExtendedState = function(player)
 	return getExtendedState(player)
 end
 
+-- Reset extended state for new life (called from LifeManager.resetPlayerLife)
+_G.ResetExtendedState = function(player)
+	if not player or not player.UserId then return end
+	
+	-- Create fresh extended state
+	ExtendedStates[player.UserId] = {
+		Education = "None",
+		Experience = 0,
+		CurrentJob = nil,
+		OwnedProperties = {},
+		OwnedVehicles = {},
+		OwnedItems = {},
+		OwnedCrypto = {},
+		InJail = false,
+		JailYearsLeft = 0,
+	}
+	
+	-- Also reset career data
+	CareerProgression[player.UserId] = nil
+	
+	print("[LifeRemoteHandlers] Reset extended state for new life:", player.Name)
+end
+
 -- Sync prison state from flags (called after event choice processing)
 -- This ensures ExtendedStates stays in sync with Flags
 _G.SyncPrisonStateFromFlags = function(player)

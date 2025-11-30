@@ -209,6 +209,12 @@ local function resetPlayerLife(player)
 		warn("[LifeManager] pendingEvents table is nil!")
 	end
 	
+	-- Reset extended state in LifeRemoteHandlers (jobs, education, assets, prison)
+	if _G.ResetExtendedState then
+		_G.ResetExtendedState(player)
+		print("[LifeManager] Reset extended state")
+	end
+	
 	-- Sync the fresh state to client (will show intro screen again)
 	print("[LifeManager] Syncing state to client...")
 	local serialized = serializeState(newState, player)

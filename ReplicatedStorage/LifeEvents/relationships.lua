@@ -26,8 +26,19 @@ module.events = {
 		end,
 		text = "You met %personName% at a party. There's definitely chemistry.",
 		choices = {
-			{ text = "💕 Ask them out!", effects = { Happiness = 8 }, resultText = "They said yes! You have a date.", setFlag = "dating" },
-			{ text = "📱 Get their number", effects = { Happiness = 5 }, resultText = "You exchanged contacts. Potential!" },
+			{ 
+				text = "💕 Ask them out!", 
+				effects = { Happiness = 8 }, 
+				resultText = "They said yes! You have a date with %personName%.", 
+				setFlag = "dating",
+				addRelationship = { category = "lovers", dynamicNameKey = "personName", startingRelationship = 55, type = "dating" }
+			},
+			{ 
+				text = "📱 Get their number", 
+				effects = { Happiness = 5 }, 
+				resultText = "You exchanged contacts with %personName%. Potential!",
+				addRelationship = { category = "lovers", dynamicNameKey = "personName", startingRelationship = 35, type = "interest" }
+			},
 			{ text = "😰 Too nervous", effects = { Happiness = -3 }, resultText = "The moment passed. What if?" },
 		},
 	},
@@ -205,8 +216,18 @@ module.events = {
 		end,
 		text = "You hit it off with %friendName%! Potential new friend.",
 		choices = {
-			{ text = "🤝 Become friends!", effects = { Happiness = 8 }, resultText = "You made a new friend!" },
-			{ text = "📱 Exchange info", effects = { Happiness = 4 }, resultText = "Maybe you'll hang out sometime." },
+			{ 
+				text = "🤝 Become friends!", 
+				effects = { Happiness = 8 }, 
+				resultText = "You made a new friend! %friendName% is now in your contacts.", 
+				addRelationship = { category = "friends", dynamicNameKey = "friendName", startingRelationship = 65, type = "friend" }
+			},
+			{ 
+				text = "📱 Exchange info", 
+				effects = { Happiness = 4 }, 
+				resultText = "You exchanged contacts with %friendName%. Maybe you'll hang out sometime.",
+				addRelationship = { category = "friends", dynamicNameKey = "friendName", startingRelationship = 40, type = "acquaintance" }
+			},
 			{ text = "🤷 Nice to meet them", effects = { Happiness = 2 }, resultText = "Pleasant but not memorable." },
 		},
 	},

@@ -536,9 +536,20 @@ module.events = {
 		emoji = "🐕", title = "Adopting a Pet!",
 		category = "family",
 		getDynamicData = function()
-			local pets = {"rescue dog", "cat", "puppy", "kitten", "rabbit", "bird"}
+			local petData = {
+				{ type = "rescue dog", emoji = "🐕" },
+				{ type = "cat", emoji = "🐱" },
+				{ type = "puppy", emoji = "🐶" },
+				{ type = "kitten", emoji = "🐱" },
+				{ type = "rabbit", emoji = "🐰" },
+				{ type = "bird", emoji = "🐦" },
+			}
+			local chosen = petData[math.random(#petData)]
 			local names = {"Max", "Luna", "Charlie", "Bella", "Cooper", "Lucy", "Milo", "Daisy"}
-			return { petType = pets[math.random(#pets)], petName = names[math.random(#names)] }
+			return { petType = chosen.type, petName = names[math.random(#names)], petEmoji = chosen.emoji }
+		end,
+		getDynamicEmoji = function(data)
+			return data.petEmoji or "🐕"
 		end,
 		text = "You adopted a %petType% named %petName%!",
 		choices = {

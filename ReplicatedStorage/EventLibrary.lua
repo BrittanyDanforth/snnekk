@@ -261,8 +261,17 @@ local events = {
 		emoji = "🐕", title = "Meeting a Pet",
 		category = "family",
 		getDynamicData = function()
-			local pets = {"dog", "cat", "hamster", "goldfish"}
-			return { petType = pets[math.random(#pets)] }
+			local petData = {
+				{ type = "dog", emoji = "🐕" },
+				{ type = "cat", emoji = "🐱" },
+				{ type = "hamster", emoji = "🐹" },
+				{ type = "goldfish", emoji = "🐟" },
+			}
+			local chosen = petData[math.random(#petData)]
+			return { petType = chosen.type, petEmoji = chosen.emoji }
+		end,
+		getDynamicEmoji = function(data)
+			return data.petEmoji or "🐕"
 		end,
 		text = "Your family got a pet %petType%!",
 		choices = {
