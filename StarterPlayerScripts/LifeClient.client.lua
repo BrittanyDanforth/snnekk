@@ -63,6 +63,7 @@ local awaitingEvent          = false
 local hasShownAgeHint        = false
 local introComplete          = false
 local selectedGender         = nil
+local awaitingFreshStart     = false
 
 local occupationScreenInstance, assetsScreenInstance, relationshipsScreenInstance, activitiesScreenInstance, storyPathsScreenInstance
 local minigamesInstance
@@ -74,6 +75,7 @@ local showEvent, hideEvent
 local showIntro, hideIntro
 local showTutorial, hideTutorial
 local updateNameButtons
+local updateAvatarVisual
 
 ----------------------------------------------------------------
 -- COLORS (Premium BitLife Palette)
@@ -685,6 +687,78 @@ moneyLabel.Text = "$0"
 moneyLabel.ZIndex = 7
 moneyLabel.Parent = moneyContainer
 
+local function getLifeStageFromAge(age)
+	if age < 3 then
+		return "baby"
+	elseif age < 13 then
+		return "child"
+	elseif age < 20 then
+		return "teen"
+	elseif age < 60 then
+		return "adult"
+	else
+		return "senior"
+	end
+end
+
+local femaleAvatar = {
+	baby = "👶",
+	child = "👧",
+	teen = "👩‍🦰",
+	adult = "👩",
+	senior = "👵",
+	default = "👩",
+}
+
+local maleAvatar = {
+	baby = "👶",
+	child = "👦",
+	teen = "🧔",
+	adult = "👨",
+	senior = "👴",
+	default = "👨",
+}
+
+local neutralAvatar = {
+	baby = "👶",
+	child = "🧒",
+	teen = "🧑",
+	adult = "🧑",
+	senior = "🧓",
+	default = "🧑",
+}
+
+local function pickAvatarEmoji(age, gender)
+	local stage = getLifeStageFromAge(age or 0)
+	local normalized = gender and string.lower(gender) or ""
+	local source = neutralAvatar
+
+	if normalized == "female" or normalized == "woman" or normalized == "girl" then
+		source = femaleAvatar
+	elseif normalized == "male" or normalized == "man" or normalized == "boy" then
+		source = maleAvatar
+	end
+
+	return source[stage] or source.default
+end
+
+updateAvatarVisual = function()
+	local gender = currentState.Gender or selectedGender
+	local age = currentState.Age or 0
+	avatarEmoji.Text = pickAvatarEmoji(age, gender)
+
+	local normalized = gender and string.lower(gender) or ""
+	if normalized == "female" or normalized == "woman" or normalized == "girl" then
+		avatarCircle.BackgroundColor3 = C.Pink
+	elseif normalized == "male" or normalized == "man" or normalized == "boy" then
+		avatarCircle.BackgroundColor3 = C.BluePale
+	else
+		avatarCircle.BackgroundColor3 = C.Gray200
+	end
+end
+
+updateAvatarVisual()
+
 ----------------------------------------------------------------
 -- LIFE FEED AREA
 ----------------------------------------------------------------
@@ -714,6 +788,15 @@ feedLayout.SortOrder = Enum.SortOrder.LayoutOrder
 feedLayout.Parent = feedScroll
 
 local feedEntryCount = 0
+
+local function clearFeed()
+	for _, child in ipairs(feedScroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	feedEntryCount = 0
+end
 
 local function addFeedEntry(text)
 	if not text or text == "" then return end
@@ -1642,6 +1725,7 @@ for _, g in ipairs(genderData) do
 
 	btn.MouseButton1Click:Connect(function()
 		selectedGender = g.gender
+		updateAvatarVisual()
 		genderTitle.Text = "Now, pick someone to become"
 		genderBtns.Visible = false
 		nameBtns.Visible  = true
@@ -1691,13 +1775,6 @@ local function updateFromState()
 	)
 	moneyLabel.Text = formatMoney(currentState.Money or 0)
 
-	avatarEmoji.Text =
-		(currentState.Age < 3  and "👶") or
-		(currentState.Age < 13 and "🧒") or
-		(currentState.Age < 20 and "🧑") or
-		(currentState.Age < 60 and "👨") or
-		"👴"
-
 	for key, card in pairs(statCards) do
 		local val = currentState[key] or (currentState.Stats and currentState.Stats[key]) or 50
 		card.percentLabel.Text = val .. "%"
@@ -1705,6 +1782,8 @@ local function updateFromState()
 			Size = UDim2.new(math.clamp(val/100, 0, 1), 0, 1, 0),
 		})
 	end
+
+	updateAvatarVisual()
 end
 
 ----------------------------------------------------------------
@@ -1714,8 +1793,28 @@ end
 -- Track previous state for change detection
 local previousState = {}
 
+local function resetLifeUIForNewSave()
+	clearFeed()
+	introComplete = false
+	selectedGender = nil
+	awaitingFreshStart = true
+	hasShownAgeHint = false
+	hideTutorial()
+	updateAvatarVisual()
+	showIntro()
+end
+
 SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 	if state then
+		local previouslyNamed = currentState.Name ~= nil
+		local incomingName = state.Name
+		local newHasName = incomingName ~= nil and incomingName ~= ""
+		if previouslyNamed and not newHasName then
+			resetLifeUIForNewSave()
+		elseif newHasName then
+			awaitingFreshStart = false
+		end
+
 		-- Calculate deltas for result popup
 		local deltas = {}
 		if previousState.Happiness and state.Happiness then

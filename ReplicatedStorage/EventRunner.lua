@@ -53,18 +53,28 @@ export type DynamicData = {
 	[string]: DynamicDataValue,
 }
 
+export type RelationshipSpec = {
+	category: string?,
+	person: { [string]: any }?,
+	name: string?,
+	relationship: number?,
+}
+
 export type EventChoice = {
 	text: string,
 	result: string?,
 	resultText: string?,
 	effects: EffectsMap?,
+	dynamicEffects: ((LifeState, DynamicData?) -> (EffectsMap?))?,
 	setFlag: string?,
 	clearFlag: string?,
 	setFlags: { string }?,
 	clearFlags: { string }?,
+	addRelationship: RelationshipSpec | ((LifeState, DynamicData?) -> (RelationshipSpec?))?,
 	minigame: string?,
 	outcome: string?,
 	getDynamicMoney: ((DynamicData) -> (number?))?,
+	resultEmoji: string?,
 }
 
 export type EventDef = {
@@ -671,9 +681,14 @@ function EventRunner.buildClientPayload(eventDef: EventDef, state: LifeState): (
 		})
 	end
 
+	local payloadEmoji = eventDef.emoji
+	if dynamicData.eventEmoji then
+		payloadEmoji = dynamicData.eventEmoji
+	end
+
 	local payload: ClientEventPayload = {
 		id = eventDef.id,
-		emoji = eventDef.emoji,
+		emoji = payloadEmoji,
 		title = eventDef.title,
 		text = processedText or eventDef.text,
 		category = eventDef.category,
@@ -716,10 +731,13 @@ function EventRunner.applyChoice(
 		resultText = "",
 	}
 
-	-- Apply stat / money effects
-	if choice.effects and type(choice.effects) == "table" then
-		for stat, delta in pairs(choice.effects) do
-			if type(delta) == "number" then
+	local function applyEffectsTable(effectTable: EffectsMap?)
+		if not effectTable then
+			return
+		end
+
+		for stat, delta in pairs(effectTable) do
+			if type(delta) == "number" and delta ~= 0 then
 				if stat == "Money" then
 					state.Money = (state.Money or 0) + delta
 					results.effects.Money = (results.effects.Money or 0) + delta
@@ -758,6 +776,21 @@ function EventRunner.applyChoice(
 				end
 			end
 		end
+	end
+
+	-- Apply dynamic effects first (if provided)
+	if type(choice.dynamicEffects) == "function" then
+		local ok, dynEffects = pcall(choice.dynamicEffects, state, dynamicData)
+		if ok then
+			applyEffectsTable(dynEffects)
+		else
+			warn("[EventRunner] dynamicEffects failed for event:", eventDef.id, dynEffects)
+		end
+	end
+
+	-- Apply stat / money effects
+	if choice.effects and type(choice.effects) == "table" then
+		applyEffectsTable(choice.effects)
 	end
 
 	-- Apply dynamic money callback if present
@@ -806,6 +839,45 @@ function EventRunner.applyChoice(
 		results.minigameTriggered = choice.minigame
 	end
 
+	-- Relationship creation
+	if choice.addRelationship then
+		local relSpec = choice.addRelationship
+		if type(relSpec) == "function" then
+			local ok, spec = pcall(relSpec, state, dynamicData)
+			if ok then
+				relSpec = spec
+			else
+				warn("[EventRunner] addRelationship failed for event:", eventDef.id, spec)
+				relSpec = nil
+			end
+		end
+
+		if type(relSpec) == "table" and state.AddRelationship then
+			local category = relSpec.category or "friends"
+			local person = relSpec.person or {}
+
+			if relSpec.name and not person.name then
+				person.name = relSpec.name
+			end
+
+			if relSpec.relationship and person.relationship == nil then
+				person.relationship = relSpec.relationship
+			end
+
+			local added = state:AddRelationship(category, person)
+			if added then
+				results.addedRelationship = {
+					category = category,
+					person = {
+						id = added.id,
+						name = added.name,
+						relationship = added.relationship,
+					},
+				}
+			end
+		end
+	end
+
 	-- Explicit result text from choice, if given
 	local explicitResultText: string? = nil
 	if choice.result or choice.resultText then
@@ -824,6 +896,10 @@ function EventRunner.applyChoice(
 		dynamicData,
 		explicitResultText
 	)
+
+	if choice.resultEmoji then
+		results.resultEmoji = EventRunner.processDynamicText(choice.resultEmoji, dynamicData) or choice.resultEmoji
+	end
 
 	return results, nil
 end

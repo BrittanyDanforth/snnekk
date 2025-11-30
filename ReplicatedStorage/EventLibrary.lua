@@ -1883,12 +1883,12 @@ local events = {
 		id = "pet_adoption",
 		minAge = 10, maxAge = 80,
 		weight = 8, oneTime = true,
-		emoji = "🐕", title = "Pet Adoption",
+		emoji = "🐾", title = "Pet Adoption",
 		category = "family",
 		text = "You could adopt a pet!",
 		choices = {
-			{ text = "🐕 Adopt a dog", effects = { Happiness = 15 }, resultText = "You adopted a loyal companion!", setFlag = "pet_owner" },
-			{ text = "🐈 Adopt a cat", effects = { Happiness = 12, Smarts = 2 }, resultText = "You adopted a mysterious feline!", setFlag = "pet_owner" },
+			{ text = "🐕 Adopt a dog", effects = { Happiness = 15 }, resultText = "You adopted a loyal companion!", resultEmoji = "🐕", setFlag = "pet_owner" },
+			{ text = "🐈 Adopt a cat", effects = { Happiness = 12, Smarts = 2 }, resultText = "You adopted a mysterious feline!", resultEmoji = "🐈", setFlag = "pet_owner" },
 			{ text = "🙅 Not ready", effects = {}, resultText = "Maybe another time." },
 		},
 	},
@@ -3673,17 +3673,117 @@ local events = {
 		id = "find_pet",
 		minAge = 8, maxAge = 70,
 		weight = 5, oneTime = true,
-		emoji = "🐕", title = "Stray Pet",
+		emoji = "🐾", title = "Stray Pet",
 		category = "social",
 		getDynamicData = function()
 			local pets = {"dog", "cat", "kitten", "puppy"}
-			return { petType = pets[math.random(#pets)] }
+			local petType = pets[math.random(#pets)]
+			local emojiMap = {
+				dog = "🐕",
+				puppy = "🐕‍🦺",
+				cat = "🐈",
+				kitten = "🐈‍⬛",
+			}
+
+			local scenarioRoll = math.random()
+			local conditionLine
+			local keepCost = math.random(150, 450)
+			local shelterFee = math.random(25, 120)
+			local feedCost = math.random(10, 40)
+			local keepHealthLoss = 0
+			local shelterHealthLoss = 0
+
+			if scenarioRoll < 0.45 then
+				conditionLine = "It happily trots behind you and looks healthy."
+			elseif scenarioRoll < 0.8 then
+				conditionLine = "It's skittish and keeps flinching away."
+				if math.random() < 0.5 then
+					keepHealthLoss = math.random(2, 4)
+				end
+				if math.random() < 0.6 then
+					shelterHealthLoss = math.random(2, 5)
+				end
+			else
+				conditionLine = "It's limping and whimpering — clearly injured."
+				keepCost = keepCost + math.random(200, 350)
+				keepHealthLoss = math.random(3, 6)
+				shelterHealthLoss = math.random(4, 7)
+			end
+
+			local function buildShelterResult()
+				if shelterHealthLoss > 0 then
+					return string.format("Shelter staff took over, but not before it scratched you (-%d Health).", shelterHealthLoss)
+				else
+					return "Shelter staff thanked you and promised to find it a family."
+				end
+			end
+
+			local function buildKeepResult()
+				if keepHealthLoss > 0 then
+					return string.format("It panicked at first and scratched you (-%d Health), but a vet visit ($%d) calmed it down.", keepHealthLoss, keepCost)
+				else
+					return string.format("It curled up on your couch immediately. Supplies and shots cost $%d.", keepCost)
+				end
+			end
+
+			return {
+				petType = petType,
+				eventEmoji = emojiMap[petType] or "🐾",
+				conditionLine = conditionLine,
+				keepCost = keepCost,
+				shelterFee = shelterFee,
+				feedCost = feedCost,
+				keepHealthLoss = keepHealthLoss,
+				shelterHealthLoss = shelterHealthLoss,
+				keepResult = buildKeepResult(),
+				shelterResult = buildShelterResult(),
+				feedResult = string.format("You bought food ($%d). It ate nervously then trotted off.", feedCost),
+				ignoreResult = "It watched you leave before wandering down the street.",
+			}
 		end,
-		text = "A friendly stray %petType% followed you home!",
+		text = "A stray %petType% followed you home. %conditionLine%",
 		choices = {
-			{ text = "🏠 Keep it!", effects = { Happiness = 15, Money = -200 }, resultText = "You have a new best friend!", setFlag = "pet_owner" },
-			{ text = "🏥 Take to shelter", effects = { Happiness = 5, Smarts = 3 }, resultText = "You did the responsible thing. Hope they find a home." },
-			{ text = "🤷 Shoo it away", effects = { Happiness = -3 }, resultText = "You felt a little guilty." },
+			{
+				text = "🏠 Keep it!",
+				effects = { Happiness = 15 },
+				dynamicEffects = function(_, data)
+					return {
+						Money = data.keepCost and -data.keepCost or 0,
+						Health = data.keepHealthLoss and -data.keepHealthLoss or 0,
+					}
+				end,
+				resultText = "%keepResult%",
+				resultEmoji = "%eventEmoji%",
+				setFlags = { "pet_owner", "pet_parent" },
+			},
+			{
+				text = "🏥 Take to shelter",
+				effects = { Happiness = 5, Smarts = 3 },
+				dynamicEffects = function(_, data)
+					return {
+						Money = data.shelterFee and -data.shelterFee or 0,
+						Health = data.shelterHealthLoss and -data.shelterHealthLoss or 0,
+					}
+				end,
+				resultText = "%shelterResult%",
+				resultEmoji = "%eventEmoji%",
+			},
+			{
+				text = "🥪 Feed & post online",
+				effects = { Happiness = 4 },
+				dynamicEffects = function(_, data)
+					return {
+						Money = data.feedCost and -data.feedCost or 0,
+					}
+				end,
+				resultText = "%feedResult%",
+				resultEmoji = "%eventEmoji%",
+			},
+			{
+				text = "🤷 Shoo it away",
+				effects = { Happiness = -3 },
+				resultText = "%ignoreResult%",
+			},
 		},
 	},
 	
@@ -9320,11 +9420,103 @@ local endOfLifeEvents = {
 		weight = 40, cooldown = 3,
 		emoji = "🦽", title = "Mobility Decision",
 		category = "health",
-		text = "Getting around isn't as easy as it used to be. What to do?",
+		getDynamicData = function()
+			local scenarios = {
+				{
+					text = "Your knees grind whenever you take the stairs. The doctor warned another fall could break something.",
+					keepRange = { -5, 4 },
+					stayRange = { -10, -2 },
+					aidRange = { 3, 8 },
+					aidHappy = { 4, 9 },
+					walkHappyPos = 6,
+					walkHappyNeg = -5,
+				},
+				{
+					text = "Vertigo hits hard in grocery aisles. Handrails suddenly look very appealing.",
+					keepRange = { -3, 5 },
+					stayRange = { -6, -1 },
+					aidRange = { 2, 6 },
+					aidHappy = { 3, 7 },
+					walkHappyPos = 5,
+					walkHappyNeg = -6,
+				},
+				{
+					text = "Your hip keeps popping out when you stand up quickly. Physical therapy says stay active, but cautiously.",
+					keepRange = { -4, 6 },
+					stayRange = { -8, -2 },
+					aidRange = { 4, 9 },
+					aidHappy = { 5, 8 },
+					walkHappyPos = 7,
+					walkHappyNeg = -4,
+				},
+			}
+
+			local scenario = scenarios[math.random(#scenarios)]
+			local function roll(range)
+				return math.random(range[1], range[2])
+			end
+
+			local keepDelta = roll(scenario.keepRange)
+			local stayDelta = roll(scenario.stayRange)
+			local aidDelta = roll(scenario.aidRange)
+			local aidCost = math.random(400, 2200)
+			local aidHappy = roll(scenario.aidHappy)
+
+			local function buildResult(delta, posText, negText)
+				if delta >= 0 then
+					return string.format("%s (+%d Health).", posText, delta)
+				else
+					return string.format("%s (%d Health).", negText, delta)
+				end
+			end
+
+			return {
+				scenarioText = scenario.text,
+				keepHealthDelta = keepDelta,
+				keepHappinessDelta = keepDelta >= 0 and scenario.walkHappyPos or scenario.walkHappyNeg,
+				stayHealthDelta = stayDelta,
+				stayHappinessDelta = -6,
+				aidHealthDelta = aidDelta,
+				aidHappinessDelta = aidHappy,
+				aidCost = aidCost,
+				keepResult = buildResult(keepDelta, "Slow walks loosened you up again.", "You pushed too hard and tweaked something."),
+				aidResult = buildResult(aidDelta, "The cane/walker kept you steady and confident.", "Still shaky, but at least the aid stopped big spills."),
+				stayResult = buildResult(stayDelta, "Rest felt good short term but stiffness is brutal now.", "Staying home made everything ache even more."),
+			}
+		end,
+		text = "%scenarioText%",
 		choices = {
-			{ text = "🚶 Keep walking daily", effects = { Health = 5, Happiness = 5 }, resultText = "Exercise keeps you young!" },
-			{ text = "🦯 Get mobility aid", effects = { Health = 3, Money = -500 }, resultText = "No shame in getting help." },
-			{ text = "🏠 Stay home more", effects = { Health = -5, Happiness = -3 }, resultText = "Being sedentary isn't great..." },
+			{
+				text = "🚶 Keep walking daily",
+				dynamicEffects = function(_, data)
+					return {
+						Health = data.keepHealthDelta or 0,
+						Happiness = data.keepHappinessDelta or 0,
+					}
+				end,
+				resultText = "%keepResult%",
+			},
+			{
+				text = "🦯 Get mobility aid",
+				dynamicEffects = function(_, data)
+					return {
+						Health = data.aidHealthDelta or 0,
+						Happiness = data.aidHappinessDelta or 0,
+						Money = data.aidCost and -data.aidCost or 0,
+					}
+				end,
+				resultText = "%aidResult%",
+			},
+			{
+				text = "🏠 Stay home more",
+				dynamicEffects = function(_, data)
+					return {
+						Health = data.stayHealthDelta or 0,
+						Happiness = data.stayHappinessDelta or -6,
+					}
+				end,
+				resultText = "%stayResult%",
+			},
 		},
 	},
 	{
@@ -10165,17 +10357,107 @@ local diverseEvents = {
 		id = "stray_animal",
 		minAge = 8, maxAge = 70,
 		weight = 15, cooldown = 4,
-		emoji = "🐕", title = "Stray Found!",
+		emoji = "🐾", title = "Stray Found!",
 		category = "life",
 		getDynamicData = function()
 			local animals = {"dog", "cat", "kitten", "puppy"}
-			return { animal = animals[math.random(#animals)] }
+			local animal = animals[math.random(#animals)]
+			local emojiMap = {
+				dog = "🐕",
+				puppy = "🐕‍🦺",
+				cat = "🐈",
+				kitten = "🐈‍⬛",
+			}
+
+			local scenarioRoll = math.random()
+			local condition
+			local keepCost = math.random(200, 500)
+			local shelterFee = math.random(40, 160)
+			local feedCost = math.random(15, 50)
+			local keepHealthLoss = 0
+			local shelterHealthLoss = 0
+
+			if scenarioRoll < 0.4 then
+				condition = "It keeps nudging your leg like it already knows you."
+			elseif scenarioRoll < 0.75 then
+				condition = "It's terrified and snaps when anyone gets too close."
+				if math.random() < 0.6 then
+					shelterHealthLoss = math.random(2, 6)
+				end
+			else
+				condition = "It's bleeding from a cut and shaking in pain."
+				keepCost = keepCost + math.random(250, 400)
+				keepHealthLoss = math.random(3, 7)
+				shelterHealthLoss = math.random(3, 6)
+			end
+
+			if math.random() < 0.35 then
+				keepHealthLoss = math.max(keepHealthLoss, math.random(2, 5))
+			end
+
+			return {
+				animal = animal,
+				eventEmoji = emojiMap[animal] or "🐾",
+				condition = condition,
+				keepCost = keepCost,
+				shelterFee = shelterFee,
+				feedCost = feedCost,
+				keepHealthLoss = keepHealthLoss,
+				shelterHealthLoss = shelterHealthLoss,
+				keepResult = (keepHealthLoss > 0)
+					and string.format("It lashed out (-%d Health) until the vet patched it up ($%d). Now it won't leave your side.", keepHealthLoss, keepCost)
+					or string.format("Paperwork signed and supplies bought ($%d). Instant new roommate.", keepCost),
+				shelterResult = (shelterHealthLoss > 0)
+					and string.format("It scratched you (-%d Health) on the way, but the shelter took over.", shelterHealthLoss)
+					or "The shelter scanned its microchip and called the owner. Hero status!",
+				feedResult = string.format("You fed it ($%d) and posted everywhere. Someone offered to foster within the hour.", feedCost),
+				ignoreResult = "You walked away. It eventually wandered off into the night.",
+			}
 		end,
-		text = "You found a stray %animal%! It looks hungry and scared.",
+		text = "You found a stray %animal%! %condition%",
 		choices = {
-			{ text = "🏠 Adopt it!", effects = { Happiness = 15, Money = -500 }, resultText = "You have a new best friend!", setFlags = {"pet_owner", "animal_lover"}, addAsset = { type = "item", id = "rescue_pet", name = "Rescue Pet", value = 0 } },
-			{ text = "🏥 Take to shelter", effects = { Happiness = 5 }, resultText = "They'll find it a good home." },
-			{ text = "🍖 Just feed it", effects = { Happiness = 3 }, resultText = "At least it ate today." },
+			{
+				text = "🏠 Adopt it!",
+				effects = { Happiness = 15 },
+				dynamicEffects = function(_, data)
+					return {
+						Money = data.keepCost and -data.keepCost or 0,
+						Health = data.keepHealthLoss and -data.keepHealthLoss or 0,
+					}
+				end,
+				resultText = "%keepResult%",
+				resultEmoji = "%eventEmoji%",
+				setFlags = {"pet_owner", "animal_lover"},
+				addAsset = { type = "item", id = "rescue_pet", name = "Rescue Pet", value = 0 },
+			},
+			{
+				text = "🏥 Take to shelter",
+				effects = { Happiness = 6 },
+				dynamicEffects = function(_, data)
+					return {
+						Money = data.shelterFee and -data.shelterFee or 0,
+						Health = data.shelterHealthLoss and -data.shelterHealthLoss or 0,
+					}
+				end,
+				resultText = "%shelterResult%",
+				resultEmoji = "%eventEmoji%",
+			},
+			{
+				text = "🍖 Just feed it",
+				effects = { Happiness = 3 },
+				dynamicEffects = function(_, data)
+					return {
+						Money = data.feedCost and -data.feedCost or 0,
+					}
+				end,
+				resultText = "%feedResult%",
+				resultEmoji = "%eventEmoji%",
+			},
+			{
+				text = "🚶 Keep walking",
+				effects = { Happiness = -4 },
+				resultText = "%ignoreResult%",
+			},
 		},
 	},
 	{

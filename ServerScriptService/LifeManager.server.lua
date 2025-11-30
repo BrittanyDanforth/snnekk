@@ -720,7 +720,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	if isSignificant then
 		resultData = {
 			showPopup = true,
-			emoji = eventDef.emoji or "📋",
+			emoji = (results and results.resultEmoji) or eventDef.emoji or "📋",
 			title = eventDef.title or "Result",
 			body = feedText,
 			happiness = happinessDelta ~= 0 and happinessDelta or nil,

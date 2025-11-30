@@ -205,8 +205,40 @@ module.events = {
 		end,
 		text = "You hit it off with %friendName%! Potential new friend.",
 		choices = {
-			{ text = "🤝 Become friends!", effects = { Happiness = 8 }, resultText = "You made a new friend!" },
-			{ text = "📱 Exchange info", effects = { Happiness = 4 }, resultText = "Maybe you'll hang out sometime." },
+			{
+				text = "🤝 Become friends!",
+				effects = { Happiness = 8 },
+				resultText = "You and %friendName% are already planning hangouts!",
+				addRelationship = function(state, data)
+					return {
+						category = "friends",
+						person = {
+							name = data.friendName,
+							type = "Friend",
+							relationship = math.random(70, 90),
+							met = state.Age,
+							closeness = "Bestie in progress",
+						},
+					}
+				end,
+			},
+			{
+				text = "📱 Exchange info",
+				effects = { Happiness = 4 },
+				resultText = "Maybe you'll hang out sometime.",
+				addRelationship = function(state, data)
+					return {
+						category = "friends",
+						person = {
+							name = data.friendName,
+							type = "Acquaintance",
+							relationship = math.random(45, 65),
+							met = state.Age,
+							closeness = "New friend",
+						},
+					}
+				end,
+			},
 			{ text = "🤷 Nice to meet them", effects = { Happiness = 2 }, resultText = "Pleasant but not memorable." },
 		},
 	},

@@ -533,19 +533,34 @@ module.events = {
 		id = "m_pet_adoption",
 		minAge = 22, maxAge = 35,
 		weight = 25, oneTime = true,
-		emoji = "🐕", title = "Adopting a Pet!",
+		emoji = "🐾", title = "Adopting a Pet!",
 		category = "family",
 		getDynamicData = function()
 			local pets = {"rescue dog", "cat", "puppy", "kitten", "rabbit", "bird"}
 			local names = {"Max", "Luna", "Charlie", "Bella", "Cooper", "Lucy", "Milo", "Daisy"}
-			return { petType = pets[math.random(#pets)], petName = names[math.random(#names)] }
+			local petType = pets[math.random(#pets)]
+			local petEmojiMap = {
+				["rescue dog"] = "🐕",
+				puppy = "🐕‍🦺",
+				cat = "🐈",
+				kitten = "🐈‍⬛",
+				rabbit = "🐇",
+				bird = "🐦",
+			}
+			local petEmoji = petEmojiMap[petType] or "🐾"
+			return {
+				petType = petType,
+				petName = names[math.random(#names)],
+				eventEmoji = petEmoji,
+				petEmoji = petEmoji,
+			}
 		end,
-		text = "You adopted a %petType% named %petName%!",
+		text = "%petEmoji% You adopted a %petType% named %petName%!",
 		choices = {
-			{ text = "🥰 Best decision ever!", effects = { Happiness = 15 }, resultText = "%petName% is the love of your life! Unconditional love!", setFlags = {"has_pet", "pet_parent"} },
-			{ text = "😅 Didn't expect this much work", effects = { Happiness = 6, Money = -1000 }, resultText = "Pets are expensive and demanding. But worth it!", setFlags = {"has_pet", "pet_parent"} },
-			{ text = "📸 Instagram star", effects = { Happiness = 10, Looks = 2 }, resultText = "%petName% has more followers than you!", setFlags = {"has_pet", "pet_parent"} },
-			{ text = "🏃 Exercise buddy!", effects = { Happiness = 10, Health = 6 }, resultText = "Daily walks! You're both getting fit!", setFlags = {"has_pet", "pet_parent", "active"} },
+			{ text = "🥰 Best decision ever!", effects = { Happiness = 15 }, resultText = "%petEmoji% %petName% is the love of your life! Unconditional love!", resultEmoji = "%petEmoji%", setFlags = {"has_pet", "pet_parent"} },
+			{ text = "😅 Didn't expect this much work", effects = { Happiness = 6, Money = -1000 }, resultText = "%petEmoji% Pets are expensive and demanding. But worth it!", resultEmoji = "%petEmoji%", setFlags = {"has_pet", "pet_parent"} },
+			{ text = "📸 Instagram star", effects = { Happiness = 10, Looks = 2 }, resultText = "%petEmoji% %petName% has more followers than you!", resultEmoji = "%petEmoji%", setFlags = {"has_pet", "pet_parent"} },
+			{ text = "🏃 Exercise buddy!", effects = { Happiness = 10, Health = 6 }, resultText = "%petEmoji% Daily walks! You're both getting fit!", resultEmoji = "%petEmoji%", setFlags = {"has_pet", "pet_parent", "active"} },
 		},
 	},
 	
