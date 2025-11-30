@@ -44,6 +44,54 @@ local function hasNoCriminalRecord(state)
 end
 
 ----------------------------------------------------------------------
+-- RELATIONSHIP CHECK HELPERS
+----------------------------------------------------------------------
+
+-- Check if player has any friends (flag-based)
+local function hasFriend(state)
+	local f = state.Flags or {}
+	return f.has_best_friend or f.has_friend or f.social_butterfly or f.friendly
+end
+
+-- Check if player has a romantic partner
+local function hasPartner(state)
+	local f = state.Flags or {}
+	return f.married or f.engaged or f.in_relationship or f.dating
+end
+
+-- Check if player has coworkers (has a job)
+local function hasCoworkers(state)
+	local f = state.Flags or {}
+	return f.employed or f.teacher or f.f1_driver or f.hacker_career or f.gang_member or (state.Career and state.Career.jobTitle)
+end
+
+-- Check if player has classmates (in school)
+local function hasClassmates(state)
+	local age = state.Age or 0
+	local f = state.Flags or {}
+	return (age >= 5 and age <= 22) or f.in_school or f.in_college or f.in_university
+end
+
+-- Check if player has siblings
+local function hasSibling(state)
+	local f = state.Flags or {}
+	return f.has_sibling or f.has_brother or f.has_sister
+end
+
+-- Get a random friend name from relationships if available, otherwise generate one
+local function getFriendName(state)
+	-- Try to get from actual relationships first
+	if state.Relationships and state.Relationships.friends and #state.Relationships.friends > 0 then
+		local friend = state.Relationships.friends[math.random(#state.Relationships.friends)]
+		if friend and friend.name then
+			return friend.name
+		end
+	end
+	-- Fallback to random name
+	return randomName()
+end
+
+----------------------------------------------------------------------
 -- EVENTS DATABASE
 ----------------------------------------------------------------------
 
@@ -217,11 +265,24 @@ local events = {
 		weight = 90, oneTime = true, milestone = true,
 		emoji = "🏫", title = "First Day of Preschool",
 		category = "school",
+		getDynamicData = function() return { friendName = randomName() } end,
 		text = "It's your first day away from home!",
 		choices = {
-			{ text = "🎉 Excited!", effects = { Happiness = 5, Smarts = 3 }, resultText = "You made friends immediately.", setFlag = "social_butterfly" },
+			{ 
+				text = "🎉 Excited!", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "You made friends immediately.", 
+				setFlags = {"social_butterfly", "has_friend"},
+				addRelationship = { category = "classmates", type = "preschool_friend", startingRelationship = 55 }
+			},
 			{ text = "😰 Scared", effects = { Happiness = -2 }, resultText = "You clung to your parent but warmed up." },
-			{ text = "🤝 Make a friend", effects = { Happiness = 6 }, resultText = "You found a best friend on day one!", setFlag = "has_best_friend" },
+			{ 
+				text = "🤝 Make a friend", 
+				effects = { Happiness = 6 }, 
+				resultText = "You found a best friend %friendName% on day one!", 
+				setFlags = {"has_best_friend", "has_friend"},
+				addRelationship = { category = "friends", dynamicNameKey = "friendName", type = "best_friend", startingRelationship = 80 }
+			},
 		},
 	},
 	
@@ -1854,7 +1915,8 @@ local events = {
 		weight = 8, cooldown = 3,
 		emoji = "🤝", title = "Friend in Need",
 		category = "social",
-		getDynamicData = function() return { friendName = randomName() } end,
+		requires = hasFriend,
+		getDynamicData = function(state) return { friendName = getFriendName(state) } end,
 		text = "Your friend %friendName% needs help with something important.",
 		choices = {
 			{ text = "🤝 Help them out", effects = { Happiness = 8, Money = -100 }, resultText = "You helped them through a tough time." },
@@ -2005,7 +2067,13 @@ local events = {
 		getDynamicData = function() return { friendName = randomName() } end,
 		text = "You and %friendName% have become inseparable!",
 		choices = {
-			{ text = "🤗 Best friends forever!", effects = { Happiness = 12 }, resultText = "You found a lifelong friend.", setFlag = "has_best_friend" },
+			{ 
+				text = "🤗 Best friends forever!", 
+				effects = { Happiness = 12 }, 
+				resultText = "You found a lifelong friend.", 
+				setFlags = {"has_best_friend", "has_friend"},
+				addRelationship = { category = "friends", dynamicNameKey = "friendName", type = "best_friend", startingRelationship = 85 }
+			},
 		},
 	},
 	
@@ -3356,6 +3424,7 @@ local events = {
 		weight = 6, cooldown = 10,
 		emoji = "🎉", title = "Surprise Party!",
 		category = "social",
+		requires = hasFriend,
 		text = "Your friends and family threw you a surprise party!",
 		choices = {
 			{ text = "🎉 Amazing!", effects = { Happiness = 15 }, resultText = "You felt so loved! What a great surprise." },
@@ -3943,9 +4012,10 @@ local events = {
 		weight = 25, oneTime = true, milestone = true,
 		emoji = "🏫", title = "First Day at Daycare",
 		category = "family",
+		getDynamicData = function() return { friendName = randomName() } end,
 		text = "Your parents are dropping you off at daycare for the first time!",
 		choices = {
-			{ text = "👋 Wave bye-bye happily", effects = { Happiness = 5, Smarts = 3 }, resultText = "You adapted so well! Made new friends already.", setFlag = "daycare_kid" },
+			{ text = "👋 Wave bye-bye happily", effects = { Happiness = 5, Smarts = 3 }, resultText = "You adapted so well! Made new friends already.", setFlags = {"daycare_kid", "has_friend"}, addRelationship = { category = "classmates", dynamicNameKey = "friendName", type = "daycare_friend", startingRelationship = 50 } },
 			{ text = "😭 Cling and cry", effects = { Happiness = -3 }, resultText = "It was hard at first, but you adjusted." },
 			{ text = "🧸 Bring comfort item", effects = { Happiness = 3 }, resultText = "Your teddy bear helped you feel safe." },
 		},
@@ -4025,7 +4095,10 @@ local events = {
 		weight = 25, oneTime = true,
 		emoji = "🌙", title = "First Sleepover",
 		category = "social",
-		getDynamicData = function() return { friendName = randomName() } end,
+		requires = hasFriend,
+		getDynamicData = function(state)
+			return { friendName = getFriendName(state) }
+		end,
 		text = "You're invited to your first sleepover at %friendName%'s house!",
 		choices = {
 			{ text = "🎉 So excited!", effects = { Happiness = 8 }, resultText = "Best night ever! You stayed up way too late." },
@@ -4071,7 +4144,7 @@ local events = {
 		getDynamicData = function() return { friendName = randomName() } end,
 		text = "%friendName% wants to play with your favorite toy!",
 		choices = {
-			{ text = "🤝 Share it", effects = { Happiness = 5, Smarts = 3 }, resultText = "Sharing is caring! You made a good friend.", setFlag = "generous" },
+			{ text = "🤝 Share it", effects = { Happiness = 5, Smarts = 3 }, resultText = "Sharing is caring! You made a good friend.", setFlags = {"generous", "has_friend"}, addRelationship = { category = "friends", dynamicNameKey = "friendName", type = "childhood_friend", startingRelationship = 55 } },
 			{ text = "😤 Mine!", effects = { Happiness = 3, Smarts = -2 }, resultText = "You kept it but felt weird about it later." },
 			{ text = "🔄 Take turns", effects = { Smarts = 5, Happiness = 4 }, resultText = "You invented a turn-taking game! Problem solved.", setFlag = "problem_solver" },
 		},
@@ -4260,11 +4333,11 @@ local events = {
 		category = "school",
 		getDynamicData = function()
 			local clubs = {"chess club", "debate team", "robotics club", "art club", "coding club", "book club", "drama club"}
-			return { club = clubs[math.random(#clubs)] }
+			return { club = clubs[math.random(#clubs)], clubmateName = randomName() }
 		end,
 		text = "The %club% is looking for new members!",
 		choices = {
-			{ text = "✅ Sign up!", effects = { Smarts = 5, Happiness = 4 }, resultText = "You love the %club%! Made new friends too." },
+			{ text = "✅ Sign up!", effects = { Smarts = 5, Happiness = 4 }, resultText = "You love the %club%! Made new friends too.", setFlags = {"in_club", "has_friend"}, addRelationship = { category = "classmates", dynamicNameKey = "clubmateName", type = "club_friend", startingRelationship = 50 } },
 			{ text = "🤔 Not for me", effects = {}, resultText = "You passed. Something else will come along." },
 		},
 	},
@@ -4322,11 +4395,11 @@ local events = {
 		category = "social",
 		getDynamicData = function()
 			local camps = {"wilderness camp", "science camp", "sports camp", "art camp", "computer camp"}
-			return { camp = camps[math.random(#camps)] }
+			return { camp = camps[math.random(#camps)], campFriendName = randomName() }
 		end,
 		text = "Your parents want to send you to %camp% this summer!",
 		choices = {
-			{ text = "🎉 Can't wait!", effects = { Happiness = 8, Health = 3 }, resultText = "Best summer ever! You made lifelong friends." },
+			{ text = "🎉 Can't wait!", effects = { Happiness = 8, Health = 3 }, resultText = "Best summer ever! You made lifelong friends.", setFlags = {"camp_kid", "has_friend"}, addRelationship = { category = "friends", dynamicNameKey = "campFriendName", type = "camp_friend", startingRelationship = 60 } },
 			{ text = "😰 Homesick worry", effects = { Happiness = 4, Smarts = 3 }, resultText = "You were scared at first but ended up loving it." },
 			{ text = "🙅 Stay home", effects = { Happiness = 3 }, resultText = "You had a quiet summer instead." },
 		},
@@ -4429,7 +4502,8 @@ local events = {
 		weight = 20, oneTime = true,
 		emoji = "💪", title = "Defending a Friend",
 		category = "social",
-		getDynamicData = function() return { friendName = randomName(), bullyName = randomName() } end,
+		requires = hasFriend,
+		getDynamicData = function(state) return { friendName = getFriendName(state), bullyName = randomName() } end,
 		text = "%bullyName% is picking on your friend %friendName%!",
 		choices = {
 			{ text = "🦸 Stand up for them", effects = { Happiness = 8, Health = -3 }, resultText = "You defended your friend! They'll never forget it.", setFlags = {"brave", "loyal_friend"} },
@@ -4479,7 +4553,7 @@ local events = {
 		getDynamicData = function() return { newKidName = randomName() } end,
 		text = "A new kid named %newKidName% joined your class. They look lonely.",
 		choices = {
-			{ text = "👋 Be their friend", effects = { Happiness = 6, Smarts = 2 }, resultText = "You made a new friend! They were so grateful.", setFlag = "compassionate" },
+			{ text = "👋 Be their friend", effects = { Happiness = 6, Smarts = 2 }, resultText = "You made a new friend! They were so grateful.", setFlags = {"compassionate", "has_friend"}, addRelationship = { category = "friends", dynamicNameKey = "newKidName", type = "school_friend", startingRelationship = 60 } },
 			{ text = "🤷 Let them figure it out", effects = {}, resultText = "Someone else befriended them." },
 			{ text = "😈 Be mean", effects = { Happiness = -5, Smarts = -3 }, resultText = "Why would you do that? You felt bad later." },
 		},
@@ -9183,12 +9257,11 @@ local earlyLifeEvents = {
 		category = "school",
 		getDynamicData = function()
 			local items = {"toy", "crayon", "snack", "book"}
-			local names = {"Tommy", "Sarah", "Alex", "Jordan"}
-			return { item = items[math.random(#items)], kid = names[math.random(#names)] }
+			return { item = items[math.random(#items)], kid = randomName() }
 		end,
 		text = "%kid% wants to use your %item%. Will you share?",
 		choices = {
-			{ text = "🤝 Yes, share!", effects = { Happiness = 5, Looks = 2 }, resultText = "You made a friend!", setFlag = "generous" },
+			{ text = "🤝 Yes, share!", effects = { Happiness = 5, Looks = 2 }, resultText = "You made a friend!", setFlags = {"generous", "has_friend"}, addRelationship = { category = "classmates", dynamicNameKey = "kid", type = "kindergarten_friend", startingRelationship = 50 } },
 			{ text = "🙅 It's mine!", effects = { Happiness = 2 }, resultText = "You kept your stuff. Fair enough." },
 			{ text = "🔄 Take turns", effects = { Smarts = 4, Happiness = 3 }, resultText = "Smart compromise!" },
 		},
@@ -9664,9 +9737,10 @@ local diverseEvents = {
 		weight = 30, cooldown = 2,
 		emoji = "📚", title = "Study Group",
 		category = "school",
+		getDynamicData = function() return { studyBuddyName = randomName() } end,
 		text = "Some classmates want to form a study group. They asked if you want to join.",
 		choices = {
-			{ text = "📖 Join them!", effects = { Smarts = 8, Happiness = 5 }, resultText = "Your grades improved and you made friends!", setFlag = "studious" },
+			{ text = "📖 Join them!", effects = { Smarts = 8, Happiness = 5 }, resultText = "Your grades improved and you made friends!", setFlags = {"studious", "has_friend"}, addRelationship = { category = "classmates", dynamicNameKey = "studyBuddyName", type = "study_buddy", startingRelationship = 55 } },
 			{ text = "🎮 Rather play games", effects = { Happiness = 5, Smarts = -3 }, resultText = "Fun but not productive." },
 			{ text = "📱 Study alone", effects = { Smarts = 5 }, resultText = "You prefer your own pace." },
 		},
@@ -9746,7 +9820,7 @@ local diverseEvents = {
 			{ text = "💪 Stand up to them", effects = { Happiness = 8, Health = -5 }, resultText = "You fought back! They leave you alone now.", setFlag = "stood_up_for_self" },
 			{ text = "🗣️ Tell a teacher", effects = { Smarts = 3 }, resultText = "The bully got in trouble.", setFlag = "seeks_help" },
 			{ text = "😢 Ignore it", effects = { Happiness = -10, Health = -3 }, resultText = "It hurts but you push through." },
-			{ text = "🤝 Try to befriend them", effects = { Smarts = 5, Happiness = 5 }, resultText = "Surprisingly, they're actually nice one-on-one.", setFlag = "peacemaker" },
+			{ text = "🤝 Try to befriend them", effects = { Smarts = 5, Happiness = 5 }, resultText = "Surprisingly, they're actually nice one-on-one.", setFlags = {"peacemaker", "has_friend"}, addRelationship = { category = "friends", dynamicNameKey = "bullyName", type = "reformed_bully_friend", startingRelationship = 45 } },
 		},
 	},
 	
@@ -9886,7 +9960,9 @@ local diverseEvents = {
 		weight = 10, cooldown = 5,
 		emoji = "🏃", title = "Marathon!",
 		category = "health",
-		text = "Your friend challenges you to run a marathon with them!",
+		requires = hasFriend,
+		getDynamicData = function(state) return { friendName = getFriendName(state) } end,
+		text = "Your friend %friendName% challenges you to run a marathon with them!",
 		choices = {
 			{ text = "🏅 Train and run!", effects = { Health = 20, Happiness = 15, Looks = 5 }, resultText = "26.2 miles complete! You're a marathoner!", setFlags = {"marathon_finisher", "determined"} },
 			{ text = "🚶 Do a half marathon", effects = { Health = 10, Happiness = 8 }, resultText = "13.1 miles is still impressive!" },
@@ -9903,6 +9979,7 @@ local diverseEvents = {
 		weight = 15, cooldown = 5,
 		emoji = "🎉", title = "Surprise Party!",
 		category = "social",
+		requires = hasFriend,
 		text = "Your friends threw you a surprise party! You had no idea!",
 		choices = {
 			{ text = "😭 Tears of joy", effects = { Happiness = 20 }, resultText = "Best surprise ever! You feel so loved!" },
@@ -9916,14 +9993,15 @@ local diverseEvents = {
 		weight = 15, cooldown = 4,
 		emoji = "💔", title = "Friendship Troubles",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = randomName() }
+		requires = hasFriend,
+		getDynamicData = function(state)
+			return { friendName = getFriendName(state) }
 		end,
 		text = "You and %friendName% had a big argument. The friendship is on the rocks.",
 		choices = {
 			{ text = "🤝 Apologize first", effects = { Happiness = 5 }, resultText = "You made up. Friendship saved!", setFlag = "mature" },
 			{ text = "⏰ Give it time", effects = { Happiness = -5 }, resultText = "Some distance might help." },
-			{ text = "🚪 End it", effects = { Happiness = -10 }, resultText = "Some friendships aren't meant to last." },
+			{ text = "🚪 End it", effects = { Happiness = -10 }, resultText = "Some friendships aren't meant to last.", clearFlag = "has_best_friend" },
 			{ text = "💬 Talk it out", effects = { Smarts = 5, Happiness = 8 }, resultText = "Communication wins again!" },
 		},
 	},
@@ -9938,7 +10016,13 @@ local diverseEvents = {
 		end,
 		text = "A new neighbor %neighborName% moved in next door!",
 		choices = {
-			{ text = "🍪 Bring welcome cookies", effects = { Happiness = 8 }, resultText = "You made a new friend!", setFlag = "friendly" },
+			{ 
+				text = "🍪 Bring welcome cookies", 
+				effects = { Happiness = 8 }, 
+				resultText = "You made a new friend!", 
+				setFlags = {"friendly", "has_friend"},
+				addRelationship = { category = "friends", dynamicNameKey = "neighborName", type = "neighbor", startingRelationship = 60 }
+			},
 			{ text = "👋 Just wave hi", effects = { Happiness = 3 }, resultText = "Polite but keeping distance." },
 			{ text = "🙈 Avoid them", effects = { Happiness = -3 }, resultText = "You're not the social type." },
 		},
@@ -10125,11 +10209,12 @@ local diverseEvents = {
 		weight = 10, oneTime = true,
 		emoji = "🎒", title = "Backpacking Adventure!",
 		category = "life",
-		getDynamicData = function()
+		requires = hasFriend,
+		getDynamicData = function(state)
 			local regions = {"Europe", "Southeast Asia", "South America", "Australia"}
-			return { region = regions[math.random(#regions)] }
+			return { region = regions[math.random(#regions)], friendName = getFriendName(state) }
 		end,
-		text = "Your friend wants to backpack through %region% for 3 months!",
+		text = "Your friend %friendName% wants to backpack through %region% for 3 months!",
 		choices = {
 			{ text = "🌍 Let's go!", effects = { Money = -8000, Happiness = 30, Smarts = 10, Health = 5 }, resultText = "Life-changing adventure!", setFlags = {"backpacker", "adventurous", "world_traveler"} },
 			{ text = "📅 Can't take time off", effects = { Happiness = -10 }, resultText = "Maybe after you retire..." },
@@ -10142,6 +10227,7 @@ local diverseEvents = {
 		weight = 15, cooldown = 3,
 		emoji = "🚗", title = "Road Trip!",
 		category = "life",
+		requires = hasFriend,
 		text = "Friends want to do a weekend road trip! Are you in?",
 		choices = {
 			{ text = "🚗 Let's ride!", effects = { Money = -500, Happiness = 15 }, resultText = "Best weekend in a long time!" },
