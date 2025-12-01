@@ -1388,14 +1388,24 @@ function OccupationScreen:showJobInfoModal(job)
 	-- Description
 	self.jobInfoDesc.Text = job.desc or "You work here as a " .. job.name .. "."
 	
-	-- Show modal
+	-- Show modal with premium animation
 	self.jobInfoOverlay.Visible = true
-	self.jobInfoCard.Position = UDim2.new(0.5, 0, 0.5, 50)
-	self.jobInfoCard.BackgroundTransparency = 1
 	
-	UI.tween(self.jobInfoCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	-- Initial positions for animation
+	self.jobInfoShell.Position = UDim2.new(0.5, 0, 0.5, 40)
+	self.jobInfoShadow.Position = UDim2.new(0.5, 3, 0.5, 43)
+	self.jobInfoShell.BackgroundTransparency = 0.5
+	self.jobInfoShadow.BackgroundTransparency = 1
+	
+	-- Animate to final positions
+	local tweenInfo = TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	UI.tween(self.jobInfoShell, tweenInfo, {
 		Position = UDim2.fromScale(0.5, 0.5),
 		BackgroundTransparency = 0
+	})
+	UI.tween(self.jobInfoShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 3),
+		BackgroundTransparency = 0.75
 	})
 end
 
@@ -1403,6 +1413,7 @@ function OccupationScreen:createJobInfoModal()
 	log("Creating job info modal...")
 	
 	self.jobInfoOverlay = Instance.new("Frame")
+	self.jobInfoOverlay.Name = "JobInfoOverlay"
 	self.jobInfoOverlay.Size = UDim2.fromScale(1, 1)
 	self.jobInfoOverlay.BackgroundColor3 = C.Black
 	self.jobInfoOverlay.BackgroundTransparency = 0.4
@@ -1421,47 +1432,87 @@ function OccupationScreen:createJobInfoModal()
 		self:hideJobInfoModal()
 	end)
 	
-	-- Card
+	-- Shadow frame (premium effect)
+	local shadowFrame = Instance.new("Frame")
+	shadowFrame.Name = "ShadowFrame"
+	shadowFrame.Size = UDim2.new(0.9, 6, 0, 386)
+	shadowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadowFrame.Position = UDim2.new(0.5, 3, 0.5, 3)
+	shadowFrame.BackgroundColor3 = C.Black
+	shadowFrame.BackgroundTransparency = 0.75
+	shadowFrame.ZIndex = 96
+	shadowFrame.Parent = self.jobInfoOverlay
+	UI.corner(shadowFrame, 26)
+	self.jobInfoShadow = shadowFrame
+	
+	-- Colored shell (premium BitLife look)
+	local shell = Instance.new("Frame")
+	shell.Name = "Shell"
+	shell.Size = UDim2.new(0.9, 0, 0, 380)
+	shell.AnchorPoint = Vector2.new(0.5, 0.5)
+	shell.Position = UDim2.fromScale(0.5, 0.5)
+	shell.BackgroundColor3 = C.Blue
+	shell.ZIndex = 97
+	shell.Parent = self.jobInfoOverlay
+	UI.corner(shell, 24)
+	self.jobInfoShell = shell
+	
+	-- Shell border stroke
+	local shellStroke = UI.stroke(shell, 2, 0.3, C.BlueDark)
+	self.jobInfoShellStroke = shellStroke
+	
+	-- Inner white card
 	self.jobInfoCard = Instance.new("Frame")
-	self.jobInfoCard.Size = UDim2.new(0.9, 0, 0, 380)
+	self.jobInfoCard.Name = "Card"
+	self.jobInfoCard.Size = UDim2.new(1, -8, 1, -8)
 	self.jobInfoCard.AnchorPoint = Vector2.new(0.5, 0.5)
 	self.jobInfoCard.Position = UDim2.fromScale(0.5, 0.5)
 	self.jobInfoCard.BackgroundColor3 = C.White
-	self.jobInfoCard.ZIndex = 97
-	self.jobInfoCard.Parent = self.jobInfoOverlay
-	UI.corner(self.jobInfoCard, 24)
+	self.jobInfoCard.ZIndex = 98
+	self.jobInfoCard.Parent = shell
+	UI.corner(self.jobInfoCard, 20)
 	
-	-- Header (blue gradient)
+	-- Header (blue accent at top)
 	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0, 85)
+	header.Name = "Header"
+	header.Size = UDim2.new(1, 0, 0, 75)
 	header.BackgroundColor3 = C.Blue
-	header.ZIndex = 98
+	header.ZIndex = 99
 	header.Parent = self.jobInfoCard
-	UI.corner(header, 24)
+	UI.corner(header, 20)
 	
 	local headerFix = Instance.new("Frame")
-	headerFix.Size = UDim2.new(1, 0, 0, 40)
+	headerFix.Name = "HeaderFix"
+	headerFix.Size = UDim2.new(1, 0, 0, 30)
 	headerFix.Position = UDim2.new(0, 0, 1, -30)
-	headerFix.BackgroundColor3 = C.BlueDark
-	headerFix.ZIndex = 98
+	headerFix.BackgroundColor3 = C.Blue
+	headerFix.BorderSizePixel = 0
+	headerFix.ZIndex = 99
 	headerFix.Parent = header
 	
 	-- Close button
 	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 36, 0, 36)
+	closeBtn.Name = "CloseButton"
+	closeBtn.Size = UDim2.new(0, 32, 0, 32)
 	closeBtn.AnchorPoint = Vector2.new(1, 0)
-	closeBtn.Position = UDim2.new(1, -12, 0, 12)
+	closeBtn.Position = UDim2.new(1, -10, 0, 10)
 	closeBtn.BackgroundColor3 = C.White
-	closeBtn.BackgroundTransparency = 0.15
-	closeBtn.Font = F.Title
-	closeBtn.TextSize = 16
-	closeBtn.TextColor3 = C.BlueDark
+	closeBtn.BackgroundTransparency = 0.1
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 14
+	closeBtn.TextColor3 = C.Blue
 	closeBtn.Text = "✕"
 	closeBtn.AutoButtonColor = false
-	closeBtn.ZIndex = 100
+	closeBtn.ZIndex = 101
 	closeBtn.Parent = header
-	UI.corner(closeBtn, 18)
+	UI.corner(closeBtn, 16)
 	
+	closeBtn.MouseEnter:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
+	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		self:hideJobInfoModal()
 	end)
@@ -1599,12 +1650,18 @@ function OccupationScreen:hideJobInfoModal()
 	if not self.jobInfoOverlay then return end
 	log("Hiding job info modal")
 	
-	UI.tween(self.jobInfoCard, TweenInfo.new(0.2), {
-		Position = UDim2.new(0.5, 0, 0.5, 50),
+	local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	
+	UI.tween(self.jobInfoShell, tweenInfo, {
+		Position = UDim2.new(0.5, 0, 0.5, 25),
+		BackgroundTransparency = 0.5
+	})
+	UI.tween(self.jobInfoShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 28),
 		BackgroundTransparency = 1
 	})
 	
-	task.delay(0.2, function()
+	task.delay(0.18, function()
 		if self.jobInfoOverlay then
 			self.jobInfoOverlay.Visible = false
 		end
@@ -2382,14 +2439,24 @@ function OccupationScreen:showCareerInfoModal()
 	self.careerInfoExpLabel.Text = "📊 Total Experience: " .. string.format("%.1f years", totalExp)
 	self.careerInfoPerfLabel.Text = "⭐ Current Performance: " .. math.floor(performance) .. "%"
 	
-	-- Show modal
+	-- Show modal with premium animation
 	self.careerInfoOverlay.Visible = true
-	self.careerInfoCard.Position = UDim2.new(0.5, 0, 0.5, 50)
-	self.careerInfoCard.BackgroundTransparency = 1
 	
-	UI.tween(self.careerInfoCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	-- Initial positions for animation
+	self.careerInfoShell.Position = UDim2.new(0.5, 0, 0.5, 40)
+	self.careerInfoShadow.Position = UDim2.new(0.5, 3, 0.5, 43)
+	self.careerInfoShell.BackgroundTransparency = 0.5
+	self.careerInfoShadow.BackgroundTransparency = 1
+	
+	-- Animate to final positions
+	local tweenInfo = TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	UI.tween(self.careerInfoShell, tweenInfo, {
 		Position = UDim2.fromScale(0.5, 0.5),
 		BackgroundTransparency = 0
+	})
+	UI.tween(self.careerInfoShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 3),
+		BackgroundTransparency = 0.75
 	})
 end
 
@@ -2397,6 +2464,7 @@ function OccupationScreen:createCareerInfoModal()
 	log("Creating career info modal...")
 	
 	self.careerInfoOverlay = Instance.new("Frame")
+	self.careerInfoOverlay.Name = "CareerInfoOverlay"
 	self.careerInfoOverlay.Size = UDim2.fromScale(1, 1)
 	self.careerInfoOverlay.BackgroundColor3 = C.Black
 	self.careerInfoOverlay.BackgroundTransparency = 0.4
@@ -2414,69 +2482,112 @@ function OccupationScreen:createCareerInfoModal()
 		self:hideCareerInfoModal()
 	end)
 	
-	-- Card (taller for skills and history)
+	-- Shadow frame (premium effect)
+	local shadowFrame = Instance.new("Frame")
+	shadowFrame.Name = "ShadowFrame"
+	shadowFrame.Size = UDim2.new(0.92, 6, 0, 526)
+	shadowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadowFrame.Position = UDim2.new(0.5, 3, 0.5, 3)
+	shadowFrame.BackgroundColor3 = C.Black
+	shadowFrame.BackgroundTransparency = 0.75
+	shadowFrame.ZIndex = 96
+	shadowFrame.Parent = self.careerInfoOverlay
+	UI.corner(shadowFrame, 26)
+	self.careerInfoShadow = shadowFrame
+	
+	-- Colored shell (premium BitLife look)
+	local shell = Instance.new("Frame")
+	shell.Name = "Shell"
+	shell.Size = UDim2.new(0.92, 0, 0, 520)
+	shell.AnchorPoint = Vector2.new(0.5, 0.5)
+	shell.Position = UDim2.fromScale(0.5, 0.5)
+	shell.BackgroundColor3 = C.Blue
+	shell.ZIndex = 97
+	shell.Parent = self.careerInfoOverlay
+	UI.corner(shell, 24)
+	self.careerInfoShell = shell
+	
+	-- Shell border stroke
+	local shellStroke = UI.stroke(shell, 2, 0.3, C.BlueDark)
+	self.careerInfoShellStroke = shellStroke
+	
+	-- Inner white card (inside shell)
 	self.careerInfoCard = Instance.new("Frame")
-	self.careerInfoCard.Size = UDim2.new(0.92, 0, 0, 520)
+	self.careerInfoCard.Name = "Card"
+	self.careerInfoCard.Size = UDim2.new(1, -8, 1, -8)
 	self.careerInfoCard.AnchorPoint = Vector2.new(0.5, 0.5)
 	self.careerInfoCard.Position = UDim2.fromScale(0.5, 0.5)
 	self.careerInfoCard.BackgroundColor3 = C.White
-	self.careerInfoCard.ZIndex = 97
-	self.careerInfoCard.Parent = self.careerInfoOverlay
-	UI.corner(self.careerInfoCard, 24)
+	self.careerInfoCard.ZIndex = 98
+	self.careerInfoCard.Parent = shell
+	UI.corner(self.careerInfoCard, 20)
 	
-	-- Header
+	-- Header (colored accent banner)
 	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0, 65)
+	header.Name = "Header"
+	header.Size = UDim2.new(1, 0, 0, 60)
 	header.BackgroundColor3 = C.Blue
-	header.ZIndex = 98
+	header.ZIndex = 99
 	header.Parent = self.careerInfoCard
-	UI.corner(header, 24)
+	UI.corner(header, 20)
 	
 	local headerFix = Instance.new("Frame")
-	headerFix.Size = UDim2.new(1, 0, 0, 30)
-	headerFix.Position = UDim2.new(0, 0, 1, -20)
+	headerFix.Name = "HeaderFix"
+	headerFix.Size = UDim2.new(1, 0, 0, 25)
+	headerFix.Position = UDim2.new(0, 0, 1, -25)
 	headerFix.BackgroundColor3 = C.Blue
-	headerFix.ZIndex = 98
+	headerFix.BorderSizePixel = 0
+	headerFix.ZIndex = 99
 	headerFix.Parent = header
 	
 	local headerTitle = Instance.new("TextLabel")
-	headerTitle.Size = UDim2.new(1, 0, 1, 0)
+	headerTitle.Size = UDim2.new(1, -50, 1, 0)
+	headerTitle.Position = UDim2.new(0, 0, 0, 0)
 	headerTitle.BackgroundTransparency = 1
 	headerTitle.Font = F.Title
-	headerTitle.TextSize = 18
+	headerTitle.TextSize = 17
 	headerTitle.TextColor3 = C.White
 	headerTitle.Text = "📋 Career Information"
-	headerTitle.ZIndex = 99
+	headerTitle.ZIndex = 100
 	headerTitle.Parent = header
 	
 	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 32, 0, 32)
+	closeBtn.Name = "CloseButton"
+	closeBtn.Size = UDim2.new(0, 30, 0, 30)
 	closeBtn.AnchorPoint = Vector2.new(1, 0)
-	closeBtn.Position = UDim2.new(1, -10, 0, 10)
+	closeBtn.Position = UDim2.new(1, -8, 0, 8)
 	closeBtn.BackgroundColor3 = C.White
-	closeBtn.BackgroundTransparency = 0.15
-	closeBtn.Font = F.Title
-	closeBtn.TextSize = 14
-	closeBtn.TextColor3 = C.BlueDark
+	closeBtn.BackgroundTransparency = 0.1
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 13
+	closeBtn.TextColor3 = C.Blue
 	closeBtn.Text = "✕"
 	closeBtn.AutoButtonColor = false
-	closeBtn.ZIndex = 100
+	closeBtn.ZIndex = 101
 	closeBtn.Parent = header
-	UI.corner(closeBtn, 16)
+	UI.corner(closeBtn, 15)
+	
+	closeBtn.MouseEnter:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
+	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		self:hideCareerInfoModal()
 	end)
 	
 	-- Content scroll
 	local content = Instance.new("ScrollingFrame")
-	content.Size = UDim2.new(1, -20, 1, -80)
-	content.Position = UDim2.new(0, 10, 0, 70)
+	content.Name = "ContentScroll"
+	content.Size = UDim2.new(1, -16, 1, -72)
+	content.Position = UDim2.new(0, 8, 0, 65)
 	content.BackgroundTransparency = 1
 	content.CanvasSize = UDim2.new(0, 0, 0, 0)
 	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	content.ScrollBarThickness = 3
 	content.ScrollBarImageColor3 = C.Gray300
-	content.ZIndex = 98
+	content.ZIndex = 99
 	content.Parent = self.careerInfoCard
 	
 	local contentLayout = Instance.new("UIListLayout")
@@ -2570,12 +2681,18 @@ function OccupationScreen:hideCareerInfoModal()
 	if not self.careerInfoOverlay then return end
 	log("Hiding career info modal")
 	
-	UI.tween(self.careerInfoCard, TweenInfo.new(0.2), {
-		Position = UDim2.new(0.5, 0, 0.5, 50),
+	local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	
+	UI.tween(self.careerInfoShell, tweenInfo, {
+		Position = UDim2.new(0.5, 0, 0.5, 25),
+		BackgroundTransparency = 0.5
+	})
+	UI.tween(self.careerInfoShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 28),
 		BackgroundTransparency = 1
 	})
 	
-	task.delay(0.2, function()
+	task.delay(0.18, function()
 		if self.careerInfoOverlay then
 			self.careerInfoOverlay.Visible = false
 		end
