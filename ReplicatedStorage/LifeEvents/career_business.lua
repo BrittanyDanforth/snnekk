@@ -1,314 +1,598 @@
--- LifeEvents/career_business.lua
+-- career_business.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- BUSINESS & ENTREPRENEURSHIP CAREER EVENTS
--- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
+-- BUSINESS CAREER EVENTS - Entrepreneur, Finance, Real Estate
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+local events = {}
 
-local module = {}
+-- ═══════════════════════════════════════════════════════════════
+-- ENTREPRENEUR EVENTS
+-- ═══════════════════════════════════════════════════════════════
 
-module.events = {
+table.insert(events, {
+	id = "business_idea_spark",
+	emoji = "💡",
+	title = "The Business Idea",
+	category = "business",
+	tags = {"career", "entrepreneur", "origin"},
 	
-	-- ═══════════════════════════════════════════════════════════════
-	-- EARLY BUSINESS INSTINCTS
-	-- ═══════════════════════════════════════════════════════════════
+	weight = 12,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
 	
-	{
-		id = "biz_childhood_lemonade",
-		minAge = 7, maxAge = 12,
-		weight = 25, oneTime = true,
-		emoji = "🍋", title = "Lemonade Stand Idea!",
-		category = "school",
-		text = "Hot summer day! You want to set up a lemonade stand. What do you do?",
-		choices = {
-			{ text = "🍋 Premium lemonade $2!", effects = { Happiness = 15, Money = 50, Smarts = 5 }, resultText = "Sold out! Made $50! The business instinct is STRONG!", setFlag = "entrepreneur_spirit" },
-			{ text = "🏪 Undercut with $0.25", effects = { Happiness = 10, Money = 20 }, resultText = "Sold tons but barely made money. Learned about margins!" },
-			{ text = "📢 Big marketing push", effects = { Happiness = 12, Money = 35, Smarts = 5 }, resultText = "Signs everywhere! Customers came! Marketing works!", setFlag = "entrepreneur_spirit" },
-			{ text = "😤 Too much work", effects = { Happiness = 5 }, resultText = "Gave up after an hour. Business isn't for everyone." },
-		},
+	chainId = "entrepreneur_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 14,
+		maxAge = 40,
+		blockedFlags = {"career_entrepreneur_started"},
+		minStats = {Smarts = 35},
 	},
 	
-	{
-		id = "biz_teen_job",
-		minAge = 14, maxAge = 17,
-		weight = 25, cooldown = 2,
-		emoji = "🍔", title = "First Job Opportunity!",
-		category = "work",
-		getDynamicData = function()
-			local jobs = {"fast food", "grocery store", "movie theater", "retail"}
-			return { jobType = jobs[math.random(#jobs)] }
-		end,
-		text = "Got a job at %jobType%! Your first REAL job. How do you approach it?",
-		choices = {
-			{ text = "💪 Work hard, learn fast", effects = { Happiness = 10, Money = 500, Smarts = 5 }, resultText = "Promoted to shift lead already! Boss loves your work ethic!", setFlag = "strong_work_ethic" },
-			{ text = "🤷 Just collect paycheck", effects = { Happiness = 5, Money = 400 }, resultText = "Did the minimum. Got paid. No promotions but whatever." },
-			{ text = "🧠 Study the business", effects = { Happiness = 8, Money = 400, Smarts = 8 }, resultText = "Watched how everything works. Valuable learning experience!", setFlag = "business_observer" },
-			{ text = "😤 Quit after week 1", effects = { Happiness = -5, Money = 50 }, resultText = "Couldn't handle it. Quit before first paycheck. Rough start." },
+	getDynamicData = function(state)
+		local ideas = {"an app that solves a common problem", "a product you wish existed", "a service your neighborhood needs", "an improvement to something that already exists"}
+		return {
+			idea = ideas[math.random(#ideas)]
+		}
+	end,
+	
+	text = "You have an idea for %idea%. You can't stop thinking about it. Maybe it could actually work...",
+	
+	choices = {
+		{
+			id = "start_planning",
+			text = "Let's make it happen!",
+			resultText = "You start researching, planning, and sketching out how to make it real.",
+			effects = {Smarts = 2, Happiness = 4},
+			flags = {set = {"career_entrepreneur_started", "business_dreamer"}},
+			startCareer = "entrepreneur",
+			careerXP = 15,
+		},
+		{
+			id = "side_project",
+			text = "Work on it as a side project.",
+			resultText = "You tinker with the idea in your spare time.",
+			effects = {Happiness = 2},
+			flags = {set = {"has_business_idea"}},
+		},
+		{
+			id = "forget_it",
+			text = "It's probably too hard. Forget it.",
+			resultText = "You let the idea fade. Someone else will probably do it.",
+			effects = {Happiness = -1},
+			flags = {set = {}},
 		},
 	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- COLLEGE & EARLY CAREER
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "biz_college_major",
-		minAge = 18, maxAge = 19,
-		weight = 20, oneTime = true,
-		emoji = "🎓", title = "Choosing Your Major!",
-		category = "school",
-		text = "Time to declare a major! What do you choose?",
-		choices = {
-			{ text = "💼 Business/Finance", effects = { Smarts = 8, Happiness = 5 }, resultText = "The traditional path! Learning accounting, marketing, management!", setFlags = {"business_major", "college_student"} },
-			{ text = "🔬 STEM field", effects = { Smarts = 12, Happiness = 3 }, resultText = "Hard but valuable! Technical skills are in demand!", setFlags = {"stem_major", "college_student"} },
-			{ text = "🎨 Follow your passion", effects = { Happiness = 15, Smarts = 5 }, resultText = "Studying what you love! Happy but uncertain career path.", setFlag = "college_student" },
-			{ text = "🤷 Undeclared", effects = { Happiness = 8, Smarts = 3 }, resultText = "Still figuring it out! Exploring options.", setFlag = "college_student" },
-		},
-	},
-	
-	{
-		id = "biz_first_internship",
-		minAge = 19, maxAge = 22,
-		weight = 25, oneTime = true,
-		emoji = "👔", title = "Internship Interview!",
-		category = "work",
-		requiresFlag = "college_student",
-		getDynamicData = function()
-			local companies = {"Goldman Sachs", "McKinsey", "Google", "JP Morgan", "Deloitte"}
-			return { company = companies[math.random(#companies)] }
-		end,
-		text = "Interview at %company%! Big opportunity! How do you prepare?",
-		choices = {
-			{ 
-				text = "📚 Research everything", 
-				effects = { Happiness = 20, Money = 15000, Smarts = 5 }, 
-				resultText = "Nailed every question! HIRED! Dream internship secured!", 
-				setFlags = {"elite_intern", "resume_builder"},
-				setJob = { id = "elite_intern", title = "Business Analyst Intern", salary = 25000 }
-			},
-			{ 
-				text = "😎 Wing it on charm", 
-				effects = { Happiness = 5, Money = 5000 }, 
-				resultText = "Got a different offer. Not prestigious but it's something.", 
-				setFlag = "intern",
-				setJob = { id = "intern", title = "Intern", salary = 15000 }
-			},
-			{ text = "😰 Nervous mess", effects = { Happiness = -10 }, resultText = "Blanked on questions. Rejection email came fast. Ouch." },
-			{ 
-				text = "🤝 Network beforehand", 
-				effects = { Happiness = 18, Money = 12000, Smarts = 5 }, 
-				resultText = "Inside connection helped! Got the job! Networking works!", 
-				setFlags = {"elite_intern", "networker"},
-				setJob = { id = "elite_intern", title = "Consultant Intern", salary = 22000 }
-			},
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- CORPORATE LADDER
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "biz_first_corporate_job",
-		minAge = 22, maxAge = 28,
-		weight = 20, oneTime = true,
-		emoji = "💼", title = "First Real Job Offer!",
-		category = "work",
-		blockIfFlag = "employed", -- Don't fire if already employed
-		getDynamicData = function()
-			local salaries = {55000, 65000, 75000, 85000}
-			return { salary = salaries[math.random(#salaries)] }
-		end,
-		text = "Job offer! $%salary% per year! Do you take it?",
-		choices = {
-			{ 
-				text = "✅ Accept immediately", 
-				effects = { Happiness = 15 }, 
-				resultText = "EMPLOYED! First day jitters! Career officially begins!", 
-				setFlags = {"employed", "corporate_worker"},
-				setJob = { id = "corporate_entry", title = "Associate", salary = 55000 }
-			},
-			{ 
-				text = "📋 Negotiate higher", 
-				effects = { Happiness = 18, Smarts = 5 }, 
-				resultText = "Got $10k more! Always negotiate! Strong start!", 
-				setFlags = {"employed", "corporate_worker", "negotiator"},
-				setJob = { id = "corporate_entry", title = "Associate", salary = 65000 }
-			},
-			{ text = "🙅 Hold out for better", effects = { Happiness = -10, Money = -5000 }, resultText = "Turned it down. Job market dried up. Now desperate. Bad call." },
-			{ 
-				text = "🤔 Ask for more time", 
-				effects = { Happiness = 8 }, 
-				resultText = "Used the time to get another offer! Leverage worked!", 
-				setFlags = {"employed", "corporate_worker"},
-				setJob = { id = "corporate_entry", title = "Associate", salary = 60000 }
-			},
-		},
-	},
-	
-	{
-		id = "biz_office_politics",
-		minAge = 23, maxAge = 50,
-		weight = 25, cooldown = 3,
-		emoji = "🐍", title = "Office Politics!",
-		category = "work",
-		requiresFlag = "corporate_worker",
-		text = "A coworker is taking credit for YOUR work to the boss! What do you do?",
-		choices = {
-			{ text = "📧 Email proof to boss", effects = { Happiness = 10, Smarts = 5 }, resultText = "Receipts don't lie! Boss knows the truth now! Credit restored!" },
-			{ text = "😤 Confront them publicly", effects = { Happiness = -10, Looks = -3 }, resultText = "Made a scene! Now YOU look bad. Should've been strategic." },
-			{ text = "🤐 Let it slide", effects = { Happiness = -15, Smarts = -3 }, resultText = "They keep doing it. You're invisible. This will hurt your career." },
-			{ text = "🎯 Work directly with boss", effects = { Happiness = 12, Smarts = 8 }, resultText = "Started sending updates directly. No middleman. Smart move!", setFlag = "savvy_worker" },
-		},
-	},
-	
-	{
-		id = "biz_promotion_opportunity",
-		minAge = 25, maxAge = 45,
-		weight = 20, cooldown = 3,
-		emoji = "📈", title = "Promotion Opening!",
-		category = "work",
-		requiresFlag = "corporate_worker",
-		blockIfFlag = "manager", -- Only promote once via this event
-		text = "Management position opened up! Multiple people want it. What do you do?",
-		choices = {
-			{ 
-				text = "📊 Build a case", 
-				effects = { Happiness = 20, Smarts = 5 }, 
-				resultText = "Presented your accomplishments! GOT THE PROMOTION! Manager now!", 
-				setFlags = {"manager", "promoted"},
-				setJob = { id = "manager", title = "Manager", salary = 95000 }
-			},
-			{ 
-				text = "🤝 Lobby decision makers", 
-				effects = { Happiness = 15 }, 
-				resultText = "Relationships paid off! Promoted! Politics matter!", 
-				setFlags = {"manager", "political_player"},
-				setJob = { id = "manager", title = "Manager", salary = 90000 }
-			},
-			{ text = "🤷 Hope they notice me", effects = { Happiness = -15 }, resultText = "They didn't. Someone else got it. You have to advocate for yourself!" },
-			{ text = "😰 Don't apply", effects = { Happiness = -10, Smarts = -3 }, resultText = "Too scared to try. Watched someone less qualified get it. Regret." },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- ENTREPRENEURSHIP PATH
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "biz_startup_idea",
-		minAge = 22, maxAge = 45,
-		weight = 15, oneTime = true,
-		emoji = "💡", title = "Big Startup Idea!",
-		category = "work",
-		requiresFlag = "entrepreneur_spirit",
-		getDynamicData = function()
-			local ideas = {"an app that", "a service that", "a platform that", "a product that"}
-			local solutions = {"saves people time", "connects communities", "solves a daily problem", "makes life easier"}
-			return { ideaType = ideas[math.random(#ideas)], solution = solutions[math.random(#solutions)] }
-		end,
-		text = "You have an idea for %ideaType% %solution%! Could be big! What do you do?",
-		choices = {
-			{ text = "🚀 Quit job and build it", effects = { Happiness = 15, Money = -30000 }, resultText = "All in! Scary but exciting! No salary but pursuing the dream!", setFlags = {"startup_founder", "entrepreneur"} },
-			{ text = "🌙 Build it on the side", effects = { Happiness = 12, Health = -5 }, resultText = "Nights and weekends! Exhausting but keeping the safety net!", setFlags = {"side_hustle", "entrepreneur"} },
-			{ text = "🤝 Find a cofounder", effects = { Happiness = 15, Smarts = 5 }, resultText = "Found a perfect partner! Complementary skills! Let's go!", setFlags = {"startup_founder", "entrepreneur", "has_cofounder"} },
-			{ text = "📝 Just file it away", effects = { Happiness = -5 }, resultText = "Great ideas need execution. This one just sits in a notebook..." },
-		},
-	},
-	
-	{
-		id = "biz_seeking_funding",
-		minAge = 23, maxAge = 50,
-		weight = 20, oneTime = true,
-		emoji = "💰", title = "Investor Meeting!",
-		category = "work",
-		requiresFlag = "startup_founder",
-		getDynamicData = function()
-			local vcs = {"Sequoia", "Andreessen Horowitz", "Y Combinator", "a wealthy angel"}
-			local amounts = {500000, 1000000, 2000000}
-			return { investor = vcs[math.random(#vcs)], amount = amounts[math.random(#amounts)] }
-		end,
-		text = "Pitching to %investor%! Asking for $%amount%! How do you pitch?",
-		choices = {
-			{ text = "📊 Data-driven pitch", effects = { Happiness = 25, Money = 1000000, Smarts = 5 }, resultText = "They loved the metrics! FUNDED! Check is in the mail!", setFlags = {"funded_startup", "vc_backed"} },
-			{ text = "🎯 Vision and passion", effects = { Happiness = 20, Money = 500000 }, resultText = "They believed in YOU! Smaller check but you have a champion!", setFlag = "funded_startup" },
-			{ text = "😰 Freeze in the meeting", effects = { Happiness = -15 }, resultText = "Couldn't articulate your vision. Pass. Practice more." },
-			{ text = "😤 Overvalue the company", effects = { Happiness = -10, Smarts = 3 }, resultText = "Asked for too much. They walked. Know your worth but be realistic." },
-		},
-	},
-	
-	{
-		id = "biz_startup_success",
-		minAge = 25, maxAge = 55,
-		weight = 12, oneTime = true,
-		emoji = "🚀", title = "Startup Taking Off!",
-		category = "work",
-		requiresFlag = "funded_startup",
-		text = "Your startup is growing FAST! Revenue up 500%! Big companies want to talk! What do you do?",
-		choices = {
-			{ text = "💰 Sell the company!", effects = { Happiness = 35, Money = 10000000 }, resultText = "ACQUIRED! Eight-figure exit! You're a MILLIONAIRE!", setFlags = {"successful_exit", "millionaire"} },
-			{ text = "🚀 Keep building!", effects = { Happiness = 25, Money = 500000, Smarts = 5 }, resultText = "Turned down the offer! Going for BILLION dollar company!", setFlag = "unicorn_pursuit" },
-			{ text = "📈 Take company public", effects = { Happiness = 30, Money = 20000000 }, resultText = "IPO! On the stock market! Paper wealth through the roof!", setFlags = {"public_company", "ceo"} },
-			{ text = "💼 Hire CEO to run it", effects = { Happiness = 20, Money = 3000000 }, resultText = "Brought in professional management. Less control, more free time." },
-		},
-	},
-	
-	{
-		id = "biz_startup_failure",
-		minAge = 23, maxAge = 50,
-		weight = 25, oneTime = true,
-		emoji = "📉", title = "Startup Struggling...",
-		category = "work",
-		requiresFlag = "startup_founder",
-		text = "It's not working. Running out of money. Team losing faith. What do you do?",
-		choices = {
-			{ text = "💪 Pivot the business", effects = { Happiness = 8, Smarts = 8 }, resultText = "New direction! The pivot is working! Second chance!", setFlag = "pivot_survivor" },
-			{ text = "🚪 Shut it down", effects = { Happiness = -20, Money = -50000 }, resultText = "Painful but necessary. Learned SO much. Will try again.", clearFlag = "startup_founder" },
-			{ text = "🙏 One more fundraise", effects = { Happiness = 5, Money = 200000 }, resultText = "Found believers! Got bridge funding! Living to fight another day!", setFlag = "scrappy_survivor" },
-			{ text = "😔 Give up and get a job", effects = { Happiness = -15, Money = 50000 }, resultText = "Back to corporate. Dream over. But stability is nice...", clearFlag = "startup_founder", setFlag = "ex_founder" },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- EXECUTIVE LEVEL
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "biz_c_suite",
-		minAge = 35, maxAge = 60,
-		weight = 12, oneTime = true,
-		emoji = "👔", title = "C-Suite Opportunity!",
-		category = "work",
-		requiresFlag = "manager",
-		getDynamicData = function()
-			local titles = {"CFO", "COO", "CMO", "CTO"}
-			return { title = titles[math.random(#titles)] }
-		end,
-		text = "Offered the %title% position at a major company! Executive level! What do you do?",
-		choices = {
-			{ text = "✅ Accept immediately", effects = { Happiness = 30, Money = 500000 }, resultText = "Chief Officer! Corner office! Stock options! You've made it!", setFlags = {"c_suite", "executive"} },
-			{ text = "📋 Negotiate hard", effects = { Happiness = 25, Money = 750000, Smarts = 5 }, resultText = "Better package! More equity! Smart negotiation!", setFlags = {"c_suite", "executive"} },
-			{ text = "🤔 Stay at current company", effects = { Happiness = 10, Money = 100000 }, resultText = "Loyalty has value. They appreciate you even more now." },
-			{ text = "🚀 Counter with CEO demand", effects = { Happiness = -10 }, resultText = "Overreached. Offer withdrawn. Know when to push and when to accept." },
-		},
-	},
-	
-	{
-		id = "biz_ethical_dilemma",
-		minAge = 30, maxAge = 65,
-		weight = 20, cooldown = 4,
-		emoji = "⚖️", title = "Ethical Dilemma!",
-		category = "work",
-		requiresFlag = "corporate_worker",
-		text = "Boss wants you to do something legally gray that will make the company millions. What do you do?",
-		choices = {
-			{ text = "🚨 Report it", effects = { Happiness = 15, Money = -20000, Smarts = 5 }, resultText = "Whistleblower protections kicked in. Right thing to do. Career complicated.", setFlag = "whistleblower" },
-			{ text = "🙅 Refuse quietly", effects = { Happiness = 8, Money = -10000 }, resultText = "Declined without drama. Passed over for promotion. Sleep well though." },
-			{ text = "✅ Do it anyway", effects = { Happiness = -10, Money = 100000, Smarts = -5 }, resultText = "Made the money. Soul feels dirty. Hope it doesn't come back to bite you.", setFlag = "morally_compromised" },
-			{ text = "📋 Get it in writing first", effects = { Happiness = 5, Smarts = 10 }, resultText = "CYA move! If it blows up, you're protected. Smart but still risky." },
-		},
-	},
-}
+})
 
-return module
+table.insert(events, {
+	id = "business_first_sale",
+	emoji = "💰",
+	title = "First Sale!",
+	category = "business",
+	tags = {"career", "entrepreneur", "side_business"},
+	
+	weight = 15,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
+	
+	chainId = "entrepreneur_origin",
+	chainStep = 2,
+	
+	conditions = {
+		minAge = 15,
+		maxAge = 50,
+		requiredCareerId = "entrepreneur",
+		requiredCareerMinTier = 1,
+	},
+	
+	getDynamicData = function(state)
+		return {
+			amount = math.random(20, 500)
+		}
+	end,
+	
+	text = "Someone actually paid you $%amount% for your product/service! A real customer. This is validation!",
+	
+	choices = {
+		{
+			id = "reinvest",
+			text = "Reinvest every penny into growth!",
+			resultText = "You put all profits back into the business. This is how empires are built.",
+			effects = {Smarts = 2, Happiness = 5},
+			flags = {set = {"first_sale", "reinvestor"}},
+			careerXP = 25,
+		},
+		{
+			id = "pocket_it",
+			text = "Finally, some money for my effort!",
+			resultText = "You treat yourself. You earned it.",
+			effects = {Money = 200, Happiness = 4},
+			flags = {set = {"first_sale"}},
+			careerXP = 15,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "business_investor_meeting",
+	emoji = "🤝",
+	title = "Investor Interest",
+	category = "business",
+	tags = {"career", "entrepreneur", "startup_life"},
+	
+	weight = 8,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 55,
+		requiredCareerId = "entrepreneur",
+		requiredCareerMinTier = 2,
+		requiredAllFlags = {"first_sale"},
+	},
+	
+	getDynamicData = function(state)
+		local firms = {"Blue Sky Capital", "Venture Partners", "Growth Fund", "Angel Group"}
+		return {
+			firm = firms[math.random(#firms)],
+			amount = math.random(50, 500) * 1000
+		}
+	end,
+	
+	text = "%firm% wants to invest $%amount% in your business for equity. This could accelerate everything - or you could lose control.",
+	
+	choices = {
+		{
+			id = "take_investment",
+			text = "Take the money and scale!",
+			resultText = "You sign the deal. Now you have real resources - and real pressure to perform.",
+			effects = {Money = 50000, Happiness = 4},
+			flags = {set = {"funded_startup", "has_investors"}},
+			promoteCareer = true,
+			careerXP = 40,
+		},
+		{
+			id = "negotiate_terms",
+			text = "Negotiate for better terms.",
+			resultText = "After tough negotiations, you get a better deal. They respect your spine.",
+			effects = {Money = 60000, Happiness = 3},
+			flags = {set = {"funded_startup", "has_investors", "good_negotiator"}},
+			promoteCareer = true,
+			careerXP = 45,
+		},
+		{
+			id = "bootstrap",
+			text = "Stay bootstrapped. I want full control.",
+			resultText = "You turn down the money. Slower growth, but it's 100% yours.",
+			effects = {Happiness = 2, Karma = 2},
+			flags = {set = {"bootstrapped"}},
+			careerXP = 20,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "business_pivot",
+	emoji = "🔄",
+	title = "Time to Pivot?",
+	category = "business",
+	tags = {"career", "entrepreneur", "startup_life"},
+	
+	weight = 10,
+	cooldownYears = 3,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 60,
+		requiredCareerId = "entrepreneur",
+		requiredCareerMinTier = 2,
+	},
+	
+	text = "The original vision isn't working as well as hoped. Your customers want something slightly different. Do you pivot?",
+	
+	choices = {
+		{
+			id = "pivot",
+			text = "Pivot and follow the customers.",
+			resultText = "You adapt. It's not the original dream, but it's what people will pay for.",
+			effects = {Smarts = 3, Happiness = 1},
+			flags = {set = {"pivoted_business"}},
+			careerXP = 25,
+		},
+		{
+			id = "stay_course",
+			text = "Stay the course. The vision is right.",
+			resultText = "You double down on your original plan. Time will tell if you're right.",
+			effects = {Happiness = -1},
+			flags = {set = {"vision_focused"}},
+			careerXP = 15,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "business_acquisition_offer",
+	emoji = "📝",
+	title = "Acquisition Offer",
+	category = "business",
+	tags = {"career", "entrepreneur", "scaling_business", "milestone"},
+	
+	weight = 5,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
+	
+	conditions = {
+		minAge = 22,
+		maxAge = 65,
+		requiredCareerId = "entrepreneur",
+		requiredCareerMinTier = 4,
+	},
+	
+	getDynamicData = function(state)
+		local buyers = {"MegaCorp Industries", "Global Holdings", "Tech Giants Inc", "Consolidated Brands"}
+		return {
+			buyer = buyers[math.random(#buyers)],
+			offer = math.random(2, 20) * 1000000
+		}
+	end,
+	
+	text = "%buyer% wants to acquire your company for $%offer%. This is life-changing money. But is it the right choice?",
+	
+	choices = {
+		{
+			id = "sell_company",
+			text = "Sell and take the money.",
+			resultText = "You sign the papers. You're wealthy beyond imagination. But it's no longer your baby.",
+			effects = {Money = 5000000, Happiness = 7},
+			flags = {set = {"sold_company", "wealthy"}},
+			quitCareer = true,
+		},
+		{
+			id = "keep_building",
+			text = "Reject the offer. This is just the beginning.",
+			resultText = "You bet on yourself. The company is worth more to you than any offer.",
+			effects = {Happiness = 3, Karma = 2},
+			flags = {set = {"rejected_acquisition"}},
+			careerXP = 30,
+		},
+	},
+})
+
+-- ═══════════════════════════════════════════════════════════════
+-- FINANCE EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "finance_internship",
+	emoji = "📊",
+	title = "Finance Internship",
+	category = "business",
+	tags = {"career", "finance", "origin"},
+	
+	weight = 12,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
+	
+	chainId = "finance_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 19,
+		maxAge = 26,
+		blockedFlags = {"career_finance_started"},
+		requiredEducation = "high_school",
+		minStats = {Smarts = 50},
+	},
+	
+	getDynamicData = function(state)
+		local firms = {"Goldman & Sterling", "Morgan Hill Partners", "Capital First Group", "WealthMax Advisory"}
+		return {
+			firm = firms[math.random(#firms)]
+		}
+	end,
+	
+	text = "%firm% offers you a summer internship. The hours will be brutal, but the pay and networking are incredible.",
+	
+	choices = {
+		{
+			id = "accept_internship",
+			text = "Accept and grind hard!",
+			resultText = "You work 80-hour weeks. It's exhausting but you learn more than you ever thought possible.",
+			effects = {Smarts = 5, Money = 15000, Happiness = -2},
+			flags = {set = {"career_finance_started", "finance_intern"}},
+			startCareer = "finance",
+			careerXP = 30,
+		},
+		{
+			id = "decline",
+			text = "The hours are too much. Decline.",
+			resultText = "You value your work-life balance. Finance probably isn't for you anyway.",
+			effects = {Happiness = 1},
+			flags = {set = {"declined_finance"}},
+		},
+	},
+})
+
+table.insert(events, {
+	id = "finance_big_deal",
+	emoji = "💵",
+	title = "Close the Deal",
+	category = "business",
+	tags = {"career", "finance", "investment_banking"},
+	
+	weight = 10,
+	cooldownYears = 2,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 23,
+		maxAge = 55,
+		requiredCareerId = "finance",
+		requiredCareerMinTier = 2,
+	},
+	
+	getDynamicData = function(state)
+		local deals = {"a major merger", "an IPO", "a leveraged buyout", "a restructuring"}
+		return {
+			deal = deals[math.random(#deals)],
+			bonus = math.random(10, 100) * 1000
+		}
+	end,
+	
+	text = "You've been working on %deal% for months. It's about to close. If it goes through, the bonus could be $%bonus%.",
+	
+	choices = {
+		{
+			id = "all_in",
+			text = "Go all in to close it.",
+			resultText = "You work through the night. The deal closes. You're exhausted but richer.",
+			effects = {Money = 50000, Health = -3, Smarts = 2},
+			flags = {set = {"big_deal_closed"}},
+			careerXP = 30,
+			careerReputation = 15,
+		},
+		{
+			id = "delegate",
+			text = "Delegate and manage from above.",
+			resultText = "You trust your team. The deal closes, and you keep your sanity.",
+			effects = {Money = 40000, Happiness = 2},
+			flags = {set = {"deal_delegator"}},
+			careerXP = 20,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "finance_ethical_dilemma",
+	emoji = "⚖️",
+	title = "Gray Area",
+	category = "business",
+	tags = {"career", "finance", "morality"},
+	
+	weight = 7,
+	cooldownYears = 4,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 25,
+		maxAge = 60,
+		requiredCareerId = "finance",
+		requiredCareerMinTier = 2,
+	},
+	
+	text = "Your boss wants you to recommend a product to clients that has high fees and poor returns - but it pays you great commissions.",
+	
+	choices = {
+		{
+			id = "follow_orders",
+			text = "Do what the boss says.",
+			resultText = "You push the product. The commissions are nice, but you feel dirty.",
+			effects = {Money = 10000, Karma = -5, Happiness = -2},
+			flags = {set = {"finance_compromised"}},
+			careerXP = 10,
+		},
+		{
+			id = "push_back",
+			text = "Push back and recommend better options.",
+			resultText = "Your boss is annoyed, but your clients appreciate your honesty.",
+			effects = {Karma = 5, Happiness = 2},
+			flags = {set = {"finance_ethical"}},
+			careerReputation = 5,
+		},
+		{
+			id = "quit",
+			text = "This firm has bad values. I quit.",
+			resultText = "You leave for a firm with better ethics. Not everyone agrees with that choice.",
+			effects = {Karma = 6, Happiness = 3},
+			quitCareer = true,
+			flags = {set = {"quit_unethical_firm"}},
+		},
+	},
+})
+
+-- ═══════════════════════════════════════════════════════════════
+-- REAL ESTATE EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "real_estate_license",
+	emoji = "🏠",
+	title = "Get Your License",
+	category = "business",
+	tags = {"career", "real_estate", "origin"},
+	
+	weight = 10,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
+	
+	chainId = "real_estate_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 55,
+		blockedFlags = {"career_real_estate_started"},
+		requiredEducation = "high_school",
+	},
+	
+	text = "You're considering getting a real estate license. The market can be lucrative, but it's also competitive and unpredictable.",
+	
+	choices = {
+		{
+			id = "get_license",
+			text = "Study, take the exam, get licensed!",
+			resultText = "After weeks of studying, you pass! You're officially a licensed real estate agent.",
+			effects = {Money = -2000, Smarts = 3, Happiness = 4},
+			flags = {set = {"career_real_estate_started", "real_estate_licensed"}},
+			startCareer = "real_estate",
+			careerXP = 20,
+		},
+		{
+			id = "not_now",
+			text = "Maybe later.",
+			resultText = "You put the idea on hold for now.",
+			effects = {},
+			flags = {set = {}},
+		},
+	},
+})
+
+table.insert(events, {
+	id = "real_estate_first_sale",
+	emoji = "🔑",
+	title = "First Home Sale",
+	category = "business",
+	tags = {"career", "real_estate", "real_estate_agent"},
+	
+	weight = 15,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = true,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 60,
+		requiredCareerId = "real_estate",
+		requiredCareerMinTier = 1,
+	},
+	
+	getDynamicData = function(state)
+		return {
+			commission = math.random(5, 15) * 1000
+		}
+	end,
+	
+	text = "After weeks of showings and negotiations, you close your first deal! The commission check is $%commission%.",
+	
+	choices = {
+		{
+			id = "celebrate_hustle",
+			text = "This hustle is worth it!",
+			resultText = "You feel the rush of closing deals. Time to find the next one!",
+			effects = {Money = 10000, Happiness = 6},
+			flags = {set = {"first_home_sold", "real_estate_hooked"}},
+			careerXP = 30,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "real_estate_property_investment",
+	emoji = "🏢",
+	title = "Investment Property",
+	category = "business",
+	tags = {"career", "real_estate", "property_investor"},
+	
+	weight = 8,
+	cooldownYears = 3,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 25,
+		maxAge = 70,
+		requiredCareerId = "real_estate",
+		requiredCareerMinTier = 2,
+		minStats = {Money = 50000},
+	},
+	
+	getDynamicData = function(state)
+		local properties = {"a small rental unit", "a fixer-upper house", "a commercial space", "a multi-family building"}
+		return {
+			property = properties[math.random(#properties)],
+			price = math.random(100, 300) * 1000
+		}
+	end,
+	
+	text = "You find %property% for $%price%. It could generate passive income or flip for profit - if you can make the deal work.",
+	
+	choices = {
+		{
+			id = "buy_property",
+			text = "Make an offer and close the deal.",
+			resultText = "You become a property owner. Now the real work begins - managing or renovating.",
+			effects = {Money = -100000, Happiness = 3},
+			flags = {set = {"property_owner"}},
+			promoteCareer = true,
+			careerXP = 35,
+		},
+		{
+			id = "pass_this_time",
+			text = "The numbers don't work. Pass.",
+			resultText = "You walk away from this one. Better opportunities will come.",
+			effects = {},
+			flags = {set = {}},
+		},
+	},
+})
+
+table.insert(events, {
+	id = "real_estate_market_crash",
+	emoji = "📉",
+	title = "Market Downturn",
+	category = "business",
+	tags = {"career", "real_estate", "crisis"},
+	
+	weight = 5,
+	cooldownYears = 10,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 22,
+		maxAge = 75,
+		requiredCareerId = "real_estate",
+		requiredCareerMinTier = 2,
+	},
+	
+	text = "The real estate market crashes. Property values plummet. Deals dry up. Many agents leave the industry.",
+	
+	choices = {
+		{
+			id = "ride_it_out",
+			text = "Ride it out and find opportunities.",
+			resultText = "You tighten your belt and look for deals others miss. Markets recover eventually.",
+			effects = {Money = -20000, Happiness = -4},
+			flags = {set = {"survived_crash"}},
+			careerXP = 20,
+		},
+		{
+			id = "buy_distressed",
+			text = "Buy distressed properties cheap.",
+			resultText = "You scoop up properties at rock-bottom prices. Risky, but could pay off huge.",
+			effects = {Money = -50000, Happiness = -2},
+			flags = {set = {"opportunistic_buyer", "survived_crash"}},
+			careerXP = 30,
+		},
+	},
+})
+
+return {events = events}
