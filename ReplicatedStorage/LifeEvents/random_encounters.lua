@@ -421,7 +421,12 @@ module.events = {
 		weight = 12, cooldown = 5,
 		emoji = "🎰", title = "Casino Night!",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends to go with friends
+		-- Need at least $100 to gamble (cheapest option)
+		requires = function(state)
+			local hasFriend = LifeEvents.hasFriend(state)
+			local hasMoney = (state.Money or 0) >= 100
+			return hasFriend and hasMoney
+		end,
 		text = "Friends want to hit the casino! You've got some money. What do you do?",
 		choices = {
 			{ 
@@ -1194,6 +1199,161 @@ module.events = {
 				effects = { Happiness = 10, Smarts = 5, Money = 2000 }, 
 				resultText = "Ambitious! They like that. Bigger challenges ahead!",
 				setFlag = "ambitious"
+			},
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- FINANCIAL STRUGGLE EVENTS (When player is broke)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_broke_struggle",
+		minAge = 18, maxAge = 65,
+		weight = 40, cooldown = 2,
+		emoji = "💸", title = "Money Troubles",
+		category = "social",
+		-- Only fires when broke (less than $500)
+		requires = function(state)
+			return (state.Money or 0) < 500
+		end,
+		text = "Bills are due, fridge is empty, and your bank account is looking rough. What do you do?",
+		choices = {
+			{ 
+				text = "💼 Pick up extra work", 
+				effects = { Money = 300, Health = -5, Happiness = 3 }, 
+				resultText = "Took on gig work. Exhausting but made ends meet.",
+				setFlag = "hustler"
+			},
+			{ 
+				text = "📞 Ask family for help", 
+				effects = { Money = 200, Happiness = -3 }, 
+				resultText = "They helped. Grateful but a little embarrassed.",
+			},
+			{ 
+				text = "🍜 Ramen diet it is", 
+				effects = { Health = -8, Happiness = -5 }, 
+				resultText = "Survived on cheap food. Not healthy but you got through.",
+			},
+			{ 
+				text = "💪 Budget hardcore", 
+				effects = { Smarts = 4, Happiness = 2, Money = 100 }, 
+				resultText = "Cut every expense. Found money you didn't know you were wasting!",
+				setFlag = "frugal"
+			},
+		},
+	},
+	
+	{
+		id = "m_cant_afford_basics",
+		minAge = 18, maxAge = 70,
+		weight = 35, cooldown = 3,
+		emoji = "😰", title = "Can't Make Rent",
+		category = "social",
+		-- Only fires when very broke (less than $100)
+		requires = function(state)
+			return (state.Money or 0) < 100
+		end,
+		text = "Rent is due and you don't have it. Landlord is asking questions. What now?",
+		choices = {
+			{ 
+				text = "🙏 Beg for extension", 
+				effects = { Happiness = -8, Smarts = 2 },
+				chanceSuccess = 0.6,
+				effectsOnSuccess = { Happiness = 5 },
+				resultText = "They gave you another week. Phew!",
+				resultTextFail = "No extension. Late fee added. Things just got harder.",
+			},
+			{ 
+				text = "💳 Credit card advance", 
+				effects = { Money = 500, Happiness = -5 }, 
+				resultText = "Bought time but now you owe even more with interest...",
+				setFlag = "in_debt"
+			},
+			{ 
+				text = "📦 Move back with parents", 
+				effects = { Happiness = -10, Money = 200 }, 
+				resultText = "Rock bottom. But at least you have a roof and can save up.",
+				setFlag = "moved_back_home"
+			},
+			{ 
+				text = "🚗 Sleep in car", 
+				effects = { Happiness = -15, Health = -10 }, 
+				resultText = "Homeless. One of the hardest times of your life.",
+				setFlag = "experienced_homelessness"
+			},
+		},
+	},
+	
+	{
+		id = "m_unexpected_windfall_broke",
+		minAge = 18, maxAge = 70,
+		weight = 20, cooldown = 5,
+		emoji = "🎉", title = "Lucky Break!",
+		category = "social",
+		-- Only fires when broke - gives hope
+		requires = function(state)
+			return (state.Money or 0) < 300
+		end,
+		getDynamicData = function()
+			local sources = {
+				"You found $50 in an old jacket!",
+				"A friend paid back money they owed you!",
+				"You won a small scratch-off lottery!",
+				"Someone Venmo'd you by accident and said keep it!",
+				"Your tax refund came early!"
+			}
+			local amounts = {50, 100, 75, 30, 200}
+			local idx = math.random(1, #sources)
+			return { source = sources[idx], amount = amounts[idx] }
+		end,
+		text = "%source% Small wins matter when you're struggling!",
+		choices = {
+			{ 
+				text = "🙏 Thank goodness!", 
+				effectsDynamic = function(data) return { Money = data.amount, Happiness = 8 } end,
+				resultText = "Every bit helps when times are tough!",
+			},
+			{ 
+				text = "💰 Save it immediately", 
+				effectsDynamic = function(data) return { Money = data.amount, Happiness = 5, Smarts = 3 } end,
+				resultText = "Smart. Building that emergency fund one dollar at a time.",
+				setFlag = "saver"
+			},
+		},
+	},
+	
+	{
+		id = "m_financial_turnaround",
+		minAge = 20, maxAge = 60,
+		weight = 15, oneTime = true,
+		emoji = "📈", title = "Things Looking Up!",
+		category = "social",
+		-- Fires when broke but has good traits
+		requires = function(state)
+			local f = state.Flags or {}
+			local isBroke = (state.Money or 0) < 1000
+			local hasGrit = f.hustler or f.hard_worker or f.determined or f.frugal
+			return isBroke and hasGrit
+		end,
+		text = "Your hard work is starting to pay off. Someone noticed your hustle!",
+		choices = {
+			{ 
+				text = "💼 Job opportunity!", 
+				effects = { Money = 2000, Happiness = 15 }, 
+				resultText = "Better job! Finally catching a break!",
+				setFlag = "employed"
+			},
+			{ 
+				text = "🤝 Mentor appeared", 
+				effects = { Smarts = 8, Happiness = 10, Money = 500 }, 
+				resultText = "Someone successful wants to help guide you!",
+				setFlag = "has_mentor"
+			},
+			{ 
+				text = "📚 Scholarship/grant", 
+				effects = { Money = 1500, Smarts = 5, Happiness = 12 }, 
+				resultText = "Free money for education or training! Doors opening!",
 			},
 		},
 	},

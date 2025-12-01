@@ -129,6 +129,10 @@ module.events = {
 		id = "m_study_abroad",
 		minAge = 19, maxAge = 21,
 		weight = 25, oneTime = true,
+		-- Need at least $2500 to study abroad (cheapest option)
+		requires = function(state)
+			return (state.Money or 0) >= 2500
+		end,
 		emoji = "✈️", title = "Study Abroad!",
 		category = "school",
 		getDynamicData = function()
@@ -138,7 +142,7 @@ module.events = {
 		text = "You've been accepted to study abroad in %country% for a semester!",
 		choices = {
 			{ text = "🌍 Life-changing!", effects = { Smarts = 10, Happiness = 15, Money = -3000 }, resultText = "Best decision ever! You're forever changed!", setFlag = "studied_abroad" },
-			{ text = "🤷 Didn't go", effects = { Happiness = -4 }, resultText = "Decided against it. Wonder what it would have been like..." },
+			{ text = "🤷 Can't afford it", effects = { Happiness = -4 }, resultText = "Too expensive. Wonder what it would have been like..." },
 			{ text = "💕 International romance", effects = { Happiness = 12, Smarts = 5, Money = -2500 }, resultText = "Found love abroad! Long-distance is hard though...", setFlags = {"studied_abroad", "international_romance"} },
 			{ text = "📚 Academic growth", effects = { Smarts = 15, Happiness = 8, Money = -2500 }, resultText = "Expanded your worldview! So much learning!", setFlags = {"studied_abroad", "worldly"} },
 		},
@@ -387,6 +391,10 @@ module.events = {
 		minAge = 25, maxAge = 35,
 		weight = 30, oneTime = true,
 		requiresFlag = "serious_relationship",
+		-- Need at least $4000 for an engagement ring (cheapest option)
+		requires = function(state)
+			return (state.Money or 0) >= 4000
+		end,
 		emoji = "💍", title = "The Proposal!",
 		category = "family",
 		getDynamicData = function()
@@ -407,6 +415,10 @@ module.events = {
 		minAge = 25, maxAge = 35,
 		weight = 60, oneTime = true,
 		requiresFlag = "engaged",
+		-- Need at least $5000 for the cheapest wedding option
+		requires = function(state)
+			return (state.Money or 0) >= 5000
+		end,
 		emoji = "💒", title = "YOUR WEDDING DAY!",
 		category = "family",
 		getDynamicData = function()
@@ -426,6 +438,10 @@ module.events = {
 		id = "m_buying_house",
 		minAge = 26, maxAge = 35,
 		weight = 30, oneTime = true,
+		-- Need at least $20000 for down payment (cheapest option)
+		requires = function(state)
+			return (state.Money or 0) >= 20000
+		end,
 		emoji = "🏡", title = "Buying a House!",
 		category = "family",
 		getDynamicData = function()
@@ -486,6 +502,10 @@ module.events = {
 		id = "m_grad_school",
 		minAge = 24, maxAge = 32,
 		weight = 25, oneTime = true,
+		-- Need at least $5000 (cheapest option with employer help)
+		requires = function(state)
+			return (state.Money or 0) >= 5000
+		end,
 		emoji = "🎓", title = "Graduate School!",
 		category = "school",
 		getDynamicData = function()
@@ -592,6 +612,10 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "✈️", title = "Dream Vacation!",
 		category = "social",
+		-- MUST have at least $2000 (cheapest option) to even consider a vacation
+		requires = function(state)
+			return (state.Money or 0) >= 2000
+		end,
 		getDynamicData = function()
 			local destinations = {"Europe", "Japan", "Thailand", "Australia", "South America", "Africa", "tropical islands", "around the world"}
 			return { destination = destinations[math.random(#destinations)] }
