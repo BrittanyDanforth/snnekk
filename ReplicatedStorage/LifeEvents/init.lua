@@ -18,16 +18,19 @@ local LifeEvents = {}
 -- ═══════════════════════════════════════════════════════════════
 
 local function safeRequire(moduleName)
-	local module = script:FindFirstChild(moduleName)
+	-- script.Parent is the LifeEvents folder - siblings of init, not children
+	local container = script.Parent
+	local module = container:FindFirstChild(moduleName)
+	
 	if not module then
-		warn("[LifeEvents] Module not found:", moduleName)
+		warn("[LifeEvents] Module not found:", moduleName, "in", container:GetFullName())
 		return nil
 	end
-	
+
 	local success, result = pcall(function()
 		return require(module)
 	end)
-	
+
 	if success then
 		print("[LifeEvents] ✅ Loaded:", moduleName)
 		return result
@@ -183,45 +186,57 @@ local EVENT_MODULES = {
 local function loadEventModules()
 	local loaded = 0
 	local failed = 0
-	
+	local container = script.Parent -- LifeEvents folder, NOT script itself
+
 	for _, moduleName in ipairs(EVENT_MODULES) do
 		local success, result = pcall(function()
-			local moduleScript = script:FindFirstChild(moduleName)
-			if moduleScript then
+			local moduleScript = container:FindFirstChild(moduleName)
+			if moduleScript and moduleScript:IsA("ModuleScript") then
 				local events = require(moduleScript)
-				
+
 				-- Handle different return formats
 				local eventList = events
-				if events.events then
-					eventList = events.events
-				elseif events.Events then
-					eventList = events.Events
+				if type(events) == "table" then
+					if events.events then
+						eventList = events.events
+					elseif events.Events then
+						eventList = events.Events
+					end
 				end
-				
+
 				if type(eventList) == "table" then
+					local moduleEventCount = 0
 					for _, event in ipairs(eventList) do
 						local normalized = normalizeEvent(event)
-						
+
 						-- Validate event has required fields
 						if normalized.id and normalized.text and normalized.choices then
 							table.insert(LifeEvents.AllEvents, normalized)
 							LifeEvents.EventsById[normalized.id] = normalized
 							loaded = loaded + 1
+							moduleEventCount = moduleEventCount + 1
 						else
 							warn("[LifeEvents] Invalid event in " .. moduleName .. ":", normalized.id or "no id")
 						end
 					end
+					print("[LifeEvents] 📦", moduleName, "→", moduleEventCount, "events")
+				else
+					warn("[LifeEvents] Module", moduleName, "did not return a table")
 				end
+			else
+				warn("[LifeEvents] Module not found:", moduleName)
 			end
 		end)
-		
+
 		if not success then
-			warn("[LifeEvents] Failed to load module:", moduleName, result)
+			warn("[LifeEvents] ❌ Failed to load module:", moduleName, result)
 			failed = failed + 1
 		end
 	end
-	
-	print("[LifeEvents] Loaded", loaded, "events from", #EVENT_MODULES - failed, "modules")
+
+	print("[LifeEvents] ═══════════════════════════════════════")
+	print("[LifeEvents] ✅ Loaded", loaded, "events from", #EVENT_MODULES - failed, "modules")
+	print("[LifeEvents] ═══════════════════════════════════════")
 	return loaded
 end
 
