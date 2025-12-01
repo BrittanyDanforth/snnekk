@@ -78,6 +78,7 @@ local TrySpecialCareer = getRemote("TrySpecialCareer", true)
 local RequestPromotion = getRemote("RequestPromotion", true)
 local RequestRaise = getRemote("RequestRaise", true)
 local GetCareerInfo = getRemote("GetCareerInfo", true)
+local GetEducationInfo = getRemote("GetEducationInfo", true)
 
 local BuyProperty = getRemote("BuyProperty", true)
 local BuyVehicle = getRemote("BuyVehicle", true)
@@ -1987,6 +1988,103 @@ GetCareerInfo.OnServerInvoke = function(player)
 		skills = careerData.Skills or {},
 		careerHistory = careerData.CareerHistory or {},
 		achievements = careerData.Achievements or {},
+	}
+end
+
+----------------------------------------------------------------
+-- EDUCATION INFO HANDLER (GPA, Progress, Transcript)
+----------------------------------------------------------------
+
+GetEducationInfo.OnServerInvoke = function(player)
+	local state = getPlayerState(player)
+	local extState = getExtendedState(player)
+	
+	-- Get education data from extended state (or initialize if not present)
+	local eduData = extState.EducationData or {}
+	
+	-- Determine current education level
+	local level = state.Education or "none"
+	local enrolled = state.Enrolled or false
+	
+	-- Calculate GPA if not already set
+	local gpa = eduData.GPA
+	if not gpa and enrolled then
+		-- Default starting GPA based on Smarts stat
+		local smarts = state.Stats and state.Stats.Smarts or 50
+		gpa = 2.0 + (smarts / 100) * 2.0 -- Range 2.0-4.0 based on smarts
+		gpa = math.floor(gpa * 100) / 100 -- Round to 2 decimal places
+	end
+	
+	-- Calculate progress if not already set
+	local progress = eduData.Progress
+	if not progress and enrolled then
+		-- Default to 0% progress
+		progress = 0
+	end
+	
+	-- Get institution name
+	local institution = eduData.Institution
+	if not institution then
+		if level == "high_school" then
+			institution = "Local High School"
+		elseif level == "community" then
+			institution = "Community College"
+		elseif level == "bachelor" then
+			institution = "State University"
+		elseif level == "master" then
+			institution = "Graduate School"
+		elseif level == "phd" then
+			institution = "University Research Program"
+		elseif level == "law" then
+			institution = "Law School"
+		elseif level == "medical" then
+			institution = "Medical School"
+		end
+	end
+	
+	-- Get major if applicable
+	local major = eduData.Major or "Undeclared"
+	
+	-- Get debt
+	local debt = eduData.Debt or 0
+	
+	-- Get status
+	local status = "none"
+	if enrolled then
+		status = "enrolled"
+		if gpa and gpa < 2.0 then
+			status = "probation"
+		end
+	elseif level and level ~= "none" and level ~= "high_school" then
+		status = "graduated"
+	end
+	
+	-- Get grades/transcript (per-term GPA history)
+	local grades = eduData.Grades or {}
+	
+	-- Get credits if tracking
+	local creditsEarned = eduData.CreditsEarned
+	local creditsRequired = eduData.CreditsRequired
+	
+	-- Get year info if tracking
+	local year = eduData.Year
+	local totalYears = eduData.TotalYears
+	
+	return {
+		success = true,
+		level = level,
+		institution = institution,
+		major = major,
+		gpa = gpa,
+		progress = progress,
+		debt = debt,
+		status = status,
+		grades = grades,
+		creditsEarned = creditsEarned,
+		creditsRequired = creditsRequired,
+		year = year,
+		totalYears = totalYears,
+		enrolled = enrolled,
 	}
 end
 

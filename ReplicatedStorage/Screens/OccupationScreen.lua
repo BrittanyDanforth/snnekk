@@ -24,6 +24,7 @@ local DoWork = getRemote("DoWork")
 local RequestPromotion = getRemote("RequestPromotion")
 local RequestRaise = getRemote("RequestRaise")
 local GetCareerInfo = getRemote("GetCareerInfo")
+local GetEducationInfo = getRemote("GetEducationInfo") -- NEW: detailed GPA/progress/transcript
 
 -- Job Categories for filtering
 local JobCategories = {
@@ -277,6 +278,19 @@ local Education = {
 	{ id = "phd", name = "PhD Program", emoji = "🎓", duration = 5, cost = 100000, minAge = 24, requirement = "master" },
 }
 
+-- Education rank ladder used for requirements/gating.
+-- Higher number = more advanced. FIXED: Matches actual Education IDs and job requirements!
+local EducationRanks = {
+	none        = 0,
+	high_school = 1,
+	community   = 2,
+	bachelor    = 3,
+	master      = 4,
+	law         = 5,
+	medical     = 5,
+	phd         = 6,
+}
+
 -- Debug logging
 local DEBUG = true
 local function log(...)
@@ -297,6 +311,7 @@ function OccupationScreen.new(screenGui, blurOverlay, showBlurFunc, hideBlurFunc
 	self.currentTab = "jobs"
 	self.selectedCategory = "all" -- For job category filtering
 	self.careerInfo = nil -- Cached career info from server
+	self.educationInfo = nil -- Cached education info (GPA, progress, transcript)
 	log("Initial state - Age:", self:getAge(), "Money:", self:getMoney(), "Job:", self:getCurrentJob() or "None")
 	self:createUI()
 	log("✅ OccupationScreen created successfully")
@@ -361,8 +376,23 @@ end
 
 function OccupationScreen:getEducationLevel()
 	local state = self.playerState
-	if not state then return "high_school" end
-	return state.Education or (state.Career and state.Career.education) or "high_school"
+	if not state then
+		return "none"
+	end
+
+	local level = state.Education or (state.Career and state.Career.education)
+	if level then
+		return level
+	end
+
+	-- Fallback: if you're an adult and we never set a level, assume you at least
+	-- finished high school. Kids/teens default to "none".
+	local age = self:getAge()
+	if age and age >= 18 then
+		return "high_school"
+	end
+
+	return "none"
 end
 
 function OccupationScreen:isEnrolled()
@@ -429,6 +459,151 @@ function OccupationScreen:getRaises()
 		return self.careerInfo.raises or 0
 	end
 	return 0
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- EDUCATION HELPERS (GPA, Progress, Transcript, etc.)
+-- ═══════════════════════════════════════════════════════════════
+
+function OccupationScreen:fetchEducationInfo()
+	if not GetEducationInfo then
+		log("GetEducationInfo remote not available")
+		return nil
+	end
+
+	local success, result = pcall(function()
+		return GetEducationInfo:InvokeServer()
+	end)
+
+	if success and result and result.success then
+		self.educationInfo = result
+		log("Fetched education info - Level:", result.level, "GPA:", result.gpa, "Progress:", result.progress)
+		return result
+	end
+
+	log("GetEducationInfo failed or returned no data")
+	return nil
+end
+
+function OccupationScreen:getEducationDisplayName(levelId)
+	if not levelId or levelId == "" or levelId == "none" then
+		return "No Formal Education"
+	end
+
+	if levelId == "high_school" then
+		return "High School Graduate"
+	end
+
+	for _, edu in ipairs(Education) do
+		if edu.id == levelId then
+			return edu.name
+		end
+	end
+
+	return levelId:gsub("_", " "):gsub("^%l", string.upper)
+end
+
+function OccupationScreen:getEducationEmoji(levelId)
+	if levelId == "high_school" then
+		return "📚"
+	elseif levelId == "community" then
+		return "🏫"
+	elseif levelId == "bachelor" or levelId == "master" or levelId == "phd" then
+		return "🎓"
+	elseif levelId == "law" then
+		return "⚖️"
+	elseif levelId == "medical" then
+		return "🏥"
+	end
+	return "📖"
+end
+
+function OccupationScreen:getEducationGPA()
+	local info = self.educationInfo
+	if info and info.gpa then
+		return info.gpa
+	end
+	return nil
+end
+
+function OccupationScreen:getEducationProgress()
+	local info = self.educationInfo
+	if not info then
+		return nil
+	end
+
+	if info.creditsEarned and info.creditsRequired and info.creditsRequired > 0 then
+		return math.clamp((info.creditsEarned / info.creditsRequired) * 100, 0, 100)
+	end
+
+	if info.year and info.totalYears and info.totalYears > 0 then
+		return math.clamp((info.year / info.totalYears) * 100, 0, 100)
+	end
+
+	if info.progress then
+		return math.clamp(info.progress, 0, 100)
+	end
+
+	return nil
+end
+
+function OccupationScreen:getEducationDebt()
+	local info = self.educationInfo
+	if info and info.debt then
+		return info.debt
+	end
+	return 0
+end
+
+function OccupationScreen:getEducationInstitution()
+	local info = self.educationInfo
+	if info and info.institution and info.institution ~= "" then
+		return info.institution
+	end
+
+	local level = (info and info.level) or self:getEducationLevel()
+	if level == "high_school" then
+		return "Local High School"
+	elseif level == "community" then
+		return "Community College"
+	elseif level == "bachelor" or level == "master" or level == "phd" then
+		return "State University"
+	elseif level == "law" then
+		return "Law School"
+	elseif level == "medical" then
+		return "Medical School"
+	end
+
+	return nil
+end
+
+function OccupationScreen:getEducationMajor()
+	local info = self.educationInfo
+	if info and info.major and info.major ~= "" then
+		return info.major
+	end
+	return "Undeclared"
+end
+
+function OccupationScreen:getEducationStatus()
+	local info = self.educationInfo
+	if info and info.status then
+		return info.status
+	end
+
+	if self:isEnrolled() then
+		return "enrolled"
+	end
+
+	return "none"
+end
+
+function OccupationScreen:getEducationGrades()
+	local info = self.educationInfo
+	if info and type(info.grades) == "table" then
+		return info.grades
+	end
+	return {}
 end
 
 function OccupationScreen:createUI()
@@ -1674,14 +1849,13 @@ function OccupationScreen:createJobCard(parent, job, order, age, eduLevel)
 	local eduNeeded = nil
 	local inJail = self:isInJail()
 	
-	-- Check education requirement
+	-- Check education requirement (FIXED to match actual Education IDs)
 	if job.requirement then
-		local eduRanks = { none = 0, high_school = 1, community_college = 2, university = 3, graduate_school = 4, law_school = 4, medical_school = 4, mba = 4 }
-		local playerRank = eduRanks[eduLevel] or 1
-		local jobRank = eduRanks[job.requirement] or 0
+		local playerRank = EducationRanks[eduLevel] or EducationRanks.high_school
+		local jobRank = EducationRanks[job.requirement] or 0
 		meetsEdu = playerRank >= jobRank
 		if not meetsEdu then
-			eduNeeded = job.requirement:gsub("_", " "):gsub("^%l", string.upper)
+			eduNeeded = self:getEducationDisplayName(job.requirement)
 		end
 	end
 	
@@ -1814,18 +1988,23 @@ end
 
 function OccupationScreen:populateEducation()
 	self:updateInfoBar()
-	
+
 	-- Clear content
 	for _, child in ipairs(self.contentScroll:GetChildren()) do
-		if child:IsA("Frame") then child:Destroy() end
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
 	end
-	
+
 	local age = self:getAge()
 	local money = self:getMoney()
 	local eduLevel = self:getEducationLevel()
 	local enrolled = self:isEnrolled()
-	
-	-- Auto education info
+
+	-- Pull detailed info (GPA, progress, institution, etc.)
+	self:fetchEducationInfo()
+
+	-- Auto education info (grades K-12)
 	local autoSection = Instance.new("Frame")
 	autoSection.Name = "AutoEducation"
 	autoSection.Size = UDim2.new(1, 0, 0, 85)
@@ -1835,7 +2014,7 @@ function OccupationScreen:populateEducation()
 	autoSection.Parent = self.contentScroll
 	UI.corner(autoSection, 18)
 	UI.stroke(autoSection, 1, 0.7, C.Purple)
-	
+
 	local autoIcon = Instance.new("TextLabel")
 	autoIcon.Size = UDim2.new(0, 55, 0, 55)
 	autoIcon.Position = UDim2.new(0, 16, 0.5, -27.5)
@@ -1845,7 +2024,7 @@ function OccupationScreen:populateEducation()
 	autoIcon.Text = "📖"
 	autoIcon.ZIndex = 83
 	autoIcon.Parent = autoSection
-	
+
 	local autoTitle = Instance.new("TextLabel")
 	autoTitle.Size = UDim2.new(0.7, 0, 0, 24)
 	autoTitle.Position = UDim2.new(0, 80, 0, 16)
@@ -1857,7 +2036,7 @@ function OccupationScreen:populateEducation()
 	autoTitle.Text = "Basic Education"
 	autoTitle.ZIndex = 83
 	autoTitle.Parent = autoSection
-	
+
 	local autoDesc = Instance.new("TextLabel")
 	autoDesc.Size = UDim2.new(0.8, 0, 0, 36)
 	autoDesc.Position = UDim2.new(0, 80, 0, 42)
@@ -1867,11 +2046,11 @@ function OccupationScreen:populateEducation()
 	autoDesc.TextColor3 = C.Purple
 	autoDesc.TextXAlignment = Enum.TextXAlignment.Left
 	autoDesc.TextWrapped = true
-	autoDesc.Text = "Elementary, Middle, and High School enroll automatically based on your age."
+	autoDesc.Text = "Elementary, middle, and high school are handled automatically as you age. This tab is for detailed grades and higher education."
 	autoDesc.ZIndex = 83
 	autoDesc.Parent = autoSection
-	
-	-- Current education status
+
+	-- Current education status chip
 	local statusSection = Instance.new("Frame")
 	statusSection.Name = "StatusSection"
 	statusSection.Size = UDim2.new(1, 0, 0, 70)
@@ -1881,7 +2060,7 @@ function OccupationScreen:populateEducation()
 	statusSection.Parent = self.contentScroll
 	UI.corner(statusSection, 16)
 	UI.stroke(statusSection, 1, 0.88, C.Gray200)
-	
+
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Size = UDim2.new(0.5, 0, 0, 24)
 	statusLabel.Position = UDim2.new(0, 18, 0, 14)
@@ -1893,68 +2072,72 @@ function OccupationScreen:populateEducation()
 	statusLabel.Text = "Current Education Level"
 	statusLabel.ZIndex = 83
 	statusLabel.Parent = statusSection
-	
-	local eduDisplay = eduLevel:gsub("_", " "):gsub("^%l", string.upper)
-	if eduDisplay == "High school" then eduDisplay = "High School Graduate" end
-	
+
+	local eduDisplay = self:getEducationDisplayName(eduLevel)
+
 	local levelBadge = Instance.new("Frame")
-	levelBadge.Size = UDim2.new(0, 160, 0, 28)
+	levelBadge.Size = UDim2.new(0, 190, 0, 28)
 	levelBadge.Position = UDim2.new(0, 18, 0, 38)
 	levelBadge.BackgroundColor3 = C.Purple
 	levelBadge.ZIndex = 83
 	levelBadge.Parent = statusSection
 	UI.pill(levelBadge)
-	
+
 	local levelLabel = Instance.new("TextLabel")
 	levelLabel.Size = UDim2.fromScale(1, 1)
 	levelLabel.BackgroundTransparency = 1
 	levelLabel.Font = F.Button
 	levelLabel.TextSize = 12
 	levelLabel.TextColor3 = C.White
+	levelLabel.TextXAlignment = Enum.TextXAlignment.Center
 	levelLabel.Text = eduDisplay
 	levelLabel.ZIndex = 84
 	levelLabel.Parent = levelBadge
-	
+
 	if enrolled then
 		local enrolledBadge = Instance.new("Frame")
-		enrolledBadge.Size = UDim2.new(0, 85, 0, 28)
+		enrolledBadge.Size = UDim2.new(0, 95, 0, 28)
 		enrolledBadge.AnchorPoint = Vector2.new(1, 0.5)
 		enrolledBadge.Position = UDim2.new(1, -18, 0.5, 0)
 		enrolledBadge.BackgroundColor3 = C.Amber
 		enrolledBadge.ZIndex = 83
 		enrolledBadge.Parent = statusSection
 		UI.pill(enrolledBadge)
-		
+
 		local enrolledLabel = Instance.new("TextLabel")
 		enrolledLabel.Size = UDim2.fromScale(1, 1)
 		enrolledLabel.BackgroundTransparency = 1
 		enrolledLabel.Font = F.Medium
 		enrolledLabel.TextSize = 11
 		enrolledLabel.TextColor3 = C.White
-		enrolledLabel.Text = "Enrolled"
+		enrolledLabel.Text = "Currently Enrolled"
 		enrolledLabel.ZIndex = 84
 		enrolledLabel.Parent = enrolledBadge
 	end
-	
-	-- Higher education section
+
+	-- Premium current-education card (GPA, progress, debt, transcript button)
+	if eduLevel ~= "none" or enrolled or self.educationInfo then
+		self:createCurrentEducationCard(self.contentScroll, eduLevel, self.educationInfo, enrolled)
+	end
+
+	-- Higher education choices
 	local section = Instance.new("Frame")
 	section.Name = "HigherEducation"
 	section.Size = UDim2.new(1, 0, 0, 0)
 	section.AutomaticSize = Enum.AutomaticSize.Y
 	section.BackgroundColor3 = C.White
-	section.LayoutOrder = 2
+	section.LayoutOrder = 3
 	section.ZIndex = 82
 	section.Parent = self.contentScroll
 	UI.corner(section, 18)
 	UI.stroke(section, 1, 0.88, C.Gray200)
 	UI.pad(section, 14, 14, 14, 16)
-	
+
 	local sectionLayout = Instance.new("UIListLayout")
 	sectionLayout.Padding = UDim.new(0, 10)
 	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	sectionLayout.Parent = section
-	
-	-- Section header
+
 	local headerFrame = Instance.new("Frame")
 	headerFrame.Name = "Header"
 	headerFrame.Size = UDim2.new(1, 0, 0, 36)
@@ -1962,24 +2145,24 @@ function OccupationScreen:populateEducation()
 	headerFrame.LayoutOrder = 0
 	headerFrame.ZIndex = 83
 	headerFrame.Parent = section
-	
+
 	local badge = Instance.new("Frame")
-	badge.Size = UDim2.new(0, 145, 0, 32)
+	badge.Size = UDim2.new(0, 155, 0, 32)
 	badge.BackgroundColor3 = C.Purple
 	badge.ZIndex = 84
 	badge.Parent = headerFrame
 	UI.pill(badge)
-	
+
 	local badgeLabel = Instance.new("TextLabel")
 	badgeLabel.Size = UDim2.fromScale(1, 1)
 	badgeLabel.BackgroundTransparency = 1
 	badgeLabel.Font = F.Button
 	badgeLabel.TextSize = 14
 	badgeLabel.TextColor3 = C.White
-	badgeLabel.Text = "Higher Education"
+	badgeLabel.Text = "Higher Education Options"
 	badgeLabel.ZIndex = 85
 	badgeLabel.Parent = badge
-	
+
 	-- Add education options
 	local order = 1
 	for _, edu in ipairs(Education) do
@@ -1988,16 +2171,265 @@ function OccupationScreen:populateEducation()
 	end
 end
 
+-- ═══════════════════════════════════════════════════════════════
+-- CURRENT EDUCATION CARD (Premium AAA: GPA, progress, debt, transcript)
+-- ═══════════════════════════════════════════════════════════════
+
+function OccupationScreen:createCurrentEducationCard(parent, eduLevel, eduInfo, enrolled)
+	local levelId = eduLevel or (eduInfo and eduInfo.level) or "none"
+	if levelId == "none" and not enrolled then
+		return
+	end
+
+	local card = Instance.new("Frame")
+	card.Name = "CurrentEducationCard"
+	card.Size = UDim2.new(1, 0, 0, 190)
+	card.BackgroundColor3 = C.White
+	card.LayoutOrder = 2
+	card.ZIndex = 82
+	card.Parent = parent
+	UI.corner(card, 18)
+	UI.stroke(card, 1, 0.9, C.Purple)
+
+	-- Icon
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Size = UDim2.new(0, 60, 0, 60)
+	iconFrame.Position = UDim2.new(0, 14, 0, 14)
+	iconFrame.BackgroundColor3 = C.PurplePale
+	iconFrame.ZIndex = 83
+	iconFrame.Parent = card
+	UI.corner(iconFrame, 16)
+
+	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Size = UDim2.fromScale(1, 1)
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.Font = F.Body
+	iconLabel.TextSize = 32
+	iconLabel.Text = self:getEducationEmoji(levelId)
+	iconLabel.TextColor3 = C.PurpleDark
+	iconLabel.ZIndex = 84
+	iconLabel.Parent = iconFrame
+
+	-- Title + institution
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, -90, 0, 24)
+	titleLabel.Position = UDim2.new(0, 86, 0, 12)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 17
+	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	local levelName = self:getEducationDisplayName(levelId)
+	if levelId == "high_school" then
+		titleLabel.Text = "High School Student"
+	else
+		local major = self:getEducationMajor()
+		if major and major ~= "" and major ~= "Undeclared" then
+			titleLabel.Text = levelName .. " in " .. major
+		else
+			titleLabel.Text = levelName
+		end
+	end
+	titleLabel.ZIndex = 83
+	titleLabel.Parent = card
+
+	local institution = self:getEducationInstitution() or ""
+	local subtitleLabel = Instance.new("TextLabel")
+	subtitleLabel.Size = UDim2.new(1, -90, 0, 18)
+	subtitleLabel.Position = UDim2.new(0, 86, 0, 36)
+	subtitleLabel.BackgroundTransparency = 1
+	subtitleLabel.Font = F.Body
+	subtitleLabel.TextSize = 12
+	subtitleLabel.TextColor3 = C.Gray500
+	subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	subtitleLabel.Text = institution ~= "" and ("at " .. institution) or ""
+	subtitleLabel.ZIndex = 83
+	subtitleLabel.Parent = card
+
+	-- Status chips
+	local statusRow = Instance.new("Frame")
+	statusRow.Size = UDim2.new(1, -90, 0, 24)
+	statusRow.Position = UDim2.new(0, 86, 0, 56)
+	statusRow.BackgroundTransparency = 1
+	statusRow.ZIndex = 83
+	statusRow.Parent = card
+
+	local statusLayout = Instance.new("UIListLayout")
+	statusLayout.FillDirection = Enum.FillDirection.Horizontal
+	statusLayout.Padding = UDim.new(0, 8)
+	statusLayout.Parent = statusRow
+
+	local status = self:getEducationStatus()
+	local statusBadge = Instance.new("Frame")
+	statusBadge.Size = UDim2.new(0, 95, 0, 24)
+	statusBadge.BackgroundColor3 = (status == "graduated") and C.Green or C.Purple
+	statusBadge.LayoutOrder = 1
+	statusBadge.ZIndex = 84
+	statusBadge.Parent = statusRow
+	UI.pill(statusBadge)
+
+	local statusLabel2 = Instance.new("TextLabel")
+	statusLabel2.Size = UDim2.fromScale(1, 1)
+	statusLabel2.BackgroundTransparency = 1
+	statusLabel2.Font = F.Button
+	statusLabel2.TextSize = 11
+	statusLabel2.TextColor3 = C.White
+	if status == "graduated" then
+		statusLabel2.Text = "🎓 Graduated"
+	elseif status == "probation" then
+		statusLabel2.Text = "⚠️ On Probation"
+	elseif enrolled or status == "enrolled" then
+		statusLabel2.Text = "📚 Enrolled"
+	else
+		statusLabel2.Text = "—"
+	end
+	statusLabel2.ZIndex = 85
+	statusLabel2.Parent = statusBadge
+
+	if status == "probation" then
+		local probBadge = Instance.new("Frame")
+		probBadge.Size = UDim2.new(0, 110, 0, 24)
+		probBadge.BackgroundColor3 = C.Amber
+		probBadge.LayoutOrder = 2
+		probBadge.ZIndex = 84
+		probBadge.Parent = statusRow
+		UI.pill(probBadge)
+
+		local probLabel = Instance.new("TextLabel")
+		probLabel.Size = UDim2.fromScale(1, 1)
+		probLabel.BackgroundTransparency = 1
+		probLabel.Font = F.Medium
+		probLabel.TextSize = 10
+		probLabel.TextColor3 = C.White
+		probLabel.Text = "Study or risk failing"
+		probLabel.ZIndex = 85
+		probLabel.Parent = probBadge
+	end
+
+	-- GPA + progress
+	local detailRow = Instance.new("Frame")
+	detailRow.Size = UDim2.new(1, -28, 0, 52)
+	detailRow.Position = UDim2.new(0, 14, 0, 90)
+	detailRow.BackgroundColor3 = C.Gray50
+	detailRow.ZIndex = 83
+	detailRow.Parent = card
+	UI.corner(detailRow, 12)
+	UI.pad(detailRow, 10, 10, 8, 8)
+
+	local gpa = self:getEducationGPA()
+	local progress = self:getEducationProgress()
+
+	local gpaBadge = Instance.new("Frame")
+	gpaBadge.Size = UDim2.new(0, 90, 0, 26)
+	gpaBadge.BackgroundColor3 = C.PurplePale
+	gpaBadge.ZIndex = 84
+	gpaBadge.Parent = detailRow
+	UI.pill(gpaBadge)
+
+	local gpaLabel = Instance.new("TextLabel")
+	gpaLabel.Size = UDim2.fromScale(1, 1)
+	gpaLabel.BackgroundTransparency = 1
+	gpaLabel.Font = F.Medium
+	gpaLabel.TextSize = 12
+	gpaLabel.TextColor3 = C.PurpleDark
+	if gpa then
+		gpaLabel.Text = string.format("GPA %.2f", gpa)
+	else
+		gpaLabel.Text = "GPA —"
+	end
+	gpaLabel.ZIndex = 85
+	gpaLabel.Parent = gpaBadge
+
+	local progressLabel = Instance.new("TextLabel")
+	progressLabel.Size = UDim2.new(1, -100, 0, 16)
+	progressLabel.Position = UDim2.new(0, 100, 0, 4)
+	progressLabel.BackgroundTransparency = 1
+	progressLabel.Font = F.Body
+	progressLabel.TextSize = 11
+	progressLabel.TextColor3 = C.Gray700
+	progressLabel.TextXAlignment = Enum.TextXAlignment.Left
+	if progress then
+		progressLabel.Text = string.format("Progress: %.0f%% complete", progress)
+	else
+		progressLabel.Text = "Progress: —"
+	end
+	progressLabel.ZIndex = 84
+	progressLabel.Parent = detailRow
+
+	local progressBarBg = Instance.new("Frame")
+	progressBarBg.Size = UDim2.new(1, -100, 0, 8)
+	progressBarBg.Position = UDim2.new(0, 100, 0, 28)
+	progressBarBg.BackgroundColor3 = C.Gray200
+	progressBarBg.ZIndex = 84
+	progressBarBg.Parent = detailRow
+	UI.pill(progressBarBg)
+
+	local progressFill = Instance.new("Frame")
+	progressFill.Size = UDim2.new(progress and math.clamp(progress / 100, 0, 1) or 0, 0, 1, 0)
+	progressFill.BackgroundColor3 = C.Purple
+	progressFill.ZIndex = 85
+	progressFill.Parent = progressBarBg
+	UI.pill(progressFill)
+
+	-- Debt chip
+	local debt = self:getEducationDebt()
+	if debt > 0 then
+		local debtBadge = Instance.new("Frame")
+		debtBadge.Size = UDim2.new(0, 140, 0, 22)
+		debtBadge.Position = UDim2.new(0, 14, 0, 146)
+		debtBadge.BackgroundColor3 = C.RedPale
+		debtBadge.ZIndex = 83
+		debtBadge.Parent = card
+		UI.pill(debtBadge)
+
+		local debtLabel = Instance.new("TextLabel")
+		debtLabel.Size = UDim2.fromScale(1, 1)
+		debtLabel.BackgroundTransparency = 1
+		debtLabel.Font = F.Body
+		debtLabel.TextSize = 11
+		debtLabel.TextColor3 = C.RedDark
+		debtLabel.TextXAlignment = Enum.TextXAlignment.Center
+		debtLabel.Text = "💸 Debt: " .. UI.formatMoney(debt)
+		debtLabel.ZIndex = 84
+		debtLabel.Parent = debtBadge
+	end
+
+	-- Transcript button
+	local transcriptBtn = Instance.new("TextButton")
+	transcriptBtn.Size = UDim2.new(0, 140, 0, 32)
+	transcriptBtn.AnchorPoint = Vector2.new(1, 1)
+	transcriptBtn.Position = UDim2.new(1, -14, 1, -12)
+	transcriptBtn.BackgroundColor3 = C.Blue
+	transcriptBtn.Font = F.Button
+	transcriptBtn.TextSize = 13
+	transcriptBtn.TextColor3 = C.White
+	transcriptBtn.Text = "📑 View Transcript"
+	transcriptBtn.AutoButtonColor = false
+	transcriptBtn.ZIndex = 84
+	transcriptBtn.Parent = card
+	UI.corner(transcriptBtn, 10)
+
+	transcriptBtn.MouseEnter:Connect(function()
+		UI.tween(transcriptBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.BlueDark })
+	end)
+	transcriptBtn.MouseLeave:Connect(function()
+		UI.tween(transcriptBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Blue })
+	end)
+	transcriptBtn.MouseButton1Click:Connect(function()
+		self:showEducationInfoModal()
+	end)
+end
+
 function OccupationScreen:createEducationCard(parent, edu, order, age, money, eduLevel, enrolled)
 	local meetsAge = age >= edu.minAge
 	local meetsMoney = money >= edu.cost
 	local meetsReq = true
 	
-	-- Check prerequisite
+	-- Check prerequisite (FIXED to use proper EducationRanks)
 	if edu.requirement then
-		local eduRanks = { none = 0, high_school = 1, community_college = 2, university = 3, graduate_school = 4, law_school = 4, medical_school = 4, mba = 4 }
-		local playerRank = eduRanks[eduLevel] or 1
-		local reqRank = eduRanks[edu.requirement] or 0
+		local playerRank = EducationRanks[eduLevel] or EducationRanks.high_school
+		local reqRank = EducationRanks[edu.requirement] or 0
 		meetsReq = playerRank >= reqRank
 	end
 	
@@ -2088,7 +2520,7 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 	if not meetsAge then
 		reqText = "Age " .. edu.minAge .. "+"
 	elseif not meetsReq then
-		reqText = "Need " .. (edu.requirement or ""):gsub("_", " ")
+		reqText = "Need " .. self:getEducationDisplayName(edu.requirement)
 	elseif enrolled then
 		reqText = "Already enrolled"
 	else
@@ -2135,6 +2567,407 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 			self:enrollEducation(edu.id)
 		end)
 	end
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- EDUCATION DETAILS MODAL (GPA + transcript)
+-- ═══════════════════════════════════════════════════════════════
+
+function OccupationScreen:showEducationInfoModal()
+	log("=== SHOWING EDUCATION INFO MODAL ===")
+
+	if not self.educationInfoModal then
+		self:createEducationInfoModal()
+	end
+
+	self:fetchEducationInfo()
+
+	local gpa = self:getEducationGPA()
+	local progress = self:getEducationProgress()
+	local debt = self:getEducationDebt()
+	local grades = self:getEducationGrades()
+	local levelId = self.educationInfo and self.educationInfo.level or self:getEducationLevel()
+	local levelName = self:getEducationDisplayName(levelId)
+	local institution = self:getEducationInstitution() or ""
+	local status = self:getEducationStatus()
+
+	self.educationInfoTitle.Text = levelName
+	if institution ~= "" then
+		self.educationInfoSubtitle.Text = institution
+	else
+		self.educationInfoSubtitle.Text = ""
+	end
+
+	if gpa then
+		self.educationInfoGpaLabel.Text = string.format("🎓 GPA: %.2f", gpa)
+	else
+		self.educationInfoGpaLabel.Text = "🎓 GPA: —"
+	end
+
+	if progress then
+		self.educationInfoProgressLabel.Text = string.format("📈 Progress: %.0f%% complete", progress)
+	else
+		self.educationInfoProgressLabel.Text = "📈 Progress: —"
+	end
+
+	if debt > 0 then
+		self.educationInfoDebtLabel.Text = "💸 Student Debt: " .. UI.formatMoney(debt)
+	else
+		self.educationInfoDebtLabel.Text = "💸 Student Debt: None"
+	end
+
+	self.educationInfoStatusLabel.Text = "Status: " .. status:gsub("^%l", string.upper)
+
+	-- Transcript list
+	for _, child in ipairs(self.educationInfoGradesContainer:GetChildren()) do
+		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
+			child:Destroy()
+		end
+	end
+
+	if #grades == 0 then
+		local noGrades = Instance.new("TextLabel")
+		noGrades.Size = UDim2.new(1, 0, 0, 40)
+		noGrades.BackgroundTransparency = 1
+		noGrades.Font = F.Body
+		noGrades.TextSize = 12
+		noGrades.TextColor3 = C.Gray400
+		noGrades.TextWrapped = true
+		noGrades.Text = "No detailed grades yet. Your school performance is still tracked and will affect jobs, scholarships, and events."
+		noGrades.ZIndex = 100
+		noGrades.Parent = self.educationInfoGradesContainer
+	else
+		for i, term in ipairs(grades) do
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, 0, 0, 32)
+			row.BackgroundColor3 = C.Gray50
+			row.ZIndex = 99
+			row.Parent = self.educationInfoGradesContainer
+			UI.corner(row, 10)
+
+			local termName = Instance.new("TextLabel")
+			termName.Size = UDim2.new(0.6, 0, 1, 0)
+			termName.BackgroundTransparency = 1
+			termName.Font = F.Body
+			termName.TextSize = 11
+			termName.TextColor3 = C.Gray800
+			termName.TextXAlignment = Enum.TextXAlignment.Left
+			termName.Text = term.term or term.name or ("Term " .. tostring(i))
+			termName.ZIndex = 100
+			termName.Parent = row
+
+			local termGpa = Instance.new("TextLabel")
+			termGpa.Size = UDim2.new(0.4, -8, 1, 0)
+			termGpa.Position = UDim2.new(0.6, 8, 0, 0)
+			termGpa.BackgroundTransparency = 1
+			termGpa.Font = F.Medium
+			termGpa.TextSize = 11
+			termGpa.TextColor3 = C.PurpleDark
+			termGpa.TextXAlignment = Enum.TextXAlignment.Right
+			if term.gpa then
+				termGpa.Text = string.format("GPA %.2f", term.gpa)
+			elseif term.grade then
+				termGpa.Text = tostring(term.grade)
+			else
+				termGpa.Text = "—"
+			end
+			termGpa.ZIndex = 100
+			termGpa.Parent = row
+		end
+	end
+
+	-- Show modal with animation
+	self.educationInfoOverlay.Visible = true
+
+	self.educationInfoShell.Position = UDim2.new(0.5, 0, 0.5, 40)
+	self.educationInfoShadow.Position = UDim2.new(0.5, 3, 0.5, 43)
+	self.educationInfoShell.BackgroundTransparency = 0.5
+	self.educationInfoShadow.BackgroundTransparency = 1
+
+	local tweenInfo = TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	UI.tween(self.educationInfoShell, tweenInfo, {
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0
+	})
+	UI.tween(self.educationInfoShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 3),
+		BackgroundTransparency = 0.75
+	})
+end
+
+function OccupationScreen:createEducationInfoModal()
+	log("Creating education info modal...")
+
+	self.educationInfoOverlay = Instance.new("Frame")
+	self.educationInfoOverlay.Name = "EducationInfoOverlay"
+	self.educationInfoOverlay.Size = UDim2.fromScale(1, 1)
+	self.educationInfoOverlay.BackgroundColor3 = C.Black
+	self.educationInfoOverlay.BackgroundTransparency = 0.4
+	self.educationInfoOverlay.Visible = false
+	self.educationInfoOverlay.ZIndex = 96
+	self.educationInfoOverlay.Parent = self.screenGui
+
+	local closeArea = Instance.new("TextButton")
+	closeArea.Size = UDim2.fromScale(1, 1)
+	closeArea.BackgroundTransparency = 1
+	closeArea.Text = ""
+	closeArea.ZIndex = 96
+	closeArea.Parent = self.educationInfoOverlay
+	closeArea.MouseButton1Click:Connect(function()
+		self:hideEducationInfoModal()
+	end)
+
+	local shadowFrame = Instance.new("Frame")
+	shadowFrame.Name = "ShadowFrame"
+	shadowFrame.Size = UDim2.new(0.92, 6, 0, 460)
+	shadowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadowFrame.Position = UDim2.new(0.5, 3, 0.5, 3)
+	shadowFrame.BackgroundColor3 = C.Black
+	shadowFrame.BackgroundTransparency = 0.75
+	shadowFrame.ZIndex = 96
+	shadowFrame.Parent = self.educationInfoOverlay
+	UI.corner(shadowFrame, 26)
+	self.educationInfoShadow = shadowFrame
+
+	local shell = Instance.new("Frame")
+	shell.Name = "Shell"
+	shell.Size = UDim2.new(0.92, 0, 0, 454)
+	shell.AnchorPoint = Vector2.new(0.5, 0.5)
+	shell.Position = UDim2.fromScale(0.5, 0.5)
+	shell.BackgroundColor3 = C.Purple
+	shell.ZIndex = 97
+	shell.Parent = self.educationInfoOverlay
+	UI.corner(shell, 24)
+	self.educationInfoShell = shell
+
+	-- Inner card
+	self.educationInfoCard = Instance.new("Frame")
+	self.educationInfoCard.Name = "Card"
+	self.educationInfoCard.Size = UDim2.new(1, -8, 1, -8)
+	self.educationInfoCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	self.educationInfoCard.Position = UDim2.fromScale(0.5, 0.5)
+	self.educationInfoCard.BackgroundColor3 = C.White
+	self.educationInfoCard.ZIndex = 98
+	self.educationInfoCard.Parent = shell
+	UI.corner(self.educationInfoCard, 20)
+
+	-- Header
+	local header = Instance.new("Frame")
+	header.Name = "Header"
+	header.Size = UDim2.new(1, 0, 0, 64)
+	header.BackgroundColor3 = C.Purple
+	header.ZIndex = 99
+	header.Parent = self.educationInfoCard
+	UI.corner(header, 20)
+
+	local headerFix = Instance.new("Frame")
+	headerFix.Name = "HeaderFix"
+	headerFix.Size = UDim2.new(1, 0, 0, 26)
+	headerFix.Position = UDim2.new(0, 0, 1, -26)
+	headerFix.BackgroundColor3 = C.Purple
+	headerFix.BorderSizePixel = 0
+	headerFix.ZIndex = 99
+	headerFix.Parent = header
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -50, 0, 24)
+	title.Position = UDim2.new(0, 12, 0, 10)
+	title.BackgroundTransparency = 1
+	title.Font = F.Title
+	title.TextSize = 18
+	title.TextColor3 = C.White
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Text = "🎓 Education Details"
+	title.ZIndex = 100
+	title.Parent = header
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Name = "CloseButton"
+	closeBtn.Size = UDim2.new(0, 30, 0, 30)
+	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.Position = UDim2.new(1, -8, 0, 8)
+	closeBtn.BackgroundColor3 = C.White
+	closeBtn.BackgroundTransparency = 0.1
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 13
+	closeBtn.TextColor3 = C.Purple
+	closeBtn.Text = "✕"
+	closeBtn.AutoButtonColor = false
+	closeBtn.ZIndex = 101
+	closeBtn.Parent = header
+	UI.corner(closeBtn, 15)
+
+	closeBtn.MouseEnter:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
+	end)
+	closeBtn.MouseButton1Click:Connect(function()
+		self:hideEducationInfoModal()
+	end)
+
+	-- Content scroll
+	local content = Instance.new("ScrollingFrame")
+	content.Name = "ContentScroll"
+	content.Size = UDim2.new(1, -16, 1, -72)
+	content.Position = UDim2.new(0, 8, 0, 68)
+	content.BackgroundTransparency = 1
+	content.CanvasSize = UDim2.new(0, 0, 0, 0)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.ScrollBarThickness = 3
+	content.ScrollBarImageColor3 = C.Gray300
+	content.ZIndex = 99
+	content.Parent = self.educationInfoCard
+
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.Padding = UDim.new(0, 12)
+	contentLayout.Parent = content
+
+	-- Summary card
+	local summary = Instance.new("Frame")
+	summary.Size = UDim2.new(1, 0, 0, 84)
+	summary.BackgroundColor3 = C.Gray50
+	summary.LayoutOrder = 1
+	summary.ZIndex = 99
+	summary.Parent = content
+	UI.corner(summary, 12)
+	UI.pad(summary, 12, 12, 8, 8)
+
+	self.educationInfoTitle = Instance.new("TextLabel")
+	self.educationInfoTitle.Size = UDim2.new(1, 0, 0, 20)
+	self.educationInfoTitle.BackgroundTransparency = 1
+	self.educationInfoTitle.Font = F.Title
+	self.educationInfoTitle.TextSize = 15
+	self.educationInfoTitle.TextColor3 = C.Gray900
+	self.educationInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+	self.educationInfoTitle.Text = "Current Education"
+	self.educationInfoTitle.ZIndex = 100
+	self.educationInfoTitle.Parent = summary
+
+	self.educationInfoSubtitle = Instance.new("TextLabel")
+	self.educationInfoSubtitle.Size = UDim2.new(1, 0, 0, 18)
+	self.educationInfoSubtitle.Position = UDim2.new(0, 0, 0, 22)
+	self.educationInfoSubtitle.BackgroundTransparency = 1
+	self.educationInfoSubtitle.Font = F.Body
+	self.educationInfoSubtitle.TextSize = 12
+	self.educationInfoSubtitle.TextColor3 = C.Gray600
+	self.educationInfoSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+	self.educationInfoSubtitle.Text = ""
+	self.educationInfoSubtitle.ZIndex = 100
+	self.educationInfoSubtitle.Parent = summary
+
+	self.educationInfoStatusLabel = Instance.new("TextLabel")
+	self.educationInfoStatusLabel.Size = UDim2.new(1, 0, 0, 18)
+	self.educationInfoStatusLabel.Position = UDim2.new(0, 0, 0, 44)
+	self.educationInfoStatusLabel.BackgroundTransparency = 1
+	self.educationInfoStatusLabel.Font = F.Body
+	self.educationInfoStatusLabel.TextSize = 12
+	self.educationInfoStatusLabel.TextColor3 = C.Gray600
+	self.educationInfoStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	self.educationInfoStatusLabel.Text = "Status: enrolled"
+	self.educationInfoStatusLabel.ZIndex = 100
+	self.educationInfoStatusLabel.Parent = summary
+
+	-- GPA / progress / debt
+	local statsCard = Instance.new("Frame")
+	statsCard.Size = UDim2.new(1, 0, 0, 80)
+	statsCard.BackgroundColor3 = C.Gray50
+	statsCard.LayoutOrder = 2
+	statsCard.ZIndex = 99
+	statsCard.Parent = content
+	UI.corner(statsCard, 12)
+	UI.pad(statsCard, 12, 12, 8, 8)
+
+	self.educationInfoGpaLabel = Instance.new("TextLabel")
+	self.educationInfoGpaLabel.Size = UDim2.new(1, 0, 0, 18)
+	self.educationInfoGpaLabel.BackgroundTransparency = 1
+	self.educationInfoGpaLabel.Font = F.Medium
+	self.educationInfoGpaLabel.TextSize = 12
+	self.educationInfoGpaLabel.TextColor3 = C.Gray700
+	self.educationInfoGpaLabel.TextXAlignment = Enum.TextXAlignment.Left
+	self.educationInfoGpaLabel.Text = "🎓 GPA: —"
+	self.educationInfoGpaLabel.ZIndex = 100
+	self.educationInfoGpaLabel.Parent = statsCard
+
+	self.educationInfoProgressLabel = Instance.new("TextLabel")
+	self.educationInfoProgressLabel.Size = UDim2.new(1, 0, 0, 18)
+	self.educationInfoProgressLabel.Position = UDim2.new(0, 0, 0, 20)
+	self.educationInfoProgressLabel.BackgroundTransparency = 1
+	self.educationInfoProgressLabel.Font = F.Medium
+	self.educationInfoProgressLabel.TextSize = 12
+	self.educationInfoProgressLabel.TextColor3 = C.Gray700
+	self.educationInfoProgressLabel.TextXAlignment = Enum.TextXAlignment.Left
+	self.educationInfoProgressLabel.Text = "📈 Progress: —"
+	self.educationInfoProgressLabel.ZIndex = 100
+	self.educationInfoProgressLabel.Parent = statsCard
+
+	self.educationInfoDebtLabel = Instance.new("TextLabel")
+	self.educationInfoDebtLabel.Size = UDim2.new(1, 0, 0, 18)
+	self.educationInfoDebtLabel.Position = UDim2.new(0, 0, 0, 40)
+	self.educationInfoDebtLabel.BackgroundTransparency = 1
+	self.educationInfoDebtLabel.Font = F.Medium
+	self.educationInfoDebtLabel.TextSize = 12
+	self.educationInfoDebtLabel.TextColor3 = C.Gray700
+	self.educationInfoDebtLabel.TextXAlignment = Enum.TextXAlignment.Left
+	self.educationInfoDebtLabel.Text = "💸 Student Debt: —"
+	self.educationInfoDebtLabel.ZIndex = 100
+	self.educationInfoDebtLabel.Parent = statsCard
+
+	-- Transcript
+	local transcriptHeader = Instance.new("TextLabel")
+	transcriptHeader.Size = UDim2.new(1, 0, 0, 24)
+	transcriptHeader.BackgroundTransparency = 1
+	transcriptHeader.Font = F.Title
+	transcriptHeader.TextSize = 14
+	transcriptHeader.TextColor3 = C.Gray800
+	transcriptHeader.TextXAlignment = Enum.TextXAlignment.Left
+	transcriptHeader.Text = "📑 Transcript"
+	transcriptHeader.LayoutOrder = 3
+	transcriptHeader.ZIndex = 99
+	transcriptHeader.Parent = content
+
+	self.educationInfoGradesContainer = Instance.new("Frame")
+	self.educationInfoGradesContainer.Size = UDim2.new(1, 0, 0, 0)
+	self.educationInfoGradesContainer.AutomaticSize = Enum.AutomaticSize.Y
+	self.educationInfoGradesContainer.BackgroundColor3 = C.Gray50
+	self.educationInfoGradesContainer.LayoutOrder = 4
+	self.educationInfoGradesContainer.ZIndex = 99
+	self.educationInfoGradesContainer.Parent = content
+	UI.corner(self.educationInfoGradesContainer, 12)
+	UI.pad(self.educationInfoGradesContainer, 12, 12, 8, 8)
+	
+	local gradesLayout = Instance.new("UIListLayout")
+	gradesLayout.Padding = UDim.new(0, 6)
+	gradesLayout.Parent = self.educationInfoGradesContainer
+
+	self.educationInfoModal = true
+	log("Education info modal created")
+end
+
+function OccupationScreen:hideEducationInfoModal()
+	if not self.educationInfoOverlay then
+		return
+	end
+
+	log("Hiding education info modal")
+
+	local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+
+	UI.tween(self.educationInfoShell, tweenInfo, {
+		Position = UDim2.new(0.5, 0, 0.5, 25),
+		BackgroundTransparency = 0.5
+	})
+	UI.tween(self.educationInfoShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 28),
+		BackgroundTransparency = 1
+	})
+
+	task.delay(0.18, function()
+		if self.educationInfoOverlay then
+			self.educationInfoOverlay.Visible = false
+		end
+	end)
 end
 
 function OccupationScreen:createResultModal()
@@ -2761,6 +3594,10 @@ function OccupationScreen:hide()
 		-- Also hide job info modal if open
 		if self.jobInfoOverlay then
 			self.jobInfoOverlay.Visible = false
+		end
+		-- Also hide education info modal if open
+		if self.educationInfoOverlay then
+			self.educationInfoOverlay.Visible = false
 		end
 		log("✅ OccupationScreen hidden, modals cleaned up")
 	end)
