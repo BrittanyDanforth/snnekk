@@ -1,6 +1,7 @@
 -- LifeStageSystem.lua
 -- Comprehensive BitLife-style life stage management.
 -- Controls what events, actions, and content are available at each stage.
+-- INTEGRATED with EventMemory for AAA-quality validation
 
 local LifeStageSystem = {}
 
@@ -9,6 +10,19 @@ local LifeStageSystem = {}
 ----------------------------------------------------------------------
 
 local DEBUG_EVENT_VALIDATION = false
+
+-- Load EventMemory for comprehensive validation
+local EventMemory = nil
+local function loadEventMemory()
+	if EventMemory then return EventMemory end
+	local success, result = pcall(function()
+		return require(script.Parent:WaitForChild("EventMemory", 2))
+	end)
+	if success and result then
+		EventMemory = result
+	end
+	return EventMemory
+end
 
 local function dprint(...)
 	if DEBUG_EVENT_VALIDATION then
@@ -946,6 +960,105 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 
+	-- ═══════════════════════════════════════════════════════════════
+	-- 17. COMPREHENSIVE MEMORY-BASED VALIDATION (AAA BitLife-style)
+	-- Uses EventMemory to check player's ACTUAL history, not just flags
+	-- This prevents illogical events like "tax returns" for non-workers
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if result.valid then
+		local mem = loadEventMemory()
+		if mem and state.Memory then
+			local memoryValidation = mem.validateEvent(eventDef, state, state.Memory)
+			if not memoryValidation.valid then
+				result.valid = false
+				for _, reason in ipairs(memoryValidation.reasons or {}) do
+					table.insert(result.reasons, "[Memory] " .. reason)
+				end
+			end
+		end
+		
+		-- Additional memory-specific checks using LifeState methods if available
+		if result.valid then
+			-- Work history checks
+			if eventDef.requiresWorkHistory then
+				local hasWorked = state.HasEverWorked and state:HasEverWorked() 
+					or flags.employed or flags.has_job or flags.ever_worked
+				if not hasWorked then
+					result.valid = false
+					table.insert(result.reasons, "Requires work history")
+				end
+			end
+			
+			if eventDef.requiresCurrentJob then
+				local employed = state.IsCurrentlyEmployed and state:IsCurrentlyEmployed()
+					or flags.employed or flags.has_job
+				if not employed then
+					result.valid = false
+					table.insert(result.reasons, "Requires current employment")
+				end
+			end
+			
+			-- Tax history (must have worked to file taxes)
+			if eventDef.requiresTaxHistory then
+				local canTax = state.CanFileTaxes and state:CanFileTaxes()
+					or flags.employed or flags.has_job or flags.ever_worked
+				if not canTax then
+					result.valid = false
+					table.insert(result.reasons, "Requires work/tax history")
+				end
+			end
+			
+			-- Friend requirements (must have actual friends)
+			if eventDef.requiresFriends then
+				local hasFriends = state.HasActualFriends and state:HasActualFriends()
+				if not hasFriends then
+					result.valid = false
+					table.insert(result.reasons, "Requires actual friends")
+				end
+			end
+			
+			-- Partner requirements
+			if eventDef.requiresPartner then
+				local hasPartner = state.HasRomanticPartner and state:HasRomanticPartner()
+					or flags.dating or flags.married or flags.in_relationship
+				if not hasPartner then
+					result.valid = false
+					table.insert(result.reasons, "Requires romantic partner")
+				end
+			end
+			
+			-- Block if dropout (for education-requiring events)
+			if eventDef.blocksDropout then
+				local isDropout = state.HasDroppedOut and state:HasDroppedOut()
+					or flags.dropped_out or flags.expelled
+				if isDropout then
+					result.valid = false
+					table.insert(result.reasons, "Blocked for school dropouts")
+				end
+			end
+			
+			-- Criminal history checks
+			if eventDef.requiresCriminalHistory then
+				local hasCrime = state.HasCriminalRecord and state:HasCriminalRecord()
+					or flags.criminal or flags.committed_crime
+				if not hasCrime then
+					result.valid = false
+					table.insert(result.reasons, "Requires criminal history")
+				end
+			end
+			
+			if eventDef.blocksIfCriminal then
+				local hasCrime = state.HasCriminalRecord and state:HasCriminalRecord()
+					or flags.criminal or flags.criminal_record
+				if hasCrime then
+					result.valid = false
+					table.insert(result.reasons, "Blocked by criminal record")
+				end
+			end
+		end
+	end
+
 	if DEBUG_EVENT_VALIDATION or eventDef.category == "prison" then
 		if result.valid then
 			dprint("✅ Event", eventDef.id, "PASSED validation")
@@ -1549,6 +1662,20 @@ end
 
 -- Check if player has EVER worked (any job, any time)
 function LifeStageSystem.hasEverWorked(state)
+	-- First check via LifeState method (uses Memory if available)
+	if state.HasEverWorked then
+		return state:HasEverWorked()
+	end
+	
+	-- Also check via EventMemory directly
+	local mem = loadEventMemory()
+	if mem and state.Memory then
+		if mem.hasEverWorked(state.Memory) then
+			return true
+		end
+	end
+	
+	-- Fallback to flags
 	local flags = state.Flags or {}
 	return flags.employed or flags.has_job or flags.career_starter 
 		or flags.ever_worked or flags.first_job or flags.good_worker 
@@ -1559,6 +1686,11 @@ end
 
 -- Check if player is CURRENTLY employed
 function LifeStageSystem.isCurrentlyEmployed(state)
+	-- First check via LifeState method (uses Memory if available)
+	if state.IsCurrentlyEmployed then
+		return state:IsCurrentlyEmployed()
+	end
+	
 	local flags = state.Flags or {}
 	return flags.employed or flags.has_job or flags.side_hustler
 end
@@ -1597,6 +1729,20 @@ end
 
 -- Check if player has any friends in relationships
 function LifeStageSystem.hasActualFriends(state)
+	-- First check via LifeState method (uses Memory if available)
+	if state.HasActualFriends then
+		return state:HasActualFriends()
+	end
+	
+	-- Check via EventMemory directly
+	local mem = loadEventMemory()
+	if mem and state.Memory then
+		if mem.hasFriends(state.Memory) then
+			return true
+		end
+	end
+	
+	-- Fallback to relationships check
 	local relationships = state.Relationships or {}
 	for _, rel in pairs(relationships) do
 		if (rel.type == "friend" or rel.category == "friends") and rel.alive ~= false then
