@@ -154,6 +154,15 @@ module.events = {
 		weight = 50, oneTime = true,
 		emoji = "💵", title = "Social Security Decision",
 		category = "career",
+		-- CRITICAL: Must have worked at some point to qualify for Social Security!
+		requiresAnyFlag = {"employed", "has_job", "career_starter", "ever_worked", "first_job", "retired", "good_worker", "worked_parttime"},
+		requires = function(state)
+			local flags = state.Flags or {}
+			-- Must have some work history
+			return flags.employed or flags.has_job or flags.career_starter 
+				or flags.ever_worked or flags.first_job or flags.retired
+				or flags.good_worker or flags.worked_parttime or flags.intern_experience
+		end,
 		getDynamicData = function()
 			local earlyAmount = math.random(1800, 2200)
 			local fullAmount = math.random(2400, 2900)

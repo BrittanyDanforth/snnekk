@@ -565,6 +565,7 @@ module.events = {
 		weight = 35, oneTime = true,
 		emoji = "📊", title = "Career Plateau",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must have a career to plateau!
 		text = "You've been at the same level for years. Is this it? Have you peaked?",
 		choices = {
 			{ text = "🚀 Push for promotion", effects = { Smarts = 6, Happiness = 4, Money = 5000 }, resultText = "Extra effort paid off! Moving up!", setFlag = "ambitious" },
@@ -630,6 +631,7 @@ module.events = {
 		weight = 30, oneTime = true,
 		emoji = "💰", title = "Peak Earning Years",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must have income to be in peak earning years!
 		text = "You're in your prime earning years. Salary is highest it's ever been!",
 		choices = {
 			{ text = "💵 Max retirement savings", effects = { Money = 20000, Happiness = 4 }, resultText = "401k maxed! Future you says thanks!", setFlag = "retirement_saver" },
@@ -645,6 +647,7 @@ module.events = {
 		weight = 25, cooldown = 4,
 		emoji = "🎓", title = "Mentoring the Next Generation",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must be working to mentor at work!
 		getDynamicData = function()
 			return { menteeName = randomFirstName() }
 		end,

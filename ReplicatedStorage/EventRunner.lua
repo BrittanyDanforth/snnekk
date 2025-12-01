@@ -334,6 +334,11 @@ local function getYearRecap(state: LifeState): string?
 	local flags = state.Flags or {}
 	local age = state.Age or 0
 	local lifeStage = getLifeStage(age)
+	
+	-- Check if player has EVER worked (important for narrative accuracy)
+	local hasEverWorked = flags.employed or flags.has_job or flags.career_starter 
+		or flags.ever_worked or flags.first_job or flags.good_worker 
+		or flags.worked_parttime or flags.intern_experience or flags.internship_completed
 
 	-- Prioritize special career paths over life stage
 	local bucket: string
@@ -353,7 +358,8 @@ local function getYearRecap(state: LifeState): string?
 		bucket = "romantic_path"
 	elseif flags.millionaire or flags.billionaire or flags.tech_billionaire then
 		bucket = "wealthy_path"
-	elseif flags.bankrupt or flags.homeless or flags.unemployed then
+	elseif flags.bankrupt or flags.homeless or flags.unemployed or (lifeStage == "adult" and not hasEverWorked) then
+		-- Include adults who never worked in struggling_path
 		bucket = "struggling_path"
 	else
 		bucket = lifeStage

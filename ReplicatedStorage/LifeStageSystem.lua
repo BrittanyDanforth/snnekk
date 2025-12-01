@@ -1542,4 +1542,93 @@ function LifeStageSystem.serializeForClient(state)
 	}
 end
 
+----------------------------------------------------------------------
+-- CENTRALIZED STATE VALIDATION HELPERS
+-- Use these in events to properly validate player history
+----------------------------------------------------------------------
+
+-- Check if player has EVER worked (any job, any time)
+function LifeStageSystem.hasEverWorked(state)
+	local flags = state.Flags or {}
+	return flags.employed or flags.has_job or flags.career_starter 
+		or flags.ever_worked or flags.first_job or flags.good_worker 
+		or flags.worked_parttime or flags.intern_experience 
+		or flags.internship_completed or flags.side_hustler
+		or flags.entrepreneur or flags.business_owner
+end
+
+-- Check if player is CURRENTLY employed
+function LifeStageSystem.isCurrentlyEmployed(state)
+	local flags = state.Flags or {}
+	return flags.employed or flags.has_job or flags.side_hustler
+end
+
+-- Check if player has completed high school (diploma or GED)
+function LifeStageSystem.hasHighSchoolEducation(state)
+	local flags = state.Flags or {}
+	-- Must not be a dropout without GED
+	if flags.high_school_dropout and not flags.ged_graduate then
+		return false
+	end
+	return flags.high_school_graduate or flags.ged_graduate or flags.college_student or flags.college_graduate
+end
+
+-- Check if player has college education
+function LifeStageSystem.hasCollegeEducation(state)
+	local flags = state.Flags or {}
+	return flags.college_graduate or flags.advanced_degree or flags.bachelors_degree
+		or flags.masters_degree or flags.doctorate or flags.phd
+end
+
+-- Check if player is currently in school (any level)
+function LifeStageSystem.isInSchool(state)
+	local caps = LifeStageSystem.getCapabilities(state)
+	return caps.inSchool
+end
+
+-- Check if player has demonstrated academic excellence
+function LifeStageSystem.hasAcademicExcellence(state)
+	local flags = state.Flags or {}
+	return flags.honors_student or flags.honor_student or flags.valedictorian 
+		or flags.award_winner or flags.deans_list or flags.honor_roll 
+		or flags.academic_achiever or flags.academic_focused or flags.high_test_scores
+		or flags.scholarship or flags.dedicated_student
+end
+
+-- Check if player has any friends in relationships
+function LifeStageSystem.hasActualFriends(state)
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if (rel.type == "friend" or rel.category == "friends") and rel.alive ~= false then
+			return true
+		end
+	end
+	return false
+end
+
+-- Check if player has romantic partner
+function LifeStageSystem.hasRomanticPartner(state)
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if (rel.type == "romance" or rel.category == "romance") and rel.alive ~= false then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.in_relationship or flags.married or flags.dating or flags.engaged
+end
+
+-- Check if player can afford something (minimum money check)
+function LifeStageSystem.canAfford(state, amount)
+	return (state.Money or 0) >= amount
+end
+
+-- Check if player has any social history (for events about reconnecting, etc.)
+function LifeStageSystem.hasSocialHistory(state)
+	local flags = state.Flags or {}
+	return flags.ever_had_friend or flags.college_graduate or flags.high_school_diploma 
+		or flags.social_butterfly or flags.had_childhood_friend or flags.had_college_friends
+		or flags.good_roommate or flags.friendly or LifeStageSystem.hasActualFriends(state)
+end
+
 return LifeStageSystem
