@@ -13,7 +13,24 @@
 --
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local CareerSystem = require(script.Parent.CareerSystem)
+-- Safe require CareerSystem
+local CareerSystem = nil
+local csSuccess, csResult = pcall(function()
+	return require(script.Parent.CareerSystem)
+end)
+if csSuccess then
+	CareerSystem = csResult
+else
+	warn("[EventEngine] ⚠️ CareerSystem not loaded:", csResult)
+	-- Provide minimal fallback
+	CareerSystem = {
+		getPrimaryCareer = function() return nil end,
+		getCurrentTier = function() return nil end,
+		meetsCareerRequirements = function() return true end,
+		getCareerEventBoost = function() return 0 end,
+		getDisplayInfo = function() return { hasCareer = false, title = "Unemployed" } end,
+	}
+end
 
 local EventEngine = {}
 

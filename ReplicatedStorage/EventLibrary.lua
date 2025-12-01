@@ -21,7 +21,78 @@ local EventLibrary = {}
 -- LOAD CORE SYSTEMS
 -- ═══════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent:WaitForChild("LifeEvents"))
+-- Try multiple ways to load LifeEvents (handles both Rojo and Studio structures)
+local LifeEvents = nil
+local loadSuccess, loadError = pcall(function()
+	-- Method 1: Direct require (works if LifeEvents is a ModuleScript via Rojo)
+	local lifeEventsModule = script.Parent:FindFirstChild("LifeEvents")
+	if lifeEventsModule then
+		if lifeEventsModule:IsA("ModuleScript") then
+			LifeEvents = require(lifeEventsModule)
+		elseif lifeEventsModule:IsA("Folder") then
+			-- Method 2: It's a folder, look for init inside
+			local initModule = lifeEventsModule:FindFirstChild("init")
+			if initModule and initModule:IsA("ModuleScript") then
+				LifeEvents = require(initModule)
+			else
+				error("LifeEvents folder exists but has no init ModuleScript")
+			end
+		else
+			error("LifeEvents exists but is not a ModuleScript or Folder: " .. lifeEventsModule.ClassName)
+		end
+	else
+		error("LifeEvents not found in ReplicatedStorage")
+	end
+end)
+
+if not loadSuccess then
+	warn("[EventLibrary] ❌ Failed to load LifeEvents:", loadError)
+	warn("[EventLibrary] ⚠️ Creating minimal fallback system...")
+	
+	-- Create a minimal fallback so the game doesn't completely break
+	LifeEvents = {
+		CareerLibrary = { getAllCareers = function() return {} end },
+		CareerSystem = {
+			startCareer = function() return false end,
+			getDisplayInfo = function() return { hasCareer = false, title = "Unemployed", emoji = "🤷", salary = 0 } end,
+			getAvailableCareers = function() return {} end,
+			calculateIncome = function() return 0 end,
+		},
+		EventEngine = {
+			isEligible = function() return true end,
+			selectYearEvents = function() return {} end,
+			completeEvent = function() return {} end,
+			processEventText = function(e) return e.text or "" end,
+			getEventEmoji = function(e) return e.emoji or "📜" end,
+		},
+		getAllEvents = function() return {} end,
+		getEvent = function() return nil end,
+		getEventsForAge = function() return {} end,
+		getEventsByCategory = function() return {} end,
+		getEventsByTag = function() return {} end,
+		selectRandomEvent = function() return nil end,
+		hasFriend = function() return false end,
+		hasPartner = function() return false end,
+		isMarried = function() return false end,
+		hasChildren = function() return false end,
+		getFriendName = function() return "Friend" end,
+		getPartnerName = function() return "Partner" end,
+		hasJob = function() return false end,
+		isInJail = function() return false end,
+		isEnrolled = function() return false end,
+		hasFlag = function() return false end,
+		setFlag = function() end,
+		clearFlag = function() end,
+		getStat = function() return 50 end,
+		modifyStat = function() return 50 end,
+		hasEducation = function() return false end,
+		getStats = function() return { totalEvents = 0 } end,
+		printStats = function() print("LifeEvents not loaded") end,
+	}
+else
+	print("[EventLibrary] ✅ LifeEvents loaded successfully!")
+end
+
 local RelationshipService = nil
 
 -- Lazy load RelationshipService

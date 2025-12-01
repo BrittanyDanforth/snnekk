@@ -13,7 +13,23 @@
 --
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local CareerLibrary = require(script.Parent.CareerLibrary)
+-- Safe require CareerLibrary
+local CareerLibrary = nil
+local clSuccess, clResult = pcall(function()
+	return require(script.Parent.CareerLibrary)
+end)
+if clSuccess then
+	CareerLibrary = clResult
+else
+	warn("[CareerSystem] ⚠️ CareerLibrary not loaded:", clResult)
+	-- Provide minimal fallback
+	CareerLibrary = {
+		getCareer = function() return nil end,
+		getAllCareers = function() return {} end,
+		getTier = function() return nil end,
+		getTierByBranch = function() return nil end,
+	}
+end
 
 local CareerSystem = {}
 

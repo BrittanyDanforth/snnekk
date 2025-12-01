@@ -13,10 +13,34 @@
 
 local LifeEvents = {}
 
+-- ═══════════════════════════════════════════════════════════════
+-- SAFE MODULE LOADING
+-- ═══════════════════════════════════════════════════════════════
+
+local function safeRequire(moduleName)
+	local module = script:FindFirstChild(moduleName)
+	if not module then
+		warn("[LifeEvents] Module not found:", moduleName)
+		return nil
+	end
+	
+	local success, result = pcall(function()
+		return require(module)
+	end)
+	
+	if success then
+		print("[LifeEvents] ✅ Loaded:", moduleName)
+		return result
+	else
+		warn("[LifeEvents] ❌ Failed to load", moduleName, ":", result)
+		return nil
+	end
+end
+
 -- Load core systems
-local CareerLibrary = require(script.CareerLibrary)
-local CareerSystem = require(script.CareerSystem)
-local EventEngine = require(script.EventEngine)
+local CareerLibrary = safeRequire("CareerLibrary") or { getAllCareers = function() return {} end, getCareer = function() return nil end }
+local CareerSystem = safeRequire("CareerSystem") or {}
+local EventEngine = safeRequire("EventEngine") or {}
 
 -- Export systems
 LifeEvents.CareerLibrary = CareerLibrary
