@@ -1150,6 +1150,14 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	local roll = math.random(100)
 	print("[LifeRemoteHandlers] Acceptance roll:", roll, "vs", acceptanceChance)
 	
+	-- CRITICAL: Always set job_seeking/applied_for_jobs flag when player applies
+	-- This enables follow-up events in the LifeEvents system
+	if lifeState then
+		lifeState:SetFlag("applied_for_jobs")
+		lifeState:SetFlag("job_seeking")
+		print("[LifeRemoteHandlers] Set 'applied_for_jobs' and 'job_seeking' flags")
+	end
+	
 	if roll > acceptanceChance then
 		local message = "Unfortunately, " .. job.company .. " decided not to hire you."
 		if isExConvict then
@@ -1159,7 +1167,15 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 		elseif job.reqLooks and looks < job.reqLooks + 10 then
 			message = job.company .. " decided to go with another candidate."
 		end
+		-- Keep job_seeking flag - they're still looking!
 		return { success = false, message = message }
+	end
+	
+	-- Player got hired - clear job_seeking flag
+	if lifeState then
+		lifeState:ClearFlag("job_seeking")
+		lifeState:ClearFlag("applied_for_jobs")
+		print("[LifeRemoteHandlers] Cleared job seeking flags - player is now employed")
 	end
 	
 	-- ════════════════════════════════════════════════════════════════

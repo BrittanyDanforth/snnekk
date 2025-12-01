@@ -264,35 +264,71 @@ module.events = {
 	-- EARLY CAREER (Ages 22-28)
 	-- ═══════════════════════════════════════════════════════════════
 	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CAREER ENTRY - REQUIRES EDUCATION + ACTIVELY SEEKING WORK
+	-- In BitLife, you apply for jobs - they don't just appear!
+	-- These events fire when player has been seeking employment
+	-- ═══════════════════════════════════════════════════════════════
+	
 	{
 		id = "m_first_real_job",
-		minAge = 22, maxAge = 25,
-		weight = 70, oneTime = true,
-		emoji = "💼", title = "First Real Job!",
+		minAge = 22, maxAge = 30,
+		weight = 15, oneTime = true, -- LOW weight - should apply through Jobs screen!
+		emoji = "💼", title = "Job Opportunity!",
 		category = "career",
-		blockIfFlag = "employed", -- Don't fire if already employed
-		getDynamicData = function()
-			local fields = {
-				{ name = "tech", title = "Junior Developer", salary = 55000 },
-				{ name = "finance", title = "Financial Analyst", salary = 52000 },
-				{ name = "healthcare", title = "Healthcare Coordinator", salary = 42000 },
-				{ name = "marketing", title = "Marketing Associate", salary = 45000 },
-				{ name = "education", title = "Teaching Assistant", salary = 35000 },
-				{ name = "engineering", title = "Junior Engineer", salary = 58000 },
-				{ name = "consulting", title = "Associate Consultant", salary = 60000 },
-				{ name = "retail management", title = "Assistant Manager", salary = 38000 },
-				{ name = "government", title = "Government Analyst", salary = 48000 },
-			}
+		blockIfFlag = "employed",
+		-- CRITICAL: Must have education AND be actively job seeking OR have job offer
+		requiresAnyFlag = {"college_graduate", "ged_graduate", "has_job_offer", "job_seeking", "applied_for_jobs", "internship_completed", "well_connected"},
+		-- Must have at least high school equivalent
+		requires = function(state)
+			local flags = state.Flags or {}
+			-- Must have graduated high school at minimum (or GED)
+			local hasEducation = flags.high_school_graduate or flags.ged_graduate or flags.college_graduate or flags.advanced_degree
+			-- And must NOT be a dropout without GED
+			local isDropout = flags.high_school_dropout and not flags.ged_graduate
+			return hasEducation and not isDropout
+		end,
+		getDynamicData = function(state)
+			local flags = state and state.Flags or {}
+			-- Better jobs for better education
+			local hasCollege = flags.college_graduate or flags.advanced_degree
+			local hasConnections = flags.well_connected or flags.networker or flags.has_job_offer
+			
+			local fields
+			if hasCollege and hasConnections then
+				fields = {
+					{ name = "tech", title = "Software Developer", salary = 75000 },
+					{ name = "finance", title = "Financial Analyst", salary = 68000 },
+					{ name = "consulting", title = "Associate Consultant", salary = 72000 },
+					{ name = "engineering", title = "Junior Engineer", salary = 70000 },
+				}
+			elseif hasCollege then
+				fields = {
+					{ name = "tech", title = "Junior Developer", salary = 55000 },
+					{ name = "finance", title = "Financial Analyst", salary = 52000 },
+					{ name = "marketing", title = "Marketing Associate", salary = 45000 },
+					{ name = "engineering", title = "Junior Engineer", salary = 58000 },
+				}
+			else
+				-- High school/GED only - entry level positions
+				fields = {
+					{ name = "retail", title = "Assistant Manager", salary = 32000 },
+					{ name = "office", title = "Administrative Assistant", salary = 30000 },
+					{ name = "customer service", title = "Customer Service Rep", salary = 28000 },
+					{ name = "sales", title = "Sales Associate", salary = 26000 },
+				}
+			end
 			local chosen = fields[math.random(#fields)]
 			return { field = chosen.name, title = chosen.title, salary = chosen.salary }
 		end,
-		text = "You got your first full-time job in %field%! Starting salary: $%salary%!",
+		text = "After putting yourself out there, you landed a job in %field%! Starting salary: $%salary%!",
 		choices = {
 			{ 
 				text = "🎉 Dream job!", 
 				effects = { Happiness = 12, Smarts = 3 }, 
 				resultText = "You love what you do! That's the dream!", 
 				setFlags = {"employed", "career_starter"},
+				clearFlags = {"job_seeking", "applied_for_jobs"},
 				setJob = { id = "entry_level", title = "%title%", salary = 50000 }
 			},
 			{ 
@@ -300,6 +336,7 @@ module.events = {
 				effects = { Happiness = 4, Smarts = 2 }, 
 				resultText = "Not perfect, but pays the bills.", 
 				setFlags = {"employed", "career_starter"},
+				clearFlags = {"job_seeking", "applied_for_jobs"},
 				setJob = { id = "entry_level", title = "%title%", salary = 45000 }
 			},
 			{ 
@@ -307,6 +344,7 @@ module.events = {
 				effects = { Happiness = 2, Smarts = 4 }, 
 				resultText = "Everyone starts somewhere. Working your way up!", 
 				setFlags = {"employed", "career_starter"},
+				clearFlags = {"job_seeking", "applied_for_jobs"},
 				setJob = { id = "entry_level", title = "%title%", salary = 42000 }
 			},
 			{ 
@@ -314,7 +352,215 @@ module.events = {
 				effects = { Happiness = 8, Smarts = 5 }, 
 				resultText = "You asked for more and got it! Always negotiate!", 
 				setFlags = {"employed", "negotiator", "career_starter"},
+				clearFlags = {"job_seeking", "applied_for_jobs"},
 				setJob = { id = "entry_level", title = "%title%", salary = 58000 }
+			},
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- STRUGGLING ADULT EVENTS - Reality check for unprepared adults
+	-- No education + No job = Hard times (like real BitLife)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_struggling_adult_no_education",
+		minAge = 19, maxAge = 35,
+		weight = 60, cooldown = 2,
+		emoji = "😰", title = "Reality Check",
+		category = "career",
+		blockIfFlag = "employed",
+		requiresFlag = "high_school_dropout",
+		blockIfFlag2 = "ged_graduate", -- Don't fire if they got GED
+		text = "No diploma, no job. Bills are piling up. Parents are asking when you'll get your life together.",
+		choices = {
+			{ 
+				text = "📚 Time to get GED", 
+				effects = { Happiness = 4, Smarts = 5, Money = -300 }, 
+				resultText = "Enrolled in a GED program. It's time to turn things around!",
+				setFlags = {"pursuing_ged", "taking_responsibility"},
+				clearFlag = "high_school_dropout"
+			},
+			{ 
+				text = "🔧 Learn a trade", 
+				effects = { Happiness = 6, Smarts = 4 }, 
+				resultText = "Signed up for trade school. Electricians, plumbers make good money!",
+				setFlag = "trade_student"
+			},
+			{ 
+				text = "🏠 Move back home", 
+				effects = { Happiness = -6, Money = 500 }, 
+				resultText = "Swallowed your pride. Living with parents again. At least rent is free.",
+				setFlag = "living_with_parents"
+			},
+			{ 
+				text = "😤 Ignore the problem", 
+				effects = { Happiness = -10, Health = -5 }, 
+				resultText = "Burying your head in the sand. The problems aren't going away.",
+				setFlag = "in_denial"
+			},
+		},
+	},
+	
+	{
+		id = "m_minimum_wage_struggle",
+		minAge = 18, maxAge = 40,
+		weight = 45, cooldown = 3,
+		emoji = "💸", title = "Paycheck to Paycheck",
+		category = "career",
+		requiresFlag = "employed",
+		-- Only for low-level jobs without education
+		requires = function(state)
+			local flags = state.Flags or {}
+			local hasCollege = flags.college_graduate or flags.advanced_degree
+			local job = state.CurrentJob or ""
+			local isLowPayJob = job == "" or job:match("entry") or job:match("minimum") or job:match("part_time")
+			return not hasCollege and (state.Money or 0) < 5000
+		end,
+		text = "Rent, food, bills... your paycheck barely covers the basics. There's never anything left.",
+		choices = {
+			{ 
+				text = "💪 Second job time", 
+				effects = { Money = 800, Health = -8, Happiness = -4 }, 
+				resultText = "Picked up a second job. Exhausted but making ends meet.",
+				setFlag = "second_job"
+			},
+			{ 
+				text = "📚 Invest in education", 
+				effects = { Smarts = 6, Happiness = 4, Money = -1000 }, 
+				resultText = "Started night classes. Playing the long game for a better career.",
+				setFlag = "continuing_education"
+			},
+			{ 
+				text = "🍜 Cut all expenses", 
+				effects = { Money = 400, Happiness = -6 }, 
+				resultText = "Ramen every night. No fun. But you're saving something.",
+				setFlag = "frugal"
+			},
+			{ 
+				text = "💳 Credit card it", 
+				effects = { Money = 1000, Happiness = 2 }, 
+				resultText = "Living on credit. This will catch up with you eventually...",
+				setFlag = "in_debt"
+			},
+		},
+	},
+	
+	{
+		id = "m_homelessness_warning",
+		minAge = 20, maxAge = 50,
+		weight = 30, oneTime = true,
+		emoji = "🏠", title = "Eviction Notice!",
+		category = "career",
+		blockIfFlag = "employed",
+		blockIfFlag2 = "homeowner",
+		-- Must be broke and jobless
+		requires = function(state)
+			return (state.Money or 0) < 500
+		end,
+		text = "EVICTION NOTICE on your door. You have 30 days to pay rent or you're out on the street.",
+		choices = {
+			{ 
+				text = "🏠 Move in with family", 
+				effects = { Happiness = -8, Money = 200 }, 
+				resultText = "Pride shattered, but you have a roof. Family took you in.",
+				setFlags = {"living_with_parents", "rock_bottom"},
+				clearFlag = "has_apartment"
+			},
+			{ 
+				text = "🆘 Seek emergency assistance", 
+				effects = { Happiness = -4, Money = 1500 }, 
+				resultText = "Found a housing assistance program. They helped with this month's rent.",
+				setFlag = "received_assistance"
+			},
+			{ 
+				text = "💼 Beg for any job", 
+				effects = { Happiness = -10, Money = 800 }, 
+				resultText = "Took a terrible job but it pays. Barely enough to stay housed.",
+				setFlags = {"employed", "desperate_work"},
+				setJob = { id = "minimum_wage", title = "Fast Food Worker", salary = 18000 }
+			},
+			{ 
+				text = "😔 Accept fate", 
+				effects = { Happiness = -20, Health = -10, Money = -500 }, 
+				resultText = "Couldn't pay. Lost everything. You're homeless now.",
+				setFlags = {"homeless", "rock_bottom"},
+				clearFlags = {"has_apartment", "homeowner"}
+			},
+		},
+	},
+	
+	{
+		id = "m_homeless_life",
+		minAge = 18, maxAge = 70,
+		weight = 70, cooldown = 1,
+		emoji = "🏚️", title = "Life on the Streets",
+		category = "health",
+		requiresFlag = "homeless",
+		text = "Another day without a home. Cold nights, uncertain meals. This is rock bottom.",
+		choices = {
+			{ 
+				text = "🏠 Shelter for the night", 
+				effects = { Health = 5, Happiness = 2 }, 
+				resultText = "Found a bed at the homeless shelter. Warm meal too. Small mercies.",
+				setFlag = "using_shelter"
+			},
+			{ 
+				text = "💼 Look for work", 
+				effects = { Happiness = 4, Smarts = 2 }, 
+				resultText = "Hard to get hired without an address, but you're trying.",
+				setFlag = "job_seeking"
+			},
+			{ 
+				text = "🆘 Seek social services", 
+				effects = { Happiness = 6, Money = 200 }, 
+				resultText = "Got connected with a case worker. There's hope for getting back on your feet.",
+				setFlag = "getting_help"
+			},
+			{ 
+				text = "😔 Give up hope", 
+				effects = { Happiness = -15, Health = -10 }, 
+				resultText = "Darkness consumes you. Each day is just survival.",
+				setFlag = "hopeless"
+			},
+		},
+	},
+	
+	{
+		id = "m_comeback_story",
+		minAge = 20, maxAge = 50,
+		weight = 40, oneTime = true,
+		emoji = "🌅", title = "A Second Chance",
+		category = "social",
+		requiresFlag = "rock_bottom",
+		blockIfFlag = "employed",
+		text = "Someone sees potential in you. An opportunity to turn your life around presents itself.",
+		choices = {
+			{ 
+				text = "🙏 Accept with gratitude", 
+				effects = { Happiness = 15, Smarts = 5 }, 
+				resultText = "You grabbed the lifeline! Someone believed in you when you didn't believe in yourself.",
+				setFlags = {"second_chance", "motivated"},
+				clearFlags = {"hopeless", "in_denial"}
+			},
+			{ 
+				text = "💼 Prove yourself", 
+				effects = { Happiness = 10, Money = 500 }, 
+				resultText = "Given a chance to work. You're going to show them they made the right choice!",
+				setFlags = {"employed", "second_chance", "proving_myself"},
+				setJob = { id = "second_chance", title = "Worker", salary = 24000 }
+			},
+			{ 
+				text = "😰 Scared to fail again", 
+				effects = { Happiness = -4 }, 
+				resultText = "Fear holds you back. The opportunity passes.",
+			},
+			{ 
+				text = "🔥 This is my moment", 
+				effects = { Happiness = 20, Smarts = 8 }, 
+				resultText = "Rock bottom became the foundation for your comeback. LET'S GO!",
+				setFlags = {"comeback_story", "determined", "motivated"},
+				clearFlags = {"hopeless", "rock_bottom", "homeless"}
 			},
 		},
 	},

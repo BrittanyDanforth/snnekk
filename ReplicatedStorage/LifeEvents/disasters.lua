@@ -16,7 +16,7 @@ local module = {}
 module.events = {
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- EXTREME WEATHER EVENTS
+	-- EXTREME WEATHER EVENTS (category = "disaster" for red UI styling)
 	-- ═══════════════════════════════════════════════════════════════
 	
 	{
@@ -24,7 +24,7 @@ module.events = {
 		minAge = 5, maxAge = 100,
 		weight = 25, cooldown = 4,
 		emoji = "⛈️", title = "Severe Storm Warning!",
-		category = "family",
+		category = "disaster",
 		text = "A severe storm is approaching! Thunder rumbling, sky turning dark. What do you do?",
 		choices = {
 			{ 
@@ -55,7 +55,7 @@ module.events = {
 		minAge = 5, maxAge = 100,
 		weight = 15, cooldown = 6,
 		emoji = "🌪️", title = "TORNADO WARNING!",
-		category = "family",
+		category = "disaster",
 		text = "SIRENS BLARING! A tornado has been spotted! You need to act NOW!",
 		choices = {
 			{ 
@@ -86,7 +86,7 @@ module.events = {
 		minAge = 10, maxAge = 100,
 		weight = 15, cooldown = 6,
 		emoji = "🌀", title = "Hurricane Approaching!",
-		category = "family",
+		category = "disaster",
 		getDynamicData = function()
 			local categories = {1, 2, 3, 4}
 			return { category = categories[math.random(#categories)] }
@@ -121,7 +121,7 @@ module.events = {
 		minAge = 10, maxAge = 100,
 		weight = 12, cooldown = 6,
 		emoji = "🔥", title = "Wildfire Approaching!",
-		category = "family",
+		category = "disaster",
 		text = "Wildfire is burning toward your area! Smoke visible in the sky. What do you do?",
 		choices = {
 			{ 
@@ -152,7 +152,7 @@ module.events = {
 		minAge = 10, maxAge = 100,
 		weight = 20, cooldown = 4,
 		emoji = "🌊", title = "Flash Flood!",
-		category = "family",
+		category = "disaster",
 		text = "Water rising FAST! Streets turning into rivers! What do you do?",
 		choices = {
 			{ 
@@ -183,7 +183,7 @@ module.events = {
 		minAge = 5, maxAge = 100,
 		weight = 20, cooldown = 4,
 		emoji = "❄️", title = "Blizzard Warning!",
-		category = "family",
+		category = "disaster",
 		getDynamicData = function()
 			local inches = math.random(18, 36)
 			return { inches = inches }
@@ -218,7 +218,7 @@ module.events = {
 		minAge = 5, maxAge = 100,
 		weight = 10, cooldown = 8,
 		emoji = "🏚️", title = "EARTHQUAKE!",
-		category = "family",
+		category = "disaster",
 		getDynamicData = function()
 			local magnitudes = {4.5, 5.5, 6.0, 6.5}
 			return { magnitude = magnitudes[math.random(#magnitudes)] }
@@ -253,7 +253,7 @@ module.events = {
 		minAge = 5, maxAge = 100,
 		weight = 25, cooldown = 3,
 		emoji = "🌡️", title = "Extreme Heat Wave!",
-		category = "family",
+		category = "disaster",
 		getDynamicData = function()
 			local temp = math.random(105, 118)
 			return { temperature = temp }
@@ -292,7 +292,7 @@ module.events = {
 		minAge = 16, maxAge = 85,
 		weight = 20, cooldown = 4,
 		emoji = "🚗", title = "Accident About to Happen!",
-		category = "family",
+		category = "disaster",
 		text = "A car is swerving toward you! Split second to react!",
 		choices = {
 			{ 
@@ -323,7 +323,7 @@ module.events = {
 		minAge = 10, maxAge = 100,
 		weight = 10, cooldown = 8,
 		emoji = "🔥", title = "Fire in the House!",
-		category = "family",
+		category = "disaster",
 		text = "You smell smoke! There's a fire starting in your home! What do you do?",
 		choices = {
 			{ 
@@ -416,7 +416,7 @@ module.events = {
 		minAge = 18, maxAge = 100,
 		weight = 10, cooldown = 6,
 		emoji = "🏠", title = "Intruder in Your Home!",
-		category = "family",
+		category = "disaster",
 		text = "You hear someone breaking in downstairs! You're home! What do you do?",
 		choices = {
 			{ 
@@ -482,7 +482,7 @@ module.events = {
 		minAge = 18, maxAge = 100,
 		weight = 20, cooldown = 4,
 		emoji = "📋", title = "Insurance Claim Time",
-		category = "family",
+		category = "disaster",
 		requiresFlag = "lost_home",
 		text = "Insurance company is giving you the runaround on your claim. What do you do?",
 		choices = {
@@ -545,7 +545,7 @@ module.events = {
 		minAge = 25, maxAge = 100,
 		weight = 12, cooldown = 8,
 		emoji = "🏗️", title = "Rebuilding After Disaster",
-		category = "family",
+		category = "disaster",
 		requiresFlag = "lost_home",
 		text = "Your home was destroyed. Time to decide what's next. What do you do?",
 		choices = {

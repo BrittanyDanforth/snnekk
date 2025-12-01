@@ -411,16 +411,38 @@ module.events = {
 		weight = 100, milestone = true, oneTime = true,
 		emoji = "🎓", title = "HIGH SCHOOL GRADUATION!",
 		category = "school",
+		-- Block if already dropped out
+		blockIfFlag = "high_school_dropout",
 		getDynamicData = function()
 			local honors = {"summa cum laude", "magna cum laude", "cum laude", "with honors", ""}
 			return { honor = honors[math.random(#honors)] }
 		end,
 		text = "You did it! You're graduating high school %honor%! Caps in the air!",
 		choices = {
-			{ text = "🎓 Valedictorian speech!", effects = { Smarts = 10, Happiness = 15, Looks = 5 }, resultText = "Top of your class! You gave the big speech!", setFlag = "valedictorian" },
-			{ text = "🎉 Celebrate with friends!", effects = { Happiness = 12 }, resultText = "Best night ever! Graduation parties everywhere!" },
-			{ text = "😢 Bittersweet", effects = { Happiness = 5, Smarts = 2 }, resultText = "Happy and sad. End of an era." },
-			{ text = "🎯 Ready for what's next", effects = { Happiness = 8, Smarts = 5 }, resultText = "High school was just the beginning!", setFlag = "ambitious" },
+			{ 
+				text = "🎓 Valedictorian speech!", 
+				effects = { Smarts = 10, Happiness = 15, Looks = 5 }, 
+				resultText = "Top of your class! You gave the big speech!", 
+				setFlags = {"high_school_graduate", "valedictorian", "honor_student"}
+			},
+			{ 
+				text = "🎉 Celebrate with friends!", 
+				effects = { Happiness = 12 }, 
+				resultText = "Best night ever! Graduation parties everywhere!",
+				setFlag = "high_school_graduate"
+			},
+			{ 
+				text = "😢 Bittersweet", 
+				effects = { Happiness = 5, Smarts = 2 }, 
+				resultText = "Happy and sad. End of an era.",
+				setFlag = "high_school_graduate"
+			},
+			{ 
+				text = "🎯 Ready for what's next", 
+				effects = { Happiness = 8, Smarts = 5 }, 
+				resultText = "High school was just the beginning!", 
+				setFlags = {"high_school_graduate", "ambitious"}
+			},
 		},
 	},
 	
