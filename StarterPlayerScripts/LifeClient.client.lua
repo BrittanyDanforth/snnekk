@@ -515,7 +515,17 @@ local function showResultPopup(data, callback)
 
 	resultCallback = callback
 
-	local isPositive = (data.happiness or 0) >= 0 and (data.health or 0) >= 0
+	-- PRIORITY: wasSuccess flag from minigames/events takes precedence
+	-- Otherwise fall back to stat-based check
+	local isPositive
+	if data.wasSuccess ~= nil then
+		-- Explicit success/fail flag from server (e.g., minigame results)
+		isPositive = data.wasSuccess
+	else
+		-- Fall back to stat-based check
+		isPositive = (data.happiness or 0) >= 0 and (data.health or 0) >= 0
+	end
+	
 	local shellColor = isPositive and C.Green or C.Red
 	local shellStrokeColor = isPositive and C.GreenDark or C.RedDark
 
@@ -2086,6 +2096,7 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 			smarts = resultData.smarts or deltas.smarts,
 			looks = resultData.looks or deltas.looks,
 			money = resultData.money or deltas.money,
+			wasSuccess = resultData.wasSuccess, -- IMPORTANT: Pass through success flag for minigames
 		})
 	elseif deltas.health and deltas.health < -10 then
 		-- Auto-show popup for significant negative health

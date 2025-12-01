@@ -876,11 +876,324 @@ module.events = {
 				effects = { Happiness = -5 }, 
 				resultText = "You ducked away. But you can't run forever.",
 			},
-			{ 
+			{
 				text = "💰 Offer to make amends", 
 				effects = { Happiness = 8, Money = -3000 }, 
 				resultText = "Money can't fix everything, but it helped. They agreed to move on.",
 				clearFlag = "mean_streak"
+			},
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- EDUCATION CONSEQUENCES (Your past choices affect opportunities)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	-- Good students get better opportunities
+	{
+		id = "m_honor_student_opportunity",
+		minAge = 22, maxAge = 35,
+		weight = 30, cooldown = 5,
+		emoji = "🌟", title = "Academic Achievement Pays Off!",
+		category = "social",
+		requiresAnyFlag = {"honor_student", "honors_student", "college_graduate", "ivy_league", "scholarship_student"},
+		blockIfFlag = "dropout",
+		getDynamicData = function()
+			local opportunities = {
+				{type = "prestigious internship at a Fortune 500 company", reward = 5000},
+				{type = "scholarship for graduate studies", reward = 20000},
+				{type = "research position at a top university", reward = 8000},
+				{type = "leadership development program", reward = 3000},
+			}
+			local opp = opportunities[math.random(#opportunities)]
+			return { opportunity = opp.type, reward = opp.reward }
+		end,
+		text = "Your academic record impressed them! You've been offered a %opportunity%!",
+		choices = {
+			{ 
+				text = "🎯 Accept this opportunity!", 
+				effectsDynamic = function(data) return { Money = data.reward, Happiness = 15, Smarts = 5 } end,
+				resultText = "Your hard work in school is paying off! Doors are opening!",
+				setFlag = "prestigious_opportunity"
+			},
+			{ 
+				text = "🤔 Consider other options", 
+				effects = { Happiness = 5, Smarts = 2 }, 
+				resultText = "You have options because you worked hard. That's a good problem to have.",
+			},
+		},
+	},
+	
+	-- Dropouts/poor students face harder job market
+	{
+		id = "m_no_degree_struggle",
+		minAge = 20, maxAge = 40,
+		weight = 35, cooldown = 4,
+		emoji = "📋", title = "Job Requirements",
+		category = "social",
+		blockIfFlag = "college_graduate",
+		blockIfFlag2 = "employed",
+		requires = function(state)
+			local f = state.Flags or {}
+			-- Only fire if player DOESN'T have good education flags
+			return not (f.college_graduate or f.college_student or f.honors_student or f.ivy_league)
+		end,
+		text = "Dream job posting! Great pay, great benefits... but it requires a college degree you don't have.",
+		choices = {
+			{ 
+				text = "😤 Apply anyway", 
+				effects = { Happiness = -5, Smarts = 2 },
+				chanceSuccess = 0.15,
+				effectsOnSuccess = { Happiness = 20, Money = 5000 },
+				resultText = "They gave you a chance! Your experience spoke louder than a degree!",
+				resultTextFail = "Rejected. 'We require a bachelor's degree minimum.' Door closed.",
+			},
+			{ 
+				text = "📚 Look into getting a degree", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "Maybe it's time to go back to school. Never too late to learn.",
+				setFlag = "considering_education"
+			},
+			{ 
+				text = "🔧 Find jobs without degree requirements", 
+				effects = { Happiness = 2, Smarts = 2 }, 
+				resultText = "Trades, sales, gig work... degrees aren't everything. Different paths exist.",
+			},
+			{ 
+				text = "😔 Feel stuck", 
+				effects = { Happiness = -10 }, 
+				resultText = "Should have stayed in school... regret is heavy.",
+				setFlag = "education_regret"
+			},
+		},
+	},
+	
+	-- Education opens networking opportunities
+	{
+		id = "m_alumni_network",
+		minAge = 25, maxAge = 55,
+		weight = 25, cooldown = 5,
+		emoji = "🤝", title = "Alumni Connection!",
+		category = "social",
+		requiresAnyFlag = {"college_graduate", "ivy_league", "scholarship_student"},
+		getDynamicData = function()
+			local connections = {
+				{type = "CEO of a growing startup", benefit = "job offer"},
+				{type = "venture capitalist", benefit = "investment opportunity"},
+				{type = "hiring manager at dream company", benefit = "interview"},
+				{type = "successful entrepreneur", benefit = "mentorship"},
+			}
+			local conn = connections[math.random(#connections)]
+			return { person = conn.type, benefit = conn.benefit }
+		end,
+		text = "At an alumni event, you meet a %person%! They went to your school!",
+		choices = {
+			{ 
+				text = "🤝 Network strategically", 
+				effects = { Happiness = 12, Smarts = 3, Money = 2000 }, 
+				resultText = "College connections pay off! They offered you a %benefit%!",
+				setFlag = "strong_network"
+			},
+			{ 
+				text = "💼 Ask for career advice", 
+				effects = { Happiness = 8, Smarts = 5 }, 
+				resultText = "Valuable insights! They shared secrets to their success.",
+			},
+			{ 
+				text = "😎 Just socialize", 
+				effects = { Happiness = 6 }, 
+				resultText = "Nice to reminisce about college days.",
+			},
+		},
+	},
+	
+	-- Self-made path (for those without degrees who work hard)
+	{
+		id = "m_self_made_success",
+		minAge = 25, maxAge = 45,
+		weight = 20, oneTime = true,
+		emoji = "💪", title = "Proving Them Wrong!",
+		category = "social",
+		requires = function(state)
+			local f = state.Flags or {}
+			-- Must NOT have college but MUST be employed or entrepreneur
+			return not f.college_graduate and (f.employed or f.entrepreneur or f.self_employed)
+		end,
+		text = "People said you wouldn't make it without a degree. Look at you now! A reporter wants to interview you about your success story!",
+		choices = {
+			{ 
+				text = "🎤 Share your story", 
+				effects = { Happiness = 20, Smarts = 3 }, 
+				resultText = "Your interview went viral! Proof that hustle beats degrees!",
+				setFlags = {"self_made", "inspiring_story"}
+			},
+			{ 
+				text = "🙏 Stay humble", 
+				effects = { Happiness = 12, Smarts = 2 }, 
+				resultText = "You politely declined. Success speaks for itself.",
+				setFlag = "self_made"
+			},
+			{ 
+				text = "💼 Use it for business", 
+				effects = { Happiness = 15, Money = 5000 }, 
+				resultText = "The publicity brought new customers and opportunities!",
+				setFlags = {"self_made", "publicity_savvy"}
+			},
+		},
+	},
+	
+	-- High school behavior affects adult life
+	{
+		id = "m_past_reputation",
+		minAge = 22, maxAge = 40,
+		weight = 25, cooldown = 5,
+		emoji = "📸", title = "Blast from the Past!",
+		category = "social",
+		getDynamicData = function(state)
+			local f = state and state.Flags or {}
+			-- Determine if player had good or bad reputation
+			local wasGood = f.honor_student or f.generous or f.friendly or f.volunteer
+			local wasBad = f.bully or f.sneaky or f.troublemaker or f.mean_streak
+			return { wasGood = wasGood, wasBad = wasBad }
+		end,
+		requires = function(state)
+			local f = state.Flags or {}
+			-- Must have some kind of past behavior flag
+			return f.honor_student or f.bully or f.sneaky or f.troublemaker or f.mean_streak or f.generous or f.friendly
+		end,
+		text = "You run into your old high school classmate! They remember you...",
+		choices = {
+			{ 
+				text = "🤗 Reconnect happily", 
+				requires = function(state) 
+					local f = state.Flags or {}
+					return f.honor_student or f.generous or f.friendly
+				end,
+				effects = { Happiness = 10 }, 
+				resultText = "They remember you fondly! 'You were always so nice!' Feels good!",
+			},
+			{ 
+				text = "😬 Awkward encounter", 
+				requires = function(state) 
+					local f = state.Flags or {}
+					return f.bully or f.mean_streak or f.troublemaker
+				end,
+				effects = { Happiness = -8 }, 
+				resultText = "They remember... the bad stuff. 'You made my life miserable.' Guilt hits hard.",
+			},
+			{ 
+				text = "🙏 Apologize for the past", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "If you weren't the nicest kid, at least you've grown. They appreciate the apology.",
+				clearFlag = "bully"
+			},
+			{ 
+				text = "🏃 Pretend you don't remember them", 
+				effects = { Happiness = -3 }, 
+				resultText = "Awkward. You both know you're lying.",
+			},
+		},
+	},
+	
+	-- Skills from hobbies pay off
+	{
+		id = "m_hobby_career",
+		minAge = 20, maxAge = 40,
+		weight = 20, cooldown = 5,
+		emoji = "🎯", title = "Hobby Becomes Career!",
+		category = "social",
+		requiresAnyFlag = {"creative_mind", "stem_track", "programmer", "art_interest", "computer_interest", "music_talent"},
+		text = "All those hours spent on your hobby... someone wants to PAY you to do it!",
+		choices = {
+			{ 
+				text = "💰 Turn passion into profession!", 
+				effects = { Happiness = 20, Money = 5000 }, 
+				resultText = "Dream job! Getting paid to do what you love! Life doesn't get better!",
+				setFlags = {"passion_career", "dream_job"}
+			},
+			{ 
+				text = "🤔 Keep it as a hobby", 
+				effects = { Happiness = 8, Smarts = 2 }, 
+				resultText = "Sometimes hobbies should stay hobbies. Don't want to ruin the fun.",
+			},
+			{ 
+				text = "💼 Side hustle only", 
+				effects = { Happiness = 12, Money = 2000 }, 
+				resultText = "Extra income from something you enjoy! Win-win!",
+				setFlag = "side_hustler"
+			},
+		},
+	},
+	
+	-- Lazy choices catch up
+	{
+		id = "m_lazy_consequences",
+		minAge = 25, maxAge = 50,
+		weight = 25, cooldown = 5,
+		emoji = "😫", title = "Catching Up to You...",
+		category = "social",
+		requires = function(state)
+			local f = state.Flags or {}
+			-- Must have lazy/bad choice flags
+			return f.procrastinator or f.couch_potato or f.sneaky or f.party_animal
+		end,
+		blockIfFlag = "turned_life_around",
+		text = "Years of cutting corners and taking shortcuts... the consequences are becoming clear.",
+		choices = {
+			{ 
+				text = "😤 Time to change!", 
+				effects = { Happiness = 5, Health = 5, Smarts = 3 }, 
+				resultText = "Wake up call received! Making changes starting TODAY!",
+				setFlag = "turned_life_around",
+				clearFlags = {"procrastinator", "couch_potato"}
+			},
+			{ 
+				text = "🤷 It is what it is", 
+				effects = { Happiness = -8, Health = -5 }, 
+				resultText = "Accepting mediocrity. But is this really living?",
+			},
+			{ 
+				text = "😔 Regret but feel stuck", 
+				effects = { Happiness = -12 }, 
+				resultText = "Wishing you could go back and make different choices...",
+				setFlag = "life_regret"
+			},
+			{ 
+				text = "📝 Make a plan", 
+				effects = { Happiness = 8, Smarts = 5 }, 
+				resultText = "Small steps. One day at a time. You can turn this around!",
+				setFlag = "improving_self"
+			},
+		},
+	},
+	
+	-- Good work ethic pays dividends
+	{
+		id = "m_work_ethic_reward",
+		minAge = 25, maxAge = 55,
+		weight = 25, cooldown = 5,
+		emoji = "⭐", title = "Hard Work Noticed!",
+		category = "social",
+		requiresAnyFlag = {"hard_worker", "dedicated", "career_achiever", "turned_life_around", "improving_self"},
+		blockIfFlag = "procrastinator",
+		text = "Your consistent effort hasn't gone unnoticed! Someone important has been watching!",
+		choices = {
+			{ 
+				text = "🎉 Accept the recognition", 
+				effects = { Happiness = 15, Money = 3000 }, 
+				resultText = "Promotion, raise, bonus - your work ethic is your superpower!",
+				setFlag = "recognized_talent"
+			},
+			{ 
+				text = "🙏 Thank your mentors", 
+				effects = { Happiness = 12, Smarts = 3 }, 
+				resultText = "You didn't get here alone. Gratitude is a great look.",
+			},
+			{ 
+				text = "📈 Ask for more responsibility", 
+				effects = { Happiness = 10, Smarts = 5, Money = 2000 }, 
+				resultText = "Ambitious! They like that. Bigger challenges ahead!",
+				setFlag = "ambitious"
 			},
 		},
 	},

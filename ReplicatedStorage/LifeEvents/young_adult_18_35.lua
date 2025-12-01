@@ -785,6 +785,165 @@ module.events = {
 			{ text = "💤 Sleep is a memory", effects = { Happiness = 10, Health = -10, Money = -6000 }, resultText = "What year is it? Doesn't matter. Baby needs you.", setFlag = "multiple_children" },
 		},
 	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- DROPOUT / EDUCATION PATH CONSEQUENCES
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_dropout_job_struggle",
+		minAge = 18, maxAge = 30,
+		weight = 35, cooldown = 3,
+		emoji = "📋", title = "Job Application Pain",
+		category = "career",
+		requiresFlag = "high_school_dropout",
+		blockIfFlag = "employed",
+		text = "Every job application asks for education. 'High School Diploma Required.' The checkbox mocks you.",
+		choices = {
+			{ 
+				text = "📝 Apply anyway", 
+				effects = { Happiness = -4 },
+				chanceSuccess = 0.20,
+				effectsOnSuccess = { Happiness = 10, Money = 500 },
+				resultText = "They gave you a shot! Hard work can speak louder than paper!",
+				resultTextFail = "Rejected again. 'Thank you for your interest, but...'",
+				setFlag = "employed"
+			},
+			{ 
+				text = "📚 Get your GED", 
+				effects = { Smarts = 8, Happiness = 5, Money = -500 }, 
+				resultText = "You enrolled in a GED program. It's not too late to get that credential!",
+				setFlag = "pursuing_ged",
+				clearFlag = "high_school_dropout"
+			},
+			{ 
+				text = "🔧 Look for trade work", 
+				effects = { Happiness = 4, Money = 1000 }, 
+				resultText = "Construction, warehouse, delivery... diplomas matter less here.",
+				setFlag = "trade_worker"
+			},
+			{ 
+				text = "💼 Start own hustle", 
+				effects = { Happiness = 6, Smarts = 3 }, 
+				resultText = "No one asks for your diploma when you're the boss!",
+				setFlag = "entrepreneur"
+			},
+		},
+	},
+	
+	{
+		id = "m_dropout_regret",
+		minAge = 20, maxAge = 35,
+		weight = 25, oneTime = true,
+		emoji = "😔", title = "What If?",
+		category = "social",
+		requiresFlag = "high_school_dropout",
+		getDynamicData = function()
+			local scenarios = {
+				"old classmates talking about their college memories on social media",
+				"a job posting for your dream job that requires a degree",
+				"your younger sibling's graduation",
+				"filling out an application that asks about education"
+			}
+			return { scenario = scenarios[math.random(#scenarios)] }
+		end,
+		text = "Seeing %scenario% makes you wonder... what if you'd finished school?",
+		choices = {
+			{ 
+				text = "📚 Never too late", 
+				effects = { Happiness = 6, Smarts = 4 }, 
+				resultText = "You start researching GED programs and community college. There's still time!",
+				setFlag = "considering_education"
+			},
+			{ 
+				text = "💪 Forge my own path", 
+				effects = { Happiness = 8, Smarts = 2 }, 
+				resultText = "Plenty of successful people didn't finish school. You'll prove them wrong!",
+				setFlag = "determined"
+			},
+			{ 
+				text = "😔 Deep regret", 
+				effects = { Happiness = -10 }, 
+				resultText = "The 'what ifs' hit hard. Some doors are closed now.",
+				setFlag = "life_regret"
+			},
+			{ 
+				text = "🤷 Different path, not wrong", 
+				effects = { Happiness = 4, Smarts = 3 }, 
+				resultText = "Life's a journey. Your path is just different, not worse.",
+			},
+		},
+	},
+	
+	{
+		id = "m_ged_success",
+		minAge = 19, maxAge = 40,
+		weight = 40, oneTime = true,
+		emoji = "🎓", title = "GED Victory!",
+		category = "school",
+		requiresFlag = "pursuing_ged",
+		text = "You passed all the GED tests! You now have an official high school equivalency credential!",
+		choices = {
+			{ 
+				text = "🎉 So proud!", 
+				effects = { Happiness = 15, Smarts = 5 }, 
+				resultText = "Proved everyone wrong! Doors that were closed are opening!",
+				setFlags = {"ged_graduate", "perseverance"},
+				clearFlags = {"pursuing_ged", "high_school_dropout"}
+			},
+			{ 
+				text = "📚 On to college!", 
+				effects = { Happiness = 12, Smarts = 8 }, 
+				resultText = "You're enrolling in community college. The comeback story continues!",
+				setFlags = {"ged_graduate", "college_bound"},
+				clearFlags = {"pursuing_ged", "high_school_dropout"}
+			},
+			{ 
+				text = "💼 Time to job hunt", 
+				effects = { Happiness = 10, Smarts = 3 }, 
+				resultText = "Now you can check that box on applications!",
+				setFlags = {"ged_graduate"},
+				clearFlags = {"pursuing_ged", "high_school_dropout"}
+			},
+		},
+	},
+	
+	{
+		id = "m_honors_student_opportunity",
+		minAge = 18, maxAge = 25,
+		weight = 30, oneTime = true,
+		emoji = "🌟", title = "Academic Excellence Pays Off!",
+		category = "school",
+		requiresAnyFlag = {"honors_student", "honor_student", "valedictorian", "award_winner"},
+		blockIfFlag = "high_school_dropout",
+		text = "Your academic achievements caught someone's attention! A prestigious program wants you!",
+		choices = {
+			{ 
+				text = "🎓 Full scholarship!", 
+				effects = { Happiness = 20, Smarts = 8, Money = 20000 }, 
+				resultText = "Your hard work in school paid off HUGE! Free education!",
+				setFlags = {"scholarship", "high_achiever"}
+			},
+			{ 
+				text = "💼 Internship offer", 
+				effects = { Happiness = 15, Smarts = 5, Money = 5000 }, 
+				resultText = "Top company wants YOU! Resume building begins!",
+				setFlag = "prestigious_intern"
+			},
+			{ 
+				text = "🔬 Research opportunity", 
+				effects = { Happiness = 12, Smarts = 10 }, 
+				resultText = "Working with top professors on real research!",
+				setFlags = {"researcher", "academic_track"}
+			},
+			{ 
+				text = "🌍 Study abroad", 
+				effects = { Happiness = 18, Smarts = 6 }, 
+				resultText = "Scholarship to study in another country! Adventure awaits!",
+				setFlags = {"world_traveler", "international_experience"}
+			},
+		},
+	},
 }
 
 return module

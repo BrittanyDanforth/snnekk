@@ -746,6 +746,196 @@ module.events = {
 			{ text = "😅 Started strong, fizzled out", effects = { Health = 2 }, resultText = "Motivation is hard to maintain. You tried!" },
 		},
 	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- SKIPPING SCHOOL / TRUANCY (Choices with real consequences)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_skip_school_temptation",
+		minAge = 14, maxAge = 17,
+		weight = 35, cooldown = 3,
+		emoji = "🏃", title = "The Skip Day!",
+		category = "school",
+		getDynamicData = function()
+			local reasons = {"a boring test", "a presentation you didn't prepare for", "just feeling lazy", "hanging with friends", "sleeping in"}
+			return { reason = reasons[math.random(#reasons)] }
+		end,
+		text = "You're tempted to skip school because of %reason%. Your friends are doing it...",
+		choices = {
+			{ 
+				text = "🎒 Go to school anyway", 
+				effects = { Smarts = 5, Happiness = -2 }, 
+				resultText = "You showed up. Boring, but you learned something.",
+				setFlag = "responsible"
+			},
+			{ 
+				text = "🎮 Skip and play games", 
+				effects = { Happiness = 8, Smarts = -3 }, 
+				resultText = "FREEDOM! But you missed a quiz worth 10% of your grade...",
+				setFlag = "truant"
+			},
+			{ 
+				text = "🛏️ Just sleep in", 
+				effects = { Health = 4, Happiness = 4, Smarts = -2 }, 
+				resultText = "Needed that rest. But now you're behind.",
+				setFlag = "truant"
+			},
+			{ 
+				text = "🛒 Go to the mall", 
+				effects = { Happiness = 6, Smarts = -4, Money = -30 }, 
+				resultText = "Fun day! But parents found out from the school's automated call...",
+				setFlags = {"truant", "in_trouble"}
+			},
+		},
+	},
+	
+	{
+		id = "m_caught_skipping",
+		minAge = 14, maxAge = 17,
+		weight = 40, oneTime = true,
+		emoji = "😱", title = "Caught!",
+		category = "school",
+		requiresFlag = "truant",
+		text = "The school called home. Your parents know you've been skipping. You're in BIG trouble.",
+		choices = {
+			{ 
+				text = "😢 Accept punishment", 
+				effects = { Happiness = -8, Smarts = 2 }, 
+				resultText = "Grounded for a month. Lesson learned... hopefully.",
+				clearFlag = "truant",
+				setFlag = "learned_lesson"
+			},
+			{ 
+				text = "🗣️ Make excuses", 
+				effects = { Happiness = -4, Smarts = -3 }, 
+				resultText = "They don't believe you. Made it worse.",
+				setFlag = "sneaky"
+			},
+			{ 
+				text = "😤 Argue back", 
+				effects = { Happiness = -6, Health = -2 }, 
+				resultText = "Huge fight. Doors slammed. Things said that can't be unsaid.",
+				setFlags = {"rebellious", "troubled_home"}
+			},
+			{ 
+				text = "🙏 Promise to change", 
+				effects = { Happiness = 2, Smarts = 3 }, 
+				resultText = "They gave you another chance. Don't blow it.",
+				clearFlag = "truant",
+				setFlag = "second_chance"
+			},
+		},
+	},
+	
+	{
+		id = "m_chronic_truancy",
+		minAge = 15, maxAge = 17,
+		weight = 30, oneTime = true,
+		emoji = "📉", title = "Falling Behind",
+		category = "school",
+		requiresFlag = "truant",
+		blockIfFlag = "learned_lesson",
+		text = "You've missed so many days that you're failing multiple classes. The principal wants to see you.",
+		choices = {
+			{ 
+				text = "📚 Get serious", 
+				effects = { Smarts = 6, Happiness = -4 }, 
+				resultText = "Time to turn this around. Extra credit, tutoring, staying after school.",
+				clearFlag = "truant",
+				setFlag = "redemption_arc"
+			},
+			{ 
+				text = "🤷 Whatever", 
+				effects = { Smarts = -5, Happiness = -2 }, 
+				resultText = "You don't care anymore. GPA tanking.",
+				setFlag = "academic_trouble"
+			},
+			{ 
+				text = "🏃 Consider dropping out", 
+				effects = { Smarts = -8, Happiness = 4 }, 
+				resultText = "School isn't for everyone... but is this the right choice?",
+				setFlag = "considering_dropout"
+			},
+			{ 
+				text = "🆘 Ask for help", 
+				effects = { Smarts = 4, Happiness = 2, Health = 3 }, 
+				resultText = "Counselor helped you make a plan. Support systems exist!",
+				clearFlag = "truant",
+				setFlag = "getting_support"
+			},
+		},
+	},
+	
+	{
+		id = "m_dropout_decision",
+		minAge = 16, maxAge = 17,
+		weight = 25, oneTime = true,
+		emoji = "🚪", title = "Dropping Out?",
+		category = "school",
+		requiresFlag = "considering_dropout",
+		text = "You're at a crossroads. Drop out of high school or stick it out?",
+		choices = {
+			{ 
+				text = "🚪 Drop out", 
+				effects = { Happiness = 5, Smarts = -10 }, 
+				resultText = "No diploma. The world just got a lot harder.",
+				setFlag = "high_school_dropout",
+				clearFlags = {"truant", "considering_dropout", "academic_trouble"}
+			},
+			{ 
+				text = "🎓 Stay and graduate", 
+				effects = { Smarts = 8, Happiness = 3 }, 
+				resultText = "You made it through. That diploma matters more than you know.",
+				clearFlags = {"truant", "considering_dropout", "academic_trouble"},
+				setFlag = "perseverance"
+			},
+			{ 
+				text = "📚 GED instead", 
+				effects = { Smarts = 4, Happiness = 2 }, 
+				resultText = "Alternative path. Still a credential. Better than nothing.",
+				setFlag = "ged_path",
+				clearFlags = {"truant", "considering_dropout"}
+			},
+			{ 
+				text = "💼 Work full-time", 
+				effects = { Money = 2000, Smarts = -8, Happiness = 4 }, 
+				resultText = "You got a job. Making money but doors will be harder to open.",
+				setFlags = {"high_school_dropout", "employed"},
+				clearFlags = {"truant", "considering_dropout"}
+			},
+		},
+	},
+	
+	{
+		id = "m_good_student_reward",
+		minAge = 14, maxAge = 17,
+		weight = 30, cooldown = 3,
+		emoji = "⭐", title = "Academic Recognition!",
+		category = "school",
+		requiresAnyFlag = {"academic_focused", "honors_student", "honor_student", "responsible"},
+		blockIfFlag = "truant",
+		text = "Your teachers noticed your dedication! You've been nominated for an academic award!",
+		choices = {
+			{ 
+				text = "🏆 Accept with pride", 
+				effects = { Happiness = 12, Smarts = 5 }, 
+				resultText = "Award ceremony! Your family is so proud!",
+				setFlag = "award_winner"
+			},
+			{ 
+				text = "🙏 Stay humble", 
+				effects = { Happiness = 8, Smarts = 3 }, 
+				resultText = "The recognition feels good. Keep working hard.",
+			},
+			{ 
+				text = "📈 Use for college apps", 
+				effects = { Happiness = 6, Smarts = 6 }, 
+				resultText = "This is going to look great on applications!",
+				setFlag = "strong_application"
+			},
+		},
+	},
 }
 
 return module
