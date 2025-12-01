@@ -608,10 +608,279 @@ module.events = {
 				effects = { Health = -20, Happiness = -15 },
 				resultText = "They saw you and attacked! You got hurt badly. Leave this to police next time!"
 			},
-			{
-				text = "🚶 Walk away",
-				effects = { Happiness = -10, Smarts = -3 },
-				resultText = "Did nothing. The guilt eats at you. Someone got hurt because you didn't act."
+		{
+			text = "🚶 Walk away",
+			effects = { Happiness = -10, Smarts = -3 },
+			resultText = "Did nothing. The guilt eats at you. Someone got hurt because you didn't act."
+		},
+	},
+},
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- LIFE-STEERING EVENTS (Based on player's past choices)
+	-- These events react to who the player has become
+	-- ═══════════════════════════════════════════════════════════════
+	
+	-- For Ex-Convicts trying to rebuild
+	{
+		id = "m_ex_con_job_hunt",
+		minAge = 20, maxAge = 55,
+		weight = 35, cooldown = 3,
+		emoji = "📝", title = "Job Application",
+		category = "social",
+		requiresFlag = "ex_convict",
+		blockIfFlag = "employed",
+		text = "You're applying for jobs, but the 'Have you been convicted of a crime?' question stares back at you.",
+		choices = {
+			{ 
+				text = "✍️ Be honest", 
+				effects = { Happiness = -5, Smarts = 3 }, 
+				resultText = "You told the truth. Most won't call back, but at least you were honest.",
+				setFlag = "honest_about_record"
+			},
+			{ 
+				text = "🤥 Lie on the form", 
+				effects = { Happiness = 3, Smarts = -3 }, 
+				resultText = "You checked 'No'. Hope they don't do a background check...",
+				setFlag = "lied_on_application"
+			},
+			{ 
+				text = "🔧 Look for second-chance employers", 
+				effects = { Happiness = 5, Smarts = 4 }, 
+				resultText = "Some companies specifically hire people with records. Smart thinking!",
+				setFlag = "seeking_second_chance"
+			},
+			{ 
+				text = "💼 Start own business instead", 
+				effects = { Happiness = 8, Money = -5000, Smarts = 5 }, 
+				resultText = "Be your own boss! Nobody can reject your application now.",
+				setFlags = {"entrepreneur", "self_employed"}
+			},
+		},
+	},
+	
+	-- Criminal past catching up
+	{
+		id = "m_past_catches_up",
+		minAge = 18, maxAge = 50,
+		weight = 25, cooldown = 5,
+		emoji = "👮", title = "Knock at the Door",
+		category = "social",
+		requiresAnyFlag = {"petty_thief", "committed_crime", "gang_member", "criminal_tendencies"},
+		blockIfFlag = "in_prison",
+		text = "There's a loud knock at your door. Through the peephole, you see police.",
+		choices = {
+			{ 
+				text = "🚪 Answer normally", 
+				effects = { Happiness = 5, Smarts = 2 }, 
+				resultText = "Just routine questions. They were looking for someone else. Close call.",
+			},
+			{ 
+				text = "🏃 Sneak out the back", 
+				effects = { Happiness = -8, Health = -5 }, 
+				resultText = "You ran for nothing. Now you look guilty of something.",
+				setFlag = "paranoid"
+			},
+			{ 
+				text = "📞 Call a lawyer first", 
+				effects = { Happiness = 2, Money = -500, Smarts = 5 }, 
+				resultText = "Smart move. Know your rights. They just wanted to ask about a neighbor.",
+			},
+			{ 
+				text = "😰 Panic and confess something", 
+				effects = { Happiness = -15, Smarts = -5 }, 
+				resultText = "You blurted out details about old crimes. They weren't even here for you. Now they are.",
+				setFlag = "under_investigation"
+			},
+		},
+	},
+	
+	-- Criminal opportunity for those on that path
+	{
+		id = "m_criminal_opportunity",
+		minAge = 18, maxAge = 45,
+		weight = 30, cooldown = 3,
+		emoji = "💰", title = "Underground Opportunity",
+		category = "crime",
+		requiresAnyFlag = {"criminal_tendencies", "gang_contact", "petty_thief", "drug_dealer"},
+		blockIfFlag = "in_prison",
+		getDynamicData = function()
+			local jobs = {
+				{type = "smuggling goods", pay = 5000},
+				{type = "being a lookout", pay = 1000},
+				{type = "delivering packages", pay = 2000},
+				{type = "hacking a system", pay = 8000},
+			}
+			local job = jobs[math.random(#jobs)]
+			return { jobType = job.type, pay = job.pay }
+		end,
+		text = "Someone from your past contacts you about %jobType%. They're offering $%pay%.",
+		choices = {
+			{ 
+				text = "✅ Take the job", 
+				effectsDynamic = function(data) return { Money = data.pay, Happiness = 5 } end,
+				chanceSuccess = 0.65,
+				resultText = "Job done. Easy money. But you're deeper in now.",
+				resultTextFail = "BUSTED! The cops were waiting. You're going to prison.",
+				setFlagOnFail = "in_prison",
+				setFlag = "active_criminal"
+			},
+			{ 
+				text = "❌ Decline politely", 
+				effects = { Happiness = 2, Smarts = 4 }, 
+				resultText = "You're trying to stay clean. Respect.",
+				setFlag = "going_straight"
+			},
+			{ 
+				text = "📞 Tip off the police", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "Anonymous tip sent. Maybe making up for the past.",
+				setFlag = "informant"
+			},
+			{ 
+				text = "💲 Negotiate higher pay", 
+				effectsDynamic = function(data) return { Money = math.floor(data.pay * 1.5), Happiness = 8 } end,
+				chanceSuccess = 0.5,
+				resultText = "They agreed! More risk, more reward.",
+				resultTextFail = "They didn't like your attitude. Deal's off. And now they don't trust you.",
+				setFlagOnFail = "burned_criminal_contact"
+			},
+		},
+	},
+	
+	-- Good reputation paying off
+	{
+		id = "m_good_reputation",
+		minAge = 25, maxAge = 60,
+		weight = 25, cooldown = 5,
+		emoji = "🌟", title = "Reputation Matters",
+		category = "social",
+		requiresAnyFlag = {"generous", "honest", "volunteer", "mentor", "community_pillar"},
+		blockIfFlag = "criminal_tendencies",
+		getDynamicData = function()
+			local opportunities = {
+				"offered a board position",
+				"nominated for a community award",
+				"asked to speak at an event",
+				"recommended for a big opportunity"
+			}
+			return { opportunity = opportunities[math.random(#opportunities)] }
+		end,
+		text = "Because of your good reputation in the community, you've been %opportunity%!",
+		choices = {
+			{ 
+				text = "🎉 Accept graciously", 
+				effects = { Happiness = 15, Smarts = 3 }, 
+				resultText = "Your good deeds are being recognized! Feels amazing!",
+				setFlag = "community_leader"
+			},
+			{ 
+				text = "😊 Humbly decline", 
+				effects = { Happiness = 8, Smarts = 2 }, 
+				resultText = "You prefer to do good quietly. That's admirable.",
+			},
+			{ 
+				text = "🤔 Use it strategically", 
+				effects = { Happiness = 10, Money = 5000, Smarts = 4 }, 
+				resultText = "This opened doors for your career. Good reputation is valuable!",
+				setFlag = "networker"
+			},
+		},
+	},
+	
+	-- Reformed criminal event
+	{
+		id = "m_redemption_opportunity",
+		minAge = 25, maxAge = 55,
+		weight = 20, oneTime = true,
+		emoji = "🕊️", title = "Chance for Redemption",
+		category = "social",
+		requiresFlag = "ex_convict",
+		requiresFlag2 = "going_straight",
+		text = "A youth center asks if you'd share your story with at-risk kids. Your past could help them avoid the same mistakes.",
+		choices = {
+			{ 
+				text = "🎤 Tell your story", 
+				effects = { Happiness = 20, Smarts = 5 }, 
+				resultText = "The kids listened. Some even cried. You might have changed lives today.",
+				setFlags = {"redeemed", "mentor", "speaker"}
+			},
+			{ 
+				text = "📝 Write it down instead", 
+				effects = { Happiness = 12, Smarts = 4 }, 
+				resultText = "Your written testimony is being shared. Impact without the spotlight.",
+				setFlag = "redeemed"
+			},
+			{ 
+				text = "😔 Too painful to share", 
+				effects = { Happiness = -5 }, 
+				resultText = "You're not ready. That's okay. Healing takes time.",
+			},
+		},
+	},
+	
+	-- Karma event for good people
+	{
+		id = "m_karma_good_deed",
+		minAge = 20, maxAge = 70,
+		weight = 20, cooldown = 5,
+		emoji = "🍀", title = "Good Karma",
+		category = "social",
+		requiresAnyFlag = {"generous", "volunteer", "helped_stranger", "mentor"},
+		blockIfFlag = "mean_streak",
+		text = "Remember that person you helped a while back? They tracked you down to repay the kindness!",
+		choices = {
+			{ 
+				text = "🤗 Accept their thanks", 
+				effects = { Happiness = 15, Money = 2000 }, 
+				resultText = "They gave you a gift and heartfelt thanks. Good deeds come back around!",
+			},
+			{ 
+				text = "🤝 Ask them to pay it forward", 
+				effects = { Happiness = 18, Smarts = 3 }, 
+				resultText = "You asked them to help someone else instead. The chain of kindness continues!",
+				setFlag = "chain_of_kindness"
+			},
+			{ 
+				text = "🙈 Don't remember them", 
+				effects = { Happiness = 8 }, 
+				resultText = "You help so many people you can't remember them all. That's beautiful.",
+			},
+		},
+	},
+	
+	-- Mean streak consequences
+	{
+		id = "m_mean_karma",
+		minAge = 18, maxAge = 60,
+		weight = 25, cooldown = 5,
+		emoji = "😠", title = "What Goes Around...",
+		category = "social",
+		requiresAnyFlag = {"mean_streak", "bully", "fights_back", "aggressive"},
+		blockIfFlag = "redeemed",
+		text = "Someone you wronged in the past crosses your path. They haven't forgotten.",
+		choices = {
+			{ 
+				text = "🙏 Apologize sincerely", 
+				effects = { Happiness = 5, Smarts = 3 }, 
+				resultText = "They accepted your apology. Some grudges can heal.",
+				clearFlag = "mean_streak"
+			},
+			{ 
+				text = "😤 Stand your ground", 
+				effects = { Happiness = -8, Health = -10 }, 
+				resultText = "The confrontation got ugly. Your past came back to hurt you.",
+			},
+			{ 
+				text = "🏃 Avoid the situation", 
+				effects = { Happiness = -5 }, 
+				resultText = "You ducked away. But you can't run forever.",
+			},
+			{ 
+				text = "💰 Offer to make amends", 
+				effects = { Happiness = 8, Money = -3000 }, 
+				resultText = "Money can't fix everything, but it helped. They agreed to move on.",
+				clearFlag = "mean_streak"
 			},
 		},
 	},

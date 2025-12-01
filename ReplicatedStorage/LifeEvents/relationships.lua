@@ -238,8 +238,14 @@ module.events = {
 		weight = 20, cooldown = 3,
 		emoji = "🆘", title = "Friend in Need",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return LifeEvents.hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
+		getDynamicData = function(state)
+			-- Use actual friend name from relationships
+			return { friendName = LifeEvents.getFriendName(state) }
 		end,
 		text = "%friendName% needs help. They're going through a tough time.",
 		choices = {
@@ -255,8 +261,14 @@ module.events = {
 		weight = 15, cooldown = 5,
 		emoji = "💔", title = "Friend Betrayal",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return LifeEvents.hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
+		getDynamicData = function(state)
+			-- Use actual friend name from relationships
+			return { friendName = LifeEvents.getFriendName(state) }
 		end,
 		text = "%friendName% betrayed your trust. They shared your secrets.",
 		choices = {
@@ -272,8 +284,14 @@ module.events = {
 		weight = 15, cooldown = 3,
 		emoji = "☠️", title = "Toxic Friend",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return LifeEvents.hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
+		getDynamicData = function(state)
+			-- Use actual friend name from relationships
+			return { friendName = LifeEvents.getFriendName(state) }
 		end,
 		text = "%friendName% has become toxic. Always negative, always drama.",
 		choices = {

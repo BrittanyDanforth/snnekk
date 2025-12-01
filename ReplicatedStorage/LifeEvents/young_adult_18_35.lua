@@ -363,9 +363,15 @@ module.events = {
 		minAge = 23, maxAge = 30,
 		weight = 35, oneTime = true,
 		emoji = "💕", title = "Serious Relationship!",
-		category = "social",
-		getDynamicData = function()
-			return { partnerName = LifeEvents.randomFirstName() }
+		category = "romance",
+		-- CRITICAL: Only fire if player actually has a romantic partner!
+		requires = function(state)
+			return LifeEvents.hasPartner(state)
+		end,
+		requiresAnyFlag = {"dating", "in_relationship", "college_romance", "office_romance", "international_romance"},
+		getDynamicData = function(state)
+			-- Use actual partner name from relationships, or fallback
+			return { partnerName = LifeEvents.getPartnerName(state) }
 		end,
 		text = "You and %partnerName% are getting serious! This could be the one!",
 		choices = {
@@ -561,9 +567,15 @@ module.events = {
 		weight = 30, cooldown = 3,
 		emoji = "🎉", title = "Friend's Big Milestone!",
 		category = "social",
-		getDynamicData = function()
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return LifeEvents.hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "good_roommate", "friendly"},
+		getDynamicData = function(state)
 			local milestones = {"getting married", "having a baby", "buying a house", "getting promoted", "starting a business"}
-			return { milestone = milestones[math.random(#milestones)], friendName = LifeEvents.randomFirstName() }
+			-- Use actual friend name if available
+			return { milestone = milestones[math.random(#milestones)], friendName = LifeEvents.getFriendName(state) }
 		end,
 		text = "%friendName% is %milestone%! How do you feel?",
 		choices = {
