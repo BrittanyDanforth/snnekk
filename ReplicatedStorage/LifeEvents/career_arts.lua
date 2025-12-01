@@ -16,10 +16,10 @@ table.insert(events, {
 	category = "creative",
 	tags = {"career", "musician", "origin"},
 	
-	weight = 12,
+	weight = 4,  -- LOW weight - rare random encounter, not priority
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,  -- NOT a milestone - just a random discovery event
 	
 	chainId = "musician_origin",
 	chainStep = 1,
@@ -28,6 +28,7 @@ table.insert(events, {
 		minAge = 10,
 		maxAge = 25,
 		blockedFlags = {"career_musician_started", "music_rejected"},
+		-- No requiredFlags - this is a discovery event that can happen to anyone
 	},
 	
 	getDynamicData = function(state)
@@ -78,13 +79,13 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,
 	
+	-- This event requires the musician career, so it won't fire randomly
+	requiresFlag = "career_musician_started",  -- Only for active musicians
 	conditions = {
 		minAge = 13,
 		maxAge = 35,
-		requiredCareerId = "musician",
-		requiredCareerMinTier = 1,
 	},
 	
 	getDynamicData = function(state)
@@ -120,19 +121,19 @@ table.insert(events, {
 	emoji = "📝",
 	title = "Record Label Interest",
 	category = "creative",
-	tags = {"career", "musician", "record_deal", "milestone"},
+	tags = {"career", "musician", "record_deal"},
 	
 	weight = 6,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,
 	
+	-- Requires career AND success indicators
+	requiresFlag = "career_musician_started",
+	requiresAnyFlag = {"viral_musician", "original_artist"},
 	conditions = {
 		minAge = 16,
 		maxAge = 40,
-		requiredCareerId = "musician",
-		requiredCareerMinTier = 2,
-		requiredAnyFlags = {"viral_musician", "original_artist"},
 	},
 	
 	getDynamicData = function(state)
@@ -232,10 +233,10 @@ table.insert(events, {
 	category = "creative",
 	tags = {"career", "actor", "origin"},
 	
-	weight = 10,
+	weight = 4,  -- LOW weight - rare random discovery event
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,  -- NOT a milestone
 	
 	chainId = "actor_origin",
 	chainStep = 1,
@@ -333,19 +334,19 @@ table.insert(events, {
 	emoji = "⭐",
 	title = "The Breakthrough Role",
 	category = "creative",
-	tags = {"career", "actor", "supporting_role", "milestone"},
+	tags = {"career", "actor", "supporting_role"},
 	
 	weight = 6,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,
 	
+	-- Requires career AND persistence
+	requiresFlag = "career_actor_started",
+	requiresAnyFlag = {"persistent_actor", "trained_actor"},
 	conditions = {
 		minAge = 18,
 		maxAge = 60,
-		requiredCareerId = "actor",
-		requiredCareerMinTier = 1,
-		requiredAnyFlags = {"persistent_actor", "trained_actor"},
 	},
 	
 	getDynamicData = function(state)
@@ -381,19 +382,19 @@ table.insert(events, {
 	category = "creative",
 	tags = {"career", "writer", "origin"},
 	
-	weight = 12,
+	weight = 4,  -- LOW weight - rare random discovery event
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,  -- NOT a milestone
 	
 	chainId = "writer_origin",
 	chainStep = 1,
 	
+	minStats = {Smarts = 35},  -- Requires intelligence
 	conditions = {
 		minAge = 10,
 		maxAge = 35,
 		blockedFlags = {"career_writer_started", "writing_rejected"},
-		minStats = {Smarts = 35},
 	},
 	
 	text = "You write your first complete story - beginning, middle, and end. Reading it back, you're surprised by what came out of your head.",
@@ -425,18 +426,18 @@ table.insert(events, {
 	emoji = "📚",
 	title = "Finish Your First Book",
 	category = "creative",
-	tags = {"career", "writer", "published_book", "milestone"},
+	tags = {"career", "writer", "published_book"},
 	
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,
 	
+	-- Only for active writers
+	requiresFlag = "career_writer_started",
 	conditions = {
 		minAge = 18,
 		maxAge = 70,
-		requiredCareerId = "writer",
-		requiredCareerMinTier = 1,
 	},
 	
 	text = "You type the final words. After months of work, you've finished writing an entire book. Now comes the hard part: getting it published.",
@@ -473,14 +474,16 @@ table.insert(events, {
 	category = "creative",
 	tags = {"career", "influencer", "origin", "viral"},
 	
-	weight = 10,
+	weight = 3,  -- VERY low weight - rare viral moment
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,  -- NOT a milestone
 	
 	chainId = "influencer_origin",
 	chainStep = 1,
 	
+	-- Requires social media usage
+	requiresFlag = "social_media_user",
 	conditions = {
 		minAge = 13,
 		maxAge = 35,
@@ -631,14 +634,16 @@ table.insert(events, {
 	category = "creative",
 	tags = {"career", "artist", "origin"},
 	
-	weight = 10,
+	weight = 4,  -- LOW weight - rare random discovery event
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,  -- NOT a milestone
 	
 	chainId = "artist_origin",
 	chainStep = 1,
 	
+	-- Only fires if player has shown creative interest
+	requiresAnyFlag = {"creative", "art_hobby", "artistic_talent"},
 	conditions = {
 		minAge = 16,
 		maxAge = 50,

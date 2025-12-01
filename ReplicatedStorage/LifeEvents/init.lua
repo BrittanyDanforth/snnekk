@@ -82,7 +82,9 @@ local function normalizeEvent(event)
 		requiredCareerId = event.requiredCareerId,
 		requiredCareerMinTier = event.requiredCareerMinTier,
 		requiredEducation = event.requiresEducation,
-		custom = event.requires, -- Legacy custom function
+		minMoney = event.minMoney,  -- Money requirements
+		minStats = event.minStats,   -- Stat requirements
+		custom = event.requires,     -- Legacy custom function
 	}
 	
 	-- Handle single flags (convert to arrays)
@@ -109,11 +111,22 @@ local function normalizeEvent(event)
 		
 		weight = event.weight,
 		cooldownYears = event.cooldown,
+		cooldown = event.cooldown, -- Keep legacy field for LifeStageSystem
 		oneTime = event.oneTime,
 		milestone = event.milestone,
 		
 		chainId = event.chainId,
 		chainStep = event.chainStep,
+		
+		-- Keep these at top level for LifeStageSystem compatibility
+		requires = event.requires,
+		minMoney = event.minMoney,
+		minStats = event.minStats,
+		requiresFlag = event.requiresFlag,
+		requiresFlag2 = event.requiresFlag2,
+		requiresAnyFlag = event.requiresAnyFlag,
+		blockIfFlag = event.blockIfFlag,
+		blockIfFlag2 = event.blockIfFlag2,
 		
 		conditions = conditions,
 		

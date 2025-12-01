@@ -344,11 +344,11 @@ module.events = {
 	{
 		id = "wealth_first_million",
 		minAge = 25, maxAge = 80,
-		weight = 50, oneTime = true, milestone = true,
+		weight = 50, oneTime = true, milestone = false,  -- NOT a milestone - requires money condition
 		emoji = "💰", title = "MILLIONAIRE!",
 		category = "social",
 		-- MUST actually have $1M+ to trigger this event!
-		requires = function(state) return (state.Money or 0) >= 1000000 end,
+		minMoney = 1000000,  -- Use direct money check instead of function
 		blockIfFlag = "millionaire",  -- Don't fire twice
 		text = "Your net worth just crossed ONE MILLION DOLLARS! How do you feel?",
 		choices = {

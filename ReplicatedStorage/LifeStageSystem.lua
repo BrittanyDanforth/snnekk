@@ -575,12 +575,39 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 
-	-- 6. Custom requires callback
-	if eventDef.requires then
-		local ok, canFire = pcall(eventDef.requires, state)
-		if not ok or not canFire then
+	-- 6. Custom requires callback (check both legacy and normalized format)
+	local customRequires = eventDef.requires or (eventDef.conditions and eventDef.conditions.custom)
+	if customRequires and type(customRequires) == "function" then
+		local ok, canFire = pcall(customRequires, state)
+		if not ok then
 			result.valid = false
-			table.insert(result.reasons, "Requirements not met")
+			table.insert(result.reasons, "Requirements check failed: " .. tostring(canFire))
+		elseif not canFire then
+			result.valid = false
+			table.insert(result.reasons, "Custom requirements not met")
+		end
+	end
+	
+	-- 6b. Check stat requirements (minStats)
+	local minStats = eventDef.minStats or (eventDef.conditions and eventDef.conditions.minStats)
+	if minStats and type(minStats) == "table" then
+		local stats = state.Stats or {}
+		for statName, minValue in pairs(minStats) do
+			local currentValue = stats[statName] or state[statName] or 0
+			if currentValue < minValue then
+				result.valid = false
+				table.insert(result.reasons, "Insufficient " .. statName .. " (need " .. minValue .. ", have " .. currentValue .. ")")
+			end
+		end
+	end
+	
+	-- 6c. Check money requirements
+	local minMoney = eventDef.minMoney or (eventDef.conditions and eventDef.conditions.minMoney)
+	if minMoney then
+		local currentMoney = state.Money or 0
+		if currentMoney < minMoney then
+			result.valid = false
+			table.insert(result.reasons, "Insufficient money (need $" .. minMoney .. ", have $" .. currentMoney .. ")")
 		end
 	end
 
