@@ -2532,7 +2532,9 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 		meetsReq = playerRank >= reqRank
 	end
 	
-	local canEnroll = meetsAge and meetsMoney and meetsReq and not enrolled
+	-- 🔥 FIXED: Money is NO LONGER a hard gate!
+	-- You can enroll with student loans. Only age, prereq, and not-already-enrolled matter.
+	local canEnroll = meetsAge and meetsReq and not enrolled
 	
 	local card = Instance.new("Frame")
 	card.Name = edu.id
@@ -2576,11 +2578,11 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 	titleLabel.ZIndex = 84
 	titleLabel.Parent = card
 	
-	-- Cost badge
+	-- Cost badge (visual only - shows if you can pay cash or will need loan)
 	local costBadge = Instance.new("Frame")
 	costBadge.Size = UDim2.new(0, 80, 0, 24)
 	costBadge.Position = UDim2.new(0, 84, 0, 36)
-	costBadge.BackgroundColor3 = meetsMoney and C.GreenPale or C.RedPale
+	costBadge.BackgroundColor3 = meetsMoney and C.GreenPale or C.AmberPale
 	costBadge.ZIndex = 84
 	costBadge.Parent = card
 	UI.pill(costBadge)
@@ -2590,7 +2592,7 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 	costLabel.BackgroundTransparency = 1
 	costLabel.Font = F.Medium
 	costLabel.TextSize = 11
-	costLabel.TextColor3 = meetsMoney and C.GreenDark or C.RedDark
+	costLabel.TextColor3 = meetsMoney and C.GreenDark or C.AmberDark
 	costLabel.Text = UI.formatMoney(edu.cost)
 	costLabel.ZIndex = 85
 	costLabel.Parent = costBadge
@@ -2614,14 +2616,16 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 	durLabel.ZIndex = 85
 	durLabel.Parent = durBadge
 	
-	-- Requirement text
+	-- Requirement text (FIXED to show loan info instead of blocking)
 	local reqText = ""
-	if not meetsAge then
+	if enrolled then
+		reqText = "Already enrolled"
+	elseif not meetsAge then
 		reqText = "Age " .. edu.minAge .. "+"
 	elseif not meetsReq then
 		reqText = "Need " .. self:getEducationDisplayName(edu.requirement)
-	elseif enrolled then
-		reqText = "Already enrolled"
+	elseif not meetsMoney then
+		reqText = "Will take student loans"
 	else
 		reqText = "Age " .. edu.minAge .. "+"
 	end
@@ -2632,28 +2636,37 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 	reqLabel.BackgroundTransparency = 1
 	reqLabel.Font = F.Body
 	reqLabel.TextSize = 11
-	reqLabel.TextColor3 = canEnroll and C.Gray400 or C.Red
+	-- Red for real locks, amber for loan warning, gray for OK
+	if not canEnroll then
+		reqLabel.TextColor3 = C.Red
+	elseif not meetsMoney then
+		reqLabel.TextColor3 = C.Amber
+	else
+		reqLabel.TextColor3 = C.Gray400
+	end
 	reqLabel.TextXAlignment = Enum.TextXAlignment.Left
 	reqLabel.Text = reqText
 	reqLabel.ZIndex = 84
 	reqLabel.Parent = card
 	
-	-- Enroll button
+	-- Enroll button (FIXED to show "Loan" if paying with debt)
 	local enrollBtn = Instance.new("TextButton")
 	enrollBtn.Size = UDim2.new(0, 72, 0, 46)
 	enrollBtn.AnchorPoint = Vector2.new(1, 0.5)
 	enrollBtn.Position = UDim2.new(1, -12, 0.5, 0)
-	enrollBtn.BackgroundColor3 = canEnroll and C.Purple or C.Gray300
+	enrollBtn.AutoButtonColor = false
 	enrollBtn.Font = F.Button
 	enrollBtn.TextSize = 14
-	enrollBtn.TextColor3 = canEnroll and C.White or C.Gray500
-	enrollBtn.Text = canEnroll and "Enroll" or "Locked"
-	enrollBtn.AutoButtonColor = false
 	enrollBtn.ZIndex = 84
 	enrollBtn.Parent = card
 	UI.corner(enrollBtn, 12)
 	
 	if canEnroll then
+		enrollBtn.BackgroundColor3 = C.Purple
+		enrollBtn.TextColor3 = C.White
+		-- Show "Loan" if player can't afford it in cash, "Enroll" if they can
+		enrollBtn.Text = not meetsMoney and "Loan" or "Enroll"
+		
 		enrollBtn.MouseEnter:Connect(function()
 			UI.tween(enrollBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.PurpleDark })
 			UI.tween(card, TweenInfo.new(0.12), { BackgroundColor3 = C.PurplePale:Lerp(C.White, 0.7) })
@@ -2663,8 +2676,22 @@ function OccupationScreen:createEducationCard(parent, edu, order, age, money, ed
 			UI.tween(card, TweenInfo.new(0.12), { BackgroundColor3 = C.White })
 		end)
 		enrollBtn.MouseButton1Click:Connect(function()
+			-- Server handles loan/debt automatically
 			self:enrollEducation(edu.id)
 		end)
+	else
+		enrollBtn.BackgroundColor3 = C.Gray300
+		enrollBtn.TextColor3 = C.Gray500
+		
+		if enrolled then
+			enrollBtn.Text = "Enrolled"
+		elseif not meetsAge then
+			enrollBtn.Text = "Age " .. edu.minAge
+		elseif not meetsReq then
+			enrollBtn.Text = "Locked"
+		else
+			enrollBtn.Text = "Locked"
+		end
 	end
 end
 

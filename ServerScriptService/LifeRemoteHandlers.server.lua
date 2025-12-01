@@ -250,6 +250,11 @@ local function canAfford(player, cost)
 	return lifeState and lifeState.Money >= cost
 end
 
+local function getMoney(player)
+	local lifeState = getLifeManagerState(player)
+	return lifeState and lifeState.Money or 0
+end
+
 local function deductMoney(player, amount)
 	local lifeState = getLifeManagerState(player)
 	if lifeState then
@@ -1763,17 +1768,47 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		end
 	end
 	
-	-- Check cost
-	if not canAfford(player, actualCost) then
-		local message = "You can't afford this! Cost: $" .. actualCost
-		if isExConvict and actualCost > edu.cost then
-			message = "You can't afford this! Cost: $" .. actualCost .. " (increased due to limited financial aid for ex-convicts)"
-		end
-		return { success = false, message = message }
+	-- ═══════════════════════════════════════════════════════════════
+	-- STUDENT LOAN SYSTEM - No longer hard-gates on money!
+	-- Pay what you can afford upfront (up to 25%), rest becomes debt
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local currentMoney = getMoney(player)
+	local maxUpfront = math.floor(actualCost * 0.25) -- Can pay up to 25% upfront
+	local upfrontPayment = 0
+	local loanAmount = actualCost
+	local usedLoan = false
+	
+	-- Calculate how much to pay upfront vs loan
+	if currentMoney >= actualCost then
+		-- Can pay in full - no loan needed
+		upfrontPayment = actualCost
+		loanAmount = 0
+		usedLoan = false
+	elseif currentMoney > 0 then
+		-- Pay what you can (up to 25%)
+		upfrontPayment = math.min(currentMoney, maxUpfront)
+		loanAmount = actualCost - upfrontPayment
+		usedLoan = true
+	else
+		-- No money - everything goes to loans
+		upfrontPayment = 0
+		loanAmount = actualCost
+		usedLoan = true
+	end
+	
+	print("[LifeRemoteHandlers] Education cost breakdown:")
+	print("  Total cost:", actualCost)
+	print("  Player money:", currentMoney)
+	print("  Upfront payment:", upfrontPayment)
+	print("  Student loan:", loanAmount)
+	
+	-- Deduct upfront payment
+	if upfrontPayment > 0 then
+		deductMoney(player, upfrontPayment)
 	end
 	
 	-- Enroll!
-	deductMoney(player, actualCost)
 	extState.Education = edu.id -- Use ID for consistency (community, bachelor, master, etc.)
 	
 	-- Initialize EducationData for tracking GPA, progress, debt, etc.
@@ -1781,13 +1816,17 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	local startingGPA = 2.5 + (smarts / 100) * 1.5 -- Range 2.5-4.0 based on smarts
 	startingGPA = math.floor(startingGPA * 100) / 100
 	
+	-- Calculate existing debt + new loan
+	local existingDebt = (extState.EducationData and extState.EducationData.Debt) or 0
+	local totalDebt = existingDebt + loanAmount
+	
 	extState.EducationData = {
 		Level = edu.id,
 		Institution = getInstitutionName(edu.id),
 		Major = getRandomMajor(edu.id),
 		GPA = startingGPA,
 		Progress = 0,
-		Debt = actualCost, -- Start with the enrollment cost as debt
+		Debt = totalDebt, -- Total student loan debt
 		Year = 1,
 		TotalYears = edu.duration or 4,
 		CreditsEarned = 0,
@@ -1795,6 +1834,9 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		Status = "enrolled",
 		Grades = {}, -- Transcript entries
 		EnrollmentYear = state.Age,
+		UsedLoan = usedLoan,
+		LoanAmount = loanAmount,
+		UpfrontPaid = upfrontPayment,
 	}
 	
 	-- Mark as enrolled
@@ -1812,14 +1854,28 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	
 	syncStateToClient(player)
 	
-	local message = "🎓 You enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. ")"
+	-- Build enrollment success message
+	local message
+	if usedLoan then
+		if upfrontPayment > 0 then
+			message = "🎓 You enrolled in " .. edu.name .. "!\n💰 Paid $" .. upfrontPayment .. " upfront\n📋 Student loan: $" .. loanAmount
+		else
+			message = "🎓 You enrolled in " .. edu.name .. " with a student loan!\n📋 Total debt: $" .. totalDebt
+		end
+	else
+		message = "🎓 You enrolled in " .. edu.name .. "! (Paid in full: $" .. actualCost .. ")"
+	end
+	
 	if isExConvict and actualCost > edu.cost then
-		message = "🎓 Despite your criminal record, you enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. " - limited financial aid available)"
+		message = message .. "\n⚠️ Limited financial aid due to criminal record"
 	end
 	
 	return { 
 		success = true, 
-		message = message
+		message = message,
+		usedLoan = usedLoan,
+		loanAmount = loanAmount,
+		totalDebt = totalDebt,
 	}
 end
 
