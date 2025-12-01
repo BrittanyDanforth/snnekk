@@ -32,7 +32,170 @@ else
 	}
 end
 
+-- Safe require EventMemory
+local EventMemory = nil
+local emSuccess, emResult = pcall(function()
+	return require(script.Parent.Parent.EventMemory)
+end)
+if emSuccess then
+	EventMemory = emResult
+else
+	warn("[EventEngine] ⚠️ EventMemory not loaded:", emResult)
+	-- Provide minimal fallback
+	EventMemory = {
+		validateEvent = function() return { valid = true, reasons = {} } end,
+		hasEverWorked = function() return false end,
+		isCurrentlyEmployed = function() return false end,
+		hasFriends = function() return false end,
+		hasPartner = function() return false end,
+		hasCriminalRecord = function() return false end,
+		isInPrison = function() return false end,
+		hasLicense = function() return false end,
+		hasSkill = function() return false end,
+		hasCondition = function() return false end,
+		hasEducation = function() return false end,
+	}
+end
+
 local EventEngine = {}
+
+-- ═══════════════════════════════════════════════════════════════
+-- HELPER FUNCTIONS FOR DEEP VALIDATION
+-- ═══════════════════════════════════════════════════════════════
+
+-- Check if player owns an asset of a specific type
+local function ownsAsset(state, assetType)
+	if not state then return false end
+	
+	local assets = state.Assets or {}
+	
+	if assetType == "car" or assetType == "vehicle" then
+		return assets.Vehicles and #assets.Vehicles > 0
+	elseif assetType == "house" or assetType == "property" or assetType == "home" then
+		return assets.Properties and #assets.Properties > 0
+	elseif assetType == "pet" then
+		return state.Pets and #state.Pets > 0
+	elseif assetType == "crypto" then
+		return assets.Crypto and #assets.Crypto > 0
+	end
+	
+	-- Check flags as fallback
+	local flags = state.Flags or {}
+	if assetType == "car" or assetType == "vehicle" then
+		return flags.owns_car or flags.has_vehicle or flags.car_owner
+	elseif assetType == "house" or assetType == "property" or assetType == "home" then
+		return flags.owns_house or flags.homeowner or flags.property_owner
+	end
+	
+	return false
+end
+
+-- Check if player has a specific relationship type
+local function hasRelationshipType(state, relType)
+	if not state then return false end
+	
+	local relationships = state.Relationships or {}
+	
+	for _, rel in ipairs(relationships) do
+		if rel.type == relType then
+			return true
+		end
+		-- Handle aliases
+		if relType == "partner" and (rel.type == "spouse" or rel.type == "boyfriend" or rel.type == "girlfriend") then
+			return true
+		end
+		if relType == "spouse" and rel.type == "partner" and (state.Flags or {}).married then
+			return true
+		end
+	end
+	
+	-- Check flags as fallback
+	local flags = state.Flags or {}
+	if relType == "partner" then
+		return flags.in_relationship or flags.dating or flags.married
+	elseif relType == "spouse" then
+		return flags.married
+	elseif relType == "friend" then
+		return flags.has_friend or flags.ever_had_friend
+	elseif relType == "child" then
+		return flags.has_children or flags.parent
+	end
+	
+	return false
+end
+
+-- Check if player has specific health condition
+local function hasHealthCondition(state, condition)
+	if not state then return false end
+	
+	local flags = state.Flags or {}
+	local conditionFlag = "has_" .. string.gsub(string.lower(condition), " ", "_")
+	
+	if flags[conditionFlag] then return true end
+	
+	-- Check common aliases
+	local aliases = {
+		pregnant = {"pregnant", "expecting", "with_child"},
+		depression = {"depressed", "has_depression", "depression"},
+		anxiety = {"anxious", "has_anxiety", "anxiety"},
+		addiction = {"addict", "addicted", "has_addiction"},
+	}
+	
+	if aliases[string.lower(condition)] then
+		for _, alias in ipairs(aliases[string.lower(condition)]) do
+			if flags[alias] then return true end
+		end
+	end
+	
+	return false
+end
+
+-- Get count of children
+local function getChildCount(state)
+	if not state then return 0 end
+	
+	local count = 0
+	local relationships = state.Relationships or {}
+	
+	for _, rel in ipairs(relationships) do
+		if rel.type == "child" or rel.type == "son" or rel.type == "daughter" then
+			count = count + 1
+		end
+	end
+	
+	return count
+end
+
+-- Check if player has driver's license
+local function hasDriversLicense(state)
+	if not state then return false end
+	
+	local flags = state.Flags or {}
+	return flags.has_license or flags.drivers_license or flags.can_drive
+end
+
+-- Check work status
+local function isEmployed(state)
+	if not state then return false end
+	
+	local flags = state.Flags or {}
+	if flags.employed or flags.has_job then return true end
+	
+	-- Check for current job from extended state
+	if state.CurrentJob then return true end
+	
+	return false
+end
+
+-- Check money requirements
+local function meetsMoney(state, minMoney, maxMoney)
+	local money = state.Money or 0
+	
+	if minMoney and money < minMoney then return false end
+	if maxMoney and money > maxMoney then return false end
+	
+	return true
+end
 
 -- ═══════════════════════════════════════════════════════════════
 -- UNIFIED EVENT SCHEMA
@@ -184,12 +347,273 @@ local function hasEducation(state, required)
 	return playerRank >= reqRank
 end
 
--- Main eligibility check
+-- ═══════════════════════════════════════════════════════════════
+-- AUTO-INFERENCE: Detect requirements from event tags/id/category
+-- This catches events where the author forgot to add explicit conditions
+-- ═══════════════════════════════════════════════════════════════
+local function inferRequirementsFromEvent(event, state)
+	local tags = event.tags or {}
+	local id = event.id or ""
+	local category = event.category or ""
+	local title = event.title or ""
+	local text = event.text or ""
+	local lowerId = string.lower(id)
+	local lowerTitle = string.lower(title)
+	local lowerText = string.lower(text)
+	
+	-- CAR/VEHICLE EVENT DETECTION
+	local carPatterns = {"car_", "driving_", "vehicle_", "speeding_", "traffic_", "road_trip", "commute", "parking_"}
+	for _, pattern in ipairs(carPatterns) do
+		if string.find(lowerId, pattern) or string.find(lowerTitle, pattern) then
+			-- Event involves driving - check for vehicle or license
+			if not ownsAsset(state, "car") and not hasDriversLicense(state) then
+				return false, "auto_infer: car event but no vehicle/license"
+			end
+		end
+	end
+	
+	-- Car crash/accident specific (these need a car!)
+	local crashPatterns = {"car_accident", "car_crash", "fender_bender", "wreck", "collision"}
+	for _, pattern in ipairs(crashPatterns) do
+		if string.find(lowerId, pattern) or string.find(lowerText, pattern) then
+			if not ownsAsset(state, "car") then
+				return false, "auto_infer: car accident but no car"
+			end
+		end
+	end
+	
+	-- PET EVENT DETECTION
+	local petPatterns = {"pet_", "dog_", "cat_", "_pet", "_dog", "_cat", "puppy", "kitten", "veterinar"}
+	for _, pattern in ipairs(petPatterns) do
+		if string.find(lowerId, pattern) then
+			if not ownsAsset(state, "pet") and not string.find(lowerId, "adopt") and not string.find(lowerId, "get_") then
+				return false, "auto_infer: pet event but no pet"
+			end
+		end
+	end
+	
+	-- PARTNER/SPOUSE EVENT DETECTION
+	local partnerPatterns = {"spouse_", "partner_", "marriage_", "wedding_", "anniversary", "husband_", "wife_", "_spouse", "_partner"}
+	for _, pattern in ipairs(partnerPatterns) do
+		if string.find(lowerId, pattern) then
+			if not hasRelationshipType(state, "partner") then
+				return false, "auto_infer: partner event but no partner"
+			end
+		end
+	end
+	
+	-- CHILD EVENT DETECTION
+	local childPatterns = {"child_", "parenting_", "son_", "daughter_", "baby_", "kids_", "children_", "_child", "pregnant"}
+	for _, pattern in ipairs(childPatterns) do
+		if string.find(lowerId, pattern) then
+			-- Skip "pregnancy" events - those don't require existing children
+			if not string.find(lowerId, "pregnan") and not string.find(lowerId, "trying_for") then
+				local hasChildren = hasRelationshipType(state, "child") or (state.Flags or {}).has_children
+				if not hasChildren then
+					return false, "auto_infer: child event but no children"
+				end
+			end
+		end
+	end
+	
+	-- WORK/JOB EVENT DETECTION
+	local workPatterns = {"coworker_", "boss_", "workplace_", "office_", "promotion_", "fired_", "layoff", "work_conflict", "salary_", "raise_"}
+	for _, pattern in ipairs(workPatterns) do
+		if string.find(lowerId, pattern) then
+			if not isEmployed(state) then
+				return false, "auto_infer: work event but not employed"
+			end
+		end
+	end
+	
+	-- STUDENT EVENT DETECTION
+	local studentPatterns = {"exam_", "test_", "homework_", "professor_", "classmate_", "lecture_", "finals_", "midterm_", "study_group", "dorm_"}
+	for _, pattern in ipairs(studentPatterns) do
+		if string.find(lowerId, pattern) then
+			local isStudent = (state.Flags or {}).in_school or (state.Flags or {}).enrolled or (state.Flags or {}).college_student
+			if not isStudent then
+				return false, "auto_infer: student event but not in school"
+			end
+		end
+	end
+	
+	-- GRADUATE/ADVANCED DEGREE EVENT DETECTION
+	local gradSchoolPatterns = {"phd_", "masters_", "doctorate_", "thesis_", "dissertation_", "postdoc_", "grad_school"}
+	for _, pattern in ipairs(gradSchoolPatterns) do
+		if string.find(lowerId, pattern) then
+			-- Graduate school events require at least bachelor's degree
+			local education = state.Education or {}
+			local eduLevel = education.level or state.EducationLevel or "none"
+			local hasUndergrad = (eduLevel == "bachelor" or eduLevel == "bachelors" or eduLevel == "associate" 
+				or eduLevel == "master" or eduLevel == "masters" or eduLevel == "doctorate" or eduLevel == "phd")
+			local flags = state.Flags or {}
+			local hasUnderGradFlag = flags.college_graduate or flags.bachelor or flags.advanced_degree
+			
+			if not hasUndergrad and not hasUnderGradFlag then
+				return false, "auto_infer: grad school event but no undergraduate degree"
+			end
+		end
+	end
+	
+	-- PROFESSIONAL CREDENTIAL DETECTION
+	-- Some careers require specific degrees
+	local professionalPatterns = {
+		{pattern = "medical_school", requires = "bachelor"},
+		{pattern = "law_school", requires = "bachelor"},
+		{pattern = "dental_school", requires = "bachelor"},
+		{pattern = "residency_", requires = "medical_degree"},
+		{pattern = "bar_exam", requires = "law_degree"},
+	}
+	for _, rule in ipairs(professionalPatterns) do
+		if string.find(lowerId, rule.pattern) then
+			local flags = state.Flags or {}
+			local education = state.Education or {}
+			local eduLevel = education.level or state.EducationLevel or "none"
+			
+			if rule.requires == "bachelor" then
+				local hasBachelor = (eduLevel == "bachelor" or eduLevel == "bachelors" 
+					or eduLevel == "master" or eduLevel == "doctorate")
+				if not hasBachelor and not flags.college_graduate then
+					return false, "auto_infer: " .. rule.pattern .. " requires bachelor's degree"
+				end
+			elseif rule.requires == "medical_degree" then
+				if not flags.medical_degree and not flags.md_graduate then
+					return false, "auto_infer: " .. rule.pattern .. " requires medical degree"
+				end
+			elseif rule.requires == "law_degree" then
+				if not flags.law_degree and not flags.jd_graduate then
+					return false, "auto_infer: " .. rule.pattern .. " requires law degree"
+				end
+			end
+		end
+	end
+	
+	-- PRISON EVENT DETECTION
+	local prisonPatterns = {"prison_", "inmate_", "cell_", "warden_", "parole_", "solitary_", "yard_", "conjugal_"}
+	for _, pattern in ipairs(prisonPatterns) do
+		if string.find(lowerId, pattern) then
+			if not (state.Flags or {}).in_prison then
+				return false, "auto_infer: prison event but not in prison"
+			end
+		end
+	end
+	
+	-- HOME OWNERSHIP EVENT DETECTION
+	-- Note: Some events need OWNED property specifically (mortgage, property_tax)
+	-- Others can happen to renters too (house_fire, home_invasion)
+	local ownedPropertyPatterns = {"mortgage_", "property_tax", "home_equity", "sell_house", "home_renovation"}
+	for _, pattern in ipairs(ownedPropertyPatterns) do
+		if string.find(lowerId, pattern) then
+			if not ownsAsset(state, "house") then
+				return false, "auto_infer: property owner event but no owned property"
+			end
+		end
+	end
+	
+	-- These events require any housing (owned, rented, or living with family)
+	-- Assume everyone has some form of housing (minors live with parents)
+	-- Only block if explicitly homeless flag
+	local homelessBlocking = {"home_repair", "house_fire", "home_invasion", "basement_", "attic_", "backyard_", "garage_"}
+	local flags = state.Flags or {}
+	if flags.homeless then
+		for _, pattern in ipairs(homelessBlocking) do
+			if string.find(lowerId, pattern) then
+				return false, "auto_infer: home event but homeless"
+			end
+		end
+	end
+	
+	-- FAME/CELEBRITY EVENT DETECTION
+	local famePatterns = {"paparazzi", "tabloid", "fans_", "autograph", "red_carpet", "award_show"}
+	for _, pattern in ipairs(famePatterns) do
+		if string.find(lowerId, pattern) then
+			local isFamous = (state.Flags or {}).famous or (state.Flags or {}).celebrity or (state.Stats or {}).Fame and (state.Stats or {}).Fame > 50
+			if not isFamous then
+				return false, "auto_infer: fame event but not famous"
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CRIMINAL RECORD IMPACT DETECTION
+	-- Certain prestigious opportunities should be blocked by criminal records
+	-- ═══════════════════════════════════════════════════════════════
+	local flags = state.Flags or {}
+	local hasCriminalRecord = flags.criminal_record or flags.ex_convict or flags.convicted or flags.felon
+	
+	if hasCriminalRecord then
+		-- Government/security clearance jobs blocked
+		local securityClearancePatterns = {"security_clearance", "government_job", "fbi_", "cia_", "classified", "top_secret", "military_officer", "federal_"}
+		for _, pattern in ipairs(securityClearancePatterns) do
+			if string.find(lowerId, pattern) then
+				return false, "auto_infer: security clearance event blocked by criminal record"
+			end
+		end
+		
+		-- Law enforcement blocked
+		local lawEnforcementPatterns = {"police_officer", "cop_", "sheriff_", "detective_", "law_enforcement"}
+		for _, pattern in ipairs(lawEnforcementPatterns) do
+			if string.find(lowerId, pattern) then
+				return false, "auto_infer: law enforcement blocked by criminal record"
+			end
+		end
+		
+		-- Legal profession requires bar admission (felons often blocked)
+		local legalPatterns = {"bar_exam", "become_lawyer", "law_license", "attorney_", "pass_the_bar"}
+		for _, pattern in ipairs(legalPatterns) do
+			if string.find(lowerId, pattern) then
+				-- Not all states block, but it's realistic to make it harder
+				return false, "auto_infer: bar admission blocked by criminal record"
+			end
+		end
+		
+		-- Medical licensing also affected
+		local medicalPatterns = {"medical_license", "become_doctor", "nursing_license"}
+		for _, pattern in ipairs(medicalPatterns) do
+			if string.find(lowerId, pattern) then
+				-- Can still happen but less likely
+				local roll = math.random()
+				if roll < 0.5 then
+					return false, "auto_infer: medical license application affected by criminal record"
+				end
+			end
+		end
+	end
+	
+	-- PRISON FLAG BLOCKS MOST NORMAL EVENTS
+	if flags.in_prison then
+		-- Most normal life events should NOT happen while in prison
+		-- Only prison-specific events allowed
+		if category ~= "prison" and category ~= "health" and category ~= "family" and category ~= "milestone" then
+			-- Allow events that explicitly work in prison
+			if not string.find(lowerId, "prison_") and not string.find(lowerId, "inmate_") then
+				return false, "auto_infer: non-prison event blocked while incarcerated"
+			end
+		end
+	end
+	
+	return true, "passed_auto_inference"
+end
+
+-- Main eligibility check (ENHANCED with deep validation)
 function EventEngine.isEligible(event, state)
 	local age = state.Age or 0
 	local flags = state.Flags or {}
 	local stats = state.Stats or {}
 	local conditions = event.conditions or {}
+	local memory = state.EventMemory -- EventMemory instance if available
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- AUTO-INFERENCE CHECK (catches forgotten conditions)
+	-- ═══════════════════════════════════════════════════════════════
+	local inferValid, inferReason = inferRequirementsFromEvent(event, state)
+	if not inferValid then
+		return false, inferReason
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- BASIC AGE & FLAG CHECKS
+	-- ═══════════════════════════════════════════════════════════════
 	
 	-- Age check
 	if conditions.minAge and age < conditions.minAge then
@@ -261,7 +685,207 @@ function EventEngine.isEligible(event, state)
 		end
 	end
 	
-	-- Custom condition
+	-- ═══════════════════════════════════════════════════════════════
+	-- DEEP VALIDATION - "SMART RANDOM" CHECKS
+	-- These prevent illogical events from firing
+	-- ═══════════════════════════════════════════════════════════════
+	
+	-- ASSET OWNERSHIP CHECKS
+	-- Car-related events require owning a car
+	if conditions.requiresVehicle or conditions.requiresCar then
+		if not ownsAsset(state, "car") and not hasDriversLicense(state) then
+			return false, "no_vehicle"
+		end
+	end
+	
+	-- Driving events require driver's license
+	if conditions.requiresLicense then
+		if not hasDriversLicense(state) then
+			return false, "no_drivers_license"
+		end
+	end
+	
+	-- Home-related events require owning property
+	if conditions.requiresHome or conditions.requiresProperty then
+		if not ownsAsset(state, "house") then
+			return false, "no_property"
+		end
+	end
+	
+	-- Pet-related events require having a pet
+	if conditions.requiresPet then
+		if not ownsAsset(state, "pet") then
+			return false, "no_pet"
+		end
+	end
+	
+	-- MONEY CHECKS
+	if conditions.minMoney and (state.Money or 0) < conditions.minMoney then
+		return false, "insufficient_money"
+	end
+	if conditions.maxMoney and (state.Money or 0) > conditions.maxMoney then
+		return false, "too_much_money"
+	end
+	
+	-- RELATIONSHIP CHECKS
+	-- Partner-related events require having a partner
+	if conditions.requiresPartner then
+		if not hasRelationshipType(state, "partner") then
+			return false, "no_partner"
+		end
+	end
+	
+	-- Marriage events require being married
+	if conditions.requiresMarried then
+		if not flags.married then
+			return false, "not_married"
+		end
+	end
+	
+	-- Friend events require having friends
+	if conditions.requiresFriends or conditions.requiresFriend then
+		if not hasRelationshipType(state, "friend") then
+			return false, "no_friends"
+		end
+	end
+	
+	-- Child events require having children
+	if conditions.requiresChildren then
+		if not hasRelationshipType(state, "child") then
+			return false, "no_children"
+		end
+	end
+	
+	-- Minimum children count
+	if conditions.minChildren then
+		if getChildCount(state) < conditions.minChildren then
+			return false, "not_enough_children"
+		end
+	end
+	
+	-- EMPLOYMENT CHECKS
+	if conditions.requiresEmployed or conditions.requiresJob then
+		if not isEmployed(state) then
+			return false, "not_employed"
+		end
+	end
+	
+	if conditions.requiresUnemployed then
+		if isEmployed(state) then
+			return false, "is_employed"
+		end
+	end
+	
+	-- WORK HISTORY CHECKS (uses EventMemory if available)
+	if conditions.requiresWorkHistory then
+		local hasWorked = flags.ever_worked or flags.has_work_history
+		if memory and EventMemory.hasEverWorked then
+			hasWorked = hasWorked or EventMemory.hasEverWorked(memory)
+		end
+		if not hasWorked then
+			return false, "no_work_history"
+		end
+	end
+	
+	-- TAX EVENTS require work history
+	if conditions.requiresTaxHistory then
+		local canTax = flags.taxpayer or flags.ever_worked or flags.has_work_history
+		if memory and EventMemory.canFileTaxes then
+			canTax = canTax or EventMemory.canFileTaxes(memory)
+		end
+		if not canTax then
+			return false, "no_tax_history"
+		end
+	end
+	
+	-- HEALTH CONDITION CHECKS
+	if conditions.requiresCondition then
+		if not hasHealthCondition(state, conditions.requiresCondition) then
+			return false, "missing_condition"
+		end
+	end
+	
+	if conditions.blocksCondition then
+		if hasHealthCondition(state, conditions.blocksCondition) then
+			return false, "has_blocked_condition"
+		end
+	end
+	
+	-- CRIMINAL RECORD CHECKS
+	if conditions.requiresCriminalRecord then
+		local hasCriminal = flags.criminal or flags.criminal_record or flags.ex_convict
+		if memory and EventMemory.hasCriminalRecord then
+			hasCriminal = hasCriminal or EventMemory.hasCriminalRecord(memory)
+		end
+		if not hasCriminal then
+			return false, "no_criminal_record"
+		end
+	end
+	
+	if conditions.blocksCriminalRecord then
+		local hasCriminal = flags.criminal_record or flags.ex_convict or flags.convicted
+		if memory and EventMemory.hasCriminalRecord then
+			hasCriminal = hasCriminal or EventMemory.hasCriminalRecord(memory)
+		end
+		if hasCriminal then
+			return false, "has_criminal_record"
+		end
+	end
+	
+	-- PRISON CHECK
+	if conditions.requiresInPrison then
+		if not flags.in_prison then
+			return false, "not_in_prison"
+		end
+	end
+	
+	if conditions.blocksInPrison then
+		if flags.in_prison then
+			return false, "in_prison"
+		end
+	end
+	
+	-- SKILL CHECKS
+	if conditions.requiresSkill then
+		local hasSkillFlag = flags["knows_" .. string.gsub(string.lower(conditions.requiresSkill), " ", "_")]
+		local memoryHasSkill = memory and EventMemory.hasSkill and EventMemory.hasSkill(memory, conditions.requiresSkill)
+		if not hasSkillFlag and not memoryHasSkill then
+			return false, "missing_skill"
+		end
+	end
+	
+	-- EDUCATION LEVEL CHECK (more granular)
+	if conditions.minEducationLevel then
+		local playerEdu = state.Education or "none"
+		local reqRank = EducationRanks[conditions.minEducationLevel] or 0
+		local playerRank = EducationRanks[playerEdu] or 0
+		if playerRank < reqRank then
+			return false, "education_too_low"
+		end
+	end
+	
+	-- STUDENT CHECK
+	if conditions.requiresStudent then
+		if not flags.in_school and not flags.enrolled and not flags.college_student then
+			return false, "not_a_student"
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- EVENTMEMORY DEEP VALIDATION (if available)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if memory and EventMemory.validateEvent then
+		local memValidation = EventMemory.validateEvent(event, state, memory)
+		if not memValidation.valid then
+			return false, "memory_validation_failed: " .. (memValidation.reasons[1] or "unknown")
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CUSTOM CONDITION (runs last)
+	-- ═══════════════════════════════════════════════════════════════
+	
 	if conditions.custom and type(conditions.custom) == "function" then
 		local ok, result = pcall(conditions.custom, state)
 		if not ok or not result then
