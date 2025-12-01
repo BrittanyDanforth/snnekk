@@ -783,8 +783,146 @@ function LifeStageSystem.getTransitionEvent(oldAge, newAge)
 end
 
 ----------------------------------------------------------------------
--- DEATH SYSTEM
+-- DEATH SYSTEM (BITLIFE-STYLE)
+-- Health = 0% means INSTANT DEATH with contextual cause
 ----------------------------------------------------------------------
+
+-- Get a contextual death cause based on the player's life circumstances
+function LifeStageSystem.getDeathCause(state)
+	local age = state.Age or 0
+	local flags = state.Flags or {}
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 0
+	
+	-- Build a list of possible causes weighted by relevance
+	local possibleCauses = {}
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- HEALTH-SPECIFIC CAUSES (when health hits 0%)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if health <= 0 then
+		-- Check flags for specific health conditions
+		if flags.terminal_illness or flags.cancer then
+			table.insert(possibleCauses, { cause = "cancer", weight = 100 })
+			table.insert(possibleCauses, { cause = "a long battle with illness", weight = 80 })
+		end
+		
+		if flags.heart_disease or flags.heart_condition then
+			table.insert(possibleCauses, { cause = "heart failure", weight = 100 })
+			table.insert(possibleCauses, { cause = "a massive heart attack", weight = 80 })
+		end
+		
+		if flags.drug_addict or flags.drug_addiction then
+			table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+			table.insert(possibleCauses, { cause = "substance abuse complications", weight = 60 })
+		end
+		
+		if flags.alcoholic or flags.alcohol_addiction then
+			table.insert(possibleCauses, { cause = "liver failure", weight = 90 })
+			table.insert(possibleCauses, { cause = "alcohol poisoning", weight = 70 })
+			table.insert(possibleCauses, { cause = "cirrhosis of the liver", weight = 60 })
+		end
+		
+		if flags.in_prison then
+			table.insert(possibleCauses, { cause = "complications while incarcerated", weight = 80 })
+			table.insert(possibleCauses, { cause = "a prison altercation", weight = 60 })
+			if flags.gang_member then
+				table.insert(possibleCauses, { cause = "gang violence in prison", weight = 90 })
+			end
+		end
+		
+		if flags.shot or flags.gunshot_wound then
+			table.insert(possibleCauses, { cause = "gunshot wounds", weight = 100 })
+		end
+		
+		if flags.stabbed or flags.stab_wound then
+			table.insert(possibleCauses, { cause = "stab wounds", weight = 100 })
+		end
+		
+		if flags.car_accident or flags.injured_accident then
+			table.insert(possibleCauses, { cause = "injuries sustained in a car accident", weight = 100 })
+		end
+		
+		if flags.diabetes then
+			table.insert(possibleCauses, { cause = "diabetes complications", weight = 70 })
+		end
+		
+		if flags.mental_illness or flags.severe_depression then
+			table.insert(possibleCauses, { cause = "complications from mental illness", weight = 50 })
+		end
+		
+		-- If no specific flags, use general health-failure causes
+		if #possibleCauses == 0 then
+			table.insert(possibleCauses, { cause = "organ failure", weight = 40 })
+			table.insert(possibleCauses, { cause = "a sudden medical emergency", weight = 40 })
+			table.insert(possibleCauses, { cause = "complications from poor health", weight = 50 })
+			table.insert(possibleCauses, { cause = "a severe illness", weight = 30 })
+			
+			if age < 30 then
+				table.insert(possibleCauses, { cause = "a sudden illness", weight = 50 })
+				table.insert(possibleCauses, { cause = "an undiagnosed condition", weight = 40 })
+			elseif age < 50 then
+				table.insert(possibleCauses, { cause = "a heart attack", weight = 40 })
+				table.insert(possibleCauses, { cause = "complications from stress", weight = 30 })
+			else
+				table.insert(possibleCauses, { cause = "a heart attack", weight = 60 })
+				table.insert(possibleCauses, { cause = "a stroke", weight = 50 })
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- AGE-BASED NATURAL CAUSES (for random death checks)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if #possibleCauses == 0 then
+		if age >= 90 then
+			table.insert(possibleCauses, { cause = "old age", weight = 100 })
+			table.insert(possibleCauses, { cause = "natural causes", weight = 80 })
+			table.insert(possibleCauses, { cause = "peacefully in their sleep", weight = 70 })
+		elseif age >= 75 then
+			table.insert(possibleCauses, { cause = "natural causes", weight = 60 })
+			table.insert(possibleCauses, { cause = "a heart attack", weight = 50 })
+			table.insert(possibleCauses, { cause = "a stroke", weight = 40 })
+			table.insert(possibleCauses, { cause = "old age", weight = 40 })
+		elseif age >= 60 then
+			table.insert(possibleCauses, { cause = "a heart attack", weight = 50 })
+			table.insert(possibleCauses, { cause = "cancer", weight = 40 })
+			table.insert(possibleCauses, { cause = "a stroke", weight = 30 })
+		elseif age >= 40 then
+			table.insert(possibleCauses, { cause = "a heart attack", weight = 30 })
+			table.insert(possibleCauses, { cause = "an accident", weight = 40 })
+			table.insert(possibleCauses, { cause = "cancer", weight = 30 })
+		else
+			table.insert(possibleCauses, { cause = "an accident", weight = 50 })
+			table.insert(possibleCauses, { cause = "a sudden illness", weight = 30 })
+			table.insert(possibleCauses, { cause = "an unexpected tragedy", weight = 20 })
+		end
+	end
+	
+	-- Weighted random selection
+	local totalWeight = 0
+	for _, entry in ipairs(possibleCauses) do
+		totalWeight = totalWeight + entry.weight
+	end
+	
+	if totalWeight <= 0 then
+		return "unknown causes"
+	end
+	
+	local roll = math.random() * totalWeight
+	local cumulative = 0
+	
+	for _, entry in ipairs(possibleCauses) do
+		cumulative = cumulative + entry.weight
+		if roll <= cumulative then
+			return entry.cause
+		end
+	end
+	
+	return possibleCauses[#possibleCauses].cause
+end
 
 function LifeStageSystem.calculateDeathChance(state)
 	local age = state.Age or 0
@@ -792,6 +930,14 @@ function LifeStageSystem.calculateDeathChance(state)
 	local health = stats.Health or state.Health or 50
 	local flags = state.Flags or {}
 
+	-- ═══════════════════════════════════════════════════════════════
+	-- INSTANT DEATH: Health at or below 0% = guaranteed death
+	-- ═══════════════════════════════════════════════════════════════
+	if health <= 0 then
+		return 1.0 -- 100% chance of death
+	end
+
+	-- Base chance increases with age
 	local baseChance = 0
 	if age < 50 then
 		baseChance = 0.001
@@ -809,54 +955,87 @@ function LifeStageSystem.calculateDeathChance(state)
 		baseChance = 0.50
 	end
 
+	-- Health modifier: lower health = higher chance
+	-- At 50% health, this doubles the base chance
+	-- At 10% health, this nearly guarantees it
 	local healthMod = (100 - health) / 100
-	baseChance *= (1 + healthMod)
+	baseChance = baseChance * (1 + healthMod * 2)
 
+	-- Flag-based modifiers
 	if flags.terminal_illness then
-		baseChance *= 5
+		baseChance = baseChance * 5
 	end
-	if flags.drug_addict then
-		baseChance *= 2
+	if flags.drug_addict or flags.drug_addiction then
+		baseChance = baseChance * 2.5
 	end
-	if flags.alcoholic then
-		baseChance *= 1.5
+	if flags.alcoholic or flags.alcohol_addiction then
+		baseChance = baseChance * 1.8
+	end
+	if flags.heart_disease or flags.heart_condition then
+		baseChance = baseChance * 2
 	end
 	if flags.healthy_lifestyle then
-		baseChance *= 0.5
+		baseChance = baseChance * 0.4
+	end
+	if flags.exercises_regularly then
+		baseChance = baseChance * 0.7
 	end
 	if flags.in_prison and flags.gang_member then
-		baseChance *= 1.25 -- prison + gang = more risk
+		baseChance = baseChance * 1.5
+	end
+	if flags.fugitive then
+		baseChance = baseChance * 1.3
 	end
 
 	return math.min(baseChance, 0.99)
 end
 
 function LifeStageSystem.checkDeath(state)
-	local chance = LifeStageSystem.calculateDeathChance(state)
-	local roll = math.random()
-
-	if roll < chance then
-		local age = state.Age or 0
-		local causes = { "old age", "heart attack", "stroke", "cancer", "accident" }
-
-		if age >= 80 then
-			table.insert(causes, "natural causes")
-			table.insert(causes, "peacefully in sleep")
-		end
-		if state.Flags and state.Flags.in_prison then
-			table.insert(causes, "complications in prison")
-		end
-
-		local cause = causes[math.random(#causes)]
-
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 50
+	local age = state.Age or 0
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CRITICAL: 0% Health = Immediate death, no random roll needed
+	-- ═══════════════════════════════════════════════════════════════
+	if health <= 0 then
+		local cause = LifeStageSystem.getDeathCause(state)
 		return {
 			died = true,
 			cause = cause,
 			age = age,
+			wasHealthDeath = true, -- Flag indicating this was a 0% health death
+		}
+	end
+	
+	-- Normal random death check for aging/natural causes
+	local chance = LifeStageSystem.calculateDeathChance(state)
+	local roll = math.random()
+
+	if roll < chance then
+		local cause = LifeStageSystem.getDeathCause(state)
+		return {
+			died = true,
+			cause = cause,
+			age = age,
+			wasHealthDeath = false,
 		}
 	end
 
 	return { died = false }
+end
+
+-- Check if a player should die immediately (call after stat changes)
+-- Returns death info if health <= 0, otherwise nil
+function LifeStageSystem.checkImmediateDeath(state)
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 50
+	
+	if health <= 0 then
+		return LifeStageSystem.checkDeath(state)
+	end
+	
+	return nil
 end
 
 ----------------------------------------------------------------------

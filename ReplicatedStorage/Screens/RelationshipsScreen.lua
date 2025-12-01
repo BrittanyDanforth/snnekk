@@ -1291,7 +1291,7 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	local cost = action.cost or 0
 	-- Free actions (cost = 0) are always available!
 	local canAfford = (cost == 0) or (money >= cost)
-	
+
 	local card = Instance.new("Frame")
 	card.Name = action.id
 	card.Size = UDim2.new(1, 0, 0, 62)
@@ -1301,169 +1301,326 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	card.Parent = self.actionsScroll
 	UI.corner(card, 14)
 	UI.stroke(card, 1, canAfford and 0.7 or 0.88, canAfford and accentColor or C.Gray200)
-	
+
 	-- Name
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0.5, 0, 0, 22)
-	nameLabel.Position = UDim2.new(0, 16, 0, 10)
+	nameLabel.Size = UDim2.new(0.6, 0, 0, 24)
+	nameLabel.Position = UDim2.new(0, 16, 0, 8)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = F.Title
 	nameLabel.TextSize = 15
-	nameLabel.TextColor3 = C.Gray900
+	nameLabel.TextColor3 = canAfford and C.Gray900 or C.Gray500
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Text = action.name
+	nameLabel.Text = action.name or "Action"
 	nameLabel.ZIndex = 98
 	nameLabel.Parent = card
-	
-	-- Effect badge - show FREE for no-cost actions
-	local effectText = action.effect
-	local badgeBg = paleColor
-	local badgeTextColor = accentColor
-	
-	if cost > 0 then
-		effectText = action.effect .. " | $" .. cost
-		badgeBg = canAfford and C.AmberPale or C.RedPale
-		badgeTextColor = canAfford and C.AmberDark or C.RedDark
-	else
-		effectText = action.effect .. " | FREE"
-		badgeBg = C.GreenPale
-		badgeTextColor = C.GreenDark
-	end
-	
-	local effectBadge = Instance.new("Frame")
-	effectBadge.Size = UDim2.new(0, math.clamp(#effectText * 7 + 20, 100, 180), 0, 24)
-	effectBadge.Position = UDim2.new(0, 16, 0, 34)
-	effectBadge.BackgroundColor3 = badgeBg
-	effectBadge.ZIndex = 98
-	effectBadge.Parent = card
-	UI.pill(effectBadge)
-	
+
+	-- Effect / description line
 	local effectLabel = Instance.new("TextLabel")
-	effectLabel.Size = UDim2.fromScale(1, 1)
+	effectLabel.Size = UDim2.new(0.6, 0, 0, 20)
+	effectLabel.Position = UDim2.new(0, 16, 0, 34)
 	effectLabel.BackgroundTransparency = 1
-	effectLabel.Font = F.Medium
-	effectLabel.TextSize = 11
-	effectLabel.TextColor3 = badgeTextColor
-	effectLabel.Text = effectText
-	effectLabel.ZIndex = 99
-	effectLabel.Parent = effectBadge
-	
-	-- Button
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 60, 0, 38)
-	btn.AnchorPoint = Vector2.new(1, 0.5)
-	btn.Position = UDim2.new(1, -12, 0.5, 0)
-	btn.BackgroundColor3 = canAfford and accentColor or C.Gray300
-	btn.Font = F.Button
-	btn.TextSize = 13
-	btn.TextColor3 = canAfford and C.White or C.Gray500
-	btn.Text = canAfford and "Do" or "Need $"
-	btn.AutoButtonColor = false
-	btn.ZIndex = 98
-	btn.Parent = card
-	UI.corner(btn, 10)
-	
+	effectLabel.Font = F.Body
+	effectLabel.TextSize = 12
+	effectLabel.TextColor3 = canAfford and C.Gray500 or C.Gray400
+	effectLabel.TextXAlignment = Enum.TextXAlignment.Left
+	effectLabel.Text = action.effect or ""
+	effectLabel.ZIndex = 98
+	effectLabel.Parent = card
+
+	-- Cost badge (if any)
+	if cost > 0 then
+		local costBadge = Instance.new("Frame")
+		costBadge.Size = UDim2.new(0, 90, 0, 26)
+		costBadge.AnchorPoint = Vector2.new(1, 0)
+		costBadge.Position = UDim2.new(1, -16, 0, 10)
+		costBadge.BackgroundColor3 = canAfford and C.GreenPale or C.Gray200
+		costBadge.ZIndex = 98
+		costBadge.Parent = card
+		UI.pill(costBadge)
+
+		local costLabel = Instance.new("TextLabel")
+		costLabel.Size = UDim2.fromScale(1, 1)
+		costLabel.BackgroundTransparency = 1
+		costLabel.Font = F.Medium
+		costLabel.TextSize = 11
+		costLabel.TextColor3 = canAfford and C.GreenDark or C.Gray500
+		costLabel.Text = (canAfford and "- " or "Need ") .. UI.formatMoney(cost)
+		costLabel.ZIndex = 99
+		costLabel.Parent = costBadge
+	end
+
+	-- Full-card click area
+	local clickArea = Instance.new("TextButton")
+	clickArea.Size = UDim2.fromScale(1, 1)
+	clickArea.BackgroundTransparency = 1
+	clickArea.Text = ""
+	clickArea.AutoButtonColor = false
+	clickArea.ZIndex = 100
+	clickArea.Parent = card
+
 	if canAfford then
-		btn.MouseEnter:Connect(function()
-			UI.tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = accentColor:Lerp(C.Black, 0.15) })
-			UI.tween(card, TweenInfo.new(0.1), { BackgroundColor3 = paleColor:Lerp(C.White, 0.6) })
+		clickArea.MouseEnter:Connect(function()
+			UI.tween(card, TweenInfo.new(0.12), {
+				BackgroundColor3 = paleColor:Lerp(C.White, 0.4)
+			})
 		end)
-		btn.MouseLeave:Connect(function()
-			UI.tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = accentColor })
-			UI.tween(card, TweenInfo.new(0.1), { BackgroundColor3 = C.White })
+		clickArea.MouseLeave:Connect(function()
+			UI.tween(card, TweenInfo.new(0.12), {
+				BackgroundColor3 = C.White
+			})
 		end)
-		btn.MouseButton1Click:Connect(function()
-			self:hideInteractionModal()
-			task.delay(0.3, function()
-				self:doInteraction(action.id, self.currentInteractType, person)
-			end)
+
+		clickArea.MouseButton1Click:Connect(function()
+			-- When clicking an action from the modal, we already have current person/type
+			local relType = self.currentInteractType
+			local explicitPerson = person or self.currentInteractPerson
+			self:doInteraction(action.id, relType, explicitPerson, cost)
 		end)
+	else
+		-- Visually disabled
+		clickArea.Active = false
+		clickArea.AutoButtonColor = false
 	end
 end
 
+-- Result popup for interaction outcomes (BitLife-style result toast)
 function RelationshipsScreen:createResultModal()
-	self.resultModal = UI.createModalCard(self.screenGui, {
-		name = "RelationshipsResult",
-		accentColor = C.Green,
-		accentDark = C.GreenDark,
-		accentPale = C.GreenPale,
-		zIndex = 98
-	})
-	
-	self.resultModal.closeArea.MouseButton1Click:Connect(function()
-		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+	self.resultOverlay = Instance.new("Frame")
+	self.resultOverlay.Name = "ResultOverlay"
+	self.resultOverlay.Size = UDim2.fromScale(1, 1)
+	self.resultOverlay.BackgroundColor3 = C.Black
+	self.resultOverlay.BackgroundTransparency = 0.5
+	self.resultOverlay.Visible = false
+	self.resultOverlay.ZIndex = 98
+	self.resultOverlay.Parent = self.screenGui
+
+	-- Click-through blocker
+	local bgBlock = Instance.new("TextButton")
+	bgBlock.Size = UDim2.fromScale(1, 1)
+	bgBlock.BackgroundTransparency = 1
+	bgBlock.Text = ""
+	bgBlock.ZIndex = 98
+	bgBlock.Parent = self.resultOverlay
+	bgBlock.MouseButton1Click:Connect(function()
+		self:hideResultModal()
 	end)
-	self.resultModal.okButton.MouseButton1Click:Connect(function()
-		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+
+	-- Card
+	local card = Instance.new("Frame")
+	card.Name = "ResultCard"
+	card.Size = UDim2.new(0.9, 0, 0, 220)
+	card.AnchorPoint = Vector2.new(0.5, 0.5)
+	card.Position = UDim2.fromScale(0.5, 0.5)
+	card.BackgroundColor3 = C.White
+	card.ZIndex = 99
+	card.Parent = self.resultOverlay
+	UI.corner(card, 22)
+	UI.stroke(card, 1, 0.85, C.Gray200)
+	self.resultCard = card
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.Size = UDim2.new(1, -32, 0, 32)
+	titleLabel.Position = UDim2.new(0, 16, 0, 18)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Font = F.Title
+	titleLabel.TextSize = 18
+	titleLabel.TextColor3 = C.Gray900
+	titleLabel.TextWrapped = true
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.ZIndex = 100
+	titleLabel.Parent = card
+	self.resultTitle = titleLabel
+
+	local bodyLabel = Instance.new("TextLabel")
+	bodyLabel.Name = "Body"
+	bodyLabel.Size = UDim2.new(1, -32, 1, -90)
+	bodyLabel.Position = UDim2.new(0, 16, 0, 56)
+	bodyLabel.BackgroundTransparency = 1
+	bodyLabel.Font = F.Body
+	bodyLabel.TextSize = 14
+	bodyLabel.TextColor3 = C.Gray700
+	bodyLabel.TextWrapped = true
+	bodyLabel.TextYAlignment = Enum.TextYAlignment.Top
+	bodyLabel.ZIndex = 100
+	bodyLabel.Parent = card
+	self.resultBody = bodyLabel
+
+	local okBtn = Instance.new("TextButton")
+	okBtn.Name = "OkButton"
+	okBtn.Size = UDim2.new(0, 100, 0, 38)
+	okBtn.AnchorPoint = Vector2.new(0.5, 1)
+	okBtn.Position = UDim2.new(0.5, 0, 1, -16)
+	okBtn.BackgroundColor3 = C.Pink
+	okBtn.Font = F.Button
+	okBtn.TextSize = 14
+	okBtn.TextColor3 = C.White
+	okBtn.Text = "OK"
+	okBtn.AutoButtonColor = false
+	okBtn.ZIndex = 100
+	okBtn.Parent = card
+	UI.corner(okBtn, 14)
+
+	okBtn.MouseEnter:Connect(function()
+		UI.tween(okBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.PinkDark })
+	end)
+	okBtn.MouseLeave:Connect(function()
+		UI.tween(okBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.Pink })
+	end)
+	okBtn.MouseButton1Click:Connect(function()
+		self:hideResultModal()
 	end)
 end
 
-function RelationshipsScreen:doInteraction(actionId, relType, person)
-	log("=== DOING INTERACTION ===")
-	log("Action ID:", actionId, "Relation Type:", relType)
-	log("Person:", person and person.name or "None", "Person ID:", person and person.id or "None")
-	log("Player Money:", self:getMoney())
-	
+function RelationshipsScreen:showResultModal(title, message)
+	if not self.resultOverlay then
+		self:createResultModal()
+	end
+
+	self.resultTitle.Text = title or "Result"
+	self.resultBody.Text = message or ""
+
+	self.resultOverlay.Visible = true
+	self.resultCard.Position = UDim2.new(0.5, 0, 0.5, 30)
+	self.resultCard.BackgroundTransparency = 1
+
+	UI.tween(self.resultCard, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundTransparency = 0
+	})
+end
+
+function RelationshipsScreen:hideResultModal()
+	if not self.resultOverlay or not self.resultOverlay.Visible then return end
+
+	UI.tween(self.resultCard, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(0.5, 0, 0.5, 20),
+		BackgroundTransparency = 1
+	})
+	task.delay(0.18, function()
+		if self.resultOverlay then
+			self.resultOverlay.Visible = false
+		end
+	end)
+end
+
+-- Core call into server for any interaction / meet action
+-- actionId: string (e.g. "hug", "gift", "meet_someone")
+-- relTypeOverride: "family" | "romance" | "friend" | "enemy" | nil
+-- personOverride: relationship table or nil (for "meet" style actions)
+-- cost: number (already checked client-side for afford)
+function RelationshipsScreen:doInteraction(actionId, relTypeOverride, personOverride, cost)
 	if not DoInteraction then
-		logWarn("DoInteraction remote not available!")
-		self:showResult(false, "Server not available", "Error")
+		logWarn("DoInteraction Remote not found; cannot perform interaction")
+		self:showResultModal("Error", "Interaction system is not ready yet.")
 		return
 	end
-	
-	local personId = person and person.id or nil
-	log("Invoking server DoInteraction...")
-	local result = DoInteraction:InvokeServer(actionId, relType, personId)
-	log("Server response:", result and "received" or "nil")
-	
-	if result then
-		log("Success:", result.success, "Message:", result.message)
-		self:showResult(result.success, result.message, result.success and "Done!" or "Failed")
+
+	local relType = relTypeOverride or self.currentInteractType or "family"
+	local person = personOverride or self.currentInteractPerson
+
+	-- Build payload for server – adjust to match your LifeRemotes backend
+	local payload = {
+		actionId = actionId,
+		relationshipType = relType,
+		targetId = person and person.id or nil,
+		cost = cost or 0,
+	}
+
+	log("Firing DoInteraction:", actionId, "Type:", relType, "Target:", payload.targetId, "Cost:", payload.cost)
+
+	-- Close the interaction modal so result feels snappy
+	if self.interactOverlay and self.interactOverlay.Visible then
+		self:hideInteractionModal()
+	end
+
+	-- Optimistic "processing" feel could be added if you want
+	local ok, result = pcall(function()
+		if DoInteraction:IsA("RemoteFunction") then
+			return DoInteraction:InvokeServer(payload)
+		else
+			-- RemoteEvent: fire and expect server to update life state via LifeStateUpdated remote, etc.
+			DoInteraction:FireServer(payload)
+			return nil
+		end
+	end)
+
+	if not ok then
+		logWarn("DoInteraction failed:", result)
+		self:showResultModal("Error", "Something went wrong while performing that action.")
+		return
+	end
+
+	-- Result contract is flexible; this handles common patterns:
+	-- result = { success = true/false, title = "...", message = "...", state = {...} }
+	if type(result) == "table" then
+		if result.state or result.newState then
+			self:updateState(result.state or result.newState)
+		end
+
+		local title = result.title
+		if not title then
+			if person and person.name then
+				title = actionId:gsub("^%l", string.upper) .. " with " .. person.name
+			else
+				title = "Interaction"
+			end
+		end
+
+		local msg = result.message or result.resultText or "Interaction complete."
+		self:showResultModal(title, msg)
 	else
-		logWarn("Server returned nil!")
-		self:showResult(false, "Server error", "Error")
+		-- No structured result – just refresh UI from whatever state you already have
+		self:updateInfoBar()
 	end
 end
 
-function RelationshipsScreen:showResult(success, message, emoji)
-	local shellColor = success and C.Green or C.Red
-	local shellStroke = success and C.GreenDark or C.RedDark
-	local pale = success and C.GreenPale or C.RedPale
-	
-	self.resultModal.shell.BackgroundColor3 = shellColor
-	self.resultModal.shellStroke.Color = shellStroke
-	self.resultModal.emojiFrame.BackgroundColor3 = pale
-	self.resultModal.emojiLabel.Text = emoji or (success and "OK" or "X")
-	self.resultModal.titleLabel.Text = success and "Success!" or "Uh oh..."
-	self.resultModal.titleLabel.TextColor3 = success and C.GreenDark or C.RedDark
-	self.resultModal.messageLabel.Text = message or ""
-	self.resultModal.okButton.BackgroundColor3 = shellColor
-	
-	UI.showModal(self.resultModal)
-end
-
-function RelationshipsScreen:show()
-	log("=== SHOWING RelationshipsScreen ===")
-	log("Current state - Age:", self:getAge(), "Money:", self:getMoney())
-	local family = self:getFamily()
-	log("Family members:", #family)
-	for _, f in ipairs(family) do
-		log("  -", f.name, "(", f.role, ") Age:", f.age, "Alive:", f.alive)
-	end
-	self:updateInfoBar()
-	self:switchTab(self.currentTab)
-	UI.slideInScreen(self.overlay, "right")
+-- Public API: show / hide / toggle whole Relationships screen
+function RelationshipsScreen:show(tabId)
+	if self.isVisible then return end
 	self.isVisible = true
-	log("✅ RelationshipsScreen is now visible")
+
+	if self.showBlur then
+		pcall(self.showBlur)
+	end
+
+	self.overlay.Visible = true
+
+	-- Make sure chips + tab content are up to date
+	self:updateInfoBar()
+	if tabId then
+		self:switchTab(tabId)
+	else
+		self:switchTab(self.currentTab or "family")
+	end
 end
 
 function RelationshipsScreen:hide()
-	log("=== HIDING RelationshipsScreen ===")
-	UI.slideOutScreen(self.overlay, "right", function()
-		self.resultModal.overlay.Visible = false
-		self.interactOverlay.Visible = false
-		log("✅ RelationshipsScreen hidden, modals cleaned up")
-	end)
+	if not self.isVisible then return end
 	self.isVisible = false
+
+	if self.hideBlur then
+		pcall(self.hideBlur)
+	end
+
+	self.overlay.Visible = false
+
+	-- Also hide any open modals
+	if self.interactOverlay then
+		self.interactOverlay.Visible = false
+	end
+	if self.resultOverlay then
+		self.resultOverlay.Visible = false
+	end
+end
+
+function RelationshipsScreen:toggle()
+	if self.isVisible then
+		self:hide()
+	else
+		self:show()
+	end
 end
 
 return RelationshipsScreen

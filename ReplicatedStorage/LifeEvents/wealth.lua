@@ -202,6 +202,7 @@ module.events = {
 		weight = 10, oneTime = true,
 		emoji = "📜", title = "Inheritance!",
 		category = "family",
+		showResultPopup = true,
 		getDynamicData = function()
 			local amounts = {10000, 50000, 100000, 500000}
 			local sources = {"grandparent", "distant relative", "family friend", "great aunt"}
@@ -209,10 +210,38 @@ module.events = {
 		end,
 		text = "Your %source% passed away and left you $%amount%! Unexpected inheritance! What do you do?",
 		choices = {
-			{ text = "🏦 Save/invest it all", effects = { Money = 50000, Smarts = 8 }, resultText = "Secured the future! Honoring their memory wisely!", setFlags = {"inherited_wealth", "responsible"} },
-			{ text = "🛍️ Treat yourself", effects = { Money = 20000, Happiness = 15 }, resultText = "Bought nice things! Life's short! They'd want you happy!", setFlag = "inherited_wealth" },
-			{ text = "🏠 Down payment on house", effects = { Money = 0, Happiness = 20 }, resultText = "Finally a homeowner! Their gift made it possible!", setFlags = {"inherited_wealth", "homeowner"} },
-			{ text = "❤️ Give some to charity", effects = { Money = 30000, Happiness = 18, Smarts = 3 }, resultText = "Donated in their name. Kept some. Perfect balance.", setFlags = {"inherited_wealth", "charitable"} },
+			{ 
+				text = "🏦 Save/invest it all", 
+				effects = { Smarts = 8 }, 
+				-- Dynamic effect: get full inheritance amount
+				effectsDynamic = function(data) return { Money = data.amount or 50000 } end,
+				resultText = "Secured the future! Honoring their memory wisely!", 
+				setFlags = {"inherited_wealth", "responsible"} 
+			},
+			{ 
+				text = "🛍️ Treat yourself", 
+				effects = { Happiness = 15 }, 
+				-- Dynamic effect: get 40% of inheritance (spent rest)
+				effectsDynamic = function(data) return { Money = math.floor((data.amount or 50000) * 0.4) } end,
+				resultText = "Bought nice things! Life's short! They'd want you happy!", 
+				setFlag = "inherited_wealth" 
+			},
+			{ 
+				text = "🏠 Down payment on house", 
+				effects = { Happiness = 20 }, 
+				-- Dynamic effect: money goes to house (no cash gain but get homeowner flag)
+				effectsDynamic = function(data) return { Money = 0 } end,
+				resultText = "Finally a homeowner! Their gift made it possible!", 
+				setFlags = {"inherited_wealth", "homeowner"} 
+			},
+			{ 
+				text = "❤️ Give some to charity", 
+				effects = { Happiness = 18, Smarts = 3 }, 
+				-- Dynamic effect: keep 60% of inheritance
+				effectsDynamic = function(data) return { Money = math.floor((data.amount or 50000) * 0.6) } end,
+				resultText = "Donated in their name. Kept some. Perfect balance.", 
+				setFlags = {"inherited_wealth", "charitable"} 
+			},
 		},
 	},
 	
@@ -222,16 +251,45 @@ module.events = {
 		weight = 3, oneTime = true,
 		emoji = "🎰", title = "LOTTERY WINNER!",
 		category = "social",
+		showResultPopup = true,
 		getDynamicData = function()
 			local amounts = {100000, 500000, 1000000, 5000000}
 			return { amount = amounts[math.random(#amounts)] }
 		end,
 		text = "YOU WON THE LOTTERY! $%amount%! (After taxes) Life-changing money! What do you do?!",
 		choices = {
-			{ text = "🏦 Hire financial advisor", effects = { Money = 500000, Happiness = 30, Smarts = 10 }, resultText = "Smart! Protected the money! Set for life!", setFlags = {"lottery_winner", "wealthy", "smart_winner"} },
-			{ text = "🎉 Tell everyone!", effects = { Money = 200000, Happiness = 20 }, resultText = "Friends and family asking for loans... money disappearing fast...", setFlags = {"lottery_winner", "money_problems"} },
-			{ text = "🙊 Keep it secret", effects = { Money = 400000, Happiness = 35, Smarts = 8 }, resultText = "Quiet wealth. No one knows. Peace of mind.", setFlags = {"lottery_winner", "wealthy", "secret_millionaire"} },
-			{ text = "💸 Blow it all", effects = { Money = 0, Happiness = 25 }, resultText = "Cars! Parties! Trips! And... it's gone. Classic lottery winner.", setFlags = {"lottery_winner", "broke_again"} },
+			{ 
+				text = "🏦 Hire financial advisor", 
+				effects = { Happiness = 30, Smarts = 10 }, 
+				-- Dynamic: keep full amount with smart management
+				effectsDynamic = function(data) return { Money = data.amount or 500000 } end,
+				resultText = "Smart! Protected the money! Set for life!", 
+				setFlags = {"lottery_winner", "wealthy", "smart_winner"} 
+			},
+			{ 
+				text = "🎉 Tell everyone!", 
+				effects = { Happiness = 20 }, 
+				-- Dynamic: lose 60% to moochers and bad decisions
+				effectsDynamic = function(data) return { Money = math.floor((data.amount or 500000) * 0.4) } end,
+				resultText = "Friends and family asking for loans... money disappearing fast...", 
+				setFlags = {"lottery_winner", "money_problems"} 
+			},
+			{ 
+				text = "🙊 Keep it secret", 
+				effects = { Happiness = 35, Smarts = 8 }, 
+				-- Dynamic: keep 80% (some goes to setup/security)
+				effectsDynamic = function(data) return { Money = math.floor((data.amount or 500000) * 0.8) } end,
+				resultText = "Quiet wealth. No one knows. Peace of mind.", 
+				setFlags = {"lottery_winner", "wealthy", "secret_millionaire"} 
+			},
+			{ 
+				text = "💸 Blow it all", 
+				effects = { Happiness = 25 }, 
+				-- Dynamic: it's all gone!
+				effectsDynamic = function(data) return { Money = 0 } end,
+				resultText = "Cars! Parties! Trips! And... it's gone. Classic lottery winner.", 
+				setFlags = {"lottery_winner", "broke_again"} 
+			},
 		},
 	},
 	

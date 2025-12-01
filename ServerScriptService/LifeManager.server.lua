@@ -409,6 +409,78 @@ local function generateLifeSummary(state, deathCause)
 end
 
 ----------------------------------------------------------------
+-- IMMEDIATE DEATH CHECK (Call after stat modifications)
+-- Returns true if player died, false otherwise
+----------------------------------------------------------------
+
+local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
+
+local function checkAndHandleImmediateDeath(player, state, lastActionText)
+	-- Check if health has dropped to 0% or below
+	local stats = state.Stats or {}
+	local health = stats.Health or 0
+	
+	if health > 0 then
+		return false -- Still alive
+	end
+	
+	-- Player's health hit 0% - they die immediately
+	print("[LifeManager] ⚠️ IMMEDIATE DEATH TRIGGERED - Health hit 0% for", player.Name)
+	
+	-- Mark as dead
+	state.IsDead = true
+	state:SetFlag("deceased")
+	
+	-- Get contextual death cause from the enhanced death system
+	local deathCheck = LifeStageSystem.checkDeath(state)
+	local deathCause = deathCheck.cause or "complications from poor health"
+	
+	-- Generate life summary
+	local lifeSummary = generateLifeSummary(state, deathCause)
+	
+	-- Build death payload
+	local deathPayload = {
+		id = "death",
+		emoji = "💀",
+		title = "Rest In Peace",
+		text = lifeSummary.summaryText,
+		category = "death",
+		isDeath = true,
+		isImmediateDeath = true,
+		lifeSummary = lifeSummary,
+		lastAction = lastActionText,
+		choices = {
+			{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
+		}
+	}
+	
+	-- Store pending death event
+	pendingEvents[player] = {
+		eventDef = { id = "death", category = "death" },
+		dynamicData = {},
+		choiceIndex = nil,
+		isDeath = true,
+		deathCause = deathCause,
+		lifeSummary = lifeSummary,
+	}
+	
+	-- Add to feed and notify client
+	state:AddFeed("💀 " .. (state.Name or "You") .. " has passed away from " .. deathCause .. " at age " .. (state.Age or 0))
+	PresentEvent:FireClient(player, deathPayload, nil)
+	
+	return true -- Player died
+end
+
+-- Expose for other scripts that modify stats
+_G.CheckImmediateDeath = function(player, lastActionText)
+	local state = playerLives[player]
+	if state then
+		return checkAndHandleImmediateDeath(player, state, lastActionText)
+	end
+	return false
+end
+
+----------------------------------------------------------------
 -- AGE UP
 ----------------------------------------------------------------
 
@@ -784,14 +856,22 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 9: CLEAR PENDING EVENT
+	-- STEP 9: CHECK FOR IMMEDIATE DEATH (Health hit 0%)
+	-- ═══════════════════════════════════════════════════════════════
+	local feedText = results and results.resultText or "Something happened..."
+	if checkAndHandleImmediateDeath(player, state, feedText) then
+		-- Player died from the choice effects - don't continue
+		return
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 10: CLEAR PENDING EVENT
 	-- ═══════════════════════════════════════════════════════════════
 	pendingEvents[player] = nil
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 10: BUILD RESULT FEEDBACK
+	-- STEP 11: BUILD RESULT FEEDBACK
 	-- ═══════════════════════════════════════════════════════════════
-	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
 	
 	-- Calculate actual deltas
@@ -941,15 +1021,21 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 		end
 	end
 
-	-- Clear pending event
-	pendingEvents[player] = nil
-
-	state:AddFeed(feedText)
-	
 	-- Sync prison state
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
 	end
+	
+	-- Check for immediate death from minigame effects
+	if checkAndHandleImmediateDeath(player, state, feedText) then
+		-- Player died - don't continue with normal result flow
+		return
+	end
+
+	-- Clear pending event
+	pendingEvents[player] = nil
+
+	state:AddFeed(feedText)
 	
 	-- Calculate total deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
@@ -1008,6 +1094,7 @@ local function createSpecialActionRemote(name)
 end
 
 local DoSpecialAction = createSpecialActionRemote("DoSpecialAction")
+local DoInteraction = createSpecialActionRemote("DoInteraction")
 
 DoSpecialAction.OnServerInvoke = function(player, actionId)
 	local state = getLife(player)
@@ -1116,4 +1203,392 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 	return { success = false, message = "Action not available." }
 end
 
-print("[LifeManager] ✅ Life simulation server initialized!")
+----------------------------------------------------------------
+-- RELATIONSHIP INTERACTIONS (DoInteraction Remote)
+-- Handles interactions from RelationshipsScreen
+----------------------------------------------------------------
+
+-- Define available interactions and their effects
+local RELATIONSHIP_ACTIONS = {
+	-- Family actions
+	spend_time = {
+		name = "Spend Time",
+		baseCost = 0,
+		effects = { Happiness = 5 },
+		relationshipBoost = 8,
+		successMessages = {
+			"You had a wonderful time together!",
+			"Quality time well spent!",
+			"You bonded and shared memories.",
+		},
+	},
+	compliment = {
+		name = "Compliment",
+		baseCost = 0,
+		effects = { Happiness = 3 },
+		relationshipBoost = 5,
+		successMessages = {
+			"They appreciated your kind words!",
+			"Your compliment made them smile.",
+			"They felt valued and appreciated.",
+		},
+	},
+	gift = {
+		name = "Give Gift",
+		baseCost = 50,
+		effects = { Happiness = 8 },
+		relationshipBoost = 12,
+		successMessages = {
+			"They loved the gift!",
+			"Your thoughtfulness touched them.",
+			"The gift strengthened your bond.",
+		},
+	},
+	expensive_gift = {
+		name = "Expensive Gift",
+		baseCost = 500,
+		effects = { Happiness = 15 },
+		relationshipBoost = 20,
+		successMessages = {
+			"They were overwhelmed with joy!",
+			"Such generosity! They adore you.",
+			"An unforgettable gift that meant the world.",
+		},
+	},
+	hug = {
+		name = "Hug",
+		baseCost = 0,
+		effects = { Happiness = 4 },
+		relationshipBoost = 6,
+		successMessages = {
+			"A warm, comforting hug.",
+			"Sometimes a hug says everything.",
+			"You felt the love between you.",
+		},
+	},
+	have_conversation = {
+		name = "Have Conversation",
+		baseCost = 0,
+		effects = { Happiness = 3, Smarts = 1 },
+		relationshipBoost = 5,
+		successMessages = {
+			"You had a meaningful conversation.",
+			"Great discussion! You learned something.",
+			"The conversation brought you closer.",
+		},
+	},
+	apologize = {
+		name = "Apologize",
+		baseCost = 0,
+		effects = { Happiness = -2 },
+		relationshipBoost = 10,
+		successMessages = {
+			"They accepted your apology.",
+			"Your sincerity mended things.",
+			"Forgiveness was granted.",
+		},
+		failMessages = {
+			"They're not ready to forgive yet.",
+			"The apology fell on deaf ears.",
+			"They need more time.",
+		},
+		chanceSuccess = 0.7,
+	},
+	insult = {
+		name = "Insult",
+		baseCost = 0,
+		effects = { Happiness = 3 },
+		relationshipBoost = -15,
+		successMessages = {
+			"You said something hurtful. Why?",
+			"Your words stung. They're upset.",
+			"That was cruel. They won't forget.",
+		},
+	},
+	argue = {
+		name = "Argue",
+		baseCost = 0,
+		effects = { Happiness = -5 },
+		relationshipBoost = -10,
+		successMessages = {
+			"The argument got heated.",
+			"Words were exchanged. Tension remains.",
+			"Neither of you backed down.",
+		},
+	},
+	-- Romance-specific
+	date = {
+		name = "Go on Date",
+		baseCost = 100,
+		effects = { Happiness = 10 },
+		relationshipBoost = 15,
+		successMessages = {
+			"What a lovely date!",
+			"You had a romantic evening together.",
+			"Sparks flew! Great chemistry.",
+		},
+		failMessages = {
+			"The date was awkward...",
+			"Not your best outing.",
+			"They seemed distracted.",
+		},
+		chanceSuccess = 0.8,
+	},
+	propose = {
+		name = "Propose",
+		baseCost = 5000,
+		effects = { Happiness = 30 },
+		relationshipBoost = 50,
+		successMessages = {
+			"They said YES! You're engaged!",
+			"Tears of joy! Wedding bells await!",
+			"The happiest moment of your life!",
+		},
+		failMessages = {
+			"They said no... heartbreaking.",
+			"Not the right time, apparently.",
+			"They need more time to think.",
+		},
+		chanceSuccess = 0.6,
+		setFlagOnSuccess = "engaged",
+	},
+	-- Friend-specific
+	hangout = {
+		name = "Hang Out",
+		baseCost = 20,
+		effects = { Happiness = 6 },
+		relationshipBoost = 8,
+		successMessages = {
+			"You had a blast hanging out!",
+			"Good times with good friends.",
+			"Laughter and memories.",
+		},
+	},
+	-- Meet new people
+	meet_someone = {
+		name = "Meet Someone",
+		baseCost = 0,
+		effects = { Happiness = 5 },
+		createsRelationship = true,
+		successMessages = {
+			"You met someone interesting!",
+			"A new connection was made.",
+			"You hit it off right away!",
+		},
+	},
+}
+
+DoInteraction.OnServerInvoke = function(player, payload)
+	local state = getLife(player)
+	if not state or not state.Name then
+		return { success = false, message = "No active life." }
+	end
+	
+	-- Handle both old signature (actionId, relType, personId) and new signature (payload table)
+	local actionId, relType, targetId, cost
+	if type(payload) == "table" then
+		actionId = payload.actionId
+		relType = payload.relationshipType
+		targetId = payload.targetId
+		cost = payload.cost
+	else
+		-- Old signature: payload is actionId, subsequent args are relType, targetId
+		actionId = payload
+		relType = select(2, ...) -- This won't work in OnServerInvoke, but keeping for reference
+	end
+	
+	if not actionId then
+		return { success = false, message = "No action specified." }
+	end
+	
+	-- Get the action definition
+	local actionDef = RELATIONSHIP_ACTIONS[actionId]
+	if not actionDef then
+		return { success = false, message = "Unknown action: " .. tostring(actionId) }
+	end
+	
+	-- Check cost
+	local actionCost = cost or actionDef.baseCost or 0
+	if actionCost > 0 and (state.Money or 0) < actionCost then
+		return { 
+			success = false, 
+			message = "Not enough money! Need $" .. actionCost,
+			title = "Can't Afford It"
+		}
+	end
+	
+	-- Deduct cost
+	if actionCost > 0 then
+		state.Money = (state.Money or 0) - actionCost
+	end
+	
+	-- Store state before
+	local beforeHappiness = state.Stats.Happiness or 50
+	local beforeHealth = state.Stats.Health or 100
+	
+	-- Check for success (if action has chance)
+	local wasSuccess = true
+	if actionDef.chanceSuccess then
+		wasSuccess = math.random() < actionDef.chanceSuccess
+	end
+	
+	-- Apply stat effects
+	if actionDef.effects then
+		for stat, delta in pairs(actionDef.effects) do
+			if stat == "Money" then
+				state.Money = (state.Money or 0) + delta
+			elseif state.Stats[stat] then
+				state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + (wasSuccess and delta or -delta), 0, 100)
+			end
+		end
+	end
+	
+	-- Apply relationship change if we have a target
+	local targetPerson = nil
+	if targetId and state.Relationships then
+		for _, rel in ipairs(state.Relationships) do
+			if rel.id == targetId then
+				targetPerson = rel
+				break
+			end
+		end
+		
+		if targetPerson then
+			local relDelta = actionDef.relationshipBoost or 0
+			if not wasSuccess and relDelta > 0 then
+				relDelta = math.floor(relDelta / 2) -- Half boost on fail
+			end
+			targetPerson.relationship = math.clamp((targetPerson.relationship or 50) + relDelta, 0, 100)
+		end
+	end
+	
+	-- Handle "meet someone" - creates new relationship
+	if actionDef.createsRelationship and wasSuccess then
+		local newRelId = "friend_" .. tostring(os.time()) .. "_" .. math.random(1000, 9999)
+		local genders = {"Male", "Female"}
+		local firstNames = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Quinn", "Avery", "Blake"}
+		local newPerson = {
+			id = newRelId,
+			name = firstNames[math.random(#firstNames)],
+			type = relType or "friend",
+			role = "Friend",
+			age = math.clamp((state.Age or 18) + math.random(-5, 5), 16, 80),
+			gender = genders[math.random(#genders)],
+			relationship = 50,
+			alive = true,
+			metAge = state.Age or 18,
+		}
+		state.Relationships = state.Relationships or {}
+		table.insert(state.Relationships, newPerson)
+		targetPerson = newPerson
+	end
+	
+	-- Set flags on success
+	if wasSuccess and actionDef.setFlagOnSuccess then
+		state:SetFlag(actionDef.setFlagOnSuccess)
+	end
+	
+	-- Pick result message
+	local resultMessage
+	if wasSuccess then
+		local msgs = actionDef.successMessages or {"Done!"}
+		resultMessage = msgs[math.random(#msgs)]
+	else
+		local msgs = actionDef.failMessages or {"It didn't go well."}
+		resultMessage = msgs[math.random(#msgs)]
+	end
+	
+	-- Add target name to message if applicable
+	if targetPerson and targetPerson.name then
+		resultMessage = resultMessage:gsub("They", targetPerson.name)
+		resultMessage = resultMessage:gsub("they", targetPerson.name:lower())
+	end
+	
+	-- Check for immediate death
+	if checkAndHandleImmediateDeath(player, state, resultMessage) then
+		return { success = false, message = "You died...", isDeath = true }
+	end
+	
+	-- Build title
+	local title = actionDef.name or "Interaction"
+	if targetPerson and targetPerson.name then
+		title = title .. " with " .. targetPerson.name
+	end
+	
+	-- Calculate deltas for UI
+	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
+	local healthDelta = (state.Stats.Health or 100) - beforeHealth
+	
+	-- Add to feed
+	local feedText = title .. ": " .. resultMessage
+	state:AddFeed(feedText)
+	
+	-- Sync state
+	pushState(player, state, feedText, nil)
+	
+	return {
+		success = wasSuccess,
+		title = title,
+		message = resultMessage,
+		happiness = happinessDelta ~= 0 and happinessDelta or nil,
+		health = healthDelta ~= 0 and healthDelta or nil,
+		money = actionCost > 0 and -actionCost or nil,
+		newState = serializeState(state, player),
+		targetPerson = targetPerson and {
+			id = targetPerson.id,
+			name = targetPerson.name,
+			relationship = targetPerson.relationship,
+		} or nil,
+	}
+end
+
+----------------------------------------------------------------
+-- STAT MODIFICATION HELPERS (Global API for other scripts)
+-- These all check for immediate death after modification
+----------------------------------------------------------------
+
+_G.ModifyPlayerStat = function(player, statName, delta, reason)
+	local state = playerLives[player]
+	if not state then return false end
+	
+	if statName == "Money" then
+		state.Money = (state.Money or 0) + delta
+	elseif state.Stats and state.Stats[statName] ~= nil then
+		state.Stats[statName] = math.clamp((state.Stats[statName] or 50) + delta, 0, 100)
+	else
+		return false
+	end
+	
+	-- Check for death if health was modified
+	if statName == "Health" then
+		if checkAndHandleImmediateDeath(player, state, reason or "Stat change") then
+			return true, true -- success, died
+		end
+	end
+	
+	return true, false -- success, not died
+end
+
+_G.SetPlayerStat = function(player, statName, value, reason)
+	local state = playerLives[player]
+	if not state then return false end
+	
+	if statName == "Money" then
+		state.Money = value
+	elseif state.Stats and state.Stats[statName] ~= nil then
+		state.Stats[statName] = math.clamp(value, 0, 100)
+	else
+		return false
+	end
+	
+	-- Check for death if health was set to 0
+	if statName == "Health" then
+		if checkAndHandleImmediateDeath(player, state, reason or "Stat change") then
+			return true, true -- success, died
+		end
+	end
+	
+	return true, false -- success, not died
+end
+
+print("[LifeManager] ✅ Life simulation server initialized with enhanced death system!")

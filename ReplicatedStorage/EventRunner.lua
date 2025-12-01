@@ -877,8 +877,20 @@ function EventRunner.applyChoice(
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 5: APPLY DYNAMIC MONEY CALLBACK
+	-- STEP 5: APPLY DYNAMIC EFFECTS CALLBACK
 	-- ═══════════════════════════════════════════════════════════════
+	-- effectsDynamic allows events to compute effects based on dynamicData
+	-- Example: effectsDynamic = function(data) return { Money = data.amount } end
+	if choice.effectsDynamic and dynamicData then
+		local ok, dynamicEffects = pcall(choice.effectsDynamic, dynamicData)
+		if ok and type(dynamicEffects) == "table" then
+			applyEffectsToState(state, dynamicEffects, results)
+		elseif not ok then
+			warn("[EventRunner] effectsDynamic failed:", dynamicEffects)
+		end
+	end
+	
+	-- Legacy support: getDynamicMoney callback
 	if choice.getDynamicMoney and dynamicData then
 		local ok, amount = pcall(choice.getDynamicMoney, dynamicData)
 		if ok and type(amount) == "number" then
