@@ -1116,6 +1116,7 @@ end
 
 function RelationshipsScreen:createInteractionModal()
 	self.interactOverlay = Instance.new("Frame")
+	self.interactOverlay.Name = "InteractOverlay"
 	self.interactOverlay.Size = UDim2.fromScale(1, 1)
 	self.interactOverlay.BackgroundColor3 = C.Black
 	self.interactOverlay.BackgroundTransparency = 0.4
@@ -1134,100 +1135,167 @@ function RelationshipsScreen:createInteractionModal()
 		self:hideInteractionModal()
 	end)
 	
-	-- Card
+	-- Shadow frame (premium effect)
+	local shadowFrame = Instance.new("Frame")
+	shadowFrame.Name = "ShadowFrame"
+	shadowFrame.Size = UDim2.new(0.92, 6, 0, 456)
+	shadowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadowFrame.Position = UDim2.new(0.5, 3, 0.5, 3)
+	shadowFrame.BackgroundColor3 = C.Black
+	shadowFrame.BackgroundTransparency = 0.75
+	shadowFrame.ZIndex = 94
+	shadowFrame.Parent = self.interactOverlay
+	UI.corner(shadowFrame, 26)
+	self.interactShadow = shadowFrame
+	
+	-- Colored shell (wraps the card for BitLife premium look)
+	local shell = Instance.new("Frame")
+	shell.Name = "Shell"
+	shell.Size = UDim2.new(0.92, 0, 0, 450)
+	shell.AnchorPoint = Vector2.new(0.5, 0.5)
+	shell.Position = UDim2.fromScale(0.5, 0.5)
+	shell.BackgroundColor3 = C.Pink
+	shell.ZIndex = 95
+	shell.Parent = self.interactOverlay
+	UI.corner(shell, 24)
+	self.interactShell = shell
+	
+	-- Shell border stroke
+	local shellStroke = UI.stroke(shell, 2, 0.3, C.PinkDark)
+	self.interactShellStroke = shellStroke
+	
+	-- Inner white card
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0.92, 0, 0, 450)
+	card.Name = "Card"
+	card.Size = UDim2.new(1, -8, 1, -8)
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.fromScale(0.5, 0.5)
 	card.BackgroundColor3 = C.White
-	card.ZIndex = 95
-	card.Parent = self.interactOverlay
-	UI.corner(card, 24)
+	card.ZIndex = 96
+	card.Parent = shell
+	UI.corner(card, 20)
 	self.interactCard = card
 	
-	-- Header
+	-- Header (colored banner at top of card)
 	self.interactHeader = Instance.new("Frame")
+	self.interactHeader.Name = "Header"
 	self.interactHeader.Size = UDim2.new(1, 0, 0, 85)
 	self.interactHeader.BackgroundColor3 = C.Pink
-	self.interactHeader.ZIndex = 96
+	self.interactHeader.ZIndex = 97
 	self.interactHeader.Parent = card
-	UI.corner(self.interactHeader, 24)
+	UI.corner(self.interactHeader, 20)
 	
-	-- Bottom cover
+	-- Bottom cover (fill rounded corners at bottom of header)
 	local headerCover = Instance.new("Frame")
 	headerCover.Name = "HeaderCover"
 	headerCover.Size = UDim2.new(1, 0, 0, 30)
 	headerCover.Position = UDim2.new(0, 0, 1, -30)
 	headerCover.BackgroundColor3 = C.Pink
 	headerCover.BorderSizePixel = 0
-	headerCover.ZIndex = 96
+	headerCover.ZIndex = 97
 	headerCover.Parent = self.interactHeader
+	
+	-- Emoji/avatar area
+	local emojiFrame = Instance.new("Frame")
+	emojiFrame.Name = "EmojiFrame"
+	emojiFrame.Size = UDim2.new(0, 48, 0, 48)
+	emojiFrame.Position = UDim2.new(0, 16, 0, 18)
+	emojiFrame.BackgroundColor3 = C.PinkPale
+	emojiFrame.ZIndex = 98
+	emojiFrame.Parent = self.interactHeader
+	UI.corner(emojiFrame, 24)
+	self.interactEmojiFrame = emojiFrame
+	
+	local emojiLabel = Instance.new("TextLabel")
+	emojiLabel.Name = "Emoji"
+	emojiLabel.Size = UDim2.fromScale(1, 1)
+	emojiLabel.BackgroundTransparency = 1
+	emojiLabel.Font = Enum.Font.GothamBold
+	emojiLabel.TextSize = 26
+	emojiLabel.Text = "👤"
+	emojiLabel.ZIndex = 99
+	emojiLabel.Parent = emojiFrame
+	self.interactEmoji = emojiLabel
 	
 	-- Name in header
 	self.interactName = Instance.new("TextLabel")
-	self.interactName.Size = UDim2.new(0.65, 0, 0, 28)
-	self.interactName.Position = UDim2.new(0, 20, 0, 20)
+	self.interactName.Name = "NameLabel"
+	self.interactName.Size = UDim2.new(1, -130, 0, 28)
+	self.interactName.Position = UDim2.new(0, 76, 0, 18)
 	self.interactName.BackgroundTransparency = 1
 	self.interactName.Font = F.Title
-	self.interactName.TextSize = 22
+	self.interactName.TextSize = 20
 	self.interactName.TextColor3 = C.White
 	self.interactName.TextXAlignment = Enum.TextXAlignment.Left
+	self.interactName.TextTruncate = Enum.TextTruncate.AtEnd
 	self.interactName.Text = "Name"
-	self.interactName.ZIndex = 97
+	self.interactName.ZIndex = 99
 	self.interactName.Parent = self.interactHeader
 	
 	-- Status in header
 	self.interactStatus = Instance.new("TextLabel")
-	self.interactStatus.Size = UDim2.new(0.6, 0, 0, 22)
-	self.interactStatus.Position = UDim2.new(0, 20, 0, 50)
+	self.interactStatus.Name = "StatusLabel"
+	self.interactStatus.Size = UDim2.new(1, -130, 0, 22)
+	self.interactStatus.Position = UDim2.new(0, 76, 0, 48)
 	self.interactStatus.BackgroundTransparency = 1
 	self.interactStatus.Font = F.Body
-	self.interactStatus.TextSize = 14
+	self.interactStatus.TextSize = 13
 	self.interactStatus.TextColor3 = Color3.new(1, 1, 1)
-	self.interactStatus.TextTransparency = 0.2
+	self.interactStatus.TextTransparency = 0.15
 	self.interactStatus.TextXAlignment = Enum.TextXAlignment.Left
 	self.interactStatus.Text = "Status"
-	self.interactStatus.ZIndex = 97
+	self.interactStatus.ZIndex = 99
 	self.interactStatus.Parent = self.interactHeader
 	
-	-- Close button
+	-- Close button (circular with X)
 	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 36, 0, 36)
+	closeBtn.Name = "CloseButton"
+	closeBtn.Size = UDim2.new(0, 32, 0, 32)
 	closeBtn.AnchorPoint = Vector2.new(1, 0)
-	closeBtn.Position = UDim2.new(1, -14, 0, 14)
+	closeBtn.Position = UDim2.new(1, -12, 0, 12)
 	closeBtn.BackgroundColor3 = C.White
 	closeBtn.BackgroundTransparency = 0.1
-	closeBtn.Font = F.Title
-	closeBtn.TextSize = 20
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 16
 	closeBtn.TextColor3 = C.Pink
-	closeBtn.Text = "X"
+	closeBtn.Text = "✕"
 	closeBtn.AutoButtonColor = false
-	closeBtn.ZIndex = 98
+	closeBtn.ZIndex = 100
 	closeBtn.Parent = self.interactHeader
-	UI.corner(closeBtn, 10)
+	UI.corner(closeBtn, 16)
+	self.interactCloseBtn = closeBtn
+	
+	closeBtn.MouseEnter:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0 })
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		UI.tween(closeBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.1 })
+	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		self:hideInteractionModal()
 	end)
 	
-	-- Actions scroll
+	-- Actions scroll area
 	self.actionsScroll = Instance.new("ScrollingFrame")
-	self.actionsScroll.Size = UDim2.new(1, -28, 1, -100)
-	self.actionsScroll.Position = UDim2.new(0, 14, 0, 95)
+	self.actionsScroll.Name = "ActionsScroll"
+	self.actionsScroll.Size = UDim2.new(1, -24, 1, -105)
+	self.actionsScroll.Position = UDim2.new(0, 12, 0, 95)
 	self.actionsScroll.BackgroundTransparency = 1
 	self.actionsScroll.ScrollBarThickness = 4
 	self.actionsScroll.ScrollBarImageColor3 = C.Gray400
 	self.actionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	self.actionsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	self.actionsScroll.ZIndex = 96
+	self.actionsScroll.ZIndex = 98
 	self.actionsScroll.Parent = card
 	
 	local actionsLayout = Instance.new("UIListLayout")
-	actionsLayout.Padding = UDim.new(0, 10)
+	actionsLayout.Padding = UDim.new(0, 8)
 	actionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	actionsLayout.Parent = self.actionsScroll
 	
 	local actionsPad = Instance.new("UIPadding")
 	actionsPad.PaddingBottom = UDim.new(0, 16)
+	actionsPad.PaddingTop = UDim.new(0, 4)
 	actionsPad.Parent = self.actionsScroll
 	
 	self.currentInteractPerson = nil
@@ -1238,11 +1306,42 @@ function RelationshipsScreen:showInteractionModal(person, relType, accentColor, 
 	self.currentInteractPerson = person
 	self.currentInteractType = relType
 	
-	-- Update header
+	-- Derive dark color for stroke
+	local darkColor = accentColor:Lerp(C.Black, 0.25)
+	
+	-- Update shell colors
+	self.interactShell.BackgroundColor3 = accentColor
+	self.interactShellStroke.Color = darkColor
+	
+	-- Update header colors
 	self.interactHeader.BackgroundColor3 = accentColor
 	self.interactHeader:FindFirstChild("HeaderCover").BackgroundColor3 = accentColor
-	self.interactName.Text = person.name
-	self.interactStatus.Text = person.role .. " | " .. math.floor(person.relationship or 50) .. "% Relationship"
+	self.interactEmojiFrame.BackgroundColor3 = paleColor
+	self.interactCloseBtn.TextColor3 = accentColor
+	
+	-- Update header content
+	self.interactName.Text = person.name or "Unknown"
+	self.interactStatus.Text = (person.role or "Person") .. " | " .. math.floor(person.relationship or 50) .. "% Relationship"
+	
+	-- Set emoji based on relationship type
+	local emoji = "👤"
+	if relType == "family" then
+		local role = (person.role or ""):lower()
+		if role:find("mother") or role:find("mom") then emoji = "👩"
+		elseif role:find("father") or role:find("dad") then emoji = "👨"
+		elseif role:find("sibling") or role:find("brother") then emoji = "👦"
+		elseif role:find("sister") then emoji = "👧"
+		elseif role:find("grand") then emoji = "👵"
+		elseif role:find("child") or role:find("son") or role:find("daughter") then emoji = "👶"
+		else emoji = "👪" end
+	elseif relType == "romance" then
+		emoji = "💕"
+	elseif relType == "friend" then
+		emoji = "🤝"
+	elseif relType == "enemy" then
+		emoji = "😠"
+	end
+	self.interactEmoji.Text = emoji
 	
 	-- Clear old actions
 	for _, child in ipairs(self.actionsScroll:GetChildren()) do
@@ -1265,24 +1364,43 @@ function RelationshipsScreen:showInteractionModal(person, relType, accentColor, 
 		self:createActionButton(action, i, accentColor, paleColor, person)
 	end
 	
-	-- Show modal
+	-- Animate show (shell, shadow, and card all animate together)
 	self.interactOverlay.Visible = true
-	self.interactCard.Position = UDim2.new(0.5, 0, 0.5, 50)
-	self.interactCard.BackgroundTransparency = 1
 	
-	UI.tween(self.interactCard, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	-- Initial positions for animation
+	self.interactShell.Position = UDim2.new(0.5, 0, 0.5, 40)
+	self.interactShadow.Position = UDim2.new(0.5, 3, 0.5, 43)
+	self.interactShell.BackgroundTransparency = 0.5
+	self.interactShadow.BackgroundTransparency = 1
+	
+	-- Animate to final positions
+	local tweenInfo = TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	UI.tween(self.interactShell, tweenInfo, {
 		Position = UDim2.fromScale(0.5, 0.5),
 		BackgroundTransparency = 0
+	})
+	UI.tween(self.interactShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 3),
+		BackgroundTransparency = 0.75
 	})
 end
 
 function RelationshipsScreen:hideInteractionModal()
-	UI.tween(self.interactCard, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Position = UDim2.new(0.5, 0, 0.5, 30),
+	local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	
+	UI.tween(self.interactShell, tweenInfo, {
+		Position = UDim2.new(0.5, 0, 0.5, 25),
+		BackgroundTransparency = 0.5
+	})
+	UI.tween(self.interactShadow, tweenInfo, {
+		Position = UDim2.new(0.5, 3, 0.5, 28),
 		BackgroundTransparency = 1
 	})
-	task.delay(0.2, function()
-		self.interactOverlay.Visible = false
+	
+	task.delay(0.18, function()
+		if self.interactOverlay then
+			self.interactOverlay.Visible = false
+		end
 	end)
 end
 
@@ -1291,7 +1409,7 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	local cost = action.cost or 0
 	-- Free actions (cost = 0) are always available!
 	local canAfford = (cost == 0) or (money >= cost)
-	
+
 	local card = Instance.new("Frame")
 	card.Name = action.id
 	card.Size = UDim2.new(1, 0, 0, 62)
@@ -1301,169 +1419,316 @@ function RelationshipsScreen:createActionButton(action, order, accentColor, pale
 	card.Parent = self.actionsScroll
 	UI.corner(card, 14)
 	UI.stroke(card, 1, canAfford and 0.7 or 0.88, canAfford and accentColor or C.Gray200)
-	
+
 	-- Name
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0.5, 0, 0, 22)
-	nameLabel.Position = UDim2.new(0, 16, 0, 10)
+	nameLabel.Size = UDim2.new(0.6, 0, 0, 24)
+	nameLabel.Position = UDim2.new(0, 16, 0, 8)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = F.Title
 	nameLabel.TextSize = 15
-	nameLabel.TextColor3 = C.Gray900
+	nameLabel.TextColor3 = canAfford and C.Gray900 or C.Gray500
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Text = action.name
+	nameLabel.Text = action.name or "Action"
 	nameLabel.ZIndex = 98
 	nameLabel.Parent = card
-	
-	-- Effect badge - show FREE for no-cost actions
-	local effectText = action.effect
-	local badgeBg = paleColor
-	local badgeTextColor = accentColor
-	
-	if cost > 0 then
-		effectText = action.effect .. " | $" .. cost
-		badgeBg = canAfford and C.AmberPale or C.RedPale
-		badgeTextColor = canAfford and C.AmberDark or C.RedDark
-	else
-		effectText = action.effect .. " | FREE"
-		badgeBg = C.GreenPale
-		badgeTextColor = C.GreenDark
-	end
-	
-	local effectBadge = Instance.new("Frame")
-	effectBadge.Size = UDim2.new(0, math.clamp(#effectText * 7 + 20, 100, 180), 0, 24)
-	effectBadge.Position = UDim2.new(0, 16, 0, 34)
-	effectBadge.BackgroundColor3 = badgeBg
-	effectBadge.ZIndex = 98
-	effectBadge.Parent = card
-	UI.pill(effectBadge)
-	
+
+	-- Effect / description line
 	local effectLabel = Instance.new("TextLabel")
-	effectLabel.Size = UDim2.fromScale(1, 1)
+	effectLabel.Size = UDim2.new(0.6, 0, 0, 20)
+	effectLabel.Position = UDim2.new(0, 16, 0, 34)
 	effectLabel.BackgroundTransparency = 1
-	effectLabel.Font = F.Medium
-	effectLabel.TextSize = 11
-	effectLabel.TextColor3 = badgeTextColor
-	effectLabel.Text = effectText
-	effectLabel.ZIndex = 99
-	effectLabel.Parent = effectBadge
-	
-	-- Button
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 60, 0, 38)
-	btn.AnchorPoint = Vector2.new(1, 0.5)
-	btn.Position = UDim2.new(1, -12, 0.5, 0)
-	btn.BackgroundColor3 = canAfford and accentColor or C.Gray300
-	btn.Font = F.Button
-	btn.TextSize = 13
-	btn.TextColor3 = canAfford and C.White or C.Gray500
-	btn.Text = canAfford and "Do" or "Need $"
-	btn.AutoButtonColor = false
-	btn.ZIndex = 98
-	btn.Parent = card
-	UI.corner(btn, 10)
-	
+	effectLabel.Font = F.Body
+	effectLabel.TextSize = 12
+	effectLabel.TextColor3 = canAfford and C.Gray500 or C.Gray400
+	effectLabel.TextXAlignment = Enum.TextXAlignment.Left
+	effectLabel.Text = action.effect or ""
+	effectLabel.ZIndex = 98
+	effectLabel.Parent = card
+
+	-- Cost badge (if any)
+	if cost > 0 then
+		local costBadge = Instance.new("Frame")
+		costBadge.Size = UDim2.new(0, 90, 0, 26)
+		costBadge.AnchorPoint = Vector2.new(1, 0)
+		costBadge.Position = UDim2.new(1, -16, 0, 10)
+		costBadge.BackgroundColor3 = canAfford and C.GreenPale or C.Gray200
+		costBadge.ZIndex = 98
+		costBadge.Parent = card
+		UI.pill(costBadge)
+
+		local costLabel = Instance.new("TextLabel")
+		costLabel.Size = UDim2.fromScale(1, 1)
+		costLabel.BackgroundTransparency = 1
+		costLabel.Font = F.Medium
+		costLabel.TextSize = 11
+		costLabel.TextColor3 = canAfford and C.GreenDark or C.Gray500
+		costLabel.Text = (canAfford and "- " or "Need ") .. UI.formatMoney(cost)
+		costLabel.ZIndex = 99
+		costLabel.Parent = costBadge
+	end
+
+	-- Full-card click area
+	local clickArea = Instance.new("TextButton")
+	clickArea.Size = UDim2.fromScale(1, 1)
+	clickArea.BackgroundTransparency = 1
+	clickArea.Text = ""
+	clickArea.AutoButtonColor = false
+	clickArea.ZIndex = 100
+	clickArea.Parent = card
+
 	if canAfford then
-		btn.MouseEnter:Connect(function()
-			UI.tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = accentColor:Lerp(C.Black, 0.15) })
-			UI.tween(card, TweenInfo.new(0.1), { BackgroundColor3 = paleColor:Lerp(C.White, 0.6) })
+		clickArea.MouseEnter:Connect(function()
+			UI.tween(card, TweenInfo.new(0.12), {
+				BackgroundColor3 = paleColor:Lerp(C.White, 0.4)
+			})
 		end)
-		btn.MouseLeave:Connect(function()
-			UI.tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = accentColor })
-			UI.tween(card, TweenInfo.new(0.1), { BackgroundColor3 = C.White })
+		clickArea.MouseLeave:Connect(function()
+			UI.tween(card, TweenInfo.new(0.12), {
+				BackgroundColor3 = C.White
+			})
 		end)
-		btn.MouseButton1Click:Connect(function()
-			self:hideInteractionModal()
-			task.delay(0.3, function()
-				self:doInteraction(action.id, self.currentInteractType, person)
-			end)
+
+		clickArea.MouseButton1Click:Connect(function()
+			-- When clicking an action from the modal, we already have current person/type
+			local relType = self.currentInteractType
+			local explicitPerson = person or self.currentInteractPerson
+			self:doInteraction(action.id, relType, explicitPerson, cost)
 		end)
+	else
+		-- Visually disabled
+		clickArea.Active = false
+		clickArea.AutoButtonColor = false
 	end
 end
 
+-- Result popup for interaction outcomes (Premium BitLife-style modal with colored shell)
 function RelationshipsScreen:createResultModal()
+	-- Use the standardized premium modal card from UIComponents
 	self.resultModal = UI.createModalCard(self.screenGui, {
 		name = "RelationshipsResult",
-		accentColor = C.Green,
-		accentDark = C.GreenDark,
-		accentPale = C.GreenPale,
+		accentColor = C.Pink,
+		accentDark = C.PinkDark,
+		accentPale = C.PinkPale,
+		buttonText = "Continue",
 		zIndex = 98
 	})
 	
+	-- Connect close handlers
 	self.resultModal.closeArea.MouseButton1Click:Connect(function()
-		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+		UI.hideModal(self.resultModal, function()
+			-- Refresh current tab after closing result
+			self:switchTab(self.currentTab)
+		end)
 	end)
 	self.resultModal.okButton.MouseButton1Click:Connect(function()
-		UI.hideModal(self.resultModal, function() self:switchTab(self.currentTab) end)
+		UI.hideModal(self.resultModal, function()
+			-- Refresh current tab after closing result
+			self:switchTab(self.currentTab)
+		end)
+	end)
+	
+	-- Add hover effects to OK button
+	self.resultModal.okButton.MouseEnter:Connect(function()
+		UI.tween(self.resultModal.okButton, TweenInfo.new(0.12), {
+			BackgroundColor3 = self.resultModal.okButton.BackgroundColor3:Lerp(C.Black, 0.15)
+		})
+	end)
+	self.resultModal.okButton.MouseLeave:Connect(function()
+		-- Reset to current shell color
+		local shellColor = self.resultModal.shell.BackgroundColor3
+		UI.tween(self.resultModal.okButton, TweenInfo.new(0.12), {
+			BackgroundColor3 = shellColor
+		})
 	end)
 end
 
-function RelationshipsScreen:doInteraction(actionId, relType, person)
-	log("=== DOING INTERACTION ===")
-	log("Action ID:", actionId, "Relation Type:", relType)
-	log("Person:", person and person.name or "None", "Person ID:", person and person.id or "None")
-	log("Player Money:", self:getMoney())
-	
-	if not DoInteraction then
-		logWarn("DoInteraction remote not available!")
-		self:showResult(false, "Server not available", "Error")
-		return
+function RelationshipsScreen:showResultModal(title, message, accentColor)
+	if not self.resultModal then
+		self:createResultModal()
 	end
 	
-	local personId = person and person.id or nil
-	log("Invoking server DoInteraction...")
-	local result = DoInteraction:InvokeServer(actionId, relType, personId)
-	log("Server response:", result and "received" or "nil")
-	
-	if result then
-		log("Success:", result.success, "Message:", result.message)
-		self:showResult(result.success, result.message, result.success and "Done!" or "Failed")
-	else
-		logWarn("Server returned nil!")
-		self:showResult(false, "Server error", "Error")
+	-- Determine if this is a positive or negative result based on keywords
+	local isPositive = true
+	if message then
+		local lowerMsg = message:lower()
+		if lowerMsg:find("fail") or lowerMsg:find("reject") or lowerMsg:find("refused") 
+			or lowerMsg:find("angry") or lowerMsg:find("upset") or lowerMsg:find("worse")
+			or lowerMsg:find("error") or lowerMsg:find("broke up") or lowerMsg:find("ended") then
+			isPositive = false
+		end
 	end
-end
-
-function RelationshipsScreen:showResult(success, message, emoji)
-	local shellColor = success and C.Green or C.Red
-	local shellStroke = success and C.GreenDark or C.RedDark
-	local pale = success and C.GreenPale or C.RedPale
 	
+	-- Set colors based on result type
+	local shellColor = accentColor or (isPositive and C.Green or C.Red)
+	local shellDark = isPositive and C.GreenDark or C.RedDark
+	local paleColor = isPositive and C.GreenPale or C.RedPale
+	
+	-- If accent color was provided, use it
+	if accentColor then
+		shellColor = accentColor
+		if accentColor == C.Pink then
+			shellDark = C.PinkDark
+			paleColor = C.PinkPale
+		elseif accentColor == C.Purple then
+			shellDark = C.PurpleDark
+			paleColor = C.PurplePale
+		elseif accentColor == C.Cyan then
+			shellDark = C.CyanDark
+			paleColor = C.CyanPale
+		end
+	end
+	
+	-- Update modal appearance
 	self.resultModal.shell.BackgroundColor3 = shellColor
-	self.resultModal.shellStroke.Color = shellStroke
-	self.resultModal.emojiFrame.BackgroundColor3 = pale
-	self.resultModal.emojiLabel.Text = emoji or (success and "OK" or "X")
-	self.resultModal.titleLabel.Text = success and "Success!" or "Uh oh..."
-	self.resultModal.titleLabel.TextColor3 = success and C.GreenDark or C.RedDark
-	self.resultModal.messageLabel.Text = message or ""
+	self.resultModal.shellStroke.Color = shellDark
+	self.resultModal.emojiFrame.BackgroundColor3 = paleColor
 	self.resultModal.okButton.BackgroundColor3 = shellColor
 	
+	-- Set emoji based on outcome
+	local emoji = isPositive and "💕" or "💔"
+	if title and title:find("Date") then emoji = isPositive and "❤️" or "💔" end
+	if title and title:find("Gift") then emoji = isPositive and "🎁" or "😔" end
+	if title and title:find("Talk") then emoji = isPositive and "💬" or "😶" end
+	if title and title:find("Hug") then emoji = isPositive and "🤗" or "😐" end
+	if title and title:find("Propose") then emoji = isPositive and "💍" or "💔" end
+	if title and title:find("Kiss") then emoji = isPositive and "💋" or "😳" end
+	if title and title:find("Meet") then emoji = isPositive and "👋" or "🤷" end
+	if title and title:find("Friend") then emoji = isPositive and "🤝" or "😞" end
+	if title and title:find("Fight") then emoji = "👊" end
+	if title and title:find("Insult") then emoji = "😤" end
+	if title and title:find("Apologize") then emoji = isPositive and "🙏" or "😕" end
+	
+	self.resultModal.emojiLabel.Text = emoji
+	self.resultModal.titleLabel.Text = title or "Interaction"
+	self.resultModal.titleLabel.TextColor3 = shellDark
+	self.resultModal.messageLabel.Text = message or "Something happened..."
+	
+	-- Show with premium animation
 	UI.showModal(self.resultModal)
 end
 
-function RelationshipsScreen:show()
-	log("=== SHOWING RelationshipsScreen ===")
-	log("Current state - Age:", self:getAge(), "Money:", self:getMoney())
-	local family = self:getFamily()
-	log("Family members:", #family)
-	for _, f in ipairs(family) do
-		log("  -", f.name, "(", f.role, ") Age:", f.age, "Alive:", f.alive)
+function RelationshipsScreen:hideResultModal()
+	if not self.resultModal or not self.resultModal.overlay.Visible then return end
+	UI.hideModal(self.resultModal)
+end
+
+-- Core call into server for any interaction / meet action
+-- actionId: string (e.g. "hug", "gift", "meet_someone")
+-- relTypeOverride: "family" | "romance" | "friend" | "enemy" | nil
+-- personOverride: relationship table or nil (for "meet" style actions)
+-- cost: number (already checked client-side for afford)
+function RelationshipsScreen:doInteraction(actionId, relTypeOverride, personOverride, cost)
+	if not DoInteraction then
+		logWarn("DoInteraction Remote not found; cannot perform interaction")
+		self:showResultModal("Error", "Interaction system is not ready yet.")
+		return
 	end
-	self:updateInfoBar()
-	self:switchTab(self.currentTab)
-	UI.slideInScreen(self.overlay, "right")
+
+	local relType = relTypeOverride or self.currentInteractType or "family"
+	local person = personOverride or self.currentInteractPerson
+
+	-- Build payload for server – adjust to match your LifeRemotes backend
+	local payload = {
+		actionId = actionId,
+		relationshipType = relType,
+		targetId = person and person.id or nil,
+		cost = cost or 0,
+	}
+
+	log("Firing DoInteraction:", actionId, "Type:", relType, "Target:", payload.targetId, "Cost:", payload.cost)
+
+	-- Close the interaction modal so result feels snappy
+	if self.interactOverlay and self.interactOverlay.Visible then
+		self:hideInteractionModal()
+	end
+
+	-- Optimistic "processing" feel could be added if you want
+	local ok, result = pcall(function()
+		if DoInteraction:IsA("RemoteFunction") then
+			return DoInteraction:InvokeServer(payload)
+		else
+			-- RemoteEvent: fire and expect server to update life state via LifeStateUpdated remote, etc.
+			DoInteraction:FireServer(payload)
+			return nil
+		end
+	end)
+
+	if not ok then
+		logWarn("DoInteraction failed:", result)
+		self:showResultModal("Error", "Something went wrong while performing that action.")
+		return
+	end
+
+	-- Result contract is flexible; this handles common patterns:
+	-- result = { success = true/false, title = "...", message = "...", state = {...} }
+	if type(result) == "table" then
+		if result.state or result.newState then
+			self:updateState(result.state or result.newState)
+		end
+
+		local title = result.title
+		if not title then
+			if person and person.name then
+				title = actionId:gsub("^%l", string.upper) .. " with " .. person.name
+			else
+				title = "Interaction"
+			end
+		end
+
+		local msg = result.message or result.resultText or "Interaction complete."
+		self:showResultModal(title, msg)
+	else
+		-- No structured result – just refresh UI from whatever state you already have
+		self:updateInfoBar()
+	end
+end
+
+-- Public API: show / hide / toggle whole Relationships screen
+function RelationshipsScreen:show(tabId)
+	if self.isVisible then return end
 	self.isVisible = true
-	log("✅ RelationshipsScreen is now visible")
+
+	if self.showBlur then
+		pcall(self.showBlur)
+	end
+
+	self.overlay.Visible = true
+
+	-- Make sure chips + tab content are up to date
+	self:updateInfoBar()
+	if tabId then
+		self:switchTab(tabId)
+	else
+		self:switchTab(self.currentTab or "family")
+	end
 end
 
 function RelationshipsScreen:hide()
-	log("=== HIDING RelationshipsScreen ===")
-	UI.slideOutScreen(self.overlay, "right", function()
-		self.resultModal.overlay.Visible = false
-		self.interactOverlay.Visible = false
-		log("✅ RelationshipsScreen hidden, modals cleaned up")
-	end)
+	if not self.isVisible then return end
 	self.isVisible = false
+
+	if self.hideBlur then
+		pcall(self.hideBlur)
+	end
+
+	self.overlay.Visible = false
+
+	-- Also hide any open modals
+	if self.interactOverlay then
+		self.interactOverlay.Visible = false
+	end
+	if self.resultOverlay then
+		self.resultOverlay.Visible = false
+	end
+end
+
+function RelationshipsScreen:toggle()
+	if self.isVisible then
+		self:hide()
+	else
+		self:show()
+	end
 end
 
 return RelationshipsScreen

@@ -78,6 +78,7 @@ local TrySpecialCareer = getRemote("TrySpecialCareer", true)
 local RequestPromotion = getRemote("RequestPromotion", true)
 local RequestRaise = getRemote("RequestRaise", true)
 local GetCareerInfo = getRemote("GetCareerInfo", true)
+local GetEducationInfo = getRemote("GetEducationInfo", true)
 
 local BuyProperty = getRemote("BuyProperty", true)
 local BuyVehicle = getRemote("BuyVehicle", true)
@@ -115,7 +116,7 @@ local ExtendedStates = {} -- [UserId] = { Education, Experience, CurrentJob, etc
 local function getExtendedState(player)
 	if not ExtendedStates[player.UserId] then
 		ExtendedStates[player.UserId] = {
-			Education = "None",
+			Education = "none",  -- Use ID-based format for consistency
 			Experience = 0,
 			CurrentJob = nil,
 			OwnedProperties = {},
@@ -136,31 +137,37 @@ local function updateAutoEducation(player)
 	local age = lifeState and lifeState.Age or 0
 	
 	-- Only auto-progress if they don't already have higher education
-	local currentEdu = extState.Education or "None"
+	local currentEdu = extState.Education or "none"
 	
-	-- Education hierarchy for checking
+	-- Education hierarchy for checking (supports both old and new formats)
 	local eduLevels = {
-		["None"] = 0,
+		["None"] = 0, ["none"] = 0,
 		["Elementary"] = 1,
 		["Middle School"] = 2,
-		["High School"] = 3,
-		["Community College"] = 4,
-		["Bachelor's"] = 5,
-		["Master's"] = 6,
-		["Medical School"] = 7,
-		["Law School"] = 7,
-		["PhD"] = 8,
+		["High School"] = 3, ["high_school"] = 3,
+		["Community College"] = 4, ["community"] = 4,
+		["Bachelor's"] = 5, ["bachelor"] = 5,
+		["Master's"] = 6, ["master"] = 6,
+		["Medical School"] = 7, ["medical"] = 7,
+		["Law School"] = 7, ["law"] = 7,
+		["PhD"] = 8, ["phd"] = 8,
 	}
 	
 	local currentLevel = eduLevels[currentEdu] or 0
 	
 	-- Auto-assign education based on age (only if they don't have something higher)
+	-- Now using ID-based system
 	if age >= 18 and currentLevel < 3 then
-		extState.Education = "High School"
-	elseif age >= 14 and currentLevel < 2 then
-		extState.Education = "Middle School"
-	elseif age >= 5 and currentLevel < 1 then
-		extState.Education = "Elementary"
+		extState.Education = "high_school"
+		-- Mark as graduated from high school
+		if lifeState then
+			lifeState:SetFlag("high_school_graduate")
+		end
+	elseif age >= 5 and age < 18 then
+		-- Still in K-12, set as high school (in progress)
+		if currentLevel < 3 then
+			extState.Education = "high_school"
+		end
 	end
 end
 
@@ -243,6 +250,11 @@ local function canAfford(player, cost)
 	return lifeState and lifeState.Money >= cost
 end
 
+local function getMoney(player)
+	local lifeState = getLifeManagerState(player)
+	return lifeState and lifeState.Money or 0
+end
+
 local function deductMoney(player, amount)
 	local lifeState = getLifeManagerState(player)
 	if lifeState then
@@ -269,7 +281,10 @@ local function hasEducation(player, required)
 	updateAutoEducation(player)
 	
 	local extState = getExtendedState(player)
+	
+	-- Support both old string-based and new ID-based education levels
 	local eduLevels = {
+		-- Old string-based
 		["None"] = 0,
 		["Elementary"] = 1,
 		["Middle School"] = 2,
@@ -280,11 +295,22 @@ local function hasEducation(player, required)
 		["Medical School"] = 7,
 		["Law School"] = 7,
 		["PhD"] = 8,
+		-- New ID-based
+		["none"] = 0,
+		["high_school"] = 3,
+		["community"] = 4,
+		["bachelor"] = 5,
+		["master"] = 6,
+		["medical"] = 7,
+		["law"] = 7,
+		["phd"] = 8,
 	}
-	local playerLevel = eduLevels[extState.Education] or 0
+	
+	local playerEdu = extState.Education or "none"
+	local playerLevel = eduLevels[playerEdu] or 0
 	local requiredLevel = eduLevels[required] or 0
 	
-	print("[LifeRemoteHandlers] hasEducation check:", extState.Education, "vs required:", required, "->", playerLevel >= requiredLevel)
+	print("[LifeRemoteHandlers] hasEducation check:", playerEdu, "vs required:", required, "->", playerLevel >= requiredLevel)
 	return playerLevel >= requiredLevel
 end
 
@@ -604,13 +630,14 @@ local CareerLadders = {
 
 -- Education options for MANUAL enrollment (College+)
 -- Elementary/Middle/High School are AUTOMATIC based on age
+-- FIXED: Now uses ID-based requirements that match what we set in extState.Education
 local EducationOptions = {
-	{ id = "community", name = "Community College", minAge = 18, maxAge = 99, cost = 15000, requirement = "High School", grants = "Community College", duration = 2 },
-	{ id = "bachelor", name = "Bachelor's Degree", minAge = 18, maxAge = 99, cost = 80000, requirement = "High School", grants = "Bachelor's", duration = 4 },
-	{ id = "master", name = "Master's Degree", minAge = 22, maxAge = 99, cost = 60000, requirement = "Bachelor's", grants = "Master's", duration = 2 },
-	{ id = "medical", name = "Medical School", minAge = 22, maxAge = 45, cost = 200000, requirement = "Bachelor's", grants = "Medical School", duration = 4 },
-	{ id = "law", name = "Law School", minAge = 22, maxAge = 50, cost = 150000, requirement = "Bachelor's", grants = "Law School", duration = 3 },
-	{ id = "phd", name = "PhD Program", minAge = 24, maxAge = 99, cost = 100000, requirement = "Master's", grants = "PhD", duration = 5 },
+	{ id = "community", name = "Community College", minAge = 18, maxAge = 99, cost = 15000, requirement = "high_school", grants = "community", duration = 2 },
+	{ id = "bachelor", name = "Bachelor's Degree", minAge = 18, maxAge = 99, cost = 80000, requirement = "high_school", grants = "bachelor", duration = 4 },
+	{ id = "master", name = "Master's Degree", minAge = 22, maxAge = 99, cost = 60000, requirement = "bachelor", grants = "master", duration = 2 },
+	{ id = "medical", name = "Medical School", minAge = 22, maxAge = 45, cost = 200000, requirement = "bachelor", grants = "medical", duration = 4 },
+	{ id = "law", name = "Law School", minAge = 22, maxAge = 50, cost = 150000, requirement = "bachelor", grants = "law", duration = 3 },
+	{ id = "phd", name = "PhD Program", minAge = 24, maxAge = 99, cost = 100000, requirement = "master", grants = "phd", duration = 5 },
 }
 
 -- EXPANDED FREELANCE GIGS (25+ options)
@@ -1123,6 +1150,14 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	local roll = math.random(100)
 	print("[LifeRemoteHandlers] Acceptance roll:", roll, "vs", acceptanceChance)
 	
+	-- CRITICAL: Always set job_seeking/applied_for_jobs flag when player applies
+	-- This enables follow-up events in the LifeEvents system
+	if lifeState then
+		lifeState:SetFlag("applied_for_jobs")
+		lifeState:SetFlag("job_seeking")
+		print("[LifeRemoteHandlers] Set 'applied_for_jobs' and 'job_seeking' flags")
+	end
+	
 	if roll > acceptanceChance then
 		local message = "Unfortunately, " .. job.company .. " decided not to hire you."
 		if isExConvict then
@@ -1132,7 +1167,15 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 		elseif job.reqLooks and looks < job.reqLooks + 10 then
 			message = job.company .. " decided to go with another candidate."
 		end
+		-- Keep job_seeking flag - they're still looking!
 		return { success = false, message = message }
+	end
+	
+	-- Player got hired - clear job_seeking flag
+	if lifeState then
+		lifeState:ClearFlag("job_seeking")
+		lifeState:ClearFlag("applied_for_jobs")
+		print("[LifeRemoteHandlers] Cleared job seeking flags - player is now employed")
 	end
 	
 	-- ════════════════════════════════════════════════════════════════
@@ -1171,6 +1214,10 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	
 	-- Set job-specific flags
 	if lifeState then
+		-- CRITICAL: Set 'employed' flag for event system
+		lifeState:SetFlag("employed")
+		print("[LifeRemoteHandlers] Set 'employed' flag via ApplyForJob")
+		
 		if job.category == "military" then lifeState:SetFlag("military_service") end
 		if job.category == "government" and job.id == "police_officer" then lifeState:SetFlag("police_officer") end
 		if job.category == "medical" and string.find(job.id, "doctor") then lifeState:SetFlag("medical_professional") end
@@ -1221,6 +1268,7 @@ end
 QuitJob.OnServerInvoke = function(player)
 	local extState = getExtendedState(player)
 	local careerData = getCareerData(player)
+	local lifeState = getLifeManagerState(player)
 	
 	if extState.CurrentJob then
 		local job = extState.CurrentJob
@@ -1243,6 +1291,12 @@ QuitJob.OnServerInvoke = function(player)
 		careerData.PromotionProgress = 0
 		careerData.Warnings = 0
 		careerData.Raises = 0
+		
+		-- CRITICAL: Clear 'employed' flag when quitting job
+		if lifeState then
+			lifeState:ClearFlag("employed")
+			print("[LifeRemoteHandlers] Cleared 'employed' flag via QuitJob")
+		end
 		
 		syncStateToClient(player)
 		return { success = true, message = "You quit " .. jobTitle .. ". You're now unemployed." }
@@ -1438,6 +1492,13 @@ DoWork.OnServerInvoke = function(player)
 		careerData.Warnings = 0
 		careerData.YearsAtCurrentJob = 0
 		careerData.PromotionProgress = 0
+		
+		-- CRITICAL: Clear 'employed' flag when getting fired
+		if lifeState then
+			lifeState:ClearFlag("employed")
+			print("[LifeRemoteHandlers] Cleared 'employed' flag - got fired")
+		end
+		
 		syncStateToClient(player)
 		
 		return {
@@ -1475,6 +1536,138 @@ DoWork.OnServerInvoke = function(player)
 		eventMessage = eventMessage
 	}
 end
+
+----------------------------------------------------------------
+-- EDUCATION HELPER FUNCTIONS
+----------------------------------------------------------------
+
+-- Helper to get institution name based on education level
+local function getInstitutionName(eduId)
+	local institutions = {
+		community = { "Community College", "Technical Institute", "City College", "Metro Community College" },
+		bachelor = { "State University", "City University", "Metro University", "Regional College", "Liberal Arts College" },
+		master = { "State University Graduate School", "Graduate Institute", "Advanced Studies Center" },
+		phd = { "State University Research Program", "Doctoral Institute", "Academy of Sciences" },
+		law = { "State Law School", "City Law School", "Regional Law Academy" },
+		medical = { "Medical School", "School of Medicine", "Health Sciences University" },
+	}
+	local options = institutions[eduId] or { "University" }
+	return options[math.random(1, #options)]
+end
+
+-- Helper to get random major based on education level
+local function getRandomMajor(eduId)
+	if eduId == "community" then
+		local majors = { "General Studies", "Business Administration", "Computer Science", "Nursing", "Engineering Tech", "Liberal Arts" }
+		return majors[math.random(1, #majors)]
+	elseif eduId == "bachelor" then
+		local majors = { "Computer Science", "Business", "Psychology", "Biology", "English", "Engineering", "Economics", "Political Science", "Communications", "Nursing", "Art", "History", "Mathematics", "Chemistry", "Sociology" }
+		return majors[math.random(1, #majors)]
+	elseif eduId == "master" then
+		local majors = { "MBA", "Computer Science", "Education", "Public Administration", "Engineering", "Psychology", "Data Science" }
+		return majors[math.random(1, #majors)]
+	elseif eduId == "law" then
+		return "Law (J.D.)"
+	elseif eduId == "medical" then
+		return "Medicine (M.D.)"
+	elseif eduId == "phd" then
+		local majors = { "Physics", "Chemistry", "Biology", "Computer Science", "Economics", "Psychology", "Engineering", "Mathematics" }
+		return majors[math.random(1, #majors)]
+	end
+	return "Undeclared"
+end
+
+-- Progress education each year (called during age progression)
+local function progressEducation(player)
+	local extState = getExtendedState(player)
+	local state = getPlayerState(player)
+	local lifeState = getLifeManagerState(player)
+	
+	if not extState.EducationData or extState.EducationData.Status ~= "enrolled" then
+		return nil -- Not enrolled
+	end
+	
+	local eduData = extState.EducationData
+	local smarts = state.Stats and state.Stats.Smarts or 50
+	
+	-- Calculate semester GPA based on smarts + some randomness
+	local baseGPA = 2.0 + (smarts / 100) * 2.0
+	local randomFactor = (math.random() - 0.5) * 0.6 -- +/- 0.3
+	local semesterGPA = math.clamp(baseGPA + randomFactor, 0, 4.0)
+	semesterGPA = math.floor(semesterGPA * 100) / 100
+	
+	-- Add to transcript
+	local termNames = { "Fall", "Spring" }
+	local yearNames = { "Freshman", "Sophomore", "Junior", "Senior", "Graduate Year 1", "Graduate Year 2", "Graduate Year 3", "Graduate Year 4", "Graduate Year 5" }
+	local yearName = yearNames[eduData.Year] or ("Year " .. eduData.Year)
+	
+	table.insert(eduData.Grades, {
+		term = yearName .. " " .. termNames[math.random(1, 2)],
+		gpa = semesterGPA,
+		year = eduData.Year,
+	})
+	
+	-- Update cumulative GPA (weighted average)
+	local totalGrades = #eduData.Grades
+	if totalGrades > 0 then
+		local sum = 0
+		for _, g in ipairs(eduData.Grades) do
+			sum = sum + (g.gpa or 0)
+		end
+		eduData.GPA = math.floor((sum / totalGrades) * 100) / 100
+	end
+	
+	-- Progress credits
+	local creditsThisYear = math.random(25, 35)
+	eduData.CreditsEarned = (eduData.CreditsEarned or 0) + creditsThisYear
+	
+	-- Calculate progress percentage
+	if eduData.CreditsRequired and eduData.CreditsRequired > 0 then
+		eduData.Progress = math.clamp((eduData.CreditsEarned / eduData.CreditsRequired) * 100, 0, 100)
+	else
+		eduData.Progress = math.clamp((eduData.Year / eduData.TotalYears) * 100, 0, 100)
+	end
+	
+	-- Check for academic probation
+	if eduData.GPA < 2.0 then
+		eduData.Status = "probation"
+		return { type = "probation", message = "⚠️ Your GPA has dropped below 2.0. You're on academic probation!" }
+	end
+	
+	-- Check for graduation
+	if eduData.Year >= eduData.TotalYears then
+		-- Graduate!
+		eduData.Status = "graduated"
+		eduData.Progress = 100
+		state.Enrolled = false
+		if lifeState then
+			lifeState.Enrolled = false
+			lifeState:ClearFlag("college_student")
+			lifeState:ClearFlag("enrolled_" .. eduData.Level)
+			lifeState:SetFlag(eduData.Level .. "_graduate")
+			lifeState:SetFlag("college_graduate")
+		end
+		
+		-- Update education level
+		state.Education = eduData.Level
+		extState.Education = eduData.Level
+		
+		return { 
+			type = "graduation", 
+			message = "🎓 Congratulations! You graduated from " .. (eduData.Institution or "University") .. " with a " .. string.format("%.2f", eduData.GPA) .. " GPA!",
+			degree = eduData.Level,
+			gpa = eduData.GPA
+		}
+	end
+	
+	-- Move to next year
+	eduData.Year = eduData.Year + 1
+	
+	return { type = "progress", message = "📚 You completed a year of school. GPA: " .. string.format("%.2f", eduData.GPA) }
+end
+
+-- Expose progressEducation globally so LifeManager can call it
+_G.ProgressPlayerEducation = progressEducation
 
 EnrollEducation.OnServerInvoke = function(player, eduId)
 	local state = getPlayerState(player)
@@ -1591,35 +1784,114 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		end
 	end
 	
-	-- Check cost
-	if not canAfford(player, actualCost) then
-		local message = "You can't afford this! Cost: $" .. actualCost
-		if isExConvict and actualCost > edu.cost then
-			message = "You can't afford this! Cost: $" .. actualCost .. " (increased due to limited financial aid for ex-convicts)"
-		end
-		return { success = false, message = message }
+	-- ═══════════════════════════════════════════════════════════════
+	-- STUDENT LOAN SYSTEM - No longer hard-gates on money!
+	-- Pay what you can afford upfront (up to 25%), rest becomes debt
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local currentMoney = getMoney(player)
+	local maxUpfront = math.floor(actualCost * 0.25) -- Can pay up to 25% upfront
+	local upfrontPayment = 0
+	local loanAmount = actualCost
+	local usedLoan = false
+	
+	-- Calculate how much to pay upfront vs loan
+	if currentMoney >= actualCost then
+		-- Can pay in full - no loan needed
+		upfrontPayment = actualCost
+		loanAmount = 0
+		usedLoan = false
+	elseif currentMoney > 0 then
+		-- Pay what you can (up to 25%)
+		upfrontPayment = math.min(currentMoney, maxUpfront)
+		loanAmount = actualCost - upfrontPayment
+		usedLoan = true
+	else
+		-- No money - everything goes to loans
+		upfrontPayment = 0
+		loanAmount = actualCost
+		usedLoan = true
+	end
+	
+	print("[LifeRemoteHandlers] Education cost breakdown:")
+	print("  Total cost:", actualCost)
+	print("  Player money:", currentMoney)
+	print("  Upfront payment:", upfrontPayment)
+	print("  Student loan:", loanAmount)
+	
+	-- Deduct upfront payment
+	if upfrontPayment > 0 then
+		deductMoney(player, upfrontPayment)
 	end
 	
 	-- Enroll!
-	deductMoney(player, actualCost)
-	extState.Education = edu.grants
+	extState.Education = edu.id -- Use ID for consistency (community, bachelor, master, etc.)
+	
+	-- Initialize EducationData for tracking GPA, progress, debt, etc.
+	local smarts = state.Stats and state.Stats.Smarts or 50
+	local startingGPA = 2.5 + (smarts / 100) * 1.5 -- Range 2.5-4.0 based on smarts
+	startingGPA = math.floor(startingGPA * 100) / 100
+	
+	-- Calculate existing debt + new loan
+	local existingDebt = (extState.EducationData and extState.EducationData.Debt) or 0
+	local totalDebt = existingDebt + loanAmount
+	
+	extState.EducationData = {
+		Level = edu.id,
+		Institution = getInstitutionName(edu.id),
+		Major = getRandomMajor(edu.id),
+		GPA = startingGPA,
+		Progress = 0,
+		Debt = totalDebt, -- Total student loan debt
+		Year = 1,
+		TotalYears = edu.duration or 4,
+		CreditsEarned = 0,
+		CreditsRequired = (edu.duration or 4) * 30, -- ~30 credits per year
+		Status = "enrolled",
+		Grades = {}, -- Transcript entries
+		EnrollmentYear = state.Age,
+		UsedLoan = usedLoan,
+		LoanAmount = loanAmount,
+		UpfrontPaid = upfrontPayment,
+	}
+	
+	-- Mark as enrolled
+	state.Enrolled = true
+	if lifeState then
+		lifeState.Enrolled = true
+	end
 	
 	-- Set college_student flag if applicable
-	if lifeState and (edu.grants == "Bachelor's" or edu.grants == "Master's" or edu.grants == "PhD" 
-		or edu.grants == "Medical School" or edu.grants == "Law School") then
+	if lifeState and (edu.id == "bachelor" or edu.id == "master" or edu.id == "phd" 
+		or edu.id == "medical" or edu.id == "law" or edu.id == "community") then
 		lifeState:SetFlag("college_student")
+		lifeState:SetFlag("enrolled_" .. edu.id)
 	end
 	
 	syncStateToClient(player)
 	
-	local message = "You enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. ")"
+	-- Build enrollment success message
+	local message
+	if usedLoan then
+		if upfrontPayment > 0 then
+			message = "🎓 You enrolled in " .. edu.name .. "!\n💰 Paid $" .. upfrontPayment .. " upfront\n📋 Student loan: $" .. loanAmount
+		else
+			message = "🎓 You enrolled in " .. edu.name .. " with a student loan!\n📋 Total debt: $" .. totalDebt
+		end
+	else
+		message = "🎓 You enrolled in " .. edu.name .. "! (Paid in full: $" .. actualCost .. ")"
+	end
+	
 	if isExConvict and actualCost > edu.cost then
-		message = "🎓 Despite your criminal record, you enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. " - limited financial aid available)"
+		message = message .. "\n⚠️ Limited financial aid due to criminal record"
 	end
 	
 	return { 
 		success = true, 
-		message = message
+		message = message,
+		usedLoan = usedLoan,
+		loanAmount = loanAmount,
+		totalDebt = totalDebt,
 	}
 end
 
@@ -1973,6 +2245,116 @@ GetCareerInfo.OnServerInvoke = function(player)
 end
 
 ----------------------------------------------------------------
+-- EDUCATION INFO HANDLER (GPA, Progress, Transcript)
+----------------------------------------------------------------
+
+GetEducationInfo.OnServerInvoke = function(player)
+	local state = getPlayerState(player)
+	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
+	
+	-- Get education data from extended state
+	local eduData = extState.EducationData or {}
+	
+	-- Determine current education level
+	local level = eduData.Level or extState.Education or state.Education or "none"
+	local enrolled = state.Enrolled or (lifeState and lifeState.Enrolled) or (eduData.Status == "enrolled") or false
+	
+	-- Get all the tracked data
+	local gpa = eduData.GPA
+	local progress = eduData.Progress or 0
+	local institution = eduData.Institution
+	local major = eduData.Major or "Undeclared"
+	local debt = eduData.Debt or 0
+	local status = eduData.Status or "none"
+	local grades = eduData.Grades or {}
+	local creditsEarned = eduData.CreditsEarned or 0
+	local creditsRequired = eduData.CreditsRequired or 0
+	local year = eduData.Year or 0
+	local totalYears = eduData.TotalYears or 0
+	
+	-- If enrolled but no data, create initial data based on smarts
+	if enrolled and not gpa then
+		local smarts = state.Stats and state.Stats.Smarts or 50
+		gpa = 2.5 + (smarts / 100) * 1.5
+		gpa = math.floor(gpa * 100) / 100
+	end
+	
+	-- Auto-determine institution if not set
+	if not institution then
+		if level == "high_school" then
+			institution = "Local High School"
+		elseif level == "community" then
+			institution = "Community College"
+		elseif level == "bachelor" then
+			institution = "State University"
+		elseif level == "master" then
+			institution = "Graduate School"
+		elseif level == "phd" then
+			institution = "University Research Program"
+		elseif level == "law" then
+			institution = "Law School"
+		elseif level == "medical" then
+			institution = "Medical School"
+		end
+	end
+	
+	-- Determine status if not set
+	if status == "none" then
+		if enrolled then
+			status = "enrolled"
+			if gpa and gpa < 2.0 then
+				status = "probation"
+			end
+		elseif level and level ~= "none" and level ~= "high_school" then
+			status = "graduated"
+		end
+	end
+	
+	-- Handle high school students (automatic education)
+	local age = state.Age or 0
+	if age >= 5 and age <= 18 and level == "none" then
+		level = "high_school"
+		enrolled = age < 18
+		if enrolled then
+			status = "enrolled"
+			institution = "Local High School"
+			-- Calculate high school progress
+			local hsYear = math.max(0, age - 5)
+			progress = math.clamp((hsYear / 13) * 100, 0, 100) -- K-12 = 13 years
+			year = math.min(hsYear + 1, 12)
+			totalYears = 12
+			
+			-- Generate a GPA based on smarts if none exists
+			if not gpa then
+				local smarts = state.Stats and state.Stats.Smarts or 50
+				gpa = 2.0 + (smarts / 100) * 2.0
+				gpa = math.floor(gpa * 100) / 100
+			end
+		end
+	end
+	
+	print("[GetEducationInfo] Returning - Level:", level, "GPA:", gpa, "Progress:", progress, "Status:", status, "Enrolled:", enrolled)
+	
+	return {
+		success = true,
+		level = level,
+		institution = institution,
+		major = major,
+		gpa = gpa,
+		progress = progress,
+		debt = debt,
+		status = status,
+		grades = grades,
+		creditsEarned = creditsEarned,
+		creditsRequired = creditsRequired,
+		year = year,
+		totalYears = totalYears,
+		enrolled = enrolled,
+	}
+end
+
+----------------------------------------------------------------
 -- ASSETS HANDLERS
 ----------------------------------------------------------------
 
@@ -2292,7 +2674,23 @@ local function getRandomName(gender)
 	return names[math.random(#names)]
 end
 
-DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId)
+DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
+	-- Support both signatures:
+	-- 1. New: payload table with { actionId, relationshipType, targetId, cost }
+	-- 2. Old: (actionId, relationType, personId) as separate args
+	local actionId, relationType, personId
+	if type(arg1) == "table" then
+		-- New payload format from updated RelationshipsScreen
+		actionId = arg1.actionId
+		relationType = arg1.relationshipType
+		personId = arg1.targetId
+	else
+		-- Old format with separate arguments
+		actionId = arg1
+		relationType = arg2
+		personId = arg3
+	end
+	
 	print("[LifeRemoteHandlers] DoInteraction called:", actionId, relationType, personId)
 	
 	local age = getAge(player)
@@ -2728,10 +3126,12 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 			life.Flags.incarcerated = true
 			life.Flags.arrested = true
 			life.Flags.did_time = true
+			-- CRITICAL: Clear 'employed' flag when going to jail
+			life.Flags.employed = nil
 			-- IMPORTANT: Clear sentence_complete when going to prison (prevents bugs from previous stints)
 			life.Flags.sentence_complete = nil
 			life.Flags.released_from_prison = nil
-			print("[LifeRemoteHandlers] Set prison flags in life state, cleared any previous release flags")
+			print("[LifeRemoteHandlers] Set prison flags, cleared 'employed' flag")
 		end
 		
 		syncStateToClient(player)
@@ -3129,9 +3529,9 @@ end
 _G.ResetExtendedState = function(player)
 	if not player or not player.UserId then return end
 	
-	-- Create fresh extended state
+	-- Create fresh extended state (use ID-based education format)
 	ExtendedStates[player.UserId] = {
-		Education = "None",
+		Education = "none",
 		Experience = 0,
 		CurrentJob = nil,
 		OwnedProperties = {},
@@ -3242,6 +3642,8 @@ _G.SendToJail = function(player, years)
 		life.Flags.in_prison = true
 		life.Flags.incarcerated = true
 		life.Flags.did_time = true
+		-- CRITICAL: Clear 'employed' flag when going to jail
+		life.Flags.employed = nil
 		-- Clear any release flags
 		life.Flags.sentence_complete = nil
 		life.Flags.released_from_prison = nil
@@ -3259,6 +3661,7 @@ _G.SetPlayerJob = function(player, jobData)
 	end
 	
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	print("[LifeRemoteHandlers] SetPlayerJob - Setting job for:", player.Name)
 	print("[LifeRemoteHandlers] Job:", jobData.id or "unknown", jobData.title or "unknown")
 	
@@ -3274,6 +3677,14 @@ _G.SetPlayerJob = function(player, jobData)
 		storyFlag = jobData.storyFlag or nil, -- e.g., "teacher", "hacker_career"
 	}
 	
+	-- CRITICAL: Set the 'employed' flag in player's Flags for event system
+	-- This allows career events to properly fire/block based on employment status
+	if life then
+		life.Flags = life.Flags or {}
+		life.Flags.employed = true
+		print("[LifeRemoteHandlers] Set 'employed' flag = true")
+	end
+	
 	print("[LifeRemoteHandlers] Job set:", extState.CurrentJob.title, "at", extState.CurrentJob.company, "- Salary:", extState.CurrentJob.salary)
 	
 	syncStateToClient(player)
@@ -3283,9 +3694,18 @@ end
 -- Quit player job (callable from scripts)
 _G.QuitPlayerJob = function(player)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	if extState.CurrentJob then
 		local oldJob = extState.CurrentJob.title or "job"
 		extState.CurrentJob = nil
+		
+		-- CRITICAL: Clear the 'employed' flag when quitting
+		if life then
+			life.Flags = life.Flags or {}
+			life.Flags.employed = nil
+			print("[LifeRemoteHandlers] Cleared 'employed' flag")
+		end
+		
 		print("[LifeRemoteHandlers] Player quit job:", oldJob)
 		syncStateToClient(player)
 		return true

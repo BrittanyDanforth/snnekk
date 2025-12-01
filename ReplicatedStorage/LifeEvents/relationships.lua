@@ -4,7 +4,35 @@
 -- Romance, family, friends, social connections
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -22,7 +50,7 @@ module.events = {
 		category = "romance",
 		blockIfFlag = "married",
 		getDynamicData = function()
-			return { personName = LifeEvents.randomFirstName() }
+			return { personName = randomFirstName() }
 		end,
 		text = "You met %personName% at a party. There's definitely chemistry.",
 		choices = {
@@ -97,10 +125,10 @@ module.events = {
 	{
 		id = "m_baby_born",
 		minAge = 18, maxAge = 50,
-		weight = 80, oneTime = false, milestone = true,
+		weight = 100, oneTime = false, milestone = false, -- NOT a milestone - requires expecting flag
 		emoji = "👶", title = "Baby Born!",
 		category = "family",
-		requiresFlag = "expecting",
+		requiresFlag = "expecting", -- Only fires if pregnant
 		getDynamicData = function()
 			local genders = {"boy", "girl"}
 			return { gender = genders[math.random(#genders)] }
@@ -212,7 +240,7 @@ module.events = {
 		emoji = "👥", title = "New Friend!",
 		category = "social",
 		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+			return { friendName = randomFirstName() }
 		end,
 		text = "You hit it off with %friendName%! Potential new friend.",
 		choices = {
@@ -238,8 +266,14 @@ module.events = {
 		weight = 20, cooldown = 3,
 		emoji = "🆘", title = "Friend in Need",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
+		getDynamicData = function(state)
+			-- Use actual friend name from relationships
+			return { friendName = getFriendName(state) }
 		end,
 		text = "%friendName% needs help. They're going through a tough time.",
 		choices = {
@@ -255,8 +289,14 @@ module.events = {
 		weight = 15, cooldown = 5,
 		emoji = "💔", title = "Friend Betrayal",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
+		getDynamicData = function(state)
+			-- Use actual friend name from relationships
+			return { friendName = getFriendName(state) }
 		end,
 		text = "%friendName% betrayed your trust. They shared your secrets.",
 		choices = {
@@ -272,8 +312,14 @@ module.events = {
 		weight = 15, cooldown = 3,
 		emoji = "☠️", title = "Toxic Friend",
 		category = "social",
-		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+		-- CRITICAL: Only fire if player actually has friends!
+		requires = function(state)
+			return hasFriend(state)
+		end,
+		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
+		getDynamicData = function(state)
+			-- Use actual friend name from relationships
+			return { friendName = getFriendName(state) }
 		end,
 		text = "%friendName% has become toxic. Always negative, always drama.",
 		choices = {

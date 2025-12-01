@@ -4,7 +4,35 @@
 -- 100+ deeply thought-out events for retirement and golden years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -20,6 +48,7 @@ module.events = {
 		weight = 40, cooldown = 3,
 		emoji = "⏰", title = "Counting Down to Retirement",
 		category = "career",
+		requiresFlag = "employed", -- Must be employed to be counting down to retirement!
 		getDynamicData = function()
 			local years = math.random(1, 10)
 			return { years = years }
@@ -39,16 +68,17 @@ module.events = {
 		weight = 20, oneTime = true,
 		emoji = "💼", title = "Early Retirement Package!",
 		category = "career",
+		requiresFlag = "employed", -- Must be employed to get retirement package!
 		getDynamicData = function()
 			local amount = math.random(50000, 200000)
 			return { amount = amount }
 		end,
 		text = "Company offering early retirement package: $%amount%! Take it or leave it?",
 		choices = {
-			{ text = "💰 Take the money!", effects = { Happiness = 15, Money = 100000 }, resultText = "Golden handshake accepted! Freedom early!", setFlag = "retired_early" },
-			{ text = "🤔 Negotiate more", effects = { Happiness = 8, Money = 150000, Smarts = 4 }, resultText = "You got a better deal! Smart negotiation!", setFlag = "retired_early" },
+			{ text = "💰 Take the money!", effects = { Happiness = 15, Money = 100000 }, resultText = "Golden handshake accepted! Freedom early!", setFlags = {"retired_early", "retired"}, clearFlag = "employed" },
+			{ text = "🤔 Negotiate more", effects = { Happiness = 8, Money = 150000, Smarts = 4 }, resultText = "You got a better deal! Smart negotiation!", setFlags = {"retired_early", "retired"}, clearFlag = "employed" },
 			{ text = "🙅 Keep working", effects = { Happiness = 2, Money = 10000 }, resultText = "Not ready yet. Still have things to do." },
-			{ text = "😰 Feeling pushed out", effects = { Happiness = -8, Money = 80000 }, resultText = "Didn't feel like a choice. Bitter exit.", setFlag = "retired_early" },
+			{ text = "😰 Feeling pushed out", effects = { Happiness = -8, Money = 80000 }, resultText = "Didn't feel like a choice. Bitter exit.", setFlags = {"retired_early", "retired"}, clearFlag = "employed" },
 		},
 	},
 	
@@ -78,16 +108,18 @@ module.events = {
 		weight = 80, milestone = true, oneTime = true,
 		emoji = "🎉", title = "RETIREMENT DAY!",
 		category = "career",
+		requiresFlag = "employed", -- Must be employed to retire from job!
+		blockIfFlag = "retired", -- Can only retire once
 		getDynamicData = function()
 			local years = math.random(30, 45)
 			return { years = years }
 		end,
 		text = "After %years% years in the workforce, today is your last day! YOU'RE RETIRED!",
 		choices = {
-			{ text = "🎉 FREEDOM AT LAST!", effects = { Happiness = 25 }, resultText = "The alarm clock is officially your enemy no more!", setFlag = "retired" },
-			{ text = "😢 Bittersweet", effects = { Happiness = 10, Smarts = 3 }, resultText = "End of an era. Mixed emotions but mostly joy.", setFlag = "retired" },
-			{ text = "🍾 Epic retirement party!", effects = { Happiness = 20, Money = -1000 }, resultText = "Coworkers sent you off in style! Legendary!", setFlag = "retired" },
-			{ text = "🤷 Now what?", effects = { Happiness = 6 }, resultText = "Identity was tied to work. Time to figure out who you are.", setFlag = "retired" },
+			{ text = "🎉 FREEDOM AT LAST!", effects = { Happiness = 25 }, resultText = "The alarm clock is officially your enemy no more!", setFlag = "retired", clearFlag = "employed" },
+			{ text = "😢 Bittersweet", effects = { Happiness = 10, Smarts = 3 }, resultText = "End of an era. Mixed emotions but mostly joy.", setFlag = "retired", clearFlag = "employed" },
+			{ text = "🍾 Epic retirement party!", effects = { Happiness = 20, Money = -1000 }, resultText = "Coworkers sent you off in style! Legendary!", setFlag = "retired", clearFlag = "employed" },
+			{ text = "🤷 Now what?", effects = { Happiness = 6 }, resultText = "Identity was tied to work. Time to figure out who you are.", setFlag = "retired", clearFlag = "employed" },
 		},
 	},
 	
@@ -230,7 +262,7 @@ module.events = {
 		emoji = "🤝", title = "Reconnecting with Old Friends",
 		category = "social",
 		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+			return { friendName = randomFirstName() }
 		end,
 		text = "Got back in touch with %friendName% from decades ago! Time to catch up!",
 		choices = {
@@ -690,7 +722,7 @@ module.events = {
 		emoji = "🕊️", title = "Losing Peers",
 		category = "social",
 		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+			return { friendName = randomFirstName() }
 		end,
 		text = "%friendName%, your old friend, has passed away. Another one gone.",
 		choices = {

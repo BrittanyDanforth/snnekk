@@ -459,6 +459,9 @@ end
 -- HISTORY / EVENT PICKING
 ----------------------------------------------------------------------
 
+-- Configuration for event frequency
+local DEFAULT_EVENT_CHANCE = 0.70  -- 70% chance a year has an event (30% chance of "quiet year")
+
 function EventRunner.initHistory(state: LifeState): EventHistory
 	if not state.EventHistory then
 		state.EventHistory = {
@@ -485,11 +488,72 @@ function EventRunner.getEventValidation(state: LifeState, eventDef: EventDef): a
 	return LifeStageSystem.validateEvent(eventDef, state)
 end
 
+----------------------------------------------------------------------
+-- EVENT PLAYABILITY CHECK
+-- Ensures that at least one choice is actually available to the player
+-- This prevents "❌ Requires Money 5000" situations
+----------------------------------------------------------------------
+
+function EventRunner.isEventPlayable(state: LifeState, eventDef: EventDef): boolean
+	-- Basic validation first
+	if not EventRunner.canEventFire(state, eventDef) then
+		return false
+	end
+
+	-- No choices = "fire and forget" flavor event → always allowed
+	if not eventDef.choices or #eventDef.choices == 0 then
+		return true
+	end
+
+	-- Use the same logic as the client greying-out system
+	local availability = EventRunner.filterAvailableChoices(state, eventDef)
+
+	-- Check if at least one choice is actually doable
+	for i = 1, #eventDef.choices do
+		local info = availability[i]
+		if not info or info.available then
+			-- At least one choice is actually doable
+			return true
+		end
+	end
+
+	-- All choices blocked -> don't pick this event at all
+	return false
+end
+
+-- Get detailed playability info (for debugging)
+function EventRunner.getPlayabilityInfo(state: LifeState, eventDef: EventDef): any
+	local canFire = EventRunner.canEventFire(state, eventDef)
+	local availability = EventRunner.filterAvailableChoices(state, eventDef)
+	local playableChoices = 0
+	local blockedReasons = {}
+	
+	for i, info in pairs(availability) do
+		if info.available then
+			playableChoices = playableChoices + 1
+		else
+			table.insert(blockedReasons, {
+				choiceIndex = i,
+				reason = info.reason or "Unknown"
+			})
+		end
+	end
+	
+	return {
+		eventId = eventDef.id,
+		canFire = canFire,
+		totalChoices = eventDef.choices and #eventDef.choices or 0,
+		playableChoices = playableChoices,
+		blockedReasons = blockedReasons,
+		isPlayable = canFire and (playableChoices > 0 or not eventDef.choices or #eventDef.choices == 0),
+	}
+end
+
 function EventRunner.getMilestoneEvent(state: LifeState, events: { EventDef }): EventDef?
 	local history = state.EventHistory or {}
 
 	for _, event in ipairs(events) do
-		if event.milestone and EventRunner.canEventFire(state, event) then
+		if event.milestone and EventRunner.isEventPlayable(state, event) then
 			if not (history.milestonesFired and history.milestonesFired[event.id]) then
 				return event
 			end
@@ -504,7 +568,9 @@ function EventRunner.pickRandomEvent(state: LifeState, events: { EventDef }): Ev
 	local totalWeight = 0
 
 	for _, event in ipairs(events) do
-		if not event.milestone and EventRunner.canEventFire(state, event) then
+		-- CRITICAL: Use isEventPlayable instead of just canEventFire
+		-- This ensures we only pick events where at least one choice is available
+		if not event.milestone and EventRunner.isEventPlayable(state, event) then
 			table.insert(eligible, event)
 			totalWeight += (event.weight or 10)
 		end
@@ -532,19 +598,40 @@ function EventRunner.pickEvent(state: LifeState, events: { EventDef }): EventDef
 	print("[EventRunner] Age:", state.Age, "InJail:", state.Flags and state.Flags.in_prison or false)
 	print("[EventRunner] Total events pool:", #events)
 
+	-- Always fire milestone events (they're important life moments)
 	local milestone = EventRunner.getMilestoneEvent(state, events)
 	if milestone then
 		print("[EventRunner] Found milestone event:", milestone.id)
 		return milestone
 	end
 
+	-- Event chance roll - some years should have "nothing special"
+	-- This prevents the "random stuff popping every year" feeling
+	local eventChance = state.EventChance or DEFAULT_EVENT_CHANCE
+	local chanceRoll = math.random()
+	
+	if chanceRoll > eventChance then
+		print(string.format("[EventRunner] No event this year (roll %.2f > chance %.2f)", chanceRoll, eventChance))
+		return nil  -- Quiet year - no random event
+	end
+
 	local selected = EventRunner.pickRandomEvent(state, events)
 	if selected then
 		print("[EventRunner] Selected random event:", selected.id, "category:", selected.category or "none")
 	else
-		print("[EventRunner] No valid event found!")
+		print("[EventRunner] No valid playable event found!")
 	end
 	return selected
+end
+
+-- Set custom event chance for a player (for special circumstances)
+function EventRunner.setEventChance(state: LifeState, chance: number)
+	state.EventChance = math.clamp(chance, 0, 1)
+end
+
+-- Reset event chance to default
+function EventRunner.resetEventChance(state: LifeState)
+	state.EventChance = nil
 end
 
 -- Check for life stage transition and return transition event if applicable
@@ -877,8 +964,20 @@ function EventRunner.applyChoice(
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 5: APPLY DYNAMIC MONEY CALLBACK
+	-- STEP 5: APPLY DYNAMIC EFFECTS CALLBACK
 	-- ═══════════════════════════════════════════════════════════════
+	-- effectsDynamic allows events to compute effects based on dynamicData
+	-- Example: effectsDynamic = function(data) return { Money = data.amount } end
+	if choice.effectsDynamic and dynamicData then
+		local ok, dynamicEffects = pcall(choice.effectsDynamic, dynamicData)
+		if ok and type(dynamicEffects) == "table" then
+			applyEffectsToState(state, dynamicEffects, results)
+		elseif not ok then
+			warn("[EventRunner] effectsDynamic failed:", dynamicEffects)
+		end
+	end
+	
+	-- Legacy support: getDynamicMoney callback
 	if choice.getDynamicMoney and dynamicData then
 		local ok, amount = pcall(choice.getDynamicMoney, dynamicData)
 		if ok and type(amount) == "number" then

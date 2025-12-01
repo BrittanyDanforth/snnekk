@@ -515,7 +515,17 @@ local function showResultPopup(data, callback)
 
 	resultCallback = callback
 
-	local isPositive = (data.happiness or 0) >= 0 and (data.health or 0) >= 0
+	-- PRIORITY: wasSuccess flag from minigames/events takes precedence
+	-- Otherwise fall back to stat-based check
+	local isPositive
+	if data.wasSuccess ~= nil then
+		-- Explicit success/fail flag from server (e.g., minigame results)
+		isPositive = data.wasSuccess
+	else
+		-- Fall back to stat-based check
+		isPositive = (data.happiness or 0) >= 0 and (data.health or 0) >= 0
+	end
+	
 	local shellColor = isPositive and C.Green or C.Red
 	local shellStrokeColor = isPositive and C.GreenDark or C.RedDark
 
@@ -1462,6 +1472,84 @@ surpriseBtn.MouseLeave:Connect(function()
 end)
 
 ----------------------------------------------------------------
+-- EVENT CATEGORY COLORS (BitLife-style themed borders)
+----------------------------------------------------------------
+
+local CategoryColors = {
+	-- Dangerous/negative events - RED
+	disaster = { shell = C.Red, stroke = C.RedDark, flash = C.Red },
+	danger = { shell = C.Red, stroke = C.RedDark, flash = C.Red },
+	emergency = { shell = C.Red, stroke = C.RedDark, flash = C.Red },
+	health = { shell = Color3.fromRGB(249, 115, 22), stroke = Color3.fromRGB(194, 65, 12), flash = C.Orange },
+	
+	-- Romance/relationships - PINK
+	romance = { shell = C.Pink, stroke = Color3.fromRGB(219, 39, 119), flash = C.Pink },
+	
+	-- Career/money - BLUE  
+	career = { shell = C.Blue, stroke = C.BlueDark, flash = C.Blue },
+	
+	-- Family - PURPLE
+	family = { shell = C.Purple, stroke = Color3.fromRGB(126, 34, 206), flash = C.Purple },
+	
+	-- School - TEAL
+	school = { shell = Color3.fromRGB(20, 184, 166), stroke = Color3.fromRGB(13, 148, 136), flash = Color3.fromRGB(20, 184, 166) },
+	
+	-- Social - GREEN
+	social = { shell = C.Green, stroke = C.GreenDark, flash = C.Green },
+	
+	-- Default - RED (BitLife style)
+	default = { shell = C.Red, stroke = C.RedDark, flash = C.Blue },
+}
+
+-- Detect if event is dangerous/disaster based on ID, emoji, or content
+local function isDisasterEvent(payload)
+	local id = payload.id or ""
+	local emoji = payload.emoji or ""
+	local category = payload.category or ""
+	local title = payload.title or ""
+	
+	-- Check ID prefix
+	if id:match("^d_") then return true end
+	
+	-- Check dangerous emojis
+	local dangerEmojis = {"🌪️", "🔥", "⛈️", "🌀", "🌊", "❄️", "🏚️", "🌡️", "🚗", "🔫", "😨", "🚑", "💀", "☠️", "⚠️", "🆘"}
+	for _, de in ipairs(dangerEmojis) do
+		if emoji == de then return true end
+	end
+	
+	-- Check category
+	if category == "disaster" or category == "danger" or category == "emergency" then
+		return true
+	end
+	
+	-- Check title keywords
+	local dangerWords = {"tornado", "hurricane", "fire", "earthquake", "flood", "storm", "crash", "accident", "robbery", "intruder", "heat wave", "blizzard", "choking", "collapse"}
+	local lowerTitle = title:lower()
+	for _, word in ipairs(dangerWords) do
+		if lowerTitle:find(word) then return true end
+	end
+	
+	return false
+end
+
+-- Get the appropriate color scheme for an event
+local function getEventColors(payload)
+	local category = payload.category or "default"
+	
+	-- Override for disaster events
+	if isDisasterEvent(payload) then
+		return CategoryColors.disaster
+	end
+	
+	-- Check for category match
+	if CategoryColors[category] then
+		return CategoryColors[category]
+	end
+	
+	return CategoryColors.default
+end
+
+----------------------------------------------------------------
 -- EVENT FUNCTIONS
 ------------------------------------------------------------------
 
@@ -1469,6 +1557,17 @@ showEvent = function(payload)
 	awaitingEvent = true
 	currentEventId = payload.id
 	clearChoices()
+	
+	-- Get category-based colors
+	local colors = getEventColors(payload)
+	local isDisaster = isDisasterEvent(payload)
+	
+	-- Apply themed shell color
+	eventShell.BackgroundColor3 = colors.shell
+	local shellStroke = eventShell:FindFirstChildOfClass("UIStroke")
+	if shellStroke then
+		shellStroke.Color = colors.stroke
+	end
 
 	-- header
 	eventHeader.Visible = payload.showRelationship or false
@@ -1481,6 +1580,12 @@ showEvent = function(payload)
 	eventTitle.Text     = payload.title or "Life Event"
 	eventBody.Text      = payload.text or ""
 	eventQuestion.Text  = payload.question or "What will you do?"
+	
+	-- SCREEN SHAKE for disaster/dangerous events (like BitLife!)
+	if isDisaster then
+		shakeScreen(12, 0.4)  -- Stronger shake for disasters
+		flashScreen(colors.flash, 0.5, 0.35)  -- Flash effect
+	end
 
 	local choiceHandlers = {}
 
@@ -2086,6 +2191,7 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 			smarts = resultData.smarts or deltas.smarts,
 			looks = resultData.looks or deltas.looks,
 			money = resultData.money or deltas.money,
+			wasSuccess = resultData.wasSuccess, -- IMPORTANT: Pass through success flag for minigames
 		})
 	elseif deltas.health and deltas.health < -10 then
 		-- Auto-show popup for significant negative health

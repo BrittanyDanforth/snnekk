@@ -726,15 +726,17 @@ function ActivitiesScreen:populateCrime()
 	UI.stroke(warningCard, 1, 0.7, C.Red)
 	
 	local warnIcon = Instance.new("TextLabel")
-	warnIcon.Size = UDim2.new(0, 50, 0, 50)
-	warnIcon.Position = UDim2.new(0, 14, 0.5, -25)
-	warnIcon.BackgroundTransparency = 1
-	warnIcon.Font = F.Title
-	warnIcon.TextSize = 24
-	warnIcon.Text = "WARNING"
+	warnIcon.Size = UDim2.new(0, 44, 0, 44)
+	warnIcon.Position = UDim2.new(0, 12, 0.5, -22)
+	warnIcon.BackgroundColor3 = C.Red
+	warnIcon.BackgroundTransparency = 0.85
+	warnIcon.Font = Enum.Font.GothamBold
+	warnIcon.TextSize = 28
+	warnIcon.Text = "⚠️"
 	warnIcon.TextColor3 = C.Red
 	warnIcon.ZIndex = 83
 	warnIcon.Parent = warningCard
+	UI.corner(warnIcon, 12)
 	
 	local warnText = Instance.new("TextLabel")
 	warnText.Size = UDim2.new(1, -80, 1, -16)

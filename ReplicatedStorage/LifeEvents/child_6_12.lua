@@ -4,7 +4,35 @@
 -- 120+ deeply thought-out events for elementary school years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -74,7 +102,7 @@ module.events = {
 		emoji = "🛝", title = "Playground Politics",
 		category = "social",
 		getDynamicData = function()
-			return { kidName = LifeEvents.randomFirstName() }
+			return { kidName = randomFirstName() }
 		end,
 		text = "%kidName% says you can't play with their group unless you do what they say!",
 		choices = {
@@ -91,9 +119,9 @@ module.events = {
 		weight = 30, cooldown = 2,
 		emoji = "🍽️", title = "Lunch Table Drama",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends for friend group drama
+		requires = hasFriend,  -- MUST have friends for friend group drama
 		getDynamicData = function(state)
-			return { friendName = LifeEvents.getFriendName(state) }
+			return { friendName = getFriendName(state) }
 		end,
 		text = "There's drama at the lunch table! %friendName% is sitting in 'your' spot and your friend group is divided!",
 		choices = {
@@ -130,7 +158,7 @@ module.events = {
 		emoji = "💕", title = "First Crush!",
 		category = "social",
 		getDynamicData = function()
-			return { crushName = LifeEvents.randomFirstName() }
+			return { crushName = randomFirstName() }
 		end,
 		text = "You've developed a crush on %crushName% in your class! Your face gets red whenever they're around.",
 		choices = {
@@ -148,7 +176,7 @@ module.events = {
 		emoji = "😠", title = "Bully Encounter",
 		category = "social",
 		getDynamicData = function()
-			return { bullyName = LifeEvents.randomFirstName() }
+			return { bullyName = randomFirstName() }
 		end,
 		text = "%bullyName% has been bullying you at school - calling you names and taking your lunch money!",
 		choices = {
@@ -417,7 +445,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🏠", title = "Hosting a Sleepover!",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends to host a sleepover
+		requires = hasFriend,  -- MUST have friends to host a sleepover
 		getDynamicData = function()
 			return { count = math.random(2, 5) }
 		end,
@@ -457,7 +485,7 @@ module.events = {
 		emoji = "📊", title = "Group Project Drama",
 		category = "school",
 		getDynamicData = function()
-			return { partnerName = LifeEvents.randomFirstName() }
+			return { partnerName = randomFirstName() }
 		end,
 		text = "You're assigned a group project with %partnerName%. Will you work well together?",
 		choices = {
@@ -799,6 +827,208 @@ module.events = {
 			{ text = "🤝 Want to do more", effects = { Happiness = 8, Smarts = 4 }, resultText = "You found a new purpose!", setFlags = {"charitable", "activist"} },
 			{ text = "🤔 Did it for community service", effects = { Happiness = 4, Smarts = 2 }, resultText = "Whatever the reason, you still helped!" },
 			{ text = "😔 Opened your eyes", effects = { Smarts = 6, Happiness = 2 }, resultText = "Not everyone has what you have. Grateful now.", setFlag = "empathetic" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- SCHOOL QUIZ & GRADE EVENTS (GPA AFFECTING)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_spelling_bee",
+		minAge = 7, maxAge = 11,
+		weight = 30, cooldown = 3,
+		emoji = "🔤", title = "Spelling Bee!",
+		category = "school",
+		getDynamicData = function()
+			local words = {"necessary", "accommodate", "occurrence", "recommend", "separate", "definitely", "environment"}
+			return { word = words[math.random(#words)] }
+		end,
+		text = "You're in the class spelling bee! The word is '%word%'. Do you know it?",
+		choices = {
+			{ text = "🎯 Nail it perfectly!", chanceSuccess = 0.6, effectsOnSuccess = { Smarts = 10, Happiness = 12 }, effectsOnFail = { Smarts = 3, Happiness = -3 },
+			  resultText = "CORRECT! You won the spelling bee!", resultTextFail = "So close! You missed it by one letter.", setFlag = "spelling_champion" },
+			{ text = "🤔 Sound it out...", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 6, Happiness = 8 }, effectsOnFail = { Smarts = 2, Happiness = -2 },
+			  resultText = "You got it! Slow and steady!", resultTextFail = "Wrong! But good try." },
+			{ text = "😰 Panic and guess", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 4, Happiness = 10 }, effectsOnFail = { Smarts = 1, Happiness = -4 },
+			  resultText = "Lucky guess! You're still in!", resultTextFail = "Ding! Wrong. You're out." },
+			{ text = "🏃 Forfeit (too nervous)", effects = { Happiness = -2 }, resultText = "Stage fright got to you. Maybe next time." },
+		},
+	},
+	
+	{
+		id = "m_science_quiz",
+		minAge = 8, maxAge = 12,
+		weight = 35, cooldown = 2,
+		emoji = "🔬", title = "Pop Science Quiz!",
+		category = "school",
+		getDynamicData = function()
+			local topics = {"the solar system", "animal habitats", "the water cycle", "simple machines", "plant life cycles", "electricity"}
+			return { topic = topics[math.random(#topics)] }
+		end,
+		text = "Surprise quiz on %topic%! The teacher hands out papers. What's your strategy?",
+		choices = {
+			{ text = "📚 I paid attention!", chanceSuccess = 0.7, effectsOnSuccess = { Smarts = 8, Happiness = 6 }, effectsOnFail = { Smarts = 3, Happiness = -2 },
+			  resultText = "A+! Paying attention pays off!", resultTextFail = "B-. Thought you knew more.", setFlag = "attentive_student" },
+			{ text = "🧠 Use logic to figure it out", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 6, Happiness = 5 }, effectsOnFail = { Smarts = 2, Happiness = -3 },
+			  resultText = "Your logic worked! Good grade!", resultTextFail = "Logic only gets you so far without studying." },
+			{ text = "👀 Try to peek at neighbor's", chanceSuccess = 0.4, effectsOnSuccess = { Smarts = 2, Happiness = 3 }, effectsOnFail = { Smarts = -3, Happiness = -8 },
+			  resultText = "Sneaky... but you passed.", resultTextFail = "CAUGHT! Teacher saw you. Zero and detention!", setFlag = "caught_cheating" },
+			{ text = "😅 Just guess randomly", chanceSuccess = 0.2, effectsOnSuccess = { Smarts = 3, Happiness = 8 }, effectsOnFail = { Smarts = 1, Happiness = -4 },
+			  resultText = "Lucky day! Multiple choice saved you!", resultTextFail = "F. Random guessing doesn't work." },
+		},
+	},
+	
+	{
+		id = "m_reading_comprehension",
+		minAge = 7, maxAge = 11,
+		weight = 30, cooldown = 2,
+		emoji = "📖", title = "Reading Test!",
+		category = "school",
+		getDynamicData = function()
+			local stories = {"a mystery story", "a fairy tale", "a historical narrative", "a science article", "a poem"}
+			return { story = stories[math.random(#stories)] }
+		end,
+		text = "You have to read %story% and answer questions about it. How do you approach this?",
+		choices = {
+			{ text = "📚 Read carefully twice", effects = { Smarts = 9, Happiness = 4 }, resultText = "Perfect comprehension! You caught every detail!", setFlag = "careful_reader" },
+			{ text = "⏱️ Skim quickly, answer fast", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 5, Happiness = 5 }, effectsOnFail = { Smarts = 2, Happiness = -2 },
+			  resultText = "You got the gist! Passed!", resultTextFail = "Too fast! Missed important details." },
+			{ text = "🤔 Focus on the questions first", effects = { Smarts = 7, Happiness = 3 }, resultText = "Smart strategy! You knew what to look for!" },
+			{ text = "😴 Struggle to stay focused", effects = { Smarts = 2, Happiness = -3 }, resultText = "The story was boring... you barely passed." },
+		},
+	},
+	
+	{
+		id = "m_history_quiz",
+		minAge = 9, maxAge = 12,
+		weight = 30, cooldown = 2,
+		emoji = "📜", title = "History Quiz!",
+		category = "school",
+		getDynamicData = function()
+			local eras = {"Ancient Egypt", "the American Revolution", "the Civil War", "Ancient Rome", "the Industrial Revolution"}
+			return { era = eras[math.random(#eras)] }
+		end,
+		text = "Quiz time on %era%! You remember some of it from class...",
+		choices = {
+			{ text = "📚 I studied the chapter!", chanceSuccess = 0.75, effectsOnSuccess = { Smarts = 8, Happiness = 6 }, effectsOnFail = { Smarts = 4, Happiness = -1 },
+			  resultText = "A! Your studying paid off!", resultTextFail = "B. Close! Mixed up a few dates." },
+			{ text = "🎬 I watched a documentary!", effects = { Smarts = 6, Happiness = 5 }, resultText = "Thank you, History Channel! B+!" },
+			{ text = "🤷 Wing it from class notes", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 5, Happiness = 4 }, effectsOnFail = { Smarts = 2, Happiness = -3 },
+			  resultText = "Good memory! C+!", resultTextFail = "Notes weren't enough. D." },
+			{ text = "😰 Totally forgot to study", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 3, Happiness = 6 }, effectsOnFail = { Smarts = 1, Happiness = -5 },
+			  resultText = "Lucky! Remembered stuff from class!", resultTextFail = "F. History repeats itself... like this bad grade." },
+		},
+	},
+	
+	{
+		id = "m_times_tables",
+		minAge = 7, maxAge = 9,
+		weight = 40, oneTime = true,
+		emoji = "✖️", title = "Times Tables Test!",
+		category = "school",
+		text = "The teacher is testing everyone on their times tables! 7x8? 9x6? 12x11?",
+		choices = {
+			{ text = "🧮 Memorized them all!", effects = { Smarts = 12, Happiness = 8 }, resultText = "PERFECT SCORE! You're a multiplication master!", setFlag = "math_talent" },
+			{ text = "🎵 Learned with songs", effects = { Smarts = 8, Happiness = 6 }, resultText = "Three is a magic number! 3, 6, 9, 12... A-!" },
+			{ text = "🔢 Count on fingers secretly", chanceSuccess = 0.6, effectsOnSuccess = { Smarts = 5, Happiness = 4 }, effectsOnFail = { Smarts = 3, Happiness = -2 },
+			  resultText = "Slow but accurate! B!", resultTextFail = "Lost count somewhere. C-." },
+			{ text = "😵 Numbers are confusing!", effects = { Smarts = 2, Happiness = -4 }, resultText = "Math is hard. You need extra practice.", setFlag = "struggles_math" },
+		},
+	},
+	
+	{
+		id = "m_book_report",
+		minAge = 8, maxAge = 12,
+		weight = 30, cooldown = 3,
+		emoji = "📖", title = "Book Report Due!",
+		category = "school",
+		getDynamicData = function()
+			local books = {"Charlotte's Web", "Harry Potter", "The Giver", "Holes", "Bridge to Terabithia", "Diary of a Wimpy Kid"}
+			return { book = books[math.random(#books)] }
+		end,
+		text = "Your book report on '%book%' is due tomorrow! How prepared are you?",
+		choices = {
+			{ text = "📚 Read it AND took notes!", effects = { Smarts = 10, Happiness = 6 }, resultText = "A+! Teacher loved your analysis!", setFlag = "thorough_student" },
+			{ text = "📖 Read it, writing tonight", effects = { Smarts = 6, Happiness = 3 }, resultText = "Stayed up late but finished! B+!" },
+			{ text = "🎬 Watched the movie...", chanceSuccess = 0.4, effectsOnSuccess = { Smarts = 3, Happiness = 4 }, effectsOnFail = { Smarts = 1, Happiness = -5 },
+			  resultText = "Movie was close enough! C!", resultTextFail = "Teacher knew you didn't read it. D." },
+			{ text = "😱 I FORGOT!", effects = { Smarts = -2, Happiness = -6 }, resultText = "Zero. You begged for an extension but no luck.", setFlag = "procrastinator" },
+		},
+	},
+	
+	{
+		id = "m_art_project",
+		minAge = 6, maxAge = 12,
+		weight = 25, cooldown = 3,
+		emoji = "🎨", title = "Art Project!",
+		category = "school",
+		getDynamicData = function()
+			local projects = {"self-portrait", "still life", "collage", "sculpture", "landscape", "abstract design"}
+			return { project = projects[math.random(#projects)] }
+		end,
+		text = "Time to create a %project% for art class! How do you approach it?",
+		choices = {
+			{ text = "🎨 Pour your heart into it!", effects = { Happiness = 10, Looks = 3, Smarts = 4 }, resultText = "Displayed in the hallway! Teacher's favorite!", setFlag = "artistic" },
+			{ text = "📋 Follow instructions exactly", effects = { Smarts = 5, Happiness = 4 }, resultText = "Solid A! Technically perfect." },
+			{ text = "🤷 Minimal effort", effects = { Happiness = 2, Smarts = 1 }, resultText = "C. It's art... it's 'open to interpretation'." },
+			{ text = "✨ Go WAY overboard", effects = { Happiness = 8, Smarts = 3, Looks = 2 }, resultText = "Extra credit! You went above and beyond!", setFlag = "overachiever" },
+		},
+	},
+	
+	{
+		id = "m_group_project",
+		minAge = 8, maxAge = 12,
+		weight = 30, cooldown = 3,
+		emoji = "👥", title = "Group Project!",
+		category = "school",
+		getDynamicData = function()
+			return { kidName = randomFirstName() }
+		end,
+		text = "You're assigned a group project! %kidName% isn't doing their part!",
+		choices = {
+			{ text = "🦸 Do their work too", effects = { Smarts = 8, Happiness = -3 }, resultText = "A for the project! You carried the team.", setFlag = "reliable" },
+			{ text = "🗣️ Talk to the teacher", effects = { Smarts = 4, Happiness = 2 }, resultText = "Teacher made separate grades. Fair! B for you." },
+			{ text = "😤 Confront them directly", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 6, Happiness = 5 }, effectsOnFail = { Smarts = 4, Happiness = -4 },
+			  resultText = "They stepped up! Project saved!", resultTextFail = "Fight. Now everyone's mad. C." },
+			{ text = "🤷 Let the grade suffer", effects = { Smarts = 2, Happiness = -2 }, resultText = "D. Teamwork failed." },
+		},
+	},
+	
+	{
+		id = "m_music_class",
+		minAge = 7, maxAge = 11,
+		weight = 25, cooldown = 3,
+		emoji = "🎵", title = "Music Class Recital!",
+		category = "school",
+		getDynamicData = function()
+			local instruments = {"recorder", "xylophone", "drums", "piano", "violin", "guitar"}
+			return { instrument = instruments[math.random(#instruments)] }
+		end,
+		text = "Your music class is having a recital! You're playing the %instrument%!",
+		choices = {
+			{ text = "🎵 Practiced every day!", effects = { Happiness = 12, Smarts = 4 }, resultText = "Standing ovation! You're a natural!", setFlag = "musical" },
+			{ text = "📖 Practiced a little", chanceSuccess = 0.6, effectsOnSuccess = { Happiness = 6, Smarts = 3 }, effectsOnFail = { Happiness = -2, Smarts = 1 },
+			  resultText = "Not perfect, but good! Proud moment!", resultTextFail = "A few wrong notes but you finished!" },
+			{ text = "😰 Wing it on stage", chanceSuccess = 0.3, effectsOnSuccess = { Happiness = 10, Smarts = 2 }, effectsOnFail = { Happiness = -6 },
+			  resultText = "Somehow nailed it! Lucky!", resultTextFail = "Train wreck. Parents clapped anyway." },
+			{ text = "🤒 Pretend to be sick", effects = { Happiness = -4 }, resultText = "Avoided it, but missed out." },
+		},
+	},
+	
+	{
+		id = "m_pe_fitness_test",
+		minAge = 8, maxAge = 12,
+		weight = 30, cooldown = 2,
+		emoji = "🏃", title = "PE Fitness Test!",
+		category = "school",
+		text = "It's the annual fitness test! Push-ups, sit-ups, and the dreaded mile run!",
+		choices = {
+			{ text = "💪 Crush it!", effects = { Health = 8, Happiness = 8, Smarts = 2 }, resultText = "Presidential Fitness Award! You're in great shape!", setFlag = "athletic" },
+			{ text = "🏃 Do your best", effects = { Health = 5, Happiness = 4, Smarts = 2 }, resultText = "Solid effort! Passed everything!" },
+			{ text = "😮‍💨 Struggle through", effects = { Health = 3, Happiness = -2 }, resultText = "The mile was brutal but you finished!" },
+			{ text = "🤢 Fake an injury", chanceSuccess = 0.4, effectsOnSuccess = { Happiness = 4 }, effectsOnFail = { Happiness = -5, Health = -2 },
+			  resultText = "Sat out. No score.", resultTextFail = "Teacher didn't believe you. Run anyway!" },
 		},
 	},
 }

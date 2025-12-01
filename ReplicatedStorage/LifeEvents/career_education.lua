@@ -1,283 +1,559 @@
--- LifeEvents/career_education.lua
+-- career_education.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- EDUCATION CAREER EVENTS - Teachers, Professors, Educators
--- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
+-- EDUCATION CAREER EVENTS - Teacher, Professor
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+local events = {}
 
-local module = {}
+-- ═══════════════════════════════════════════════════════════════
+-- TEACHER EVENTS
+-- ═══════════════════════════════════════════════════════════════
 
-module.events = {
+table.insert(events, {
+	id = "teaching_inspiration",
+	emoji = "📚",
+	title = "The Teaching Call",
+	category = "life",
+	tags = {"career", "teacher", "origin"},
 	
-	-- ═══════════════════════════════════════════════════════════════
-	-- EARLY CALLING
-	-- ═══════════════════════════════════════════════════════════════
+	weight = 10,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
 	
-	{
-		id = "edu_helping_classmates",
-		minAge = 10, maxAge = 16,
-		weight = 25, oneTime = true,
-		emoji = "📚", title = "Natural Teacher!",
-		category = "school",
-		text = "You're always helping classmates understand things. Teacher noticed you explaining concepts really well!",
-		choices = {
-			{ text = "📚 Love helping others learn", effects = { Happiness = 15, Smarts = 8 }, resultText = "Teaching comes naturally! Maybe this is your calling!", setFlags = {"teacher_potential", "helper"} },
-			{ text = "🤷 Just being nice", effects = { Happiness = 8, Smarts = 3 }, resultText = "Helping out when you can. Nothing more." },
-			{ text = "💰 Start charging for tutoring", effects = { Happiness = 10, Money = 100, Smarts = 5 }, resultText = "Entrepreneurial! Getting paid to help! Smart!", setFlag = "tutor" },
-			{ text = "😤 Don't want that reputation", effects = { Happiness = -3 }, resultText = "Being the 'nerd who helps' isn't cool. Or is it?" },
-		},
+	chainId = "teacher_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 16,
+		maxAge = 40,
+		blockedFlags = {"career_teacher_started", "teaching_rejected"},
+		minStats = {Smarts = 40},
 	},
 	
-	{
-		id = "edu_tutoring_gig",
-		minAge = 14, maxAge = 22,
-		weight = 20, cooldown = 3,
-		emoji = "📝", title = "Tutoring Opportunity!",
-		category = "school",
-		getDynamicData = function()
-			local subjects = {"math", "science", "writing", "foreign language", "test prep"}
-			return { subject = subjects[math.random(#subjects)] }
-		end,
-		text = "Someone needs a tutor for %subject%! $20/hour. Do you take it?",
-		choices = {
-			{ text = "📚 Take the job", effects = { Happiness = 12, Money = 500, Smarts = 5 }, resultText = "Great experience! Student improved! You're a good teacher!", setFlag = "tutoring_experience" },
-			{ text = "💰 Negotiate higher rate", effects = { Happiness = 10, Money = 700, Smarts = 3 }, resultText = "$30/hour! Know your worth! Student still happy!", setFlag = "tutoring_experience" },
-			{ text = "🙅 Too busy", effects = { Happiness = 3 }, resultText = "Passed on the opportunity. Schedule is packed." },
-			{ text = "😬 Terrible at that subject", effects = { Happiness = 5, Smarts = 2 }, resultText = "Not your strength. Referred them to someone else." },
+	getDynamicData = function(state)
+		local moments = {
+			"You tutor a struggling student and watch the lightbulb moment happen.",
+			"A teacher who changed your life inspires you to pay it forward.",
+			"Volunteering at a school shows you how rewarding education can be."
+		}
+		return {
+			moment = moments[math.random(#moments)]
+		}
+	end,
+	
+	text = "%moment% You start thinking about becoming a teacher.",
+	
+	choices = {
+		{
+			id = "pursue_teaching",
+			text = "I want to shape young minds!",
+			resultText = "You start researching education programs and teaching credentials.",
+			effects = {Happiness = 3, Karma = 2},
+			flags = {set = {"teaching_interest"}},
+		},
+		{
+			id = "not_patient_enough",
+			text = "I don't have the patience for that.",
+			resultText = "You admire teachers but know it's not the path for you.",
+			effects = {},
+			flags = {set = {"teaching_rejected"}},
 		},
 	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- EDUCATION PATH
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "edu_degree_choice",
-		minAge = 18, maxAge = 22,
-		weight = 18, oneTime = true,
-		emoji = "🎓", title = "College Major Decision!",
-		category = "school",
-		requiresFlag = "teacher_potential",
-		text = "Time to choose your path! Education degree or subject specialty?",
-		choices = {
-			{ text = "🎓 Education major", effects = { Smarts = 10, Happiness = 12 }, resultText = "Learning how to teach! Pedagogy, psychology, classroom management!", setFlags = {"education_major", "college_student"} },
-			{ text = "📚 Subject + teaching cert", effects = { Smarts = 12, Happiness = 10 }, resultText = "Deep knowledge in your subject! Will get teaching credential later!", setFlags = {"subject_expert", "college_student"} },
-			{ text = "🔬 Go for PhD eventually", effects = { Smarts = 15, Happiness = 8 }, resultText = "Professor path! Research and teaching at the highest level!", setFlags = {"academic_track", "college_student"} },
-			{ text = "🤔 Still deciding", effects = { Smarts = 5, Happiness = 5 }, resultText = "Keeping options open for now." },
-		},
-	},
-	
-	{
-		id = "edu_student_teaching",
-		minAge = 21, maxAge = 26,
-		weight = 20, oneTime = true,
-		emoji = "🏫", title = "Student Teaching!",
-		category = "work",
-		requiresFlag = "education_major",
-		text = "Time for student teaching! First real classroom experience! Mentor teacher watching. How do you do?",
-		choices = {
-			{ text = "🌟 Natural in the classroom", effects = { Happiness = 25, Smarts = 8, Looks = 3 }, resultText = "Kids love you! Mentor says you're a natural! Teaching is definitely your calling!", setFlags = {"teacher_ready", "classroom_natural"} },
-			{ text = "📚 Struggled but learned", effects = { Happiness = 12, Smarts = 10 }, resultText = "Rough start but improved! The learning curve is real!", setFlag = "teacher_ready" },
-			{ text = "😰 Classroom management issues", effects = { Happiness = -10, Smarts = 5 }, resultText = "Kids walked all over you. Need to develop authority. Struggle is real." },
-			{ text = "💔 This isn't for me", effects = { Happiness = -15 }, resultText = "Realized teaching isn't your path. Saved yourself from wrong career.", clearFlag = "education_major" },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- TEACHING CAREER
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "edu_first_job",
-		minAge = 22, maxAge = 30,
-		weight = 20, oneTime = true,
-		emoji = "🏫", title = "First Teaching Job!",
-		category = "work",
-		requiresFlag = "teacher_ready",
-		getDynamicData = function()
-			local schools = {"inner-city school", "suburban district", "private academy", "charter school", "rural district"}
-			return { school = schools[math.random(#schools)] }
-		end,
-		text = "Job offer at a %school%! Your own classroom! What's your approach?",
-		choices = {
-			{ text = "✅ Take it, excited!", effects = { Happiness = 20, Money = 45000 }, resultText = "YOUR classroom! First day jitters! This is really happening!", setFlags = {"teacher", "employed"} },
-			{ text = "📋 Negotiate for more", effects = { Happiness = 18, Money = 50000 }, resultText = "Got a bit more! Teachers should negotiate too!", setFlags = {"teacher", "employed"} },
-			{ text = "🤔 Hold out for better", effects = { Happiness = -5, Money = 0 }, resultText = "Turned it down. Hope something better comes..." },
-			{ text = "🎯 Accept at tough school", effects = { Happiness = 15, Money = 48000 }, resultText = "The kids who need help most. Challenging but meaningful!", setFlags = {"teacher", "employed", "tough_assignment"} },
-		},
-	},
-	
-	{
-		id = "edu_first_year",
-		minAge = 22, maxAge = 32,
-		weight = 25, oneTime = true,
-		emoji = "😅", title = "First Year Teaching!",
-		category = "work",
-		requiresFlag = "teacher",
-		text = "First year is ROUGH! Lesson planning until midnight! Difficult students! How do you survive?",
-		choices = {
-			{ text = "💪 Push through it", effects = { Happiness = 8, Health = -10, Smarts = 8 }, resultText = "Survived! Barely. They say second year is easier...", setFlag = "first_year_survivor" },
-			{ text = "🤝 Lean on mentor teachers", effects = { Happiness = 15, Smarts = 10 }, resultText = "Veterans helped SO much! Learning from experience!", setFlag = "first_year_survivor" },
-			{ text = "😭 Cry a lot", effects = { Happiness = -5, Health = -5 }, resultText = "Lots of tears. Is this worth it? But the kids need you...", setFlag = "first_year_survivor" },
-			{ text = "🚪 Quit before winter break", effects = { Happiness = -20 }, resultText = "Couldn't handle it. Joined the 50% who leave teaching early.", clearFlags = {"teacher", "employed"} },
-		},
-	},
-	
-	{
-		id = "edu_breakthrough_student",
-		minAge = 24, maxAge = 60,
-		weight = 20, cooldown = 3,
-		emoji = "💡", title = "Student Breakthrough!",
-		category = "work",
-		requiresFlag = "teacher",
-		getDynamicData = function()
-			return { studentName = LifeEvents.randomFirstName() }
-		end,
-		text = "%studentName%, who was struggling all year, finally got it! The light bulb moment! How do you feel?",
-		choices = {
-			{ text = "🥹 This is why I teach", effects = { Happiness = 30 }, resultText = "THIS moment! Worth every hard day! You made a difference!", setFlag = "teacher_passion" },
-			{ text = "📈 Document for records", effects = { Happiness = 15, Smarts = 3 }, resultText = "Progress tracked! Evidence for evaluations! Professional win!" },
-			{ text = "🎉 Celebrate with class", effects = { Happiness = 20, Looks = 3 }, resultText = "Whole class celebrated! Created a positive culture!" },
-			{ text = "🤷 One student, many more", effects = { Happiness = 10 }, resultText = "Good but the work never ends. 29 other students need help." },
-		},
-	},
-	
-	{
-		id = "edu_difficult_parent",
-		minAge = 24, maxAge = 60,
-		weight = 20, cooldown = 2,
-		emoji = "😤", title = "Angry Parent!",
-		category = "work",
-		requiresFlag = "teacher",
-		text = "Parent is FURIOUS about their child's grade! Demanding answers! What do you do?",
-		choices = {
-			{ text = "📋 Show all documentation", effects = { Happiness = 10, Smarts = 5 }, resultText = "Had everything documented! Parent backed down. Always keep records!" },
-			{ text = "🤝 Listen and empathize", effects = { Happiness = 12, Looks = 3 }, resultText = "Heard them out. Found middle ground. Crisis averted." },
-			{ text = "😤 Stand your ground", effects = { Happiness = -5, Smarts = 3 }, resultText = "Wouldn't budge. Grade stays. Parent went to principal. Drama." },
-			{ text = "😰 Cave to pressure", effects = { Happiness = -15, Smarts = -5 }, resultText = "Changed the grade... now every parent knows you can be pushed around." },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- CAREER ADVANCEMENT
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "edu_department_head",
-		minAge = 30, maxAge = 55,
-		weight = 15, oneTime = true,
-		emoji = "📊", title = "Department Head Offer!",
-		category = "work",
-		requiresFlag = "teacher_passion",
-		text = "Offered Department Head position! More money, more admin work, less direct teaching. What do you do?",
-		choices = {
-			{ text = "✅ Accept the role", effects = { Happiness = 15, Money = 15000 }, resultText = "Leading the department! Shaping curriculum! Growth opportunity!", setFlags = {"department_head", "admin_track"} },
-			{ text = "❌ Stay in classroom", effects = { Happiness = 20, Money = 5000 }, resultText = "Teaching is where your heart is. More impact in the classroom!" },
-			{ text = "📋 Negotiate better terms", effects = { Happiness = 18, Money = 18000 }, resultText = "Got more money AND reduced admin meetings! Best of both!" },
-			{ text = "🤔 Ask for time to decide", effects = { Happiness = 8 }, resultText = "Taking time to think. Big decision." },
-		},
-	},
-	
-	{
-		id = "edu_principal_track",
-		minAge = 35, maxAge = 55,
-		weight = 12, oneTime = true,
-		emoji = "🏫", title = "Become a Principal?",
-		category = "work",
-		requiresFlag = "admin_track",
-		text = "District offering to put you on principal track! Lead a whole school! But you'd leave teaching entirely.",
-		choices = {
-			{ text = "🏫 Go for principal", effects = { Happiness = 20, Money = 40000 }, resultText = "Admin credential program! Principal track! School leader!", setFlags = {"principal_track", "administrator"} },
-			{ text = "📚 Stay in instruction", effects = { Happiness = 18, Smarts = 5 }, resultText = "Teaching and curriculum is your zone. Impact from the classroom!" },
-			{ text = "🎓 Become a coach instead", effects = { Happiness = 22, Money = 20000 }, resultText = "Instructional coach! Help other teachers improve! Best role!", setFlag = "instructional_coach" },
-			{ text = "📊 District admin role", effects = { Happiness = 15, Money = 35000 }, resultText = "Central office! Policy and curriculum at scale!", setFlag = "district_admin" },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- PROFESSOR / HIGHER ED PATH
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "edu_phd_decision",
-		minAge = 24, maxAge = 35,
-		weight = 15, oneTime = true,
-		emoji = "🎓", title = "PhD Opportunity!",
-		category = "school",
-		requiresFlag = "academic_track",
-		getDynamicData = function()
-			local schools = {"Harvard", "Stanford", "Berkeley", "a top research university", "your dream school"}
-			return { school = schools[math.random(#schools)] }
-		end,
-		text = "Accepted to PhD program at %school%! 5-7 years. Professor path begins. Do you go?",
-		choices = {
-			{ text = "🎓 Pursue the PhD", effects = { Smarts = 20, Money = -50000, Happiness = 15 }, resultText = "Graduate student life! Research begins! Long road but worth it!", setFlags = {"phd_student", "academic"}, clearFlag = "academic_track" },
-			{ text = "💰 Funded position!", effects = { Smarts = 18, Money = 25000, Happiness = 18 }, resultText = "FULLY FUNDED! Stipend and tuition! No debt! Dream!", setFlags = {"phd_student", "academic"} },
-			{ text = "🙅 Stay in K-12", effects = { Happiness = 10 }, resultText = "Decided the professor path isn't for you. K-12 is rewarding!" },
-			{ text = "⏳ Defer a year", effects = { Happiness = 5 }, resultText = "Taking a gap year before committing. Smart to be sure." },
-		},
-	},
-	
-	{
-		id = "edu_tenure_track",
-		minAge = 30, maxAge = 45,
-		weight = 12, oneTime = true,
-		emoji = "📚", title = "Tenure-Track Position!",
-		category = "work",
-		requiresFlag = "phd_student",
-		getDynamicData = function()
-			local schools = {"a research university", "a liberal arts college", "your alma mater", "a prestigious institution"}
-			return { school = schools[math.random(#schools)] }
-		end,
-		text = "Offered tenure-track professor position at %school%! Publish or perish begins! What do you do?",
-		choices = {
-			{ text = "✅ Accept the position", effects = { Happiness = 25, Money = 80000 }, resultText = "Professor [Your Name]! Office hours, research, students! Dream job!", setFlags = {"professor", "tenure_track"}, clearFlag = "phd_student" },
-			{ text = "📋 Negotiate package", effects = { Happiness = 23, Money = 95000, Smarts = 5 }, resultText = "Better salary, research funds, reduced teaching load! Negotiated well!", setFlags = {"professor", "tenure_track"} },
-			{ text = "🤔 Industry instead", effects = { Happiness = 15, Money = 150000 }, resultText = "Left academia for industry! More money, less prestige!", setFlag = "industry_phd" },
-			{ text = "😔 No offers", effects = { Happiness = -20, Money = 0 }, resultText = "Job market brutal. Adjunct life for now. Keep applying." },
-		},
-	},
-	
-	{
-		id = "edu_tenure_decision",
-		minAge = 35, maxAge = 50,
-		weight = 10, oneTime = true,
-		emoji = "🏛️", title = "Tenure Review!",
-		category = "work",
-		requiresFlag = "tenure_track",
-		text = "THE tenure review. 6 years of work. Committee deciding your future. Have you published enough?",
-		choices = {
-			{ text = "🎉 TENURE GRANTED!", effects = { Happiness = 40, Money = 20000 }, resultText = "TENURED PROFESSOR! Job security! Academic freedom! Made it!", setFlags = {"tenured", "established_professor"} },
-			{ text = "📚 Strong research saved you", effects = { Happiness = 35, Money = 15000 }, resultText = "Publications were strong! Tenure earned through scholarship!", setFlags = {"tenured", "respected_researcher"} },
-			{ text = "💔 Tenure denied", effects = { Happiness = -30 }, resultText = "Devastating. Have to leave. Six years... for nothing. Start over elsewhere." },
-			{ text = "🔄 Given one more year", effects = { Happiness = -10 }, resultText = "Not denied but not granted. One more year to prove yourself. Stressful." },
-		},
-	},
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- LEGACY
-	-- ═══════════════════════════════════════════════════════════════
-	
-	{
-		id = "edu_former_student_success",
-		minAge = 35, maxAge = 80,
-		weight = 15, cooldown = 5,
-		emoji = "🌟", title = "Former Student Success!",
-		category = "social",
-		requiresFlag = "teacher",
-		getDynamicData = function()
-			local achievements = {"became a doctor", "published a book", "started a successful company", "became a teacher themselves", "won a major award"}
-			return { achievement = achievements[math.random(#achievements)] }
-		end,
-		text = "A former student reached out - they %achievement%! They credited YOU for inspiring them!",
-		choices = {
-			{ text = "😭 Tears of joy", effects = { Happiness = 35 }, resultText = "THIS is why you became a teacher. Impact that lasts forever." },
-			{ text = "🤝 Reconnect with them", effects = { Happiness = 25 }, resultText = "Grabbed coffee. Heard their journey. Beautiful full circle.", addRelationship = { category = "friends", dynamicNameKey = nil, startingRelationship = 80, type = "former_student" } },
-			{ text = "📢 Share the story", effects = { Happiness = 20, Looks = 3 }, resultText = "Posted about it! Inspiring others! Teaching matters!" },
-			{ text = "🙏 Quietly grateful", effects = { Happiness = 30 }, resultText = "Private joy. No need to share. You know what you did." },
-		},
-	},
-}
+})
 
-return module
+table.insert(events, {
+	id = "teaching_credential",
+	emoji = "📜",
+	title = "Get Your Teaching Credential",
+	category = "education",
+	tags = {"career", "teacher", "origin", "credential"},
+	
+	weight = 12,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 21,
+		maxAge = 55,
+		requiredAllFlags = {"teaching_interest"},
+		requiredEducation = "bachelor",
+		blockedFlags = {"career_teacher_started"},
+	},
+	
+	getDynamicData = function(state)
+		local programs = {"a traditional credential program", "an alternative certification path", "Teach For America"}
+		return {
+			program = programs[math.random(#programs)]
+		}
+	end,
+	
+	text = "You enroll in %program% to get your teaching credential. Student teaching awaits!",
+	
+	choices = {
+		{
+			id = "complete_credential",
+			text = "Get certified and start teaching!",
+			resultText = "You complete the program and earn your teaching credential.",
+			effects = {Money = -15000, Smarts = 3, Happiness = 4},
+			flags = {set = {"career_teacher_started", "teaching_certified"}},
+			startCareer = "teacher",
+			careerXP = 25,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "teaching_first_day",
+	emoji = "🏫",
+	title = "First Day as a Teacher",
+	category = "work",
+	tags = {"career", "teacher", "classroom_teaching"},
+	
+	weight = 15,
+	cooldownYears = 99,
+	oneTime = true,
+	
+	conditions = {
+		minAge = 22,
+		maxAge = 60,
+		requiredCareerId = "teacher",
+		requiredCareerMinTier = 1,
+		requiredAllFlags = {"teaching_certified"},
+	},
+	
+	getDynamicData = function(state)
+		return {
+			students = math.random(20, 35)
+		}
+	end,
+	
+	text = "Your first day as a real teacher. %students% pairs of eyes are looking at you, waiting. This is terrifying and exciting.",
+	
+	choices = {
+		{
+			id = "nail_first_day",
+			text = "Take a deep breath and own the room.",
+			resultText = "You find your teacher voice. The students respond well. You've got this!",
+			effects = {Happiness = 5, Smarts = 2},
+			flags = {set = {"first_day_success"}},
+			careerXP = 20,
+		},
+		{
+			id = "struggle_but_learn",
+			text = "Stumble through but learn from mistakes.",
+			resultText = "It's messy, but you survive. Every teacher has a rough first day.",
+			effects = {Happiness = 2, Smarts = 1},
+			flags = {set = {"first_day_struggle"}},
+			careerXP = 15,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "teaching_difficult_student",
+	emoji = "😤",
+	title = "The Difficult Student",
+	category = "work",
+	tags = {"career", "teacher", "classroom_teaching"},
+	
+	weight = 12,
+	cooldownYears = 2,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 22,
+		maxAge = 70,
+		requiredCareerId = "teacher",
+		requiredCareerMinTier = 2,
+	},
+	
+	getDynamicData = function(state)
+		local names = {"Alex", "Jordan", "Taylor", "Morgan", "Casey"}
+		return {
+			student = names[math.random(#names)]
+		}
+	end,
+	
+	text = "%student% is disrupting your class constantly. Other students are losing learning time. You need to address this.",
+	
+	choices = {
+		{
+			id = "connect_personally",
+			text = "Try to connect with them personally.",
+			resultText = "You spend extra time understanding their situation. Slowly, they start to open up.",
+			effects = {Happiness = 2, Karma = 4},
+			flags = {set = {"reached_difficult_student"}},
+			careerXP = 20,
+		},
+		{
+			id = "strict_discipline",
+			text = "Apply strict discipline consistently.",
+			resultText = "You set firm boundaries. Some students need structure.",
+			effects = {Happiness = 1},
+			flags = {set = {"firm_disciplinarian"}},
+			careerXP = 10,
+		},
+		{
+			id = "send_to_admin",
+			text = "Escalate to administration.",
+			resultText = "You involve the principal. The problem moves elsewhere, but did you help?",
+			effects = {Karma = -1},
+			flags = {set = {}},
+			careerXP = 5,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "teaching_student_success",
+	emoji = "🌟",
+	title = "Student Success Story",
+	category = "work",
+	tags = {"career", "teacher", "experienced_teacher"},
+	
+	weight = 10,
+	cooldownYears = 2,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 25,
+		maxAge = 70,
+		requiredCareerId = "teacher",
+		requiredCareerMinTier = 2,
+	},
+	
+	getDynamicData = function(state)
+		local achievements = {"got accepted to their dream college", "won a competition they never thought they could", "finally understood a subject they struggled with for years"}
+		return {
+			achievement = achievements[math.random(#achievements)]
+		}
+	end,
+	
+	text = "A former student reaches out to tell you they %achievement%. They credit you as the teacher who believed in them.",
+	
+	choices = {
+		{
+			id = "feel_proud",
+			text = "This is why I became a teacher.",
+			resultText = "You save the message. On hard days, you'll read it again.",
+			effects = {Happiness = 6, Karma = 3},
+			flags = {set = {"student_success_story"}},
+			careerXP = 15,
+			careerReputation = 10,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "teaching_burnout",
+	emoji = "😓",
+	title = "Teacher Burnout",
+	category = "health",
+	tags = {"career", "teacher", "burnout"},
+	
+	weight = 8,
+	cooldownYears = 3,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 25,
+		maxAge = 65,
+		requiredCareerId = "teacher",
+		requiredCareerMinTier = 2,
+		maxStats = {Happiness = 35},
+	},
+	
+	text = "The endless grading, the difficult parents, the underfunding, the disrespect... you're exhausted. Teaching is hard.",
+	
+	choices = {
+		{
+			id = "take_summer",
+			text = "Use summer to really recover.",
+			resultText = "You actually rest during break instead of prepping. You need it.",
+			effects = {Health = 5, Happiness = 5},
+			flags = {set = {"teacher_recovered"}},
+		},
+		{
+			id = "push_through",
+			text = "The kids need me. Push through.",
+			resultText = "You keep going on empty. Your dedication is admirable but costly.",
+			effects = {Health = -5, Karma = 2},
+			flags = {set = {"martyr_teacher"}},
+		},
+		{
+			id = "leave_teaching",
+			text = "I can't do this anymore. I need to leave.",
+			resultText = "You resign at the end of the year. It's painful but necessary.",
+			effects = {Health = 5, Happiness = 2},
+			quitCareer = true,
+			flags = {set = {"left_teaching"}},
+		},
+	},
+})
+
+table.insert(events, {
+	id = "teaching_promotion",
+	emoji = "📋",
+	title = "Administrative Opportunity",
+	category = "work",
+	tags = {"career", "teacher", "school_admin", "milestone"},
+	
+	weight = 7,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 30,
+		maxAge = 60,
+		requiredCareerId = "teacher",
+		requiredCareerMinTier = 3,
+	},
+	
+	text = "The district offers you an administrative position - Assistant Principal. More pay, but you'd leave the classroom.",
+	
+	choices = {
+		{
+			id = "take_admin",
+			text = "Move into administration.",
+			resultText = "You trade lesson plans for budget meetings. Different challenges, broader impact.",
+			effects = {Money = 15000, Happiness = 2},
+			flags = {set = {"school_administrator"}},
+			promoteCareer = true,
+			careerXP = 35,
+		},
+		{
+			id = "stay_classroom",
+			text = "Stay in the classroom. That's where I belong.",
+			resultText = "You turn down the promotion. Teaching is your calling.",
+			effects = {Karma = 3, Happiness = 3},
+			flags = {set = {"classroom_teacher_forever"}},
+			careerXP = 15,
+		},
+	},
+})
+
+-- ═══════════════════════════════════════════════════════════════
+-- PROFESSOR EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "phd_program_start",
+	emoji = "🎓",
+	title = "PhD Program",
+	category = "education",
+	tags = {"career", "professor", "origin", "grad_school"},
+	
+	weight = 8,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	chainId = "professor_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 22,
+		maxAge = 45,
+		blockedFlags = {"career_professor_started"},
+		requiredEducation = "bachelor",
+		minStats = {Smarts = 60},
+	},
+	
+	getDynamicData = function(state)
+		local fields = {"Literature", "Physics", "History", "Computer Science", "Psychology", "Economics"}
+		local universities = {"State University", "Metropolitan University", "National Research Institute"}
+		return {
+			field = fields[math.random(#fields)],
+			university = universities[math.random(#universities)]
+		}
+	end,
+	
+	text = "You're accepted into the %field% PhD program at %university%. Five to seven years of intensive research and teaching await.",
+	
+	choices = {
+		{
+			id = "start_phd",
+			text = "Begin the academic journey.",
+			resultText = "You become a graduate student. The path to professor starts here.",
+			effects = {Money = -5000, Smarts = 5, Happiness = 3},
+			flags = {set = {"career_professor_started", "phd_student"}},
+			startCareer = "professor",
+			careerXP = 25,
+		},
+		{
+			id = "reconsider",
+			text = "The opportunity cost is too high.",
+			resultText = "You decide against academia. There are other paths.",
+			effects = {},
+			flags = {set = {}},
+		},
+	},
+})
+
+table.insert(events, {
+	id = "phd_dissertation",
+	emoji = "📝",
+	title = "Dissertation Defense",
+	category = "education",
+	tags = {"career", "professor", "phd_research", "milestone"},
+	
+	weight = 15,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 26,
+		maxAge = 55,
+		requiredCareerId = "professor",
+		requiredCareerMinTier = 1,
+		requiredAllFlags = {"phd_student"},
+	},
+	
+	text = "After years of research, you defend your dissertation before a committee of experts. They question every aspect of your work.",
+	
+	choices = {
+		{
+			id = "defend_successfully",
+			text = "Defend your research confidently.",
+			resultText = "You answer every question. The committee congratulates you - you're now Dr. You.",
+			effects = {Smarts = 5, Happiness = 8},
+			flags = {set = {"phd_earned", "doctor_title"}, clear = {"phd_student"}},
+			promoteCareer = true,
+			careerXP = 50,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "professor_tenure_track",
+	emoji = "🏛️",
+	title = "Tenure-Track Position",
+	category = "work",
+	tags = {"career", "professor", "assistant_professor", "milestone"},
+	
+	weight = 10,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 28,
+		maxAge = 55,
+		requiredCareerId = "professor",
+		requiredCareerMinTier = 2,
+		requiredAllFlags = {"phd_earned"},
+	},
+	
+	getDynamicData = function(state)
+		local universities = {"Regional University", "State College", "Research University", "Liberal Arts College"}
+		return {
+			university = universities[math.random(#universities)]
+		}
+	end,
+	
+	text = "%university% offers you a tenure-track assistant professor position. Six years to prove yourself worthy of lifetime job security.",
+	
+	choices = {
+		{
+			id = "accept_position",
+			text = "Accept and begin the tenure clock.",
+			resultText = "You start as an assistant professor. Publish or perish - the clock is ticking.",
+			effects = {Money = 10000, Happiness = 5},
+			flags = {set = {"tenure_track"}},
+			promoteCareer = true,
+			careerXP = 40,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "professor_publish",
+	emoji = "📰",
+	title = "Publish or Perish",
+	category = "work",
+	tags = {"career", "professor", "assistant_professor", "research"},
+	
+	weight = 12,
+	cooldownYears = 2,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 28,
+		maxAge = 70,
+		requiredCareerId = "professor",
+		requiredCareerMinTier = 3,
+		requiredAllFlags = {"tenure_track"},
+	},
+	
+	text = "The pressure to publish research is immense. Your tenure case depends on a strong publication record.",
+	
+	choices = {
+		{
+			id = "publish_success",
+			text = "Your paper gets accepted to a top journal!",
+			resultText = "Your research makes waves in the field. One step closer to tenure.",
+			effects = {Smarts = 3, Happiness = 5},
+			flags = {set = {"published_paper"}},
+			careerXP = 30,
+			careerReputation = 15,
+		},
+		{
+			id = "rejected_revise",
+			text = "Rejected, but with helpful feedback.",
+			resultText = "Back to the drawing board. Revision is part of the process.",
+			effects = {Happiness = -2, Smarts = 1},
+			flags = {set = {}},
+			careerXP = 10,
+		},
+	},
+})
+
+table.insert(events, {
+	id = "professor_tenure",
+	emoji = "🎉",
+	title = "Tenure Decision",
+	category = "work",
+	tags = {"career", "professor", "associate_professor", "milestone"},
+	
+	weight = 8,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 34,
+		maxAge = 60,
+		requiredCareerId = "professor",
+		requiredCareerMinTier = 3,
+		requiredAllFlags = {"tenure_track", "published_paper"},
+	},
+	
+	text = "After six years, the tenure committee meets to decide your fate. Your career hangs in the balance.",
+	
+	choices = {
+		{
+			id = "tenure_granted",
+			text = "Tenure granted! You made it!",
+			resultText = "Job security for life. You can now pursue the research that truly matters to you.",
+			effects = {Happiness = 10, Money = 15000},
+			flags = {set = {"tenured_professor"}, clear = {"tenure_track"}},
+			promoteCareer = true,
+			careerXP = 60,
+			careerReputation = 25,
+		},
+		{
+			id = "tenure_denied",
+			text = "Tenure denied. You have to leave.",
+			resultText = "Devastation. After years of work, you have to find a new position elsewhere.",
+			effects = {Happiness = -10},
+			flags = {set = {"tenure_denied"}, clear = {"tenure_track"}},
+			quitCareer = true,
+		},
+	},
+})
+
+return {events = events}

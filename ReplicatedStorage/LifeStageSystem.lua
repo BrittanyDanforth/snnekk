@@ -222,6 +222,10 @@ LifeStageSystem.StageOrder = {
 ----------------------------------------------------------------------
 
 LifeStageSystem.EventCategories = {
+	-- ═══════════════════════════════════════════════════════════════
+	-- CORE LIFE CATEGORIES (always available at appropriate ages)
+	-- ═══════════════════════════════════════════════════════════════
+	
 	family = {
 		name = "Family",
 		emoji = "👨‍👩‍👧",
@@ -244,6 +248,14 @@ LifeStageSystem.EventCategories = {
 		description = "Education events.",
 		minAge = 5,
 		maxAge = 30,
+	},
+	
+	education = {
+		name = "Education",
+		emoji = "📚",
+		description = "Education and learning events.",
+		minAge = 5,
+		maxAge = 60,
 	},
 
 	social = {
@@ -270,14 +282,6 @@ LifeStageSystem.EventCategories = {
 		maxAge = 75,
 	},
 
-	crime = {
-		name = "Crime",
-		emoji = "🔪",
-		description = "Criminal activities.",
-		minAge = 10,
-		maxAge = 70,
-	},
-
 	money = {
 		name = "Money",
 		emoji = "💰",
@@ -292,6 +296,28 @@ LifeStageSystem.EventCategories = {
 		description = "Major life milestones.",
 		minAge = 0,
 		maxAge = 120,
+	},
+	
+	life = {
+		name = "Life",
+		emoji = "🌟",
+		description = "General life events and opportunities.",
+		minAge = 0,
+		maxAge = 120,
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CAREER PATH CATEGORIES (require interest/progression flags)
+	-- ═══════════════════════════════════════════════════════════════
+
+	crime = {
+		name = "Crime",
+		emoji = "🔪",
+		description = "Criminal activities.",
+		minAge = 10,
+		maxAge = 70,
+		-- Crime category doesn't require a flag - anyone can stumble into crime
+		-- But serious criminal events should use requiredAllFlags in the event itself
 	},
 
 	prison = {
@@ -333,10 +359,29 @@ LifeStageSystem.EventCategories = {
 	hacking = {
 		name = "Hacking",
 		emoji = "💻",
-		description = "Hacker career events.",
+		description = "Hacker/cybersecurity career events.",
 		minAge = 12,
 		maxAge = 60,
 		requiresFlag = "computer_interest",
+	},
+	
+	tech = {
+		name = "Tech",
+		emoji = "💻",
+		description = "Technology and software career events.",
+		minAge = 12,
+		maxAge = 70,
+		-- Tech origin events (like "first coding project") don't require flags
+		-- But advanced tech events should use requiredAllFlags in the event
+	},
+	
+	cybersecurity = {
+		name = "Cybersecurity",
+		emoji = "🔐",
+		description = "Security and ethical hacking events.",
+		minAge = 16,
+		maxAge = 65,
+		requiresFlag = "security_interested",
 	},
 
 	teaching = {
@@ -346,6 +391,67 @@ LifeStageSystem.EventCategories = {
 		minAge = 22,
 		maxAge = 70,
 		requiresFlag = "teaching_interest",
+	},
+	
+	medical = {
+		name = "Medical",
+		emoji = "🏥",
+		description = "Medical career events.",
+		minAge = 16,
+		maxAge = 80,
+		requiresFlag = "medical_interest_sparked",
+	},
+	
+	legal = {
+		name = "Legal",
+		emoji = "⚖️",
+		description = "Legal career events.",
+		minAge = 18,
+		maxAge = 75,
+		requiresFlag = "legal_interest",
+	},
+	
+	business = {
+		name = "Business",
+		emoji = "📈",
+		description = "Business and entrepreneurship events.",
+		minAge = 16,
+		maxAge = 80,
+		-- Business doesn't require a flag - anyone can start
+	},
+	
+	military = {
+		name = "Military",
+		emoji = "🎖️",
+		description = "Military career events.",
+		minAge = 17,
+		maxAge = 65,
+		requiresFlag = "military_interest",
+	},
+	
+	sports = {
+		name = "Sports",
+		emoji = "⚽",
+		description = "Sports career events.",
+		minAge = 8,
+		maxAge = 45,
+		requiresFlag = "sports_interest",
+	},
+	
+	entertainment = {
+		name = "Entertainment",
+		emoji = "🎬",
+		description = "Entertainment and fame events.",
+		minAge = 10,
+		maxAge = 80,
+	},
+	
+	fame = {
+		name = "Fame",
+		emoji = "⭐",
+		description = "Fame and celebrity events.",
+		minAge = 14,
+		maxAge = 100,
 	},
 
 	death = {
@@ -512,15 +618,18 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 
-	-- 1. Age range
-	if eventDef.minAge and age < eventDef.minAge then
+	-- 1. Age range (check both top-level and conditions for compatibility)
+	local minAge = eventDef.minAge or (eventDef.conditions and eventDef.conditions.minAge)
+	local maxAge = eventDef.maxAge or (eventDef.conditions and eventDef.conditions.maxAge)
+	
+	if minAge and age < minAge then
 		result.valid = false
-		table.insert(result.reasons, "Too young (need " .. eventDef.minAge .. ")")
+		table.insert(result.reasons, "Too young (need " .. minAge .. ", have " .. age .. ")")
 	end
 
-	if eventDef.maxAge and age > eventDef.maxAge then
+	if maxAge and age > maxAge then
 		result.valid = false
-		table.insert(result.reasons, "Too old (max " .. eventDef.maxAge .. ")")
+		table.insert(result.reasons, "Too old (max " .. maxAge .. ", have " .. age .. ")")
 	end
 
 	-- 2. Category base validity (age + required flag)
@@ -572,16 +681,43 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 
-	-- 6. Custom requires callback
-	if eventDef.requires then
-		local ok, canFire = pcall(eventDef.requires, state)
-		if not ok or not canFire then
+	-- 6. Custom requires callback (check both legacy and normalized format)
+	local customRequires = eventDef.requires or (eventDef.conditions and eventDef.conditions.custom)
+	if customRequires and type(customRequires) == "function" then
+		local ok, canFire = pcall(customRequires, state)
+		if not ok then
 			result.valid = false
-			table.insert(result.reasons, "Requirements not met")
+			table.insert(result.reasons, "Requirements check failed: " .. tostring(canFire))
+		elseif not canFire then
+			result.valid = false
+			table.insert(result.reasons, "Custom requirements not met")
+		end
+	end
+	
+	-- 6b. Check stat requirements (minStats)
+	local minStats = eventDef.minStats or (eventDef.conditions and eventDef.conditions.minStats)
+	if minStats and type(minStats) == "table" then
+		local stats = state.Stats or {}
+		for statName, minValue in pairs(minStats) do
+			local currentValue = stats[statName] or state[statName] or 0
+			if currentValue < minValue then
+				result.valid = false
+				table.insert(result.reasons, "Insufficient " .. statName .. " (need " .. minValue .. ", have " .. currentValue .. ")")
+			end
+		end
+	end
+	
+	-- 6c. Check money requirements
+	local minMoney = eventDef.minMoney or (eventDef.conditions and eventDef.conditions.minMoney)
+	if minMoney then
+		local currentMoney = state.Money or 0
+		if currentMoney < minMoney then
+			result.valid = false
+			table.insert(result.reasons, "Insufficient money (need $" .. minMoney .. ", have $" .. currentMoney .. ")")
 		end
 	end
 
-	-- 7. Simple required flags
+	-- 7. Simple required flags (check both legacy and normalized format)
 	if eventDef.requiresFlag and not flags[eventDef.requiresFlag] then
 		result.valid = false
 		table.insert(result.reasons, "Missing required flag: " .. eventDef.requiresFlag)
@@ -591,8 +727,20 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		result.valid = false
 		table.insert(result.reasons, "Missing required flag: " .. eventDef.requiresFlag2)
 	end
+	
+	-- 7b. Check normalized conditions.requiredAllFlags
+	local conditions = eventDef.conditions or {}
+	if conditions.requiredAllFlags and type(conditions.requiredAllFlags) == "table" then
+		for _, flagName in ipairs(conditions.requiredAllFlags) do
+			if not flags[flagName] then
+				result.valid = false
+				table.insert(result.reasons, "Missing required flag: " .. flagName)
+				break
+			end
+		end
+	end
 
-	-- 8. Any-of flags
+	-- 8. Any-of flags (check both legacy and normalized format)
 	if eventDef.requiresAnyFlag and type(eventDef.requiresAnyFlag) == "table" then
 		local hasAny = false
 		for _, flagName in ipairs(eventDef.requiresAnyFlag) do
@@ -606,8 +754,23 @@ function LifeStageSystem.validateEvent(eventDef, state)
 			table.insert(result.reasons, "Missing any required flag from: " .. table.concat(eventDef.requiresAnyFlag, ", "))
 		end
 	end
+	
+	-- 8b. Check normalized conditions.requiredAnyFlags
+	if conditions.requiredAnyFlags and type(conditions.requiredAnyFlags) == "table" then
+		local hasAny = false
+		for _, flagName in ipairs(conditions.requiredAnyFlags) do
+			if flags[flagName] then
+				hasAny = true
+				break
+			end
+		end
+		if not hasAny then
+			result.valid = false
+			table.insert(result.reasons, "Missing any required flag from: " .. table.concat(conditions.requiredAnyFlags, ", "))
+		end
+	end
 
-	-- 9. Block flags
+	-- 9. Block flags (check both legacy and normalized format)
 	if eventDef.blockIfFlag and flags[eventDef.blockIfFlag] then
 		result.valid = false
 		table.insert(result.reasons, "Blocked by flag: " .. eventDef.blockIfFlag)
@@ -616,6 +779,17 @@ function LifeStageSystem.validateEvent(eventDef, state)
 	if eventDef.blockIfFlag2 and flags[eventDef.blockIfFlag2] then
 		result.valid = false
 		table.insert(result.reasons, "Blocked by flag: " .. eventDef.blockIfFlag2)
+	end
+	
+	-- 9b. Check normalized conditions.blockedFlags
+	if conditions.blockedFlags and type(conditions.blockedFlags) == "table" then
+		for _, flagName in ipairs(conditions.blockedFlags) do
+			if flags[flagName] then
+				result.valid = false
+				table.insert(result.reasons, "Blocked by flag: " .. flagName)
+				break
+			end
+		end
 	end
 
 	-- 10. Prison events must be in prison
@@ -640,6 +814,103 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		if not inSchool and not flags.college_student then
 			result.valid = false
 			table.insert(result.reasons, "Not in school")
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 13. CAREER VALIDATION (requiredCareerId, requiredCareerMinTier)
+	-- This is CRITICAL for path-gated events
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local requiredCareerId = eventDef.requiredCareerId or (conditions and conditions.requiredCareerId)
+	if requiredCareerId then
+		local career = state.Career or {}
+		local currentCareerId = career.path or career.id
+		
+		-- Check if player has the required career
+		if currentCareerId ~= requiredCareerId then
+			-- Also check flags for career (some systems use flags instead of Career table)
+			local hasCareerFlag = flags["career_" .. requiredCareerId] or flags["career_" .. requiredCareerId .. "_started"]
+			if not hasCareerFlag then
+				result.valid = false
+				table.insert(result.reasons, "Requires career: " .. requiredCareerId)
+			end
+		end
+	end
+	
+	local requiredCareerMinTier = eventDef.requiredCareerMinTier or (conditions and conditions.requiredCareerMinTier)
+	if requiredCareerMinTier and requiredCareerMinTier > 0 then
+		local career = state.Career or {}
+		local currentTier = career.tier or career.level or 0
+		
+		-- If tier not tracked in Career, estimate from experience or flags
+		if currentTier == 0 then
+			local experience = career.experience or 0
+			if experience >= 10 then currentTier = 3
+			elseif experience >= 5 then currentTier = 2
+			elseif experience >= 1 then currentTier = 1
+			end
+		end
+		
+		if currentTier < requiredCareerMinTier then
+			result.valid = false
+			table.insert(result.reasons, "Requires career tier " .. requiredCareerMinTier .. " (have tier " .. currentTier .. ")")
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 14. EDUCATION VALIDATION (requiredEducation)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local requiredEducation = eventDef.requiredEducation or (conditions and conditions.requiredEducation)
+	if requiredEducation then
+		local education = state.Education or {}
+		local currentLevel = education.level or state.EducationLevel or "none"
+		
+		-- Education hierarchy
+		local educationLevels = {
+			none = 0,
+			elementary = 1,
+			middle = 2,
+			high_school = 3,
+			highschool = 3,
+			some_college = 4,
+			associate = 5,
+			bachelor = 6,
+			bachelors = 6,
+			master = 7,
+			masters = 7,
+			doctorate = 8,
+			phd = 8,
+		}
+		
+		local requiredLevel = educationLevels[requiredEducation] or 0
+		local currentLevelNum = educationLevels[currentLevel] or 0
+		
+		if currentLevelNum < requiredLevel then
+			result.valid = false
+			table.insert(result.reasons, "Requires education: " .. requiredEducation)
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 15. MAX STATS VALIDATION (maxStats - e.g., events for poor/unhealthy)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local maxStats = eventDef.maxStats or (conditions and conditions.maxStats)
+	if maxStats and type(maxStats) == "table" then
+		local stats = state.Stats or {}
+		for statName, maxValue in pairs(maxStats) do
+			local currentValue = 0
+			if statName == "Money" then
+				currentValue = state.Money or 0
+			else
+				currentValue = stats[statName] or state[statName] or 50
+			end
+			if currentValue > maxValue then
+				result.valid = false
+				table.insert(result.reasons, statName .. " too high (max " .. maxValue .. ", have " .. currentValue .. ")")
+			end
 		end
 	end
 
@@ -783,15 +1054,244 @@ function LifeStageSystem.getTransitionEvent(oldAge, newAge)
 end
 
 ----------------------------------------------------------------------
--- DEATH SYSTEM
+-- DEATH SYSTEM (BITLIFE-STYLE)
+-- Health = 0% means INSTANT DEATH with contextual cause
 ----------------------------------------------------------------------
+
+-- Get a contextual death cause based on the player's life circumstances
+function LifeStageSystem.getDeathCause(state)
+	local age = state.Age or 0
+	local flags = state.Flags or {}
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 0
+	local healthConditions = state.HealthConditions or {}
+	local addictions = state.Addictions or {}
+	
+	-- Build a list of possible causes weighted by relevance
+	local possibleCauses = {}
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- HEALTH CONDITIONS (from HealthConditions table - prioritized)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	for _, condition in ipairs(healthConditions) do
+		local severity = condition.severity or "mild"
+		local conditionId = condition.id or ""
+		local conditionName = condition.name or conditionId
+		
+		if severity == "terminal" or severity == "severe" then
+			if conditionId == "cancer" then
+				table.insert(possibleCauses, { cause = "cancer", weight = 100 })
+				table.insert(possibleCauses, { cause = "a long battle with " .. conditionName, weight = 80 })
+			elseif conditionId == "heart_disease" or conditionId == "heart_condition" then
+				table.insert(possibleCauses, { cause = "heart failure", weight = 100 })
+				table.insert(possibleCauses, { cause = "a massive heart attack", weight = 80 })
+			elseif conditionId == "stroke" then
+				table.insert(possibleCauses, { cause = "a stroke", weight = 100 })
+			elseif conditionId == "lung_disease" or conditionId == "copd" then
+				table.insert(possibleCauses, { cause = "respiratory failure", weight = 100 })
+			elseif conditionId == "kidney_disease" or conditionId == "kidney_failure" then
+				table.insert(possibleCauses, { cause = "kidney failure", weight = 100 })
+			elseif conditionId == "liver_disease" or conditionId == "cirrhosis" then
+				table.insert(possibleCauses, { cause = "liver failure", weight = 100 })
+			elseif conditionId == "diabetes" then
+				table.insert(possibleCauses, { cause = "diabetes complications", weight = 90 })
+			elseif conditionId == "aids" or conditionId == "hiv" then
+				table.insert(possibleCauses, { cause = "AIDS-related complications", weight = 100 })
+			elseif conditionId == "alzheimers" or conditionId == "dementia" then
+				table.insert(possibleCauses, { cause = "Alzheimer's disease", weight = 100 })
+			else
+				-- Generic severe condition
+				table.insert(possibleCauses, { cause = "complications from " .. conditionName, weight = 70 })
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- ADDICTIONS (from Addictions table)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	for _, addiction in ipairs(addictions) do
+		if not addiction.inRecovery then
+			local severity = addiction.severity or 0
+			local addictionId = addiction.id or ""
+			
+			if severity >= 60 then  -- Severe addiction
+				if addictionId == "heroin" or addictionId == "opioids" then
+					table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+					table.insert(possibleCauses, { cause = "opioid-related complications", weight = 70 })
+				elseif addictionId == "cocaine" or addictionId == "meth" then
+					table.insert(possibleCauses, { cause = "a stimulant overdose", weight = 90 })
+					table.insert(possibleCauses, { cause = "drug-induced cardiac arrest", weight = 80 })
+				elseif addictionId == "alcohol" or addictionId == "alcoholism" then
+					table.insert(possibleCauses, { cause = "liver failure", weight = 90 })
+					table.insert(possibleCauses, { cause = "alcohol poisoning", weight = 70 })
+					table.insert(possibleCauses, { cause = "cirrhosis of the liver", weight = 60 })
+				elseif addictionId == "drugs" then
+					table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+					table.insert(possibleCauses, { cause = "substance abuse complications", weight = 60 })
+				end
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- FLAG-BASED CAUSES (legacy support + special circumstances)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if health <= 0 then
+		-- Check flags for specific health conditions (legacy)
+		if flags.terminal_illness or flags.cancer then
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "cancer", weight = 100 })
+				table.insert(possibleCauses, { cause = "a long battle with illness", weight = 80 })
+			end
+		end
+		
+		if flags.heart_disease or flags.heart_condition then
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "heart failure", weight = 100 })
+				table.insert(possibleCauses, { cause = "a massive heart attack", weight = 80 })
+			end
+		end
+		
+		if flags.drug_addict or flags.drug_addiction then
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+				table.insert(possibleCauses, { cause = "substance abuse complications", weight = 60 })
+			end
+		end
+		
+		if flags.alcoholic or flags.alcohol_addiction then
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "liver failure", weight = 90 })
+				table.insert(possibleCauses, { cause = "alcohol poisoning", weight = 70 })
+				table.insert(possibleCauses, { cause = "cirrhosis of the liver", weight = 60 })
+			end
+		end
+		
+		if flags.in_prison then
+			table.insert(possibleCauses, { cause = "complications while incarcerated", weight = 80 })
+			table.insert(possibleCauses, { cause = "a prison altercation", weight = 60 })
+			if flags.gang_member then
+				table.insert(possibleCauses, { cause = "gang violence in prison", weight = 90 })
+			end
+		end
+		
+		if flags.shot or flags.gunshot_wound then
+			table.insert(possibleCauses, { cause = "gunshot wounds", weight = 100 })
+		end
+		
+		if flags.stabbed or flags.stab_wound then
+			table.insert(possibleCauses, { cause = "stab wounds", weight = 100 })
+		end
+		
+		if flags.car_accident or flags.injured_accident then
+			table.insert(possibleCauses, { cause = "injuries sustained in a car accident", weight = 100 })
+		end
+		
+		if flags.diabetes then
+			table.insert(possibleCauses, { cause = "diabetes complications", weight = 70 })
+		end
+		
+		if flags.mental_illness or flags.severe_depression then
+			table.insert(possibleCauses, { cause = "complications from mental illness", weight = 50 })
+		end
+		
+		if flags.homeless then
+			table.insert(possibleCauses, { cause = "exposure to the elements", weight = 70 })
+			table.insert(possibleCauses, { cause = "malnutrition", weight = 60 })
+		end
+		
+		-- If no specific causes found, use general health-failure causes
+		if #possibleCauses == 0 then
+			table.insert(possibleCauses, { cause = "organ failure", weight = 40 })
+			table.insert(possibleCauses, { cause = "a sudden medical emergency", weight = 40 })
+			table.insert(possibleCauses, { cause = "complications from poor health", weight = 50 })
+			table.insert(possibleCauses, { cause = "a severe illness", weight = 30 })
+			
+			if age < 30 then
+				table.insert(possibleCauses, { cause = "a sudden illness", weight = 50 })
+				table.insert(possibleCauses, { cause = "an undiagnosed condition", weight = 40 })
+			elseif age < 50 then
+				table.insert(possibleCauses, { cause = "a heart attack", weight = 40 })
+				table.insert(possibleCauses, { cause = "complications from stress", weight = 30 })
+			else
+				table.insert(possibleCauses, { cause = "a heart attack", weight = 60 })
+				table.insert(possibleCauses, { cause = "a stroke", weight = 50 })
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- AGE-BASED NATURAL CAUSES (for random death checks)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if #possibleCauses == 0 then
+		if age >= 90 then
+			table.insert(possibleCauses, { cause = "old age", weight = 100 })
+			table.insert(possibleCauses, { cause = "natural causes", weight = 80 })
+			table.insert(possibleCauses, { cause = "peacefully in their sleep", weight = 70 })
+		elseif age >= 75 then
+			table.insert(possibleCauses, { cause = "natural causes", weight = 60 })
+			table.insert(possibleCauses, { cause = "a heart attack", weight = 50 })
+			table.insert(possibleCauses, { cause = "a stroke", weight = 40 })
+			table.insert(possibleCauses, { cause = "old age", weight = 40 })
+		elseif age >= 60 then
+			table.insert(possibleCauses, { cause = "a heart attack", weight = 50 })
+			table.insert(possibleCauses, { cause = "cancer", weight = 40 })
+			table.insert(possibleCauses, { cause = "a stroke", weight = 30 })
+		elseif age >= 40 then
+			table.insert(possibleCauses, { cause = "a heart attack", weight = 30 })
+			table.insert(possibleCauses, { cause = "an accident", weight = 40 })
+			table.insert(possibleCauses, { cause = "cancer", weight = 30 })
+		else
+			table.insert(possibleCauses, { cause = "an accident", weight = 50 })
+			table.insert(possibleCauses, { cause = "a sudden illness", weight = 30 })
+			table.insert(possibleCauses, { cause = "an unexpected tragedy", weight = 20 })
+		end
+	end
+	
+	-- Weighted random selection
+	local totalWeight = 0
+	for _, entry in ipairs(possibleCauses) do
+		totalWeight = totalWeight + entry.weight
+	end
+	
+	if totalWeight <= 0 then
+		return "unknown causes"
+	end
+	
+	local roll = math.random() * totalWeight
+	local cumulative = 0
+	
+	for _, entry in ipairs(possibleCauses) do
+		cumulative = cumulative + entry.weight
+		if roll <= cumulative then
+			return entry.cause
+		end
+	end
+	
+	return possibleCauses[#possibleCauses].cause
+end
 
 function LifeStageSystem.calculateDeathChance(state)
 	local age = state.Age or 0
 	local stats = state.Stats or {}
 	local health = stats.Health or state.Health or 50
 	local flags = state.Flags or {}
+	local healthConditions = state.HealthConditions or {}
+	local addictions = state.Addictions or {}
+	local fitness = state.Fitness or 50
 
+	-- ═══════════════════════════════════════════════════════════════
+	-- INSTANT DEATH: Health at or below 0% = guaranteed death
+	-- ═══════════════════════════════════════════════════════════════
+	if health <= 0 then
+		return 1.0 -- 100% chance of death
+	end
+
+	-- Base chance increases with age
 	local baseChance = 0
 	if age < 50 then
 		baseChance = 0.001
@@ -809,54 +1309,166 @@ function LifeStageSystem.calculateDeathChance(state)
 		baseChance = 0.50
 	end
 
+	-- Health modifier: lower health = higher chance
+	-- At 50% health, this doubles the base chance
+	-- At 10% health, this nearly guarantees it
 	local healthMod = (100 - health) / 100
-	baseChance *= (1 + healthMod)
+	baseChance = baseChance * (1 + healthMod * 2)
 
+	-- ═══════════════════════════════════════════════════════════════
+	-- HEALTH CONDITIONS (from HealthConditions table, not just flags)
+	-- ═══════════════════════════════════════════════════════════════
+	for _, condition in ipairs(healthConditions) do
+		local severity = condition.severity or "mild"
+		local treated = condition.treated or false
+		
+		if severity == "terminal" then
+			baseChance = baseChance * (treated and 3 or 5)
+		elseif severity == "severe" then
+			baseChance = baseChance * (treated and 1.5 or 2.5)
+		elseif severity == "moderate" then
+			baseChance = baseChance * (treated and 1.1 or 1.5)
+		-- mild conditions have minimal impact on death chance
+		end
+		
+		-- Specific condition multipliers
+		if condition.id == "cancer" then
+			baseChance = baseChance * (treated and 1.5 or 3)
+		elseif condition.id == "heart_disease" or condition.id == "heart_condition" then
+			baseChance = baseChance * (treated and 1.3 or 2)
+		elseif condition.id == "diabetes" then
+			baseChance = baseChance * (treated and 1.1 or 1.5)
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- ADDICTIONS (from Addictions table, not just flags)
+	-- ═══════════════════════════════════════════════════════════════
+	for _, addiction in ipairs(addictions) do
+		if not addiction.inRecovery then
+			local severity = addiction.severity or 0
+			
+			-- Higher severity = higher death risk
+			if severity >= 80 then
+				baseChance = baseChance * 3
+			elseif severity >= 60 then
+				baseChance = baseChance * 2
+			elseif severity >= 40 then
+				baseChance = baseChance * 1.5
+			elseif severity >= 20 then
+				baseChance = baseChance * 1.2
+			end
+			
+			-- Specific addiction type multipliers
+			if addiction.id == "heroin" or addiction.id == "opioids" then
+				baseChance = baseChance * 2  -- Opioids are particularly deadly
+			elseif addiction.id == "cocaine" or addiction.id == "meth" then
+				baseChance = baseChance * 1.8
+			elseif addiction.id == "alcohol" or addiction.id == "alcoholism" then
+				baseChance = baseChance * 1.4
+			end
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- FITNESS MODIFIER (protects against death)
+	-- ═══════════════════════════════════════════════════════════════
+	if fitness >= 80 then
+		baseChance = baseChance * 0.5  -- Very fit = 50% less likely to die
+	elseif fitness >= 60 then
+		baseChance = baseChance * 0.7
+	elseif fitness >= 40 then
+		baseChance = baseChance * 0.85
+	elseif fitness < 20 then
+		baseChance = baseChance * 1.3  -- Very unfit = 30% more likely to die
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- FLAG-BASED MODIFIERS (legacy support + additional factors)
+	-- ═══════════════════════════════════════════════════════════════
 	if flags.terminal_illness then
-		baseChance *= 5
+		baseChance = baseChance * 5
 	end
-	if flags.drug_addict then
-		baseChance *= 2
+	if flags.drug_addict or flags.drug_addiction then
+		baseChance = baseChance * 2.5
 	end
-	if flags.alcoholic then
-		baseChance *= 1.5
+	if flags.alcoholic or flags.alcohol_addiction then
+		baseChance = baseChance * 1.8
+	end
+	if flags.heart_disease or flags.heart_condition then
+		baseChance = baseChance * 2
 	end
 	if flags.healthy_lifestyle then
-		baseChance *= 0.5
+		baseChance = baseChance * 0.4
+	end
+	if flags.exercises_regularly then
+		baseChance = baseChance * 0.7
 	end
 	if flags.in_prison and flags.gang_member then
-		baseChance *= 1.25 -- prison + gang = more risk
+		baseChance = baseChance * 1.5
+	end
+	if flags.fugitive then
+		baseChance = baseChance * 1.3
+	end
+	if flags.war_veteran then
+		baseChance = baseChance * 1.2  -- PTSD, injuries from service
+	end
+	if flags.homeless then
+		baseChance = baseChance * 2  -- Harsh living conditions
+	end
+	if flags.wealthy or flags.millionaire then
+		baseChance = baseChance * 0.8  -- Better healthcare access
 	end
 
 	return math.min(baseChance, 0.99)
 end
 
 function LifeStageSystem.checkDeath(state)
-	local chance = LifeStageSystem.calculateDeathChance(state)
-	local roll = math.random()
-
-	if roll < chance then
-		local age = state.Age or 0
-		local causes = { "old age", "heart attack", "stroke", "cancer", "accident" }
-
-		if age >= 80 then
-			table.insert(causes, "natural causes")
-			table.insert(causes, "peacefully in sleep")
-		end
-		if state.Flags and state.Flags.in_prison then
-			table.insert(causes, "complications in prison")
-		end
-
-		local cause = causes[math.random(#causes)]
-
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 50
+	local age = state.Age or 0
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CRITICAL: 0% Health = Immediate death, no random roll needed
+	-- ═══════════════════════════════════════════════════════════════
+	if health <= 0 then
+		local cause = LifeStageSystem.getDeathCause(state)
 		return {
 			died = true,
 			cause = cause,
 			age = age,
+			wasHealthDeath = true, -- Flag indicating this was a 0% health death
+		}
+	end
+	
+	-- Normal random death check for aging/natural causes
+	local chance = LifeStageSystem.calculateDeathChance(state)
+	local roll = math.random()
+
+	if roll < chance then
+		local cause = LifeStageSystem.getDeathCause(state)
+		return {
+			died = true,
+			cause = cause,
+			age = age,
+			wasHealthDeath = false,
 		}
 	end
 
 	return { died = false }
+end
+
+-- Check if a player should die immediately (call after stat changes)
+-- Returns death info if health <= 0, otherwise nil
+function LifeStageSystem.checkImmediateDeath(state)
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 50
+	
+	if health <= 0 then
+		return LifeStageSystem.checkDeath(state)
+	end
+	
+	return nil
 end
 
 ----------------------------------------------------------------------

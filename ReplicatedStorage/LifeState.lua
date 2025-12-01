@@ -540,6 +540,361 @@ function LifeState:GetAssets(assetType)
 end
 
 ----------------------------------------------------------------------
+-- HEALTH CONDITIONS HELPERS
+----------------------------------------------------------------------
+
+function LifeState:AddHealthCondition(id, opts)
+	opts = opts or {}
+	local cond = {
+		id = id,
+		name = opts.name or id,
+		severity = opts.severity or "mild", -- "mild", "moderate", "severe", "terminal"
+		chronic = opts.chronic ~= false,
+		diagnosedAge = self.Age,
+		diagnosedYear = self.Year,
+		treated = opts.treated or false,
+		treatmentCost = opts.treatmentCost or 0,
+	}
+	table.insert(self.HealthConditions, cond)
+	
+	-- Set flag for conditions that should trigger death system
+	if opts.severity == "terminal" then
+		self:SetFlag("terminal_illness")
+	end
+	if id == "cancer" then
+		self:SetFlag("cancer")
+	end
+	if id == "heart_disease" or id == "heart_condition" then
+		self:SetFlag("heart_condition")
+	end
+	if id == "diabetes" then
+		self:SetFlag("diabetes")
+	end
+	
+	return cond
+end
+
+function LifeState:HasHealthCondition(id)
+	for _, cond in ipairs(self.HealthConditions) do
+		if cond.id == id then
+			return true, cond
+		end
+	end
+	return false, nil
+end
+
+function LifeState:RemoveHealthCondition(id)
+	for i, cond in ipairs(self.HealthConditions) do
+		if cond.id == id then
+			table.remove(self.HealthConditions, i)
+			-- Clear associated flags
+			if id == "cancer" then
+				self:ClearFlag("cancer")
+			end
+			if id == "heart_disease" or id == "heart_condition" then
+				self:ClearFlag("heart_condition")
+			end
+			if id == "diabetes" then
+				self:ClearFlag("diabetes")
+			end
+			return true
+		end
+	end
+	return false
+end
+
+function LifeState:GetHealthConditions()
+	return self.HealthConditions or {}
+end
+
+function LifeState:GetSevereConditions()
+	local severe = {}
+	for _, cond in ipairs(self.HealthConditions) do
+		if cond.severity == "severe" or cond.severity == "terminal" then
+			table.insert(severe, cond)
+		end
+	end
+	return severe
+end
+
+----------------------------------------------------------------------
+-- ADDICTIONS HELPERS
+----------------------------------------------------------------------
+
+function LifeState:AddAddiction(id, opts)
+	opts = opts or {}
+	local addiction = {
+		id = id,                         -- "alcohol", "drugs", "opioids", "gambling", etc.
+		name = opts.name or id,
+		severity = opts.severity or 20,  -- 0-100
+		startAge = self.Age,
+		startYear = self.Year,
+		inRecovery = opts.inRecovery or false,
+		relapses = 0,
+	}
+	table.insert(self.Addictions, addiction)
+	
+	-- Set flag for death system integration
+	if id == "alcohol" or id == "alcoholism" then
+		self:SetFlag("alcoholic")
+	end
+	if id == "drugs" or id == "opioids" or id == "cocaine" or id == "heroin" then
+		self:SetFlag("drug_addict")
+	end
+	
+	return addiction
+end
+
+function LifeState:HasAddiction(id)
+	for _, add in ipairs(self.Addictions) do
+		if add.id == id then
+			return true, add
+		end
+	end
+	return false, nil
+end
+
+function LifeState:ModifyAddiction(id, delta)
+	local has, add = self:HasAddiction(id)
+	if not has then return nil end
+	add.severity = clamp((add.severity or 0) + delta, 0, 100)
+	
+	-- If severity hits 0, they've beaten the addiction
+	if add.severity <= 0 then
+		add.inRecovery = true
+	end
+	
+	return add.severity
+end
+
+function LifeState:RemoveAddiction(id)
+	for i, add in ipairs(self.Addictions) do
+		if add.id == id then
+			table.remove(self.Addictions, i)
+			-- Clear associated flags
+			if id == "alcohol" or id == "alcoholism" then
+				self:ClearFlag("alcoholic")
+			end
+			if id == "drugs" or id == "opioids" or id == "cocaine" or id == "heroin" then
+				self:ClearFlag("drug_addict")
+			end
+			return true
+		end
+	end
+	return false
+end
+
+function LifeState:GetAddictions()
+	return self.Addictions or {}
+end
+
+function LifeState:GetTotalAddictionSeverity()
+	local total = 0
+	for _, add in ipairs(self.Addictions) do
+		if not add.inRecovery then
+			total = total + (add.severity or 0)
+		end
+	end
+	return total
+end
+
+----------------------------------------------------------------------
+-- FAME & SOCIAL MEDIA HELPERS
+----------------------------------------------------------------------
+
+function LifeState:ModifyFame(delta)
+	self.Fame = clamp((self.Fame or 0) + delta, 0, 100)
+	
+	-- Set milestone flags
+	if self.Fame >= 90 then
+		self:SetFlag("famous")
+	elseif self.Fame >= 50 then
+		self:SetFlag("notable")
+	end
+	
+	return self.Fame
+end
+
+function LifeState:SetSocialPlatform(platform)
+	self.SocialMedia.platform = platform
+end
+
+function LifeState:AddFollowers(amount)
+	amount = math.floor(amount or 0)
+	self.SocialMedia.followers = math.max(0, (self.SocialMedia.followers or 0) + amount)
+	
+	-- Scale Fame from followers
+	if self.SocialMedia.followers >= 10000000 then
+		self.Fame = math.max(self.Fame or 0, 100)
+		self:SetFlag("mega_influencer")
+	elseif self.SocialMedia.followers >= 1000000 then
+		self.Fame = math.max(self.Fame or 0, 90)
+		self:SetFlag("famous")
+	elseif self.SocialMedia.followers >= 100000 then
+		self.Fame = math.max(self.Fame or 0, 70)
+		self:SetFlag("influencer")
+	elseif self.SocialMedia.followers >= 10000 then
+		self.Fame = math.max(self.Fame or 0, 50)
+	elseif self.SocialMedia.followers >= 1000 then
+		self.Fame = math.max(self.Fame or 0, 30)
+	end
+	
+	return self.SocialMedia.followers
+end
+
+function LifeState:RemoveFollowers(amount)
+	amount = math.floor(amount or 0)
+	self.SocialMedia.followers = math.max(0, (self.SocialMedia.followers or 0) - amount)
+	return self.SocialMedia.followers
+end
+
+function LifeState:SetVerified()
+	self.SocialMedia.verified = true
+	self.Fame = math.max(self.Fame or 0, 60)
+	self:SetFlag("verified")
+end
+
+function LifeState:GetFollowers()
+	return self.SocialMedia.followers or 0
+end
+
+function LifeState:IsVerified()
+	return self.SocialMedia.verified == true
+end
+
+----------------------------------------------------------------------
+-- RELATIONSHIP CONVENIENCE HELPERS
+----------------------------------------------------------------------
+
+function LifeState:GetSpouse()
+	for id, rel in pairs(self.Relationships) do
+		if rel.type == "romance" and rel.role == "Spouse" and rel.alive ~= false then
+			return id, rel
+		end
+	end
+	return nil, nil
+end
+
+function LifeState:GetParents()
+	local parents = {}
+	for id, rel in pairs(self.Relationships) do
+		if rel.type == "family" and (rel.role == "Mother" or rel.role == "Father") then
+			table.insert(parents, { id = id, person = rel })
+		end
+	end
+	return parents
+end
+
+function LifeState:GetChildren()
+	local kids = {}
+	for id, rel in pairs(self.Relationships) do
+		if rel.type == "family" and rel.role == "Child" then
+			table.insert(kids, { id = id, person = rel })
+		end
+	end
+	return kids
+end
+
+function LifeState:GetSiblings()
+	local siblings = {}
+	for id, rel in pairs(self.Relationships) do
+		if rel.type == "family" and (rel.role == "Brother" or rel.role == "Sister" or rel.role == "Sibling") then
+			table.insert(siblings, { id = id, person = rel })
+		end
+	end
+	return siblings
+end
+
+function LifeState:GetPartner()
+	-- Get current romantic partner (dating, fiance, or spouse)
+	for id, rel in pairs(self.Relationships) do
+		if rel.type == "romance" and rel.alive ~= false then
+			if rel.role == "Spouse" or rel.role == "Partner" or rel.role == "Fiance" or rel.role == "Fiancée" then
+				return id, rel
+			end
+		end
+	end
+	return nil, nil
+end
+
+function LifeState:IsMarried()
+	local spouseId, spouse = self:GetSpouse()
+	return spouseId ~= nil
+end
+
+function LifeState:HasChildren()
+	return #self:GetChildren() > 0
+end
+
+function LifeState:GetLivingRelationships()
+	local living = {}
+	for id, rel in pairs(self.Relationships) do
+		if rel.alive ~= false then
+			table.insert(living, { id = id, person = rel })
+		end
+	end
+	return living
+end
+
+function LifeState:CountRelationshipsByType(relType)
+	local count = 0
+	for _, rel in pairs(self.Relationships) do
+		if rel.type == relType and rel.alive ~= false then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+----------------------------------------------------------------------
+-- ASSET CONVENIENCE HELPERS
+----------------------------------------------------------------------
+
+function LifeState:GetRandomAsset(assetType)
+	local list = self.Assets[assetType]
+	if not list or #list == 0 then return nil end
+	return list[math.random(1, #list)]
+end
+
+function LifeState:GetTotalAssetValue(assetType)
+	local total = 0
+	local list = self.Assets[assetType]
+	if not list then return 0 end
+	for _, asset in ipairs(list) do
+		total = total + (asset.value or 0)
+	end
+	return total
+end
+
+function LifeState:GetAssetCount(assetType)
+	local list = self.Assets[assetType]
+	if not list then return 0 end
+	return #list
+end
+
+function LifeState:HasAsset(assetType, assetId)
+	local list = self.Assets[assetType]
+	if not list then return false end
+	for _, asset in ipairs(list) do
+		if asset.id == assetId then
+			return true, asset
+		end
+	end
+	return false
+end
+
+function LifeState:GetAllAssetValues()
+	local totals = {
+		houses = self:GetTotalAssetValue("houses"),
+		cars = self:GetTotalAssetValue("cars"),
+		businesses = self:GetTotalAssetValue("businesses"),
+		investments = self:GetTotalAssetValue("investments"),
+	}
+	totals.total = totals.houses + totals.cars + totals.businesses + totals.investments
+	return totals
+end
+
+----------------------------------------------------------------------
 -- CRIMINAL RECORD
 ----------------------------------------------------------------------
 
@@ -775,29 +1130,186 @@ function LifeState:IsAdult()
 end
 
 ----------------------------------------------------------------------
--- SERIALIZATION
+-- SERIALIZATION (COMPLETE - for DataStore persistence)
 ----------------------------------------------------------------------
 
 function LifeState:Serialize()
 	return {
+		-- Core identity
 		PlayerId = self.PlayerId,
 		Name = self.Name,
 		Gender = self.Gender,
+		
+		-- Time
 		Age = self.Age,
 		Year = self.Year,
+		
+		-- Economy
 		Money = self.Money,
+		
+		-- Stats (both formats for compatibility)
 		Stats = self.Stats,
 		Happiness = self.Stats.Happiness,
 		Health = self.Stats.Health,
 		Looks = self.Stats.Looks,
 		Smarts = self.Stats.Smarts,
+		
+		-- Flags (story progress, achievements, etc.)
 		Flags = self.Flags,
+		
+		-- Career & Education
 		Career = self.Career,
 		Education = self.Education,
+		
+		-- Assets (houses, cars, businesses, pets, investments)
+		Assets = self.Assets,
+		
+		-- Relationships (complete dictionary)
+		Relationships = self.Relationships,
+		
+		-- Criminal/Legal status
 		InJail = self.InJail,
 		JailTime = self.JailTime,
+		JailSentence = self.JailSentence,
+		CriminalRecord = self.CriminalRecord,
+		WantedLevel = self.WantedLevel,
+		Notoriety = self.Notoriety,
+		
+		-- Health tracking
+		HealthConditions = self.HealthConditions,
+		Addictions = self.Addictions,
+		Fitness = self.Fitness,
+		
+		-- Fame & Social
 		Fame = self.Fame,
+		SocialMedia = self.SocialMedia,
+		
+		-- Event History (for one-time events, cooldowns, milestones)
+		EventHistory = self.EventHistory,
+		
+		-- Feed log (recent entries only to save space)
+		Feed = self:GetRecentFeed(50),
 	}
+end
+
+-- Hydrate/restore a LifeState from serialized data (for DataStore loading)
+function LifeState.fromSerialized(player, data)
+	if not data then return nil end
+	
+	local self = setmetatable({}, LifeState)
+	
+	-- Core identity
+	self.PlayerId = player.UserId
+	self.Name = data.Name
+	self.Gender = data.Gender
+	
+	-- Time
+	self.Age = data.Age or 0
+	self.Year = data.Year or 2025
+	
+	-- Economy
+	self.Money = data.Money or 0
+	
+	-- Stats
+	self.Stats = data.Stats or {
+		Happiness = data.Happiness or 80,
+		Health = data.Health or 80,
+		Looks = data.Looks or 70,
+		Smarts = data.Smarts or 70,
+	}
+	-- Backwards compatibility
+	self.Happiness = self.Stats.Happiness
+	self.Health = self.Stats.Health
+	self.Looks = self.Stats.Looks
+	self.Smarts = self.Stats.Smarts
+	
+	-- Flags
+	self.Flags = data.Flags or {}
+	
+	-- Career
+	self.Career = data.Career or {
+		path = nil,
+		jobTitle = nil,
+		employer = nil,
+		salary = 0,
+		experience = 0,
+		performance = 50,
+		promotions = 0,
+	}
+	-- Legacy fields
+	self.Job = self.Career.employer
+	self.JobTitle = self.Career.jobTitle
+	self.JobSalary = self.Career.salary or 0
+	
+	-- Education
+	self.Education = data.Education or {
+		level = "none",
+		schoolName = nil,
+		university = nil,
+		major = nil,
+		gpa = 0,
+		scholarship = nil,
+		graduated = false,
+		degrees = {},
+	}
+	self.EducationLevel = self.Education.level
+	
+	-- Assets
+	self.Assets = data.Assets or {
+		cash = self.Money,
+		houses = {},
+		cars = {},
+		businesses = {},
+		pets = {},
+		investments = {},
+	}
+	self.Assets.cash = self.Money -- Sync
+	
+	-- Relationships
+	self.Relationships = data.Relationships or {}
+	
+	-- Criminal/Legal status
+	self.InJail = data.InJail or false
+	self.JailTime = data.JailTime or 0
+	self.JailSentence = data.JailSentence or 0
+	self.CriminalRecord = data.CriminalRecord or {}
+	self.WantedLevel = data.WantedLevel or 0
+	self.Notoriety = data.Notoriety or 0
+	
+	-- Health tracking
+	self.HealthConditions = data.HealthConditions or {}
+	self.Addictions = data.Addictions or {}
+	self.Fitness = data.Fitness or 50
+	
+	-- Fame & Social
+	self.Fame = data.Fame or 0
+	self.SocialMedia = data.SocialMedia or {
+		followers = 0,
+		platform = nil,
+		verified = false,
+	}
+	
+	-- Event History
+	self.EventHistory = data.EventHistory or {
+		seenEvents = {},
+		lastOccurrence = {},
+		milestonesFired = {},
+		choicesMade = {},
+	}
+	
+	-- Feed
+	self.Feed = data.Feed or {}
+	
+	return self
+end
+
+-- Quick check if serialized data is valid
+function LifeState.isValidSaveData(data)
+	if not data then return false end
+	if type(data) ~= "table" then return false end
+	if not data.Name then return false end
+	if data.Age == nil then return false end
+	return true
 end
 
 return LifeState

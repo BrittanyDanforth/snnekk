@@ -4,7 +4,35 @@
 -- 100+ deeply thought-out events for peak career and family years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -20,6 +48,8 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "👔", title = "Executive Opportunity!",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must have a job to get executive promotion!
+		blockIfFlag = "executive", -- Only one executive promotion
 		getDynamicData = function()
 			local titles = {"Vice President", "Director", "Senior Director", "Chief Officer", "Partner"}
 			local salary = math.random(150000, 350000)
@@ -27,8 +57,20 @@ module.events = {
 		end,
 		text = "There's an opening for %title%! Salary: $%salary%! How do you approach it?",
 		choices = {
-			{ text = "📊 Prepare a strong pitch", effects = { Happiness = 18, Money = 50000, Smarts = 5 }, resultText = "Nailed it! Promoted! Corner office, here you come!", setFlag = "executive" },
-			{ text = "💼 Express interest formally", effects = { Happiness = 10, Money = 40000, Smarts = 4 }, resultText = "Got it! Big responsibility but bigger paycheck!", setFlag = "executive" },
+			{ 
+				text = "📊 Prepare a strong pitch", 
+				effects = { Happiness = 18, Smarts = 5 }, 
+				resultText = "Nailed it! Promoted! Corner office, here you come!", 
+				setFlag = "executive",
+				setJob = { id = "executive", title = "%title%", salary = 200000 }
+			},
+			{ 
+				text = "💼 Express interest formally", 
+				effects = { Happiness = 10, Smarts = 4 }, 
+				resultText = "Got it! Big responsibility but bigger paycheck!", 
+				setFlag = "executive",
+				setJob = { id = "executive", title = "%title%", salary = 175000 }
+			},
 			{ text = "⚖️ Decline - work-life balance", effects = { Happiness = 4, Smarts = 3, Money = 20000 }, resultText = "Turned it down for sanity. Got a smaller raise for staying." },
 			{ text = "🤷 Don't pursue it", effects = { Happiness = -10 }, resultText = "Someone more aggressive got it. Watching them in the corner office stings." },
 		},
@@ -111,6 +153,7 @@ module.events = {
 		weight = 20, oneTime = true,
 		emoji = "🔀", title = "Late Career Change",
 		category = "career",
+		requiresFlag = "employed", -- Must have a career to pivot from!
 		getDynamicData = function()
 			local changes = {"consulting", "teaching", "starting a business", "non-profit work", "creative field", "complete industry change"}
 			return { change = changes[math.random(#changes)] }
@@ -205,7 +248,7 @@ module.events = {
 		emoji = "💕", title = "Finding Love Again",
 		category = "social",
 		getDynamicData = function()
-			return { partnerName = LifeEvents.randomFirstName() }
+			return { partnerName = randomFirstName() }
 		end,
 		text = "You met %partnerName%. Could this be a second chance at love?",
 		choices = {
@@ -261,6 +304,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "😤", title = "Office Politics!",
 		category = "career",
+		requiresFlag = "employed", -- Must be employed to deal with office politics!
 		getDynamicData = function()
 			local situations = {"someone took credit for your work", "layoff rumors", "toxic boss", "backstabbing colleague", "merger anxiety"}
 			return { situation = situations[math.random(#situations)] }
@@ -280,6 +324,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "💰", title = "Financial Milestone!",
 		category = "career",
+		requiresFlag = "employed", -- Must have income to hit financial milestones!
 		getDynamicData = function()
 			local milestones = {"paid off the house", "hit six figures", "retirement account goal", "college fund complete", "became debt-free"}
 			return { milestone = milestones[math.random(#milestones)] }
@@ -338,10 +383,11 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "🎓", title = "Becoming a Mentor",
 		category = "career",
+		requiresFlag = "employed", -- Must have work experience to mentor!
 		getDynamicData = function()
-			return { menteeName = LifeEvents.randomFirstName() }
+			return { menteeName = randomFirstName() }
 		end,
-		text = "Young professional %menteeName% looks up to you. Want to mentor them?",
+		text = "Young professional %menteeName% looks up to you at work. Want to mentor them?",
 		choices = {
 			{ text = "🤝 Happy to guide!", effects = { Happiness = 10, Smarts = 4 }, resultText = "Paying it forward! Helping the next generation.", setFlag = "mentor" },
 			{ text = "📚 Sharing wisdom", effects = { Happiness = 8, Smarts = 5 }, resultText = "Your experience matters to someone. Beautiful.", setFlag = "mentor" },
@@ -392,7 +438,7 @@ module.events = {
 		emoji = "💒", title = "Your Child's Wedding!",
 		category = "family",
 		getDynamicData = function()
-			return { spouseName = LifeEvents.randomFirstName() }
+			return { spouseName = randomFirstName() }
 		end,
 		text = "Your baby is getting married to %spouseName%! How are you feeling?",
 		choices = {
@@ -409,6 +455,7 @@ module.events = {
 		weight = 40, oneTime = true,
 		emoji = "📊", title = "Retirement Planning Serious",
 		category = "career",
+		requiresFlag = "employed", -- Must have job to plan retirement from it!
 		text = "Meeting with financial advisor. Is retirement actually possible?",
 		choices = {
 			{ text = "✅ On track!", effects = { Happiness = 12, Smarts = 4 }, resultText = "The numbers work! Retirement is in sight!", setFlag = "retirement_ready" },
@@ -480,6 +527,184 @@ module.events = {
 			{ text = "💼 Professional impact", effects = { Happiness = 8, Smarts = 4 }, resultText = "Your work changed things. Career mattered." },
 			{ text = "❤️ Lives touched", effects = { Happiness = 10, Smarts = 3 }, resultText = "The people you helped, loved, influenced. That's legacy." },
 			{ text = "📝 Write it down", effects = { Happiness = 6, Smarts = 5 }, resultText = "Started memoirs, documenting your story.", setFlag = "writing_legacy" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- EXTENDED MIDDLE AGE EVENTS
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_career_plateau",
+		minAge = 40, maxAge = 50,
+		weight = 35, oneTime = true,
+		emoji = "📊", title = "Career Plateau",
+		category = "career",
+		text = "You've been at the same level for years. Is this it? Have you peaked?",
+		choices = {
+			{ text = "🚀 Push for promotion", effects = { Smarts = 6, Happiness = 4, Money = 5000 }, resultText = "Extra effort paid off! Moving up!", setFlag = "ambitious" },
+			{ text = "😌 Content where you are", effects = { Happiness = 8 }, resultText = "Not everyone needs to be CEO. You're happy." },
+			{ text = "🔄 Complete career change", effects = { Happiness = 4, Smarts = 8, Money = -10000 }, resultText = "Starting fresh in a new field. Scary but exciting!", setFlag = "career_changer" },
+			{ text = "💼 Start your own business", effects = { Smarts = 10, Happiness = 6, Money = -20000 }, resultText = "Entrepreneurship at 40+? Why not!", setFlag = "entrepreneur" },
+		},
+	},
+	
+	{
+		id = "m_aging_parent",
+		minAge = 40, maxAge = 55,
+		weight = 30, cooldown = 5,
+		emoji = "👴", title = "Aging Parent Needs Help",
+		category = "family",
+		text = "Your parent's health is declining. They need more care than they'll admit.",
+		choices = {
+			{ text = "🏠 Move them in with you", effects = { Happiness = 4, Money = -8000 }, resultText = "Family under one roof. It's hard but right." },
+			{ text = "🏥 Help find assisted living", effects = { Happiness = -2, Money = -30000 }, resultText = "They need professional care. Expensive but necessary." },
+			{ text = "📅 Visit more often", effects = { Happiness = 2, Money = -2000 }, resultText = "Weekly visits. Trying to be there more." },
+			{ text = "💔 Too far away to help", effects = { Happiness = -8 }, resultText = "Distance makes this so hard. Guilt is heavy." },
+		},
+	},
+	
+	{
+		id = "m_health_scare",
+		minAge = 42, maxAge = 55,
+		weight = 25, oneTime = true,
+		emoji = "⚕️", title = "Health Scare",
+		category = "health",
+		getDynamicData = function()
+			local issues = {"high blood pressure", "suspicious mole", "chest pain", "elevated cholesterol", "pre-diabetes"}
+			return { issue = issues[math.random(#issues)] }
+		end,
+		text = "Doctor found %issue%. It's a wake-up call.",
+		choices = {
+			{ text = "🏃 Complete lifestyle overhaul", effects = { Health = 15, Happiness = 4 }, resultText = "Diet, exercise, stress management. New you!", setFlag = "health_focused" },
+			{ text = "💊 Medication if needed", effects = { Health = 8, Money = -2000 }, resultText = "Modern medicine helping manage it." },
+			{ text = "😰 Anxiety about mortality", effects = { Happiness = -10, Health = 5 }, resultText = "The fear motivates some changes at least." },
+			{ text = "🙈 Ignore it", effects = { Health = -10 }, resultText = "Bad idea. This could get worse.", setFlag = "health_denial" },
+		},
+	},
+	
+	{
+		id = "m_empty_nest",
+		minAge = 45, maxAge = 55,
+		weight = 35, oneTime = true,
+		emoji = "🪺", title = "Empty Nest",
+		category = "family",
+		requiresFlag = "has_children",
+		text = "Last kid moved out. The house is suddenly... quiet.",
+		choices = {
+			{ text = "😢 Sad and lost", effects = { Happiness = -10 }, resultText = "Your purpose was raising them. What now?" },
+			{ text = "🎉 FREEDOM!", effects = { Happiness = 15, Money = 3000 }, resultText = "Privacy! No more schedules! Travel!", setFlag = "empty_nester" },
+			{ text = "🛠️ Renovate their room", effects = { Happiness = 6, Money = -8000 }, resultText = "Guest room? Home gym? The possibilities!" },
+			{ text = "💑 Rediscover your partner", effects = { Happiness = 12 }, resultText = "It's like dating again! Just the two of you!" },
+		},
+	},
+	
+	{
+		id = "m_peak_earning",
+		minAge = 45, maxAge = 55,
+		weight = 30, oneTime = true,
+		emoji = "💰", title = "Peak Earning Years",
+		category = "career",
+		text = "You're in your prime earning years. Salary is highest it's ever been!",
+		choices = {
+			{ text = "💵 Max retirement savings", effects = { Money = 20000, Happiness = 4 }, resultText = "401k maxed! Future you says thanks!", setFlag = "retirement_saver" },
+			{ text = "🏠 Upgrade lifestyle", effects = { Money = -15000, Happiness = 10, Looks = 3 }, resultText = "Nice car, nice house, nice everything!" },
+			{ text = "📊 Invest aggressively", effects = { Money = 30000, Happiness = 5 }, resultText = "Making your money work harder than you!", setFlag = "investor" },
+			{ text = "🌴 What's money for?", effects = { Money = -20000, Happiness = 12 }, resultText = "You only live once! Experiences over savings!" },
+		},
+	},
+	
+	{
+		id = "m_mentoring_next_gen",
+		minAge = 40, maxAge = 55,
+		weight = 25, cooldown = 4,
+		emoji = "🎓", title = "Mentoring the Next Generation",
+		category = "career",
+		getDynamicData = function()
+			return { menteeName = randomFirstName() }
+		end,
+		text = "Young %menteeName% at work looks up to you. They could use guidance.",
+		choices = {
+			{ text = "🌟 Be their mentor", effects = { Happiness = 10, Smarts = 3 }, resultText = "Passing on your wisdom. They're flourishing!", setFlag = "mentor" },
+			{ text = "📚 Share resources, not time", effects = { Happiness = 4, Smarts = 2 }, resultText = "Sent them books, courses. Helpful but distant." },
+			{ text = "😤 Earn it like I did", effects = { Happiness = -2 }, resultText = "Nobody helped you. Why should you?" },
+			{ text = "🤝 Become lifelong friends", effects = { Happiness = 12, Smarts = 4 }, resultText = "Great mentor-mentee bond became genuine friendship!" },
+		},
+	},
+	
+	{
+		id = "m_hobby_mastery",
+		minAge = 40, maxAge = 55,
+		weight = 25, cooldown = 5,
+		emoji = "🎯", title = "Hobby Mastery",
+		category = "social",
+		getDynamicData = function()
+			local hobbies = {"woodworking", "painting", "music", "gardening", "photography", "writing", "cooking"}
+			return { hobby = hobbies[math.random(#hobbies)] }
+		end,
+		text = "Your %hobby% skills have reached an impressive level after years of practice!",
+		choices = {
+			{ text = "🏆 Enter competitions", effects = { Happiness = 10, Smarts = 4 }, resultText = "Won third place! Not bad for a hobbyist!", setFlag = "hobby_competitor" },
+			{ text = "💵 Sell your work", effects = { Happiness = 8, Money = 5000 }, resultText = "People pay for quality! Side income!", setFlag = "artisan" },
+			{ text = "🎓 Teach others", effects = { Happiness = 12, Smarts = 5 }, resultText = "Teaching classes now. Fulfilling!", setFlag = "hobby_teacher" },
+			{ text = "🧘 It's just for me", effects = { Happiness = 10 }, resultText = "No monetization needed. Pure joy." },
+		},
+	},
+	
+	{
+		id = "m_reconnecting_old_friends",
+		minAge = 40, maxAge = 55,
+		weight = 20, cooldown = 4,
+		emoji = "👋", title = "Reconnecting with Old Friends",
+		category = "social",
+		getDynamicData = function()
+			return { friendName = randomFirstName() }
+		end,
+		text = "%friendName% from college/high school reached out after decades. Virtual reunion happening!",
+		choices = {
+			{ text = "🥳 Amazing to catch up!", effects = { Happiness = 12 }, resultText = "So many memories! Promised to stay in touch this time!" },
+			{ text = "😬 So different now", effects = { Happiness = 2 }, resultText = "People change. It was nice but... awkward." },
+			{ text = "🍻 Plan a trip together", effects = { Happiness = 10, Money = -3000 }, resultText = "Road trip like the old days! Well, with more bathroom breaks." },
+			{ text = "👻 Ghost them", effects = { Happiness = -2 }, resultText = "That chapter is closed. No response sent." },
+		},
+	},
+	
+	{
+		id = "m_kids_success",
+		minAge = 45, maxAge = 55,
+		weight = 25, cooldown = 5,
+		emoji = "🎓", title = "Children's Success!",
+		category = "family",
+		requiresFlag = "has_children",
+		getDynamicData = function()
+			local achievements = {"graduated college", "got their dream job", "got engaged", "published something", "started a business"}
+			return { achievement = achievements[math.random(#achievements)] }
+		end,
+		text = "Your kid just %achievement%! You're so proud!",
+		choices = {
+			{ text = "😭 Happy tears", effects = { Happiness = 15 }, resultText = "All those years of parenting... this makes it worth it." },
+			{ text = "🎉 Throw a celebration", effects = { Happiness = 12, Money = -5000 }, resultText = "Party time! Everyone must know!" },
+			{ text = "📸 Social media brag", effects = { Happiness = 8 }, resultText = "All your friends are jealous. As they should be." },
+			{ text = "🤔 Did I do that right?", effects = { Happiness = 6, Smarts = 3 }, resultText = "Reflecting on your parenting journey. Did okay!" },
+		},
+	},
+	
+	{
+		id = "m_tech_generational_gap",
+		minAge = 45, maxAge = 55,
+		weight = 30, cooldown = 3,
+		emoji = "📱", title = "Technology Gap",
+		category = "social",
+		getDynamicData = function()
+			local tech = {"TikTok", "cryptocurrency", "AI chatbots", "the metaverse", "NFTs", "smart home devices"}
+			return { tech = tech[math.random(#tech)] }
+		end,
+		text = "Everyone's talking about %tech% and you feel completely lost.",
+		choices = {
+			{ text = "📚 Learn to keep up", effects = { Smarts = 8, Happiness = 4 }, resultText = "You figured it out! Not as young as them but not that old either!" },
+			{ text = "🧑‍🦳 Embrace being 'old'", effects = { Happiness = 6 }, resultText = "You don't need to know everything. That's fine." },
+			{ text = "👶 Ask the kids to teach you", effects = { Happiness = 5, Smarts = 5 }, resultText = "Role reversal! They love being the expert for once." },
+			{ text = "😤 Technology is overrated", effects = { Happiness = 2 }, resultText = "Things were better before all this. Get off my lawn." },
 		},
 	},
 }

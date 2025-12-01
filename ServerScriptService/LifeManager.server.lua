@@ -98,6 +98,10 @@ local function serializeState(state, player)
 	-- Get extended state from LifeRemoteHandlers (includes InJail, CurrentJob, Education, etc.)
 	local extState = _G.GetExtendedState and player and _G.GetExtendedState(player) or {}
 
+	-- Get education data
+	local eduData = extState.EducationData or {}
+	local enrolled = state.Enrolled or (eduData.Status == "enrolled") or false
+	
 	return {
 		PlayerId = state.PlayerId,
 		Name = state.Name,
@@ -120,7 +124,22 @@ local function serializeState(state, player)
 		InJail = extState.InJail or false,
 		JailYearsLeft = extState.JailYearsLeft or 0,
 		CurrentJob = extState.CurrentJob,
-		Education = extState.Education or "None",
+		Education = extState.Education or eduData.Level or "None",
+		Enrolled = enrolled,
+		-- Full education tracking data
+		EducationData = {
+			Level = eduData.Level,
+			Institution = eduData.Institution,
+			Major = eduData.Major,
+			GPA = eduData.GPA,
+			Progress = eduData.Progress,
+			Debt = eduData.Debt,
+			Year = eduData.Year,
+			TotalYears = eduData.TotalYears,
+			Status = eduData.Status,
+			CreditsEarned = eduData.CreditsEarned,
+			CreditsRequired = eduData.CreditsRequired,
+		},
 		-- Owned assets (properties, vehicles, items)
 		Assets = {
 			Properties = extState.OwnedProperties or {},
@@ -409,6 +428,78 @@ local function generateLifeSummary(state, deathCause)
 end
 
 ----------------------------------------------------------------
+-- IMMEDIATE DEATH CHECK (Call after stat modifications)
+-- Returns true if player died, false otherwise
+----------------------------------------------------------------
+
+local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
+
+local function checkAndHandleImmediateDeath(player, state, lastActionText)
+	-- Check if health has dropped to 0% or below
+	local stats = state.Stats or {}
+	local health = stats.Health or 0
+	
+	if health > 0 then
+		return false -- Still alive
+	end
+	
+	-- Player's health hit 0% - they die immediately
+	print("[LifeManager] ⚠️ IMMEDIATE DEATH TRIGGERED - Health hit 0% for", player.Name)
+	
+	-- Mark as dead
+	state.IsDead = true
+	state:SetFlag("deceased")
+	
+	-- Get contextual death cause from the enhanced death system
+	local deathCheck = LifeStageSystem.checkDeath(state)
+	local deathCause = deathCheck.cause or "complications from poor health"
+	
+	-- Generate life summary
+	local lifeSummary = generateLifeSummary(state, deathCause)
+	
+	-- Build death payload
+	local deathPayload = {
+		id = "death",
+		emoji = "💀",
+		title = "Rest In Peace",
+		text = lifeSummary.summaryText,
+		category = "death",
+		isDeath = true,
+		isImmediateDeath = true,
+		lifeSummary = lifeSummary,
+		lastAction = lastActionText,
+		choices = {
+			{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
+		}
+	}
+	
+	-- Store pending death event
+	pendingEvents[player] = {
+		eventDef = { id = "death", category = "death" },
+		dynamicData = {},
+		choiceIndex = nil,
+		isDeath = true,
+		deathCause = deathCause,
+		lifeSummary = lifeSummary,
+	}
+	
+	-- Add to feed and notify client
+	state:AddFeed("💀 " .. (state.Name or "You") .. " has passed away from " .. deathCause .. " at age " .. (state.Age or 0))
+	PresentEvent:FireClient(player, deathPayload, nil)
+	
+	return true -- Player died
+end
+
+-- Expose for other scripts that modify stats
+_G.CheckImmediateDeath = function(player, lastActionText)
+	local state = playerLives[player]
+	if state then
+		return checkAndHandleImmediateDeath(player, state, lastActionText)
+	end
+	return false
+end
+
+----------------------------------------------------------------
 -- AGE UP
 ----------------------------------------------------------------
 
@@ -451,6 +542,20 @@ local function ageUp(player)
 	-- Update extended state (auto-education, etc.)
 	if _G.OnPlayerAgeUp then
 		_G.OnPlayerAgeUp(player)
+	end
+	
+	-- Progress education if enrolled (GPA updates, transcript, graduation)
+	if _G.ProgressPlayerEducation then
+		local eduResult = _G.ProgressPlayerEducation(player)
+		if eduResult then
+			print("[LifeManager] Education progress:", eduResult.type, eduResult.message)
+			if eduResult.type == "graduation" then
+				-- Graduation is a major event - add to feed
+				state:AddFeed(eduResult.message)
+			elseif eduResult.type == "probation" then
+				state:AddFeed(eduResult.message)
+			end
+		end
 	end
 
 	-- Add job income if has job (check both old and new job system)
@@ -546,7 +651,10 @@ local function ageUp(player)
 		local validation = EventRunner.getEventValidation(state, eventDef)
 		if not validation.valid then
 			-- Event somehow passed initial filter but failed validation
-			-- Just skip this year
+			-- Show quiet year message instead
+			local quietText = EventRunner.buildYearRecap(state) or "Life continues..."
+			state:AddFeed(quietText)
+			pushState(player, state, quietText)
 			return
 		end
 		
@@ -565,6 +673,12 @@ local function ageUp(player)
 		
 		-- Present event (state already synced above)
 		PresentEvent:FireClient(player, payload, nil)
+	else
+		-- No event this year - show a "life continues" message
+		-- This makes quiet years feel intentional, not broken
+		local quietYearText = EventRunner.buildYearRecap(state) or "Life continues..."
+		state:AddFeed(quietYearText)
+		pushState(player, state, quietYearText)
 	end
 end
 
@@ -759,17 +873,26 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	if jobToSet and results.wasSuccess ~= false then
 		print("[LifeManager] Setting job from event:", jobToSet.id, "title:", jobToSet.title)
 		
+		-- Process dynamic text in job fields
+		local processedTitle = jobToSet.title or "Employee"
 		local processedCompany = jobToSet.company or "Company"
-		if processedCompany and dynamicData then
+		local processedSalary = jobToSet.salary or 30000
+		
+		if dynamicData then
+			processedTitle = EventRunner.processDynamicText(processedTitle, dynamicData)
 			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
+			-- Handle dynamic salary if it's from dynamicData
+			if type(dynamicData.salary) == "number" then
+				processedSalary = dynamicData.salary
+			end
 		end
 		
 		if _G.SetPlayerJob then
 			_G.SetPlayerJob(player, {
 				id = jobToSet.id,
-				title = jobToSet.title,
+				title = processedTitle,
 				company = processedCompany,
-				salary = jobToSet.salary or 30000,
+				salary = processedSalary,
 				requirement = jobToSet.requirement,
 				storyFlag = choiceDef.setFlag or jobToSet.storyFlag,
 			})
@@ -784,14 +907,22 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 9: CLEAR PENDING EVENT
+	-- STEP 9: CHECK FOR IMMEDIATE DEATH (Health hit 0%)
+	-- ═══════════════════════════════════════════════════════════════
+	local feedText = results and results.resultText or "Something happened..."
+	if checkAndHandleImmediateDeath(player, state, feedText) then
+		-- Player died from the choice effects - don't continue
+		return
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 10: CLEAR PENDING EVENT
 	-- ═══════════════════════════════════════════════════════════════
 	pendingEvents[player] = nil
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 10: BUILD RESULT FEEDBACK
+	-- STEP 11: BUILD RESULT FEEDBACK
 	-- ═══════════════════════════════════════════════════════════════
-	local feedText = results and results.resultText or "Something happened..."
 	state:AddFeed(feedText)
 	
 	-- Calculate actual deltas
@@ -941,15 +1072,21 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 		end
 	end
 
-	-- Clear pending event
-	pendingEvents[player] = nil
-
-	state:AddFeed(feedText)
-	
 	-- Sync prison state
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
 	end
+	
+	-- Check for immediate death from minigame effects
+	if checkAndHandleImmediateDeath(player, state, feedText) then
+		-- Player died - don't continue with normal result flow
+		return
+	end
+
+	-- Clear pending event
+	pendingEvents[player] = nil
+
+	state:AddFeed(feedText)
 	
 	-- Calculate total deltas
 	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
@@ -1008,6 +1145,7 @@ local function createSpecialActionRemote(name)
 end
 
 local DoSpecialAction = createSpecialActionRemote("DoSpecialAction")
+-- NOTE: DoInteraction is handled by LifeRemoteHandlers.server.lua - don't create duplicate here!
 
 DoSpecialAction.OnServerInvoke = function(player, actionId)
 	local state = getLife(player)
@@ -1116,4 +1254,54 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 	return { success = false, message = "Action not available." }
 end
 
-print("[LifeManager] ✅ Life simulation server initialized!")
+
+----------------------------------------------------------------
+-- STAT MODIFICATION HELPERS (Global API for other scripts)
+-- These all check for immediate death after modification
+----------------------------------------------------------------
+
+_G.ModifyPlayerStat = function(player, statName, delta, reason)
+	local state = playerLives[player]
+	if not state then return false end
+	
+	if statName == "Money" then
+		state.Money = (state.Money or 0) + delta
+	elseif state.Stats and state.Stats[statName] ~= nil then
+		state.Stats[statName] = math.clamp((state.Stats[statName] or 50) + delta, 0, 100)
+	else
+		return false
+	end
+	
+	-- Check for death if health was modified
+	if statName == "Health" then
+		if checkAndHandleImmediateDeath(player, state, reason or "Stat change") then
+			return true, true -- success, died
+		end
+	end
+	
+	return true, false -- success, not died
+end
+
+_G.SetPlayerStat = function(player, statName, value, reason)
+	local state = playerLives[player]
+	if not state then return false end
+	
+	if statName == "Money" then
+		state.Money = value
+	elseif state.Stats and state.Stats[statName] ~= nil then
+		state.Stats[statName] = math.clamp(value, 0, 100)
+	else
+		return false
+	end
+	
+	-- Check for death if health was set to 0
+	if statName == "Health" then
+		if checkAndHandleImmediateDeath(player, state, reason or "Stat change") then
+			return true, true -- success, died
+		end
+	end
+	
+	return true, false -- success, not died
+end
+
+print("[LifeManager] ✅ Life simulation server initialized with enhanced death system!")

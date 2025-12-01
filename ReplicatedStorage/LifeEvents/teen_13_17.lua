@@ -4,7 +4,35 @@
 -- 130+ deeply thought-out events for high school years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -107,14 +135,14 @@ module.events = {
 		weight = 35, cooldown = 3,
 		emoji = "😤", title = "Friend Group Drama!",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends for this to fire
+		requires = hasFriend,  -- MUST have friends for this to fire
 		getDynamicData = function(state)
 			-- Use actual friend names if available
-			local name1 = LifeEvents.getFriendName(state)
-			local name2 = LifeEvents.getFriendName(state)
+			local name1 = getFriendName(state)
+			local name2 = getFriendName(state)
 			-- Make sure names are different
 			if name1 == name2 then
-				name2 = LifeEvents.randomFirstName()
+				name2 = randomFirstName()
 			end
 			return { friend1 = name1, friend2 = name2 }
 		end,
@@ -172,7 +200,7 @@ module.events = {
 		emoji = "💕", title = "First Relationship!",
 		category = "social",
 		getDynamicData = function()
-			return { partnerName = LifeEvents.randomFirstName() }
+			return { partnerName = randomFirstName() }
 		end,
 		text = "You and %partnerName% are officially dating! Your first real relationship!",
 		choices = {
@@ -210,7 +238,7 @@ module.events = {
 		emoji = "🎉", title = "Party Invitation!",
 		category = "social",
 		getDynamicData = function()
-			return { hostName = LifeEvents.randomFirstName() }
+			return { hostName = randomFirstName() }
 		end,
 		text = "%hostName% is throwing a party this weekend! Parents won't be home...",
 		choices = {
@@ -317,7 +345,7 @@ module.events = {
 		emoji = "👗", title = "Prom Night!",
 		category = "social",
 		getDynamicData = function()
-			return { dateName = LifeEvents.randomFirstName() }
+			return { dateName = randomFirstName() }
 		end,
 		text = "Prom is coming! The biggest night of high school!",
 		choices = {
@@ -383,16 +411,38 @@ module.events = {
 		weight = 100, milestone = true, oneTime = true,
 		emoji = "🎓", title = "HIGH SCHOOL GRADUATION!",
 		category = "school",
+		-- Block if already dropped out
+		blockIfFlag = "high_school_dropout",
 		getDynamicData = function()
 			local honors = {"summa cum laude", "magna cum laude", "cum laude", "with honors", ""}
 			return { honor = honors[math.random(#honors)] }
 		end,
 		text = "You did it! You're graduating high school %honor%! Caps in the air!",
 		choices = {
-			{ text = "🎓 Valedictorian speech!", effects = { Smarts = 10, Happiness = 15, Looks = 5 }, resultText = "Top of your class! You gave the big speech!", setFlag = "valedictorian" },
-			{ text = "🎉 Celebrate with friends!", effects = { Happiness = 12 }, resultText = "Best night ever! Graduation parties everywhere!" },
-			{ text = "😢 Bittersweet", effects = { Happiness = 5, Smarts = 2 }, resultText = "Happy and sad. End of an era." },
-			{ text = "🎯 Ready for what's next", effects = { Happiness = 8, Smarts = 5 }, resultText = "High school was just the beginning!", setFlag = "ambitious" },
+			{ 
+				text = "🎓 Valedictorian speech!", 
+				effects = { Smarts = 10, Happiness = 15, Looks = 5 }, 
+				resultText = "Top of your class! You gave the big speech!", 
+				setFlags = {"high_school_graduate", "valedictorian", "honor_student"}
+			},
+			{ 
+				text = "🎉 Celebrate with friends!", 
+				effects = { Happiness = 12 }, 
+				resultText = "Best night ever! Graduation parties everywhere!",
+				setFlag = "high_school_graduate"
+			},
+			{ 
+				text = "😢 Bittersweet", 
+				effects = { Happiness = 5, Smarts = 2 }, 
+				resultText = "Happy and sad. End of an era.",
+				setFlag = "high_school_graduate"
+			},
+			{ 
+				text = "🎯 Ready for what's next", 
+				effects = { Happiness = 8, Smarts = 5 }, 
+				resultText = "High school was just the beginning!", 
+				setFlags = {"high_school_graduate", "ambitious"}
+			},
 		},
 	},
 	
@@ -436,7 +486,7 @@ module.events = {
 		weight = 30, cooldown = 2,
 		emoji = "😬", title = "Peer Pressure",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends for this to fire
+		requires = hasFriend,  -- MUST have friends for this to fire
 		getDynamicData = function()
 			local pressures = {"try drinking", "skip school", "try a vape", "shoplift something", "bully someone", "cheat on a test"}
 			return { pressure = pressures[math.random(#pressures)] }
@@ -603,7 +653,7 @@ module.events = {
 		emoji = "🌅", title = "Summer Romance!",
 		category = "social",
 		getDynamicData = function()
-			return { personName = LifeEvents.randomFirstName() }
+			return { personName = randomFirstName() }
 		end,
 		text = "You met %personName% this summer! Instant connection!",
 		choices = {
@@ -744,6 +794,441 @@ module.events = {
 			{ text = "🏃 Running is free", effects = { Health = 6, Happiness = 4 }, resultText = "Started running and actually enjoy it!", setFlag = "runner" },
 			{ text = "🏋️ Gym is addicting", effects = { Health = 8, Looks = 4 }, resultText = "Iron is your therapy now!", setFlag = "gym_rat" },
 			{ text = "😅 Started strong, fizzled out", effects = { Health = 2 }, resultText = "Motivation is hard to maintain. You tried!" },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- SKIPPING SCHOOL / TRUANCY (Choices with real consequences)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_skip_school_temptation",
+		minAge = 14, maxAge = 17,
+		weight = 35, cooldown = 3,
+		emoji = "🏃", title = "The Skip Day!",
+		category = "school",
+		getDynamicData = function()
+			local reasons = {"a boring test", "a presentation you didn't prepare for", "just feeling lazy", "hanging with friends", "sleeping in"}
+			return { reason = reasons[math.random(#reasons)] }
+		end,
+		text = "You're tempted to skip school because of %reason%. Your friends are doing it...",
+		choices = {
+			{ 
+				text = "🎒 Go to school anyway", 
+				effects = { Smarts = 5, Happiness = -2 }, 
+				resultText = "You showed up. Boring, but you learned something.",
+				setFlag = "responsible"
+			},
+			{ 
+				text = "🎮 Skip and play games", 
+				effects = { Happiness = 8, Smarts = -3 }, 
+				resultText = "FREEDOM! But you missed a quiz worth 10% of your grade...",
+				setFlag = "truant"
+			},
+			{ 
+				text = "🛏️ Just sleep in", 
+				effects = { Health = 4, Happiness = 4, Smarts = -2 }, 
+				resultText = "Needed that rest. But now you're behind.",
+				setFlag = "truant"
+			},
+			{ 
+				text = "🛒 Go to the mall", 
+				effects = { Happiness = 6, Smarts = -4, Money = -30 }, 
+				resultText = "Fun day! But parents found out from the school's automated call...",
+				setFlags = {"truant", "in_trouble"}
+			},
+		},
+	},
+	
+	{
+		id = "m_caught_skipping",
+		minAge = 14, maxAge = 17,
+		weight = 40, oneTime = true,
+		emoji = "😱", title = "Caught!",
+		category = "school",
+		requiresFlag = "truant",
+		text = "The school called home. Your parents know you've been skipping. You're in BIG trouble.",
+		choices = {
+			{ 
+				text = "😢 Accept punishment", 
+				effects = { Happiness = -8, Smarts = 2 }, 
+				resultText = "Grounded for a month. Lesson learned... hopefully.",
+				clearFlag = "truant",
+				setFlag = "learned_lesson"
+			},
+			{ 
+				text = "🗣️ Make excuses", 
+				effects = { Happiness = -4, Smarts = -3 }, 
+				resultText = "They don't believe you. Made it worse.",
+				setFlag = "sneaky"
+			},
+			{ 
+				text = "😤 Argue back", 
+				effects = { Happiness = -6, Health = -2 }, 
+				resultText = "Huge fight. Doors slammed. Things said that can't be unsaid.",
+				setFlags = {"rebellious", "troubled_home"}
+			},
+			{ 
+				text = "🙏 Promise to change", 
+				effects = { Happiness = 2, Smarts = 3 }, 
+				resultText = "They gave you another chance. Don't blow it.",
+				clearFlag = "truant",
+				setFlag = "second_chance"
+			},
+		},
+	},
+	
+	{
+		id = "m_chronic_truancy",
+		minAge = 15, maxAge = 17,
+		weight = 30, oneTime = true,
+		emoji = "📉", title = "Falling Behind",
+		category = "school",
+		requiresFlag = "truant",
+		blockIfFlag = "learned_lesson",
+		text = "You've missed so many days that you're failing multiple classes. The principal wants to see you.",
+		choices = {
+			{ 
+				text = "📚 Get serious", 
+				effects = { Smarts = 6, Happiness = -4 }, 
+				resultText = "Time to turn this around. Extra credit, tutoring, staying after school.",
+				clearFlag = "truant",
+				setFlag = "redemption_arc"
+			},
+			{ 
+				text = "🤷 Whatever", 
+				effects = { Smarts = -5, Happiness = -2 }, 
+				resultText = "You don't care anymore. GPA tanking.",
+				setFlag = "academic_trouble"
+			},
+			{ 
+				text = "🏃 Consider dropping out", 
+				effects = { Smarts = -8, Happiness = 4 }, 
+				resultText = "School isn't for everyone... but is this the right choice?",
+				setFlag = "considering_dropout"
+			},
+			{ 
+				text = "🆘 Ask for help", 
+				effects = { Smarts = 4, Happiness = 2, Health = 3 }, 
+				resultText = "Counselor helped you make a plan. Support systems exist!",
+				clearFlag = "truant",
+				setFlag = "getting_support"
+			},
+		},
+	},
+	
+	{
+		id = "m_dropout_decision",
+		minAge = 16, maxAge = 17,
+		weight = 25, oneTime = true,
+		emoji = "🚪", title = "Dropping Out?",
+		category = "school",
+		requiresFlag = "considering_dropout",
+		text = "You're at a crossroads. Drop out of high school or stick it out?",
+		choices = {
+			{ 
+				text = "🚪 Drop out", 
+				effects = { Happiness = 5, Smarts = -10 }, 
+				resultText = "No diploma. The world just got a lot harder.",
+				setFlag = "high_school_dropout",
+				clearFlags = {"truant", "considering_dropout", "academic_trouble"}
+			},
+			{ 
+				text = "🎓 Stay and graduate", 
+				effects = { Smarts = 8, Happiness = 3 }, 
+				resultText = "You made it through. That diploma matters more than you know.",
+				clearFlags = {"truant", "considering_dropout", "academic_trouble"},
+				setFlag = "perseverance"
+			},
+			{ 
+				text = "📚 GED instead", 
+				effects = { Smarts = 4, Happiness = 2 }, 
+				resultText = "Alternative path. Still a credential. Better than nothing.",
+				setFlag = "ged_path",
+				clearFlags = {"truant", "considering_dropout"}
+			},
+			{ 
+				text = "💼 Work full-time", 
+				effects = { Money = 2000, Smarts = -8, Happiness = 4 }, 
+				resultText = "You got a job. Making money but doors will be harder to open.",
+				setFlags = {"high_school_dropout", "employed"},
+				clearFlags = {"truant", "considering_dropout"}
+			},
+		},
+	},
+	
+	{
+		id = "m_good_student_reward",
+		minAge = 14, maxAge = 17,
+		weight = 30, cooldown = 3,
+		emoji = "⭐", title = "Academic Recognition!",
+		category = "school",
+		requiresAnyFlag = {"academic_focused", "honors_student", "honor_student", "responsible"},
+		blockIfFlag = "truant",
+		text = "Your teachers noticed your dedication! You've been nominated for an academic award!",
+		choices = {
+			{ 
+				text = "🏆 Accept with pride", 
+				effects = { Happiness = 12, Smarts = 5 }, 
+				resultText = "Award ceremony! Your family is so proud!",
+				setFlag = "award_winner"
+			},
+			{ 
+				text = "🙏 Stay humble", 
+				effects = { Happiness = 8, Smarts = 3 }, 
+				resultText = "The recognition feels good. Keep working hard.",
+			},
+			{ 
+				text = "📈 Use for college apps", 
+				effects = { Happiness = 6, Smarts = 6 }, 
+				resultText = "This is going to look great on applications!",
+				setFlag = "strong_application"
+			},
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- HIGH SCHOOL EXAMS & ACADEMIC EVENTS (GPA AFFECTING)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_midterm_exams",
+		minAge = 14, maxAge = 17,
+		weight = 45, cooldown = 2,
+		emoji = "📝", title = "Midterm Exams!",
+		category = "school",
+		getDynamicData = function()
+			local subjects = {"Math", "English", "History", "Science", "Foreign Language"}
+			return { subject = subjects[math.random(#subjects)] }
+		end,
+		text = "Midterm week is here! Your %subject% exam is tomorrow. How prepared are you?",
+		choices = {
+			{ text = "📚 Been studying for weeks", effects = { Smarts = 12, Happiness = 8 }, resultText = "ACED IT! 98%! All those late nights paid off!", setFlag = "dedicated_student" },
+			{ text = "📖 Crammed last night", chanceSuccess = 0.6, effectsOnSuccess = { Smarts = 7, Happiness = 4 }, effectsOnFail = { Smarts = 3, Happiness = -3 },
+			  resultText = "B+! Cramming worked this time!", resultTextFail = "C-. Should have started earlier." },
+			{ text = "🎮 Barely studied", chanceSuccess = 0.35, effectsOnSuccess = { Smarts = 4, Happiness = 6 }, effectsOnFail = { Smarts = 1, Happiness = -6 },
+			  resultText = "Lucky! Got a C+!", resultTextFail = "F. Guess who's doing summer school?", setFlag = "academic_trouble" },
+			{ text = "🤝 Study group session", effects = { Smarts = 9, Happiness = 5 }, resultText = "A-! Teaching others helped you learn!", setFlag = "collaborative" },
+		},
+	},
+	
+	{
+		id = "m_final_exams",
+		minAge = 14, maxAge = 17,
+		weight = 40, cooldown = 2,
+		emoji = "📋", title = "Final Exams!",
+		category = "school",
+		text = "FINALS WEEK! Your semester grades depend on this! All-nighters ahead?",
+		choices = {
+			{ text = "📚 Study schedule, execute", effects = { Smarts = 14, Happiness = 6 }, resultText = "Straight A's! Your GPA is looking amazing!", setFlags = {"honor_roll", "academic_focused"} },
+			{ text = "☕ All-nighter mode", chanceSuccess = 0.55, effectsOnSuccess = { Smarts = 10, Happiness = 2, Health = -5 }, effectsOnFail = { Smarts = 4, Happiness = -4, Health = -8 },
+			  resultText = "B average! Survived but EXHAUSTED!", resultTextFail = "Brain stopped working at 3am. C's across the board." },
+			{ text = "😰 Panic and pray", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 5, Happiness = 8 }, effectsOnFail = { Smarts = 2, Happiness = -8 },
+			  resultText = "Somehow passed everything! Miracle!", resultTextFail = "D's and F's. Summer school is calling.", setFlag = "academic_probation" },
+			{ text = "🎯 Focus on hardest subjects", effects = { Smarts = 11, Happiness = 4 }, resultText = "Strategic! Pulled up the tough classes to B's!" },
+		},
+	},
+	
+	{
+		id = "m_pop_quiz_hs",
+		minAge = 14, maxAge = 17,
+		weight = 35, cooldown = 2,
+		emoji = "❓", title = "Pop Quiz!",
+		category = "school",
+		getDynamicData = function()
+			local classes = {"Algebra II", "Chemistry", "AP History", "English Lit", "Physics", "Economics"}
+			return { class = classes[math.random(#classes)] }
+		end,
+		text = "Your %class% teacher just announced a pop quiz! No warning!",
+		choices = {
+			{ text = "😎 Always prepared", effects = { Smarts = 9, Happiness = 6 }, resultText = "100%! Being prepared pays off!", setFlag = "always_prepared" },
+			{ text = "🧠 Wing it with logic", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 6, Happiness = 5 }, effectsOnFail = { Smarts = 2, Happiness = -3 },
+			  resultText = "B! Your logic saved you!", resultTextFail = "D. Logic only goes so far." },
+			{ text = "👀 Strategic peeking...", chanceSuccess = 0.35, effectsOnSuccess = { Smarts = 3, Happiness = 3 }, effectsOnFail = { Smarts = -4, Happiness = -10 },
+			  resultText = "Got away with it. C+.", resultTextFail = "CAUGHT! Zero and a call home!", setFlag = "caught_cheating" },
+			{ text = "😫 Accept the L", effects = { Smarts = 2, Happiness = -4 }, resultText = "F. One bad grade won't kill you... right?" },
+		},
+	},
+	
+	{
+		id = "m_sat_prep",
+		minAge = 16, maxAge = 17,
+		weight = 35, oneTime = true,
+		emoji = "📊", title = "SAT Prep!",
+		category = "school",
+		text = "The SAT is coming up! How will you prepare for this crucial test?",
+		choices = {
+			{ text = "📚 Expensive prep course", effects = { Smarts = 15, Money = -1500, Happiness = 5 }, resultText = "1500+! Money well spent! Top colleges here you come!", setFlag = "high_sat_score" },
+			{ text = "📖 Self-study with books", effects = { Smarts = 10, Money = -50, Happiness = 3 }, resultText = "1350! Solid score for self-study!", setFlag = "good_sat_score" },
+			{ text = "🆓 Free online resources", effects = { Smarts = 8, Happiness = 4 }, resultText = "1280! Not bad for free prep!" },
+			{ text = "🤷 Just wing it", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 6, Happiness = 6 }, effectsOnFail = { Smarts = 3, Happiness = -5 },
+			  resultText = "1200! Natural talent!", resultTextFail = "1050... retaking in the spring.", setFlag = "low_sat_score" },
+		},
+	},
+	
+	{
+		id = "m_ap_exam",
+		minAge = 15, maxAge = 17,
+		weight = 30, cooldown = 2,
+		emoji = "🎓", title = "AP Exam Day!",
+		category = "school",
+		requiresFlag = "honors_student",
+		getDynamicData = function()
+			local subjects = {"AP Calculus", "AP Chemistry", "AP US History", "AP English", "AP Physics", "AP Biology"}
+			return { subject = subjects[math.random(#subjects)] }
+		end,
+		text = "Today is your %subject% AP exam! 3 hours of intense testing!",
+		choices = {
+			{ text = "🎯 Absolutely crushed it!", effects = { Smarts = 14, Happiness = 10 }, resultText = "Score: 5! College credit earned!", setFlag = "ap_scholar" },
+			{ text = "📚 Did my best", chanceSuccess = 0.65, effectsOnSuccess = { Smarts = 10, Happiness = 6 }, effectsOnFail = { Smarts = 6, Happiness = -2 },
+			  resultText = "Score: 4! Still gets credit at most schools!", resultTextFail = "Score: 3. Passing, but no credit at top schools." },
+			{ text = "😰 Ran out of time", effects = { Smarts = 5, Happiness = -4 }, resultText = "Score: 2. That last section was brutal." },
+			{ text = "💔 Brain went blank", effects = { Smarts = 3, Happiness = -6 }, resultText = "Score: 1. All that studying for nothing.", setFlag = "test_anxiety" },
+		},
+	},
+	
+	{
+		id = "m_class_presentation",
+		minAge = 14, maxAge = 17,
+		weight = 35, cooldown = 2,
+		emoji = "🎤", title = "Class Presentation!",
+		category = "school",
+		getDynamicData = function()
+			local topics = {"your research project", "book analysis", "historical figure", "science experiment", "current events"}
+			return { topic = topics[math.random(#topics)] }
+		end,
+		text = "Time to present %topic% to the whole class! Public speaking time!",
+		choices = {
+			{ text = "🌟 Rehearsed and confident!", effects = { Smarts = 10, Happiness = 8, Looks = 2 }, resultText = "Standing ovation! A+! You're a natural!", setFlag = "public_speaker" },
+			{ text = "📋 Read from notes", effects = { Smarts = 6, Happiness = 3 }, resultText = "B. Solid content, needs more confidence." },
+			{ text = "😰 Nervous wreck", chanceSuccess = 0.4, effectsOnSuccess = { Smarts = 5, Happiness = 6 }, effectsOnFail = { Smarts = 3, Happiness = -6 },
+			  resultText = "Got through it! C+. Relief!", resultTextFail = "Froze up. C-. Embarrassing." },
+			{ text = "🤡 Made it funny", effects = { Smarts = 7, Happiness = 10 }, resultText = "A-! Everyone loved it! Class clown AND smart!", setFlag = "class_clown" },
+		},
+	},
+	
+	{
+		id = "m_essay_due",
+		minAge = 14, maxAge = 17,
+		weight = 35, cooldown = 2,
+		emoji = "📝", title = "Major Essay Due!",
+		category = "school",
+		getDynamicData = function()
+			local types = {"5-paragraph essay", "research paper", "literary analysis", "persuasive essay", "compare/contrast essay"}
+			local pages = {"3", "5", "7", "10"}
+			return { type = types[math.random(#types)], pages = pages[math.random(#pages)] }
+		end,
+		text = "Your %pages%-page %type% is due tomorrow! Where are you at?",
+		choices = {
+			{ text = "✅ Already done and proofread", effects = { Smarts = 12, Happiness = 6 }, resultText = "A! Teacher wrote 'Excellent work!' ", setFlag = "organized" },
+			{ text = "✍️ Writing tonight", effects = { Smarts = 7, Happiness = 2 }, resultText = "B. Finished at 2am but it's decent." },
+			{ text = "🌙 All-nighter needed", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 5, Happiness = -2, Health = -3 }, effectsOnFail = { Smarts = 2, Happiness = -6, Health = -5 },
+			  resultText = "C+. It exists. Barely.", resultTextFail = "Turned in garbage. D-." },
+			{ text = "🤖 ChatGPT it...", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 2, Happiness = 4 }, effectsOnFail = { Smarts = -5, Happiness = -10 },
+			  resultText = "Teacher didn't notice. B-.", resultTextFail = "CAUGHT! Academic dishonesty! Zero!", setFlag = "caught_cheating" },
+		},
+	},
+	
+	{
+		id = "m_science_fair_hs",
+		minAge = 14, maxAge = 17,
+		weight = 25, cooldown = 3,
+		emoji = "🔬", title = "Science Fair!",
+		category = "school",
+		getDynamicData = function()
+			local projects = {"potato battery", "volcano model", "plant growth experiment", "physics demonstration", "chemistry reaction", "coding project"}
+			return { project = projects[math.random(#projects)] }
+		end,
+		text = "Science fair is next week! Your project: %project%. How's it going?",
+		choices = {
+			{ text = "🏆 Going for first place!", effects = { Smarts = 14, Happiness = 8 }, resultText = "FIRST PLACE! Regional competition next!", setFlags = {"science_fair_winner", "stem_track"} },
+			{ text = "📋 Solid, safe project", effects = { Smarts = 8, Happiness = 4 }, resultText = "Third place! Honorable mention!" },
+			{ text = "🔥 Experimental and risky", chanceSuccess = 0.4, effectsOnSuccess = { Smarts = 12, Happiness = 10 }, effectsOnFail = { Smarts = 4, Happiness = -4 },
+			  resultText = "INNOVATION AWARD! Judges loved it!", resultTextFail = "Project failed during demonstration. Awkward." },
+			{ text = "😅 Procrastinated hard", effects = { Smarts = 3, Happiness = -3 }, resultText = "Participation ribbon. Better than nothing." },
+		},
+	},
+	
+	{
+		id = "m_driver_ed",
+		minAge = 15, maxAge = 16,
+		weight = 40, oneTime = true,
+		emoji = "🚗", title = "Driver's Education!",
+		category = "school",
+		text = "Driver's Ed class! Time to learn the rules of the road!",
+		choices = {
+			{ text = "📚 Ace the written test!", effects = { Smarts = 8, Happiness = 8 }, resultText = "Perfect score! Ready for the driving test!", setFlag = "drivers_ed_complete" },
+			{ text = "🚗 Focus on actual driving", effects = { Smarts = 5, Happiness = 6 }, resultText = "You're a natural behind the wheel!", setFlag = "drivers_ed_complete" },
+			{ text = "😰 Nervous driver", effects = { Smarts = 4, Happiness = -2 }, resultText = "Passed but need more practice.", setFlag = "drivers_ed_complete" },
+			{ text = "🛑 Failed the test", effects = { Smarts = 2, Happiness = -5 }, resultText = "Parallel parking is impossible! Retaking next semester." },
+		},
+	},
+	
+	{
+		id = "m_detention",
+		minAge = 14, maxAge = 17,
+		weight = 25, cooldown = 3,
+		emoji = "🪑", title = "Detention!",
+		category = "school",
+		getDynamicData = function()
+			local reasons = {"talking in class", "being late", "dress code violation", "using your phone", "talking back to a teacher"}
+			return { reason = reasons[math.random(#reasons)] }
+		end,
+		text = "You got detention for %reason%! An hour after school!",
+		choices = {
+			{ text = "😤 It was worth it", effects = { Happiness = 2, Smarts = -2 }, resultText = "Detention sucked but you'd do it again.", setFlag = "rebellious" },
+			{ text = "😞 Learn your lesson", effects = { Smarts = 4, Happiness = -2 }, resultText = "Won't make that mistake again.", setFlag = "reformed" },
+			{ text = "📚 Use time to study", effects = { Smarts = 6, Happiness = 1 }, resultText = "Made the best of it. Got homework done!" },
+			{ text = "🙄 Complain the whole time", effects = { Happiness = -4 }, resultText = "Made it worse. Now it's two detentions." },
+		},
+	},
+	
+	{
+		id = "m_extra_credit",
+		minAge = 14, maxAge = 17,
+		weight = 30, cooldown = 3,
+		emoji = "⭐", title = "Extra Credit Opportunity!",
+		category = "school",
+		getDynamicData = function()
+			local tasks = {"10-page research paper", "community service hours", "bonus math problems", "creative project", "attend a lecture"}
+			return { task = tasks[math.random(#tasks)] }
+		end,
+		text = "Your teacher is offering extra credit: %task%. Do you go for it?",
+		choices = {
+			{ text = "📚 Absolutely, grade boost!", effects = { Smarts = 10, Happiness = 4 }, resultText = "Extra credit pushed your B+ to an A-!", setFlag = "overachiever" },
+			{ text = "🤷 Nah, I'm good", effects = { Happiness = 3 }, resultText = "Your current grade is fine. More free time!" },
+			{ text = "⚡ Half-effort attempt", effects = { Smarts = 4, Happiness = 2 }, resultText = "Got partial credit. Every point counts!" },
+			{ text = "😤 Why wasn't this offered earlier?!", effects = { Happiness = -2 }, resultText = "Complained instead of doing it. No extra credit." },
+		},
+	},
+	
+	{
+		id = "m_standardized_test",
+		minAge = 14, maxAge = 17,
+		weight = 35, cooldown = 2,
+		emoji = "📊", title = "Standardized Testing!",
+		category = "school",
+		text = "State standardized testing week! Bubble sheets everywhere!",
+		choices = {
+			{ text = "🎯 Take it seriously", effects = { Smarts = 10, Happiness = 3 }, resultText = "Top 10% in the state! School is proud!", setFlag = "high_achiever" },
+			{ text = "📝 Normal effort", effects = { Smarts = 6, Happiness = 2 }, resultText = "Above average! Solid performance." },
+			{ text = "😴 Draw patterns in bubbles", effects = { Smarts = 1, Happiness = 4 }, resultText = "C for Christmas tree pattern? Worth it." },
+			{ text = "📚 Get extra time (anxiety)", effects = { Smarts = 8, Happiness = 1 }, resultText = "Accommodations helped! Good score!", setFlag = "test_anxiety" },
+		},
+	},
+	
+	{
+		id = "m_college_counselor",
+		minAge = 16, maxAge = 17,
+		weight = 35, oneTime = true,
+		emoji = "🎓", title = "College Counselor Meeting!",
+		category = "school",
+		text = "Time to meet with your college counselor about your future!",
+		choices = {
+			{ text = "🎯 I know exactly what I want", effects = { Smarts = 6, Happiness = 8 }, resultText = "Clear goals! Counselor is impressed!", setFlag = "focused_future" },
+			{ text = "📋 Need help figuring it out", effects = { Smarts = 5, Happiness = 5 }, resultText = "Got great advice! More direction now!" },
+			{ text = "💰 Focus on scholarships", effects = { Smarts = 4, Money = 500, Happiness = 4 }, resultText = "Found scholarship opportunities! Applied to 5!" },
+			{ text = "🤷 Still undecided", effects = { Happiness = -2 }, resultText = "Counselor says that's normal. Still stressful." },
 		},
 	},
 }

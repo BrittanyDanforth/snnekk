@@ -4,7 +4,12 @@
 -- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies) - health.lua has no friend calls but keeping pattern consistent
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
 
 local module = {}
 
@@ -58,12 +63,44 @@ module.events = {
 			local foods = {"peanuts", "shellfish", "dairy", "eggs", "tree nuts"}
 			return { food = foods[math.random(#foods)] }
 		end,
-		text = "You ate something with %food% and your throat is swelling! Can't breathe well! What happens?",
+		text = "You ate something with %food% and your throat is swelling! Can't breathe well! What do you do?",
 		choices = {
-			{ text = "💉 EpiPen saves you", effects = { Health = 5, Smarts = 5 }, resultText = "Someone had an EpiPen! You're okay but that was SCARY. Now you know.", setFlag = "has_allergy" },
-			{ text = "🏥 Rush to hospital", effects = { Health = -5, Money = -500, Happiness = -8 }, resultText = "Emergency room trip! They stabilized you. Terrifying experience.", setFlag = "has_allergy" },
-			{ text = "😰 Mild reaction only", effects = { Health = -3, Happiness = -5 }, resultText = "Hives and discomfort but nothing deadly. Lucky. Get tested!", setFlag = "has_allergy" },
-			{ text = "⚠️ Very serious!", effects = { Health = -20, Money = -2000, Happiness = -15 }, resultText = "Almost died! ICU stay. Life-changing experience. Always check ingredients now.", setFlag = "has_allergy" },
+			{ 
+				text = "💉 Use EpiPen", 
+				chanceSuccess = 0.90, -- EpiPen is very effective
+				effectsOnSuccess = { Health = 5, Smarts = 5 }, 
+				effectsOnFail = { Health = -15, Money = -1000, Happiness = -10 },
+				resultText = "The EpiPen worked! You're okay but that was SCARY. Now you know your allergy.", 
+				resultTextFail = "The EpiPen helped but you still needed the hospital! Severe reaction.", 
+				setFlag = "has_allergy" 
+			},
+			{ 
+				text = "🏥 Rush to hospital", 
+				chanceSuccess = 0.80, -- Good chance if you get there in time
+				effectsOnSuccess = { Health = -5, Money = -500, Happiness = -5 }, 
+				effectsOnFail = { Health = -25, Money = -3000, Happiness = -15 },
+				resultText = "Emergency room trip! They stabilized you in time. Terrifying experience.", 
+				resultTextFail = "You didn't get there fast enough! ICU stay, barely survived.", 
+				setFlag = "has_allergy" 
+			},
+			{ 
+				text = "😰 Wait it out", 
+				chanceSuccess = 0.40, -- Risky to not seek help
+				effectsOnSuccess = { Health = -3, Happiness = -5 }, 
+				effectsOnFail = { Health = -30, Money = -2000, Happiness = -20 },
+				resultText = "Got lucky! It was a mild reaction. Hives and discomfort but nothing deadly.", 
+				resultTextFail = "BAD IDEA! Throat closed up. Someone called 911. Almost died!", 
+				setFlag = "has_allergy" 
+			},
+			{ 
+				text = "🆘 Call 911 immediately", 
+				chanceSuccess = 0.85, -- Emergency services are effective
+				effectsOnSuccess = { Health = -8, Money = -800, Happiness = -8, Smarts = 3 }, 
+				effectsOnFail = { Health = -20, Money = -2500, Happiness = -12 },
+				resultText = "Paramedics arrived fast! They treated you on the spot. Smart thinking.", 
+				resultTextFail = "Help came but it was a close call. Ambulance ride to ICU.", 
+				setFlag = "has_allergy" 
+			},
 		},
 	},
 	

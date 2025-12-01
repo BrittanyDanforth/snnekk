@@ -1,380 +1,854 @@
--- LifeEvents/career_criminal.lua
+-- career_criminal.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- CRIMINAL CAREER EVENTS
--- Crime, gangs, and underworld path
+-- CRIMINAL CAREER EVENTS - Street Life, Cons, Car Theft, Burglary
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 
+-- ROBLOX TOS COMPLIANT - All content is cartoonish/generic, no real crime details
+-- Focus is on consequences, choices, and redemption arcs
+--
+-- Contains events for:
+-- - Street Hustler path
+-- - Con Artist path  
+-- - Car Thief path
+-- - Burglar path
+-- - Prison/Redemption events
+--
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+local events = {}
 
-local module = {}
+-- ═══════════════════════════════════════════════════════════════
+-- STREET LIFE ORIGIN EVENTS
+-- ═══════════════════════════════════════════════════════════════
 
-module.events = {
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- EARLY CRIMINAL TENDENCIES
-	-- ═══════════════════════════════════════════════════════════════
-
-	{
-		id = "m_criminal_awakening",
-		minAge = 12, maxAge = 18,
-		weight = 20, oneTime = true,
-		emoji = "😈", title = "Criminal Tendencies",
-		category = "crime",
-		blockIfFlag = "criminal_tendencies",
-		text = "You've been getting into trouble lately. Something about breaking rules feels... good.",
-		choices = {
-			{ text = "😈 Embrace it", effects = { Happiness = 5, Smarts = -2 }, resultText = "The thrill of being bad is addicting.", setFlag = "criminal_tendencies" },
-			{ text = "🙅 Fight the urge", effects = { Happiness = 2, Smarts = 3 }, resultText = "You resisted the dark path." },
-			{ text = "🤔 Just testing limits", effects = { Happiness = 3 }, resultText = "You're just exploring. Not committed." },
+table.insert(events, {
+	id = "hustle_opportunity",
+	emoji = "🎲",
+	title = "The Wrong Crowd",
+	category = "life",
+	tags = {"career", "criminal", "origin", "street_hustler"},
+	
+	weight = 8,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	chainId = "street_life_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 14,
+		maxAge = 25,
+		blockedFlags = {"career_street_hustler_started", "crime_rejected"},
+		maxStats = {Money = 1000},
+	},
+	
+	getDynamicData = function(state)
+		local names = {"Rico", "Marcus", "Dex", "Tyrone", "Santos"}
+		return {
+			name = names[math.random(#names)]
+		}
+	end,
+	
+	text = "%name% from the neighborhood approaches you. They know people who need help with 'deliveries' and other small jobs. Easy money, they say.",
+	
+	choices = {
+		{
+			id = "join_hustle",
+			text = "Sure, I could use the cash.",
+			resultText = "You start running small errands. The money comes fast, but you know this path has risks.",
+			effects = {Money = 500, Karma = -3},
+			flags = {set = {"career_street_hustler_started", "street_connected"}},
+			startCareer = "street_hustler",
+			careerXP = 10,
+		},
+		{
+			id = "decline_politely",
+			text = "Nah, I'm good. Thanks though.",
+			resultText = "You walk away. Maybe it's better to struggle the honest way.",
+			effects = {Karma = 2},
+			flags = {set = {"crime_rejected"}},
+		},
+		{
+			id = "snitch",
+			text = "That sounds illegal. I should tell someone.",
+			resultText = "You mention it to an adult. It doesn't make you popular in the neighborhood.",
+			effects = {Karma = 3, Happiness = -2},
+			flags = {set = {"crime_rejected", "neighborhood_snitch"}},
 		},
 	},
+})
 
-	{
-		id = "m_first_theft",
-		minAge = 10, maxAge = 16,
-		weight = 20, oneTime = true,
-		emoji = "🤫", title = "First Theft",
-		category = "crime",
-		requiresFlag = "criminal_tendencies",
-		blockIfFlag = "petty_thief",
-		getDynamicData = function()
-			local items = {"candy bar", "small toy", "keychain", "cheap jewelry"}
-			return { item = items[math.random(#items)] }
-		end,
-		text = "You stole a %item% from a store. Heart pounding, you got away with it.",
-		choices = {
-			{ text = "😈 That was easy!", effects = { Happiness = 6, Smarts = -2 }, resultText = "The rush was incredible. More next time?", setFlag = "petty_thief" },
-			{ text = "😰 Feel guilty", effects = { Happiness = -3, Smarts = 2 }, resultText = "You returned it secretly. Never again." },
-			{ text = "🎯 Want bigger scores", effects = { Happiness = 4 }, resultText = "Small stuff is for amateurs.", setFlags = {"petty_thief", "ambitious_thief"} },
+table.insert(events, {
+	id = "street_first_job",
+	emoji = "💵",
+	title = "First Real Job",
+	category = "crime",
+	tags = {"career", "criminal", "street_hustler", "petty_crime"},
+	
+	weight = 15,
+	cooldownYears = 2,
+	oneTime = true,
+	
+	chainId = "street_life_origin",
+	chainStep = 2,
+	
+	conditions = {
+		minAge = 15,
+		maxAge = 30,
+		requiredCareerId = "street_hustler",
+		requiredCareerMinTier = 1,
+		requiredAllFlags = {"street_connected"},
+	},
+	
+	getDynamicData = function(state)
+		return {
+			pay = math.random(200, 500),
+		}
+	end,
+	
+	text = "The crew needs someone to be a lookout during a 'meeting'. All you have to do is stand on the corner and text if you see anything suspicious. Easy $%pay%.",
+	
+	choices = {
+		{
+			id = "do_the_job",
+			text = "I can handle being a lookout.",
+			resultText = "You spend an hour watching the street. Nothing happens. Easy money.",
+			effects = {Money = 350, Karma = -2},
+			flags = {set = {"did_first_job"}},
+			careerXP = 15,
+		},
+		{
+			id = "back_out",
+			text = "Actually, this feels wrong. I'm out.",
+			resultText = "You walk away before you get in too deep. The crew thinks you're soft.",
+			effects = {Karma = 3},
+			flags = {set = {"backed_out_early"}},
+			careerReputation = -10,
 		},
 	},
+})
 
-	{
-		id = "m_gang_encounter",
-		minAge = 14, maxAge = 25,
-		weight = 15, oneTime = true,
-		emoji = "⚔️", title = "Gang Encounter",
-		category = "crime",
-		requiresFlag = "criminal_tendencies",
-		blockIfFlag = "gang_contact",
-		getDynamicData = function()
-			local gangs = {"Street Kings", "Southside Bloods", "Eastside Crips", "Latin Lords", "Vice Kings"}
-			return { gang = gangs[math.random(#gangs)] }
-		end,
-		text = "The %gang% noticed you. Their recruiter approaches.",
-		choices = {
-			{ text = "🤝 Hear them out", effects = { Happiness = 3 }, resultText = "They explained how things work. Interesting.", setFlag = "gang_contact" },
-			{ text = "🙅 Not interested", effects = { Happiness = 2, Smarts = 3 }, resultText = "You walked away. They'll be watching." },
-			{ text = "😤 Get aggressive", effects = { Health = -10, Happiness = -5 }, resultText = "Bad move. They taught you a lesson." },
+table.insert(events, {
+	id = "street_promotion",
+	emoji = "📈",
+	title = "Moving Up",
+	category = "crime",
+	tags = {"career", "criminal", "street_hustler", "street_life"},
+	
+	weight = 10,
+	cooldownYears = 3,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 17,
+		maxAge = 35,
+		requiredCareerId = "street_hustler",
+		requiredCareerMinTier = 1,
+		requiredAllFlags = {"did_first_job"},
+	},
+	
+	getDynamicData = function(state)
+		local bosses = {"King", "Ghost", "Bishop", "Ace", "Shadow"}
+		return {
+			boss = bosses[math.random(#bosses)],
+		}
+	end,
+	
+	text = "%boss% notices you've been reliable. They offer you a bigger role - you'd manage your own corner and some younger kids. More money, more responsibility, more risk.",
+	
+	choices = {
+		{
+			id = "accept_promotion",
+			text = "I'm ready. Let's do this.",
+			resultText = "You step up in the organization. The money is better, but so is the heat.",
+			effects = {Money = 2000, Karma = -4},
+			flags = {set = {"street_manager"}},
+			promoteCareer = true,
+			careerXP = 30,
+		},
+		{
+			id = "stay_low",
+			text = "I'd rather stay low-key.",
+			resultText = "You stick to smaller jobs. Less money, less attention.",
+			effects = {Karma = 1},
+			flags = {set = {"prefers_low_profile"}},
+		},
+		{
+			id = "try_to_leave",
+			text = "Actually, I think I want out.",
+			resultText = "Getting out isn't that simple, but %boss% respects your honesty. You're on thin ice though.",
+			effects = {Karma = 3, Happiness = -2},
+			flags = {set = {"trying_to_leave"}},
 		},
 	},
+})
 
-	-- ═══════════════════════════════════════════════════════════════
-	-- GANG PROGRESSION
-	-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- CON ARTIST EVENTS
+-- ═══════════════════════════════════════════════════════════════
 
-	{
-		id = "m_gang_initiation",
-		minAge = 14, maxAge = 30,
-		weight = 25, oneTime = true, milestone = true,
-		emoji = "⚔️", title = "Gang Initiation",
-		category = "crime",
-		requiresFlag = "gang_contact",
-		blockIfFlag = "gang_member",
-		getDynamicData = function()
-			local tasks = {"jumping in ceremony", "robbery", "delivery run", "fight a rival"}
-			return { task = tasks[math.random(#tasks)] }
-		end,
-		text = "To join, you need to complete the initiation: %task%.",
-		choices = {
-			{ text = "⚔️ Do it!", effects = { Health = -10, Happiness = 8 }, resultText = "You're officially a gang member now.", setFlag = "gang_member" },
-			{ text = "🙅 Back out", effects = { Happiness = -5, Health = -5 }, resultText = "They didn't take rejection well." },
-			{ text = "🤔 Ask for something else", effects = { Smarts = 2, Happiness = 2 }, resultText = "They gave you a different task. You're in.", setFlag = "gang_member" },
+table.insert(events, {
+	id = "first_con",
+	emoji = "🎭",
+	title = "The Natural Talent",
+	category = "crime",
+	tags = {"career", "criminal", "con_artist", "origin"},
+	
+	weight = 8,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	chainId = "con_artist_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 16,
+		maxAge = 30,
+		blockedFlags = {"career_con_artist_started", "honest_to_fault"},
+		minStats = {Smarts = 40},
+	},
+	
+	text = "You realize you have a gift for reading people and telling them exactly what they want to hear. A tourist asks for directions and you 'help' them find a restaurant... for a generous tip.",
+	
+	choices = {
+		{
+			id = "embrace_gift",
+			text = "This is too easy. I should use this.",
+			resultText = "You start looking for more opportunities to use your persuasion skills.",
+			effects = {Money = 100, Karma = -3, Happiness = 2},
+			flags = {set = {"career_con_artist_started", "smooth_talker"}},
+			startCareer = "con_artist",
+			careerXP = 15,
+		},
+		{
+			id = "feel_guilty",
+			text = "That felt wrong. I shouldn't do that again.",
+			resultText = "You give them honest directions and refuse the tip. Integrity preserved.",
+			effects = {Karma = 3},
+			flags = {set = {"honest_to_fault"}},
 		},
 	},
+})
 
-	{
-		id = "m_gang_first_job",
-		minAge = 14, maxAge = 35,
-		weight = 30, cooldown = 2,
-		emoji = "💼", title = "Gang Assignment",
-		category = "crime",
-		requiresFlag = "gang_member",
-		getDynamicData = function()
-			local jobs = {"drug run", "territory patrol", "debt collection", "weapon transport"}
-			return { job = jobs[math.random(#jobs)] }
-		end,
-		text = "Your first real job for the gang: %job%.",
-		choices = {
-			{ text = "💪 Execute perfectly", effects = { Happiness = 8, Money = 2000 }, resultText = "You impressed the bosses. Rising star.", setFlag = "gang_trusted" },
-			{ text = "😰 Barely complete it", effects = { Happiness = 3, Money = 500 }, resultText = "You got it done. Barely." },
-			{ text = "❌ Fail the mission", effects = { Happiness = -10, Health = -10 }, resultText = "The gang doesn't tolerate failure." },
+table.insert(events, {
+	id = "con_bigger_score",
+	emoji = "🃏",
+	title = "A Bigger Score",
+	category = "crime",
+	tags = {"career", "criminal", "con_artist", "grifting"},
+	
+	weight = 10,
+	cooldownYears = 2,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 50,
+		requiredCareerId = "con_artist",
+		requiredCareerMinTier = 1,
+	},
+	
+	getDynamicData = function(state)
+		local cons = {"fake charity fundraiser", "too-good-to-be-true investment", "exclusive club membership", "rare collectible sale"}
+		return {
+			con = cons[math.random(#cons)],
+			payout = math.random(2, 10) * 1000,
+		}
+	end,
+	
+	text = "You spot an opportunity for a bigger con - a %con%. If it works, you could walk away with around $%payout%.",
+	
+	choices = {
+		{
+			id = "run_the_con",
+			text = "Set it up and run the play.",
+			resultText = "Everything goes smoothly. The mark never suspects a thing.",
+			effects = {Money = 5000, Karma = -5},
+			flags = {set = {"successful_con"}},
+			careerXP = 25,
+		},
+		{
+			id = "too_risky",
+			text = "Too risky. Stick to small stuff.",
+			resultText = "You let it pass. Maybe you're getting too cautious.",
+			effects = {Karma = 1},
+			careerXP = 5,
 		},
 	},
+})
 
-	{
-		id = "m_gang_promotion_soldier",
-		minAge = 16, maxAge = 40,
-		weight = 20, oneTime = true,
-		emoji = "⬆️", title = "Promoted to Soldier",
-		category = "crime",
-		requiresFlag = "gang_trusted",
-		blockIfFlag = "gang_soldier",
-		text = "Your work has been noticed. You're being promoted to soldier.",
-		choices = {
-			{ text = "💪 Accept with pride", effects = { Happiness = 10, Money = 5000 }, resultText = "More responsibility, more reward.", setFlag = "gang_soldier" },
-			{ text = "🤔 What's expected?", effects = { Smarts = 3, Happiness = 5, Money = 3000 }, resultText = "You learned the responsibilities first.", setFlag = "gang_soldier" },
+table.insert(events, {
+	id = "con_almost_caught",
+	emoji = "😰",
+	title = "Close Call",
+	category = "crime",
+	tags = {"career", "criminal", "con_artist", "close_call"},
+	
+	weight = 8,
+	cooldownYears = 3,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 60,
+		requiredCareerId = "con_artist",
+		requiredCareerMinTier = 1,
+		requiredAllFlags = {"successful_con"},
+	},
+	
+	text = "One of your marks starts asking around. They're getting suspicious and asking neighbors if they've seen you. The heat is on.",
+	
+	choices = {
+		{
+			id = "lay_low",
+			text = "Disappear for a while. Lay low.",
+			resultText = "You go quiet for months. Eventually the heat dies down.",
+			effects = {Happiness = -2, Money = -1000},
+			flags = {set = {"laying_low"}},
+		},
+		{
+			id = "skip_town",
+			text = "Time to relocate.",
+			resultText = "You move to a new city. Fresh start, fresh marks.",
+			effects = {Money = -3000, Happiness = -1},
+			flags = {set = {"relocated"}},
+		},
+		{
+			id = "brazen_it_out",
+			text = "Act normal. They can't prove anything.",
+			resultText = "You play it cool. Eventually they give up. Lucky this time.",
+			effects = {Happiness = 1},
+			flags = {set = {"brazen"}},
+			careerXP = 10,
 		},
 	},
+})
 
-	{
-		id = "m_gang_promotion_captain",
-		minAge = 20, maxAge = 50,
-		weight = 15, oneTime = true,
-		emoji = "👑", title = "Promoted to Captain",
-		category = "crime",
-		requiresFlag = "gang_soldier",
-		blockIfFlag = "gang_captain",
-		text = "A captain position opened up. The boss is considering you.",
-		choices = {
-			{ text = "👑 Take command", effects = { Happiness = 15, Money = 15000 }, resultText = "You now run your own crew.", setFlag = "gang_captain" },
-			{ text = "🤝 Share power", effects = { Happiness = 8, Money = 8000, Smarts = 3 }, resultText = "You co-captain with another. Political move.", setFlag = "gang_captain" },
+-- ═══════════════════════════════════════════════════════════════
+-- CAR THIEF EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "first_car_boost",
+	emoji = "🚗",
+	title = "First Joyride",
+	category = "crime",
+	tags = {"career", "criminal", "car_thief", "origin"},
+	
+	weight = 8,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	chainId = "car_thief_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 15,
+		maxAge = 25,
+		blockedFlags = {"career_car_thief_started", "car_theft_rejected"},
+	},
+	
+	getDynamicData = function(state)
+		local cars = {"an old sedan", "a sports car", "a muscle car", "a convertible"}
+		return {
+			car = cars[math.random(#cars)]
+		}
+	end,
+	
+	text = "Someone left %car% running outside a convenience store. Your friend dares you to hop in and take it for a spin around the block.",
+	
+	choices = {
+		{
+			id = "take_the_ride",
+			text = "Let's go for a ride!",
+			resultText = "The thrill is unreal. You drive it around and ditch it a few blocks away. Your heart is pounding.",
+			effects = {Happiness = 3, Karma = -4},
+			flags = {set = {"career_car_thief_started", "first_joyride"}},
+			startCareer = "car_thief",
+			careerXP = 10,
+		},
+		{
+			id = "refuse",
+			text = "No way. That's grand theft auto.",
+			resultText = "You walk away. Some lines shouldn't be crossed.",
+			effects = {Karma = 3},
+			flags = {set = {"car_theft_rejected"}},
 		},
 	},
+})
 
-	{
-		id = "m_underboss_opportunity",
-		minAge = 25, maxAge = 60,
-		weight = 10, oneTime = true,
-		emoji = "🎭", title = "Underboss Position",
-		category = "crime",
-		requiresFlag = "gang_captain",
-		blockIfFlag = "underboss",
-		getDynamicData = function()
-			return { bossName = LifeEvents.randomMaleName() }
-		end,
-		text = "%bossName% wants you as underboss. Second in command of everything.",
-		choices = {
-			{ text = "👑 Accept the throne", effects = { Happiness = 20, Money = 50000 }, resultText = "You're now the right hand of the boss.", setFlag = "underboss" },
-			{ text = "🤔 Negotiate terms", effects = { Happiness = 15, Money = 40000, Smarts = 5 }, resultText = "You secured better terms.", setFlag = "underboss" },
-			{ text = "🔪 Why stop there?", effects = { Happiness = 10, Smarts = -3 }, resultText = "You're plotting to take it all...", setFlags = {"underboss", "plotting_takeover"} },
+table.insert(events, {
+	id = "car_theft_crew",
+	emoji = "🔧",
+	title = "Join a Boost Crew",
+	category = "crime",
+	tags = {"career", "criminal", "car_thief", "car_theft_basic"},
+	
+	weight = 12,
+	cooldownYears = 99,
+	oneTime = true,
+	
+	chainId = "car_thief_career",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 17,
+		maxAge = 35,
+		requiredCareerId = "car_thief",
+		requiredCareerMinTier = 1,
+		requiredAllFlags = {"first_joyride"},
+	},
+	
+	getDynamicData = function(state)
+		local names = {"the Chrome Kings", "the Midnight Runners", "the Chop Shop Boys"}
+		return {
+			crew = names[math.random(#names)],
+		}
+	end,
+	
+	text = "Word gets around about your driving skills. %crew% want you to join their operation. They boost cars and sell them to... interested parties.",
+	
+	choices = {
+		{
+			id = "join_crew",
+			text = "I'm in. Let's make some real money.",
+			resultText = "You're part of the crew now. The jobs are bigger and the pay is better.",
+			effects = {Money = 3000, Karma = -5},
+			flags = {set = {"boost_crew_member"}},
+			promoteCareer = true,
+			careerXP = 30,
+		},
+		{
+			id = "solo_work",
+			text = "I prefer working alone.",
+			resultText = "You stick to solo jobs. Less money, but nobody to snitch.",
+			effects = {Money = 500, Karma = -2},
+			flags = {set = {"solo_thief"}},
+			careerXP = 15,
 		},
 	},
+})
 
-	{
-		id = "m_become_boss",
-		minAge = 30, maxAge = 70,
-		weight = 8, oneTime = true, milestone = true,
-		emoji = "👑", title = "Become the Boss!",
-		category = "crime",
-		requiresFlag = "underboss",
-		blockIfFlag = "crime_boss",
-		getDynamicData = function()
-			local methods = {"The old boss retired", "A power vacuum formed", "You orchestrated a coup", "Natural succession"}
-			return { method = methods[math.random(#methods)] }
-		end,
-		text = "%method%. The throne is yours for the taking.",
-		choices = {
-			{ text = "👑 Claim the crown!", effects = { Happiness = 25, Money = 100000 }, resultText = "You are now THE BOSS. The criminal empire is yours.", setFlag = "crime_boss" },
-			{ text = "🤝 Rule wisely", effects = { Happiness = 20, Money = 80000, Smarts = 5 }, resultText = "You took power with diplomacy.", setFlag = "crime_boss" },
-			{ text = "🔪 Eliminate rivals first", effects = { Happiness = 15, Health = -10 }, resultText = "You secured power through violence.", setFlags = {"crime_boss", "ruthless_boss"} },
+table.insert(events, {
+	id = "car_theft_luxury",
+	emoji = "🏎️",
+	title = "Luxury Target",
+	category = "crime",
+	tags = {"career", "criminal", "car_thief", "car_theft_pro"},
+	
+	weight = 8,
+	cooldownYears = 3,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 19,
+		maxAge = 45,
+		requiredCareerId = "car_thief",
+		requiredCareerMinTier = 2,
+	},
+	
+	getDynamicData = function(state)
+		local cars = {"a limited edition sports car", "a rare vintage classic", "a custom luxury sedan"}
+		return {
+			car = cars[math.random(#cars)],
+			payout = math.random(15, 30) * 1000,
+		}
+	end,
+	
+	text = "A buyer wants %car% specifically. They'll pay $%payout% if you can get it to them within 48 hours. The security will be tight.",
+	
+	choices = {
+		{
+			id = "take_the_job",
+			text = "Challenge accepted.",
+			resultText = "After careful planning, you pull it off. The payout is everything you hoped for.",
+			effects = {Money = 22000, Karma = -6, Happiness = 3},
+			flags = {set = {"luxury_job_done"}},
+			careerXP = 35,
+		},
+		{
+			id = "pass_on_it",
+			text = "Too hot. I'll pass.",
+			resultText = "You let someone else take the risk. Smart, maybe.",
+			effects = {Karma = 1},
+			careerXP = 5,
 		},
 	},
+})
 
-	-- ═══════════════════════════════════════════════════════════════
-	-- CRIMINAL OPERATIONS
-	-- ═══════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════
+-- BURGLAR EVENTS
+-- ═══════════════════════════════════════════════════════════════
 
-	{
-		id = "m_drug_dealing",
-		minAge = 16, maxAge = 60,
-		weight = 25, cooldown = 2,
-		emoji = "💊", title = "Drug Deal",
-		category = "crime",
-		requiresFlag = "gang_member",
-		getDynamicData = function()
-			local amounts = {2000, 5000, 10000, 25000, 50000}
-			return { amount = amounts[math.random(#amounts)] }
-		end,
-		text = "A drug deal worth $%amount% is going down. You're the point man.",
-		choices = {
-			{ text = "💰 Clean deal", effects = { Money = 5000, Happiness = 5 }, resultText = "Everything went smooth. Nice profit." },
-			{ text = "🔫 Got robbed!", effects = { Money = -2000, Health = -10, Happiness = -8 }, resultText = "They took your product and cash!" },
-			{ text = "🚔 Cops showed up!", effects = { Health = -5, Happiness = -10 }, resultText = "You barely escaped! Too close." },
+table.insert(events, {
+	id = "first_break_in",
+	emoji = "🏠",
+	title = "Easy Mark",
+	category = "crime",
+	tags = {"career", "criminal", "burglar", "origin"},
+	
+	weight = 7,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	chainId = "burglar_origin",
+	chainStep = 1,
+	
+	conditions = {
+		minAge = 15,
+		maxAge = 28,
+		blockedFlags = {"career_burglar_started", "burglary_rejected"},
+		maxStats = {Money = 500},
+	},
+	
+	text = "Walking home late, you notice a house with an open window. The family is clearly on vacation - mail piled up, no cars. The temptation is real.",
+	
+	choices = {
+		{
+			id = "break_in",
+			text = "Just a quick look around...",
+			resultText = "You slip in and grab some valuables. Quick, quiet, and profitable.",
+			effects = {Money = 800, Karma = -5},
+			flags = {set = {"career_burglar_started", "first_break_in_done"}},
+			startCareer = "burglar",
+			careerXP = 15,
+		},
+		{
+			id = "walk_away",
+			text = "No. This is someone's home.",
+			resultText = "You keep walking. Some lines you won't cross.",
+			effects = {Karma = 4},
+			flags = {set = {"burglary_rejected"}},
 		},
 	},
+})
 
-	{
-		id = "m_heist_planning",
-		minAge = 18, maxAge = 55,
-		weight = 15, cooldown = 5,
-		emoji = "🎯", title = "Heist Planning",
-		category = "crime",
-		requiresFlag = "gang_soldier",
-		getDynamicData = function()
-			local targets = {"jewelry store", "bank", "casino", "armored truck", "warehouse"}
-			return { target = targets[math.random(#targets)] }
-		end,
-		text = "There's a score planned: hitting a %target%. Big money if it works.",
-		choices = {
-			{ 
-				text = "🎯 Lead the heist!", 
-				effects = { Happiness = 10 }, 
-				resultText = "You're in charge. Let's do this.",
-				minigame = "heist",
-			},
-			{ text = "🤝 Join as crew", effects = { Happiness = 5, Money = 10000 }, resultText = "You played your part. Split was good." },
-			{ text = "🙅 Too risky", effects = { Happiness = -3, Smarts = 3 }, resultText = "You sat this one out." },
+table.insert(events, {
+	id = "burglar_upgrade",
+	emoji = "🎯",
+	title = "Bigger Scores",
+	category = "crime",
+	tags = {"career", "criminal", "burglar", "burglary_basic"},
+	
+	weight = 10,
+	cooldownYears = 2,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 50,
+		requiredCareerId = "burglar",
+		requiredCareerMinTier = 1,
+	},
+	
+	getDynamicData = function(state)
+		local targets = {"a wealthy neighborhood", "vacation homes", "a small business after hours"}
+		return {
+			target = targets[math.random(#targets)],
+		}
+	end,
+	
+	text = "You've scoped out %target%. The security looks manageable and the potential haul could be significant.",
+	
+	choices = {
+		{
+			id = "do_the_job",
+			text = "Plan it out and make a move.",
+			resultText = "Careful planning pays off. You get in and out without issues.",
+			effects = {Money = 5000, Karma = -5},
+			flags = {set = {"successful_burglary"}},
+			careerXP = 25,
+		},
+		{
+			id = "abort",
+			text = "Something feels off. Abort.",
+			resultText = "You trust your instincts and walk away. Maybe next time.",
+			effects = {Karma = 1},
+			flags = {set = {"cautious_burglar"}},
 		},
 	},
+})
 
-	{
-		id = "m_gang_war",
-		minAge = 16, maxAge = 50,
-		weight = 20, cooldown = 3,
-		emoji = "⚔️", title = "Gang War!",
-		category = "crime",
-		requiresFlag = "gang_member",
-		getDynamicData = function()
-			local rivals = {"Westside Killers", "Northside Mafia", "Downtown Devils", "Harbor Crew"}
-			return { rival = rivals[math.random(#rivals)] }
-		end,
-		text = "War has broken out with the %rival%! Blood in the streets.",
-		choices = {
-			{ text = "⚔️ Fight on front lines!", effects = { Health = -20, Happiness = 8 }, resultText = "You survived the war. Battle scars.", setFlag = "war_veteran" },
-			{ text = "🧠 Strategic operations", effects = { Health = -5, Smarts = 5, Happiness = 5 }, resultText = "You planned attacks. Valuable." },
-			{ text = "🏃 Lay low", effects = { Happiness = -5, Health = 2 }, resultText = "You avoided the bloodshed. Some call it cowardice." },
+-- ═══════════════════════════════════════════════════════════════
+-- PRISON / CONSEQUENCES EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "criminal_arrested",
+	emoji = "🚔",
+	title = "Caught",
+	category = "crime",
+	tags = {"career", "criminal", "arrest", "consequences"},
+	
+	weight = 6,
+	cooldownYears = 5,
+	oneTime = false,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 16,
+		maxAge = 70,
+		requiredAnyFlags = {"street_connected", "boost_crew_member", "first_break_in_done", "successful_con"},
+		blockedFlags = {"in_prison", "just_released"},
+	},
+	
+	text = "The police finally catch up with you. You're arrested and charged. This could mean serious time.",
+	
+	choices = {
+		{
+			id = "plead_guilty",
+			text = "Plead guilty and hope for leniency.",
+			resultText = "The judge appreciates your cooperation and gives you a lighter sentence.",
+			effects = {Happiness = -8, Karma = 2},
+			flags = {set = {"in_prison", "criminal_record", "pleaded_guilty"}},
+		},
+		{
+			id = "fight_charges",
+			text = "Get a lawyer and fight the charges.",
+			resultText = "Your lawyer does their best. The outcome is uncertain...",
+			effects = {Money = -10000, Happiness = -5},
+			flags = {set = {"fighting_charges"}},
+		},
+		{
+			id = "cooperate",
+			text = "Cooperate with authorities and give names.",
+			resultText = "You become an informant. Reduced charges, but now you have enemies.",
+			effects = {Karma = -3, Happiness = -4},
+			flags = {set = {"informant", "reduced_sentence"}},
 		},
 	},
+})
 
-	{
-		id = "m_money_laundering",
-		minAge = 20, maxAge = 60,
-		weight = 20, cooldown = 3,
-		emoji = "🏦", title = "Money Laundering",
-		category = "crime",
-		requiresFlag = "gang_captain",
-		getDynamicData = function()
-			local businesses = {"car wash", "restaurant", "nightclub", "laundromat", "construction company"}
-			return { business = businesses[math.random(#businesses)] }
-		end,
-		text = "You need to clean $500K through a %business%.",
-		choices = {
-			{ text = "💰 Execute perfectly", effects = { Money = 50000, Smarts = 3 }, resultText = "Clean money in the bank. Smooth operation." },
-			{ text = "😰 IRS gets suspicious", effects = { Money = 20000, Happiness = -8 }, resultText = "You had to scale back. Too close." },
-			{ text = "🚔 Feds investigate", effects = { Money = -10000, Happiness = -15 }, resultText = "Lawyers fees and frozen assets. Disaster." },
+table.insert(events, {
+	id = "prison_life",
+	emoji = "⛓️",
+	title = "Behind Bars",
+	category = "crime",
+	tags = {"prison", "criminal", "consequences"},
+	
+	weight = 20,
+	cooldownYears = 1,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 16,
+		maxAge = 80,
+		requiredAllFlags = {"in_prison"},
+	},
+	
+	text = "Another year passes in prison. The days blur together. How will you spend your time?",
+	
+	choices = {
+		{
+			id = "education",
+			text = "Take educational classes.",
+			resultText = "You study and earn some credits. It's something positive at least.",
+			effects = {Smarts = 3, Karma = 2},
+			flags = {set = {"prison_education"}},
+		},
+		{
+			id = "workout",
+			text = "Hit the yard and work out.",
+			resultText = "You get stronger and earn some respect.",
+			effects = {Health = 5, Looks = 2},
+			flags = {set = {"prison_fitness"}},
+		},
+		{
+			id = "keep_head_down",
+			text = "Keep your head down and do your time.",
+			resultText = "You avoid trouble and wait for release day.",
+			effects = {Happiness = -2, Karma = 1},
+			flags = {set = {"good_behavior"}},
+		},
+		{
+			id = "make_connections",
+			text = "Network with other inmates.",
+			resultText = "You make some connections that might be useful later. Or dangerous.",
+			effects = {Karma = -2},
+			flags = {set = {"prison_connections"}},
 		},
 	},
+})
 
-	-- ═══════════════════════════════════════════════════════════════
-	-- CRIMINAL CONSEQUENCES
-	-- ═══════════════════════════════════════════════════════════════
-
-	{
-		id = "m_arrested_crime",
-		minAge = 14, maxAge = 70,
-		weight = 25, cooldown = 5,
-		emoji = "🚔", title = "Arrested!",
-		category = "crime",
-		requiresFlag = "criminal_tendencies",
-		getDynamicData = function()
-			local charges = {"possession", "assault", "robbery", "drug trafficking", "weapons charges"}
-			return { charge = charges[math.random(#charges)] }
-		end,
-		text = "The cops got you on %charge%! You're in cuffs.",
-		choices = {
-			{ text = "🤐 Say nothing", effects = { Smarts = 5, Happiness = -5 }, resultText = "You lawyered up. Smart move." },
-			{ text = "😭 Confess", effects = { Happiness = -10 }, resultText = "You spilled everything. Years added.", setFlag = "convicted" },
-			{ text = "🐀 Cooperate", effects = { Happiness = -15, Smarts = -3 }, resultText = "You gave up names. Sentence reduced, but...", setFlag = "snitch" },
+table.insert(events, {
+	id = "prison_release",
+	emoji = "🕊️",
+	title = "Freedom",
+	category = "crime",
+	tags = {"prison", "release", "fresh_start"},
+	
+	weight = 15,
+	cooldownYears = 99,
+	oneTime = false,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 80,
+		requiredAllFlags = {"in_prison"},
+	},
+	
+	text = "Your sentence is up. The gates open and you step into the world again. Everything looks different. What now?",
+	
+	choices = {
+		{
+			id = "go_straight",
+			text = "Go straight. Start over.",
+			resultText = "You're determined to leave that life behind. It won't be easy with a record, but you'll try.",
+			effects = {Happiness = 4, Karma = 5},
+			flags = {set = {"going_straight", "just_released"}, clear = {"in_prison"}},
+			quitCareer = true,
+		},
+		{
+			id = "back_to_old_ways",
+			text = "Hit up old contacts. Back to business.",
+			resultText = "The straight world doesn't want you anyway. Might as well do what you know.",
+			effects = {Happiness = 1, Karma = -3},
+			flags = {set = {"back_in_game", "just_released"}, clear = {"in_prison"}},
 		},
 	},
+})
 
-	{
-		id = "m_trial_crime",
-		minAge = 14, maxAge = 70,
-		weight = 30, oneTime = false,
-		emoji = "⚖️", title = "Criminal Trial",
-		category = "crime",
-		requiresFlag = "convicted",
-		blockIfFlag = "in_prison",
-		getDynamicData = function()
-			local years = {2, 5, 10, 15, 25}
-			return { sentence = years[math.random(#years)] }
-		end,
-		text = "Your trial is today. Facing %sentence% years if convicted.",
-		choices = {
-			{ text = "😇 Found not guilty!", effects = { Happiness = 15 }, resultText = "The jury acquitted you! Free!" },
-			{ text = "😔 Convicted", effects = { Happiness = -20 }, resultText = "Guilty. You're going to prison.", setFlag = "in_prison" },
-			{ text = "⚖️ Plea deal", effects = { Happiness = -10 }, resultText = "Reduced sentence. Still prison time.", setFlag = "in_prison" },
+-- ═══════════════════════════════════════════════════════════════
+-- REDEMPTION / EXIT EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "criminal_redemption_chance",
+	emoji = "✨",
+	title = "Second Chance",
+	category = "life",
+	tags = {"criminal", "redemption", "fresh_start"},
+	
+	weight = 6,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 20,
+		maxAge = 60,
+		requiredAnyFlags = {"going_straight", "trying_to_leave"},
+		requiredAllFlags = {"criminal_record"},
+	},
+	
+	getDynamicData = function(state)
+		local opportunities = {"a job training program", "a small business owner willing to hire", "a community organization"}
+		return {
+			opportunity = opportunities[math.random(#opportunities)]
+		}
+	end,
+	
+	text = "Despite your record, %opportunity% is willing to give you a chance. It's not glamorous, but it's honest work.",
+	
+	choices = {
+		{
+			id = "take_chance",
+			text = "Thank you. I won't let you down.",
+			resultText = "You start fresh with honest work. It's hard, but you sleep better at night.",
+			effects = {Happiness = 5, Karma = 8},
+			flags = {set = {"legitimate_job", "redemption_started"}},
+		},
+		{
+			id = "reject_chance",
+			text = "The pay is terrible. I can't live on this.",
+			resultText = "You turn it down. The easy money is still tempting.",
+			effects = {Happiness = -2, Karma = -2},
+			flags = {set = {"rejected_redemption"}},
 		},
 	},
+})
 
-	{
-		id = "m_betrayal_crime",
-		minAge = 18, maxAge = 60,
-		weight = 15, cooldown = 5,
-		emoji = "🔪", title = "Betrayed!",
-		category = "crime",
-		requiresFlag = "gang_member",
-		getDynamicData = function()
-			return { traitorName = LifeEvents.randomFirstName() }
-		end,
-		text = "%traitorName%, someone you trusted, sold you out to the feds or rivals.",
-		choices = {
-			{ text = "🔪 Get revenge", effects = { Happiness = 10, Health = -10 }, resultText = "You handled it. Message sent.", setFlag = "made_example" },
-			{ text = "😔 Accept it", effects = { Happiness = -15 }, resultText = "Trust no one. Lesson learned." },
-			{ text = "🏃 Go into hiding", effects = { Happiness = -8, Money = -5000 }, resultText = "You disappeared for a while.", setFlag = "laying_low" },
+table.insert(events, {
+	id = "criminal_boss_offer",
+	emoji = "👑",
+	title = "Rise to the Top",
+	category = "crime",
+	tags = {"career", "criminal", "promotion", "crime_boss"},
+	
+	weight = 5,
+	cooldownYears = 99,
+	oneTime = true,
+	milestone = false, -- Career events should NOT be milestones
+	
+	conditions = {
+		minAge = 28,
+		maxAge = 50,
+		requiredAnyFlags = {"street_manager", "boost_crew_member", "luxury_job_done"},
+		blockedFlags = {"crime_boss", "going_straight"},
+	},
+	
+	text = "The old boss is retiring. Everyone agrees you should take over the operation. You'd be running things now.",
+	
+	choices = {
+		{
+			id = "take_crown",
+			text = "It's my time. I'll lead.",
+			resultText = "You become the boss. More power, more money, but also more targets on your back.",
+			effects = {Money = 50000, Karma = -8, Happiness = 3},
+			flags = {set = {"crime_boss"}},
+			promoteCareer = true,
+			careerXP = 100,
+		},
+		{
+			id = "pass_the_crown",
+			text = "I don't want that heat. Pass it to someone else.",
+			resultText = "You let someone else take the throne. You're still respected, just not in charge.",
+			effects = {Karma = 2},
+			flags = {set = {"declined_boss"}},
+		},
+		{
+			id = "use_to_exit",
+			text = "Use this moment to get out entirely.",
+			resultText = "You announce you're done. They respect your years of service and let you walk.",
+			effects = {Karma = 5, Happiness = 4},
+			flags = {set = {"retired_criminal"}},
+			quitCareer = true,
 		},
 	},
+})
 
-	{
-		id = "m_near_death_crime",
-		minAge = 16, maxAge = 60,
-		weight = 12, cooldown = 5,
-		emoji = "💀", title = "Near Death Experience",
-		category = "crime",
-		requiresFlag = "gang_member",
-		text = "A rival crew ambushed you. Bullets flying. You barely escaped with your life.",
-		choices = {
-			{ text = "💀 This is my life now", effects = { Happiness = -10, Health = -15 }, resultText = "Another day survived in the game." },
-			{ text = "🤔 Maybe time to get out", effects = { Smarts = 5, Happiness = -5 }, resultText = "You're reconsidering this path...", setFlag = "considering_leaving" },
-			{ text = "🔥 Time for payback", effects = { Health = -5, Happiness = 5 }, resultText = "They'll regret not finishing the job.", setFlag = "seeking_revenge" },
+table.insert(events, {
+	id = "criminal_close_call_death",
+	emoji = "☠️",
+	title = "Too Close",
+	category = "crime",
+	tags = {"criminal", "danger", "mortality"},
+	
+	weight = 5,
+	cooldownYears = 5,
+	oneTime = false,
+	
+	conditions = {
+		minAge = 18,
+		maxAge = 70,
+		requiredAnyFlags = {"street_connected", "boost_crew_member", "crime_boss"},
+		blockedFlags = {"going_straight"},
+	},
+	
+	text = "A deal goes bad. You barely escape with your life. Lying in bed that night, you stare at the ceiling and wonder if this is worth it.",
+	
+	choices = {
+		{
+			id = "shake_it_off",
+			text = "Part of the game. I'll be more careful.",
+			resultText = "You double down on your security and keep going.",
+			effects = {Health = -5, Happiness = -3},
+			flags = {set = {"survivor"}},
+		},
+		{
+			id = "reconsider_life",
+			text = "This isn't worth dying over.",
+			resultText = "The brush with death makes you question everything.",
+			effects = {Health = -3, Karma = 3},
+			flags = {set = {"reconsidering"}},
 		},
 	},
+})
 
-	-- ═══════════════════════════════════════════════════════════════
-	-- GOING LEGIT / REDEMPTION
-	-- ═══════════════════════════════════════════════════════════════
-
-	{
-		id = "m_go_legit",
-		minAge = 25, maxAge = 60,
-		weight = 10, oneTime = true,
-		emoji = "🌅", title = "Going Legitimate",
-		category = "crime",
-		requiresFlag = "considering_leaving",
-		text = "You've been thinking about leaving the criminal life. Is it possible?",
-		choices = {
-			{ text = "🌅 Leave it all behind", effects = { Happiness = 15, Money = -50000 }, resultText = "You paid your debts and walked away.", clearFlags = {"gang_member", "criminal_tendencies"}, setFlag = "reformed" },
-			{ text = "💼 Go semi-legit", effects = { Happiness = 8, Money = 20000 }, resultText = "You still have connections but run a real business now.", setFlag = "semi_legit" },
-			{ text = "🔙 Can't escape", effects = { Happiness = -10 }, resultText = "They don't let you just leave. You're in for life." },
-		},
-	},
-
-	{
-		id = "m_federal_witness",
-		minAge = 20, maxAge = 60,
-		weight = 8, oneTime = true,
-		emoji = "🛡️", title = "Federal Witness Offer",
-		category = "crime",
-		requiresFlag = "gang_captain",
-		text = "The FBI offers you witness protection. Testify against the organization, start a new life.",
-		choices = {
-			{ text = "🛡️ Take the deal", effects = { Happiness = 5, Money = 10000 }, resultText = "New identity, new life. But always looking over your shoulder.", clearFlags = {"gang_member", "gang_captain"}, setFlags = {"witness_protection", "snitch"} },
-			{ text = "🙅 Never snitch", effects = { Happiness = -5 }, resultText = "You refused. Loyalty to the end." },
-			{ text = "🔪 Set up the feds", effects = { Happiness = 8, Smarts = 5 }, resultText = "You fed them false info. Dangerous game." },
-		},
-	},
-}
-
-return module
+return {events = events}

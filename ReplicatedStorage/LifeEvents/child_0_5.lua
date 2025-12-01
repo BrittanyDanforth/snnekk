@@ -4,7 +4,36 @@
 -- 100+ deeply thought-out events for infant, toddler, and preschool years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	-- Also check for friend-related flags
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -474,7 +503,7 @@ module.events = {
 		emoji = "🛝", title = "Playground Drama",
 		category = "social",
 		getDynamicData = function()
-			return { kidName = LifeEvents.randomFirstName() }
+			return { kidName = randomFirstName() }
 		end,
 		text = "Another kid named %kidName% pushed you on the playground!",
 		choices = {
@@ -538,7 +567,7 @@ module.events = {
 		category = "social",
 		getDynamicData = function()
 			local toys = {"favorite toy", "crayons", "snacks", "playdough", "blocks"}
-			return { item = toys[math.random(#toys)], kidName = LifeEvents.randomFirstName() }
+			return { item = toys[math.random(#toys)], kidName = randomFirstName() }
 		end,
 		text = "%kidName% wants to use your %item%. Will you share?",
 		choices = {
@@ -605,7 +634,7 @@ module.events = {
 		emoji = "🎈", title = "Birthday Party!",
 		category = "social",
 		getDynamicData = function()
-			return { kidName = LifeEvents.randomFirstName() }
+			return { kidName = randomFirstName() }
 		end,
 		text = "You're invited to %kidName%'s birthday party! Cake and games await!",
 		choices = {
@@ -622,9 +651,9 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "🏠", title = "First Sleepover!",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends for sleepover invite
+		requires = hasFriend,  -- MUST have friends for sleepover invite
 		getDynamicData = function(state)
-			return { friendName = LifeEvents.getFriendName(state) }
+			return { friendName = getFriendName(state) }
 		end,
 		text = "You're invited to your first sleepover at %friendName%'s house!",
 		choices = {
@@ -873,6 +902,233 @@ module.events = {
 			{ text = "🎉 Best day ever!", effects = { Happiness = 8, Health = 2 }, resultText = "Nature is amazing! You love %season%!" },
 			{ text = "🤔 Why do seasons change?", effects = { Smarts = 6 }, resultText = "Your parents tried to explain. You sort of got it.", setFlag = "curious" },
 			{ text = "🏠 Prefer indoors", effects = { Happiness = 2 }, resultText = "Seasons are whatever. TV is always in season." },
+		},
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- MORE TODDLER ADVENTURES
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_terrible_twos",
+		minAge = 2, maxAge = 3,
+		weight = 50, oneTime = true,
+		emoji = "😤", title = "The Terrible Twos!",
+		category = "family",
+		text = "You've hit the 'terrible twos'! Everything is 'NO!' and tantrums are daily!",
+		choices = {
+			{ text = "😤 FULL TANTRUM MODE", effects = { Happiness = -4 }, resultText = "You screamed, kicked, and made everyone's life difficult. Classic toddler.", setFlag = "stubborn" },
+			{ text = "😭 Cry when told no", effects = { Happiness = -2 }, resultText = "Every 'no' broke your little heart. The world is SO unfair!" },
+			{ text = "🧸 Redirect with toys", effects = { Happiness = 4, Smarts = 2 }, resultText = "Your parents learned to distract you. Smart move, parents." },
+			{ text = "🤗 Actually pretty chill", effects = { Happiness = 5 }, resultText = "You skipped the terrible twos somehow! Parents got lucky!", setFlag = "easy_baby" },
+		},
+	},
+	
+	{
+		id = "m_imaginary_friend",
+		minAge = 3, maxAge = 5,
+		weight = 35, oneTime = true,
+		emoji = "👻", title = "Imaginary Friend!",
+		category = "social",
+		getDynamicData = function()
+			local names = {"Mr. Whiskers", "Captain Invisible", "Princess Sparkle", "Dr. Giggles", "Shadow Man", "Fluffy McFluffface"}
+			return { friendName = names[math.random(#names)] }
+		end,
+		text = "You've created an imaginary friend named %friendName%! They go everywhere with you!",
+		choices = {
+			{ text = "🤝 Best friend ever!", effects = { Happiness = 8, Smarts = 3 }, resultText = "%friendName% is your constant companion! You have the best adventures!", setFlag = "imaginative" },
+			{ text = "🎭 They have a whole backstory", effects = { Smarts = 6, Happiness = 5 }, resultText = "You created an entire world for %friendName%. Future author?", setFlags = {"imaginative", "storyteller"} },
+			{ text = "😈 They tell you to do bad things", effects = { Happiness = 2, Smarts = 2 }, resultText = "%friendName% gets blamed for everything. Very convenient.", setFlag = "sneaky" },
+			{ text = "👋 They fade away quickly", effects = { Happiness = 3 }, resultText = "%friendName% only lasted a week. Real friends are more fun." },
+		},
+	},
+	
+	{
+		id = "m_grocery_store_meltdown",
+		minAge = 2, maxAge = 4,
+		weight = 40, cooldown = 3,
+		emoji = "🛒", title = "Grocery Store Meltdown!",
+		category = "family",
+		getDynamicData = function()
+			local items = {"candy bar", "toy in the checkout aisle", "cereal with cartoon characters", "balloon", "cookie"}
+			return { item = items[math.random(#items)] }
+		end,
+		text = "You want the %item% at the store SO BAD! Mom/Dad said no!",
+		choices = {
+			{ text = "😭 FULL MELTDOWN", effects = { Happiness = -6 }, resultText = "You screamed so loud everyone stared. No %item% AND embarrassed parents.", setFlag = "tantrum_prone" },
+			{ text = "🥺 Sad puppy eyes", chanceSuccess = 0.4, effectsOnSuccess = { Happiness = 10 }, effectsOnFail = { Happiness = -3 },
+			  resultText = "IT WORKED! You got the %item%!", resultTextFail = "Didn't work this time. Still no." },
+			{ text = "😤 Negotiate", effects = { Smarts = 4, Happiness = 3 }, resultText = "You promised to be good for a week. Parents are skeptical but impressed.", setFlag = "negotiator" },
+			{ text = "🤷 Accept it", effects = { Happiness = 2, Smarts = 2 }, resultText = "You handled it maturely. Parents are impressed and relieved." },
+		},
+	},
+	
+	{
+		id = "m_potty_training",
+		minAge = 2, maxAge = 3,
+		weight = 60, oneTime = true,
+		emoji = "🚽", title = "Potty Training!",
+		category = "health",
+		text = "Time to learn to use the big kid potty! No more diapers!",
+		choices = {
+			{ text = "🎯 Master it quickly!", effects = { Smarts = 6, Happiness = 6 }, resultText = "Potty trained in just 2 weeks! Genius baby!", setFlag = "quick_learner" },
+			{ text = "😅 Some accidents...", effects = { Smarts = 3, Happiness = 2 }, resultText = "A few mishaps but you got there eventually. Normal kid stuff." },
+			{ text = "😤 Refuse to cooperate", effects = { Happiness = -3 }, resultText = "Diapers for a few more months. You were NOT ready." },
+			{ text = "🏆 Motivated by stickers", effects = { Happiness = 8, Smarts = 4 }, resultText = "The sticker chart worked! Every success = sticker = happiness!" },
+		},
+	},
+	
+	{
+		id = "m_sibling_arrives",
+		minAge = 2, maxAge = 5,
+		weight = 25, oneTime = true,
+		emoji = "👶", title = "New Sibling Arrives!",
+		category = "family",
+		text = "Mom had another baby! You're not the only child anymore!",
+		choices = {
+			{ text = "🤗 Love being big sibling!", effects = { Happiness = 8 }, resultText = "You want to help with EVERYTHING! Baby got a protector!", setFlag = "nurturing" },
+			{ text = "😤 Jealous of attention", effects = { Happiness = -6 }, resultText = "Why is everyone looking at the BABY?! You were here first!", setFlag = "jealous_sibling" },
+			{ text = "🤔 Confused but curious", effects = { Happiness = 3, Smarts = 3 }, resultText = "Why is it so small? Why does it cry? So many questions!" },
+			{ text = "😈 Poke the baby", effects = { Happiness = 2 }, resultText = "Just wanted to see what would happen. Baby cried. Oops." },
+		},
+	},
+	
+	{
+		id = "m_childhood_fear",
+		minAge = 3, maxAge = 5,
+		weight = 35, cooldown = 4,
+		emoji = "😱", title = "Childhood Fear!",
+		category = "health",
+		getDynamicData = function()
+			local fears = {"the monster under the bed", "the dark", "loud thunder", "the vacuum cleaner", "clowns", "big dogs"}
+			return { fear = fears[math.random(#fears)] }
+		end,
+		text = "You've developed a fear of %fear%! It's terrifying!",
+		choices = {
+			{ text = "😭 Avoid it at all costs", effects = { Happiness = -4 }, resultText = "You run and hide whenever %fear% is mentioned.", setFlag = "fearful" },
+			{ text = "💪 Face the fear!", effects = { Happiness = 6, Smarts = 3 }, resultText = "You conquered your fear! Brave kid!", setFlag = "brave" },
+			{ text = "🤝 Need comfort from parents", effects = { Happiness = 3 }, resultText = "Cuddles and reassurance helped. Still scary though." },
+			{ text = "🦸 Pretend to be brave", effects = { Happiness = 2, Smarts = 2 }, resultText = "Fake it till you make it! You're still scared but pretending not to be." },
+		},
+	},
+	
+	{
+		id = "m_favorite_food",
+		minAge = 2, maxAge = 4,
+		weight = 40, cooldown = 3,
+		emoji = "🍕", title = "Favorite Food Discovery!",
+		category = "health",
+		getDynamicData = function()
+			local foods = {"pizza", "mac and cheese", "chicken nuggets", "ice cream", "peanut butter and jelly", "spaghetti"}
+			return { food = foods[math.random(#foods)] }
+		end,
+		text = "You've discovered your favorite food: %food%! You want it for EVERY meal!",
+		choices = {
+			{ text = "🍕 ONLY %food%!", effects = { Happiness = 8, Health = -2 }, resultText = "You refused to eat anything else for weeks. Picky eater unlocked!", setFlag = "picky_eater" },
+			{ text = "🥗 Try other things too", effects = { Happiness = 4, Health = 3, Smarts = 2 }, resultText = "You love %food% but also try new foods. Balanced kid!" },
+			{ text = "😋 Eat SO much of it", effects = { Happiness = 6 }, resultText = "You could eat %food% forever and never get tired of it!" },
+			{ text = "🤢 Suddenly hate it", effects = { Happiness = -2 }, resultText = "You ate too much and now you hate it. Classic." },
+		},
+	},
+	
+	{
+		id = "m_first_crush",
+		minAge = 4, maxAge = 5,
+		weight = 25, oneTime = true,
+		emoji = "💕", title = "First Innocent Crush!",
+		category = "social",
+		getDynamicData = function()
+			return { crushName = randomFirstName() }
+		end,
+		text = "You think %crushName% in your class is really really special! Butterflies in your tummy!",
+		choices = {
+			{ text = "💐 Give them a flower", effects = { Happiness = 8 }, resultText = "You picked a dandelion at recess and gave it to them. So sweet!", setFlag = "romantic" },
+			{ text = "😳 Too shy to talk", effects = { Happiness = 4 }, resultText = "You just stared at them from across the room. Classic crush behavior." },
+			{ text = "🏃 Chase them at recess", effects = { Happiness = 6, Health = 2 }, resultText = "Tag! You're it! Best way to show you like someone!" },
+			{ text = "🤷 What's a crush?", effects = { Smarts = 2 }, resultText = "You don't understand these feelings yet. Just happy to play!" },
+		},
+	},
+	
+	{
+		id = "m_learning_abc",
+		minAge = 3, maxAge = 5,
+		weight = 50, oneTime = true,
+		emoji = "🔤", title = "Learning the ABC's!",
+		category = "school",
+		text = "Time to learn the alphabet! A, B, C, D, E, F, G...",
+		choices = {
+			{ text = "🎵 Sing the song!", effects = { Smarts = 8, Happiness = 6 }, resultText = "You mastered the alphabet song! L-M-N-O-P!", setFlag = "early_learner" },
+			{ text = "📚 Read along with books", effects = { Smarts = 10, Happiness = 4 }, resultText = "You started recognizing letters everywhere! Future reader!", setFlag = "bookworm" },
+			{ text = "🎨 Draw the letters", effects = { Smarts = 6, Happiness = 5, Looks = 2 }, resultText = "Your A's are wobbly but you're trying! Artistic approach!" },
+			{ text = "😴 Get bored easily", effects = { Smarts = 3, Happiness = -2 }, resultText = "Letters are boring! You just want to play!" },
+		},
+	},
+	
+	{
+		id = "m_counting_123",
+		minAge = 3, maxAge = 5,
+		weight = 50, oneTime = true,
+		emoji = "🔢", title = "Learning to Count!",
+		category = "school",
+		text = "1, 2, 3, 4, 5... Time to learn numbers!",
+		choices = {
+			{ text = "🧮 Count everything!", effects = { Smarts = 8, Happiness = 5 }, resultText = "You counted everything - fingers, toes, toys, snacks!", setFlag = "early_math" },
+			{ text = "🍎 Count with snacks", effects = { Smarts = 6, Happiness = 8 }, resultText = "Learning is more fun when goldfish crackers are involved!" },
+			{ text = "🎲 Count to 100!", effects = { Smarts = 12, Happiness = 3 }, resultText = "Most kids stop at 10. You kept going! Math genius!", setFlag = "math_talent" },
+			{ text = "🤔 Numbers are confusing", effects = { Smarts = 3 }, resultText = "What comes after 29 again? You'll get there." },
+		},
+	},
+	
+	{
+		id = "m_playground_adventure",
+		minAge = 3, maxAge = 5,
+		weight = 45, cooldown = 3,
+		emoji = "🛝", title = "Playground Adventure!",
+		category = "social",
+		getDynamicData = function()
+			local activities = {"going down the big slide", "climbing the monkey bars", "swinging super high", "playing in the sandbox", "spinning on the merry-go-round"}
+			return { activity = activities[math.random(#activities)] }
+		end,
+		text = "At the playground! You tried %activity% for the first time!",
+		choices = {
+			{ text = "🎉 SO FUN!", effects = { Happiness = 10, Health = 3 }, resultText = "Best playground day ever! You want to come back tomorrow!" },
+			{ text = "😨 A little scary...", effects = { Happiness = 4 }, resultText = "It was intimidating but you tried it anyway. Brave!" },
+			{ text = "💪 Show off to other kids", effects = { Happiness = 6, Looks = 2 }, resultText = "Look what I can do! Other kids were impressed!", setFlag = "show_off" },
+			{ text = "🤕 Minor boo-boo", effects = { Happiness = -2, Health = -2 }, resultText = "Ouch! Got a small scrape. Battle wound!" },
+		},
+	},
+	
+	{
+		id = "m_tv_show_obsession",
+		minAge = 2, maxAge = 5,
+		weight = 40, cooldown = 3,
+		emoji = "📺", title = "Favorite TV Show!",
+		category = "social",
+		getDynamicData = function()
+			local shows = {"Bluey", "Peppa Pig", "Paw Patrol", "Cocomelon", "Sesame Street", "SpongeBob"}
+			return { show = shows[math.random(#shows)] }
+		end,
+		text = "You discovered %show% and you're OBSESSED! You want to watch it 24/7!",
+		choices = {
+			{ text = "📺 Watch on repeat", effects = { Happiness = 8 }, resultText = "You've seen every episode 47 times. Still not bored.", setFlag = "screen_time" },
+			{ text = "🎭 Act out the episodes", effects = { Happiness = 6, Smarts = 4 }, resultText = "You became every character. Impressive memory!", setFlag = "imaginative" },
+			{ text = "🎵 Sing the theme song", effects = { Happiness = 7 }, resultText = "You sing it ALL the time. Parents going slightly crazy." },
+			{ text = "🛒 Need ALL the merchandise", effects = { Happiness = 5 }, resultText = "Your room is now a %show% shrine. Toys, posters, everything!" },
+		},
+	},
+	
+	{
+		id = "m_naptime_resistance",
+		minAge = 2, maxAge = 4,
+		weight = 40, cooldown = 2,
+		emoji = "😴", title = "Naptime Battle!",
+		category = "health",
+		text = "It's naptime but you are NOT tired! So much energy!",
+		choices = {
+			{ text = "😤 Refuse to sleep", effects = { Happiness = 4, Health = -3 }, resultText = "You fought sleep for an hour then crashed HARD." },
+			{ text = "😴 Actually tired...", effects = { Happiness = 2, Health = 4 }, resultText = "Despite protests, you fell asleep in 5 minutes. Needed it." },
+			{ text = "🎭 Pretend to sleep", effects = { Happiness = 5, Smarts = 3 }, resultText = "Sneaky! Parents thought you were asleep. Victory!", setFlag = "sneaky" },
+			{ text = "📖 Quiet time instead", effects = { Happiness = 4, Smarts = 3, Health = 2 }, resultText = "Looked at picture books quietly. Compromise achieved!" },
 		},
 	},
 }

@@ -1,756 +1,625 @@
 -- LifeEvents/init.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- MODULAR EVENT SYSTEM - Central Loader
+-- GODLY LIFE EVENTS SYSTEM - Central Hub
 -- ═══════════════════════════════════════════════════════════════════════════════
--- This module loads all event modules and provides a unified event pool
--- Designed to scale to 30,000+ events without becoming spaghetti code
 --
--- ARCHITECTURE:
--- Each event module returns a table of events organized by category
--- This loader merges all modules and provides validation
+-- This is the main entry point for the event system. It:
+-- - Loads all event modules
+-- - Provides access to CareerSystem and EventEngine
+-- - Normalizes legacy events to the new schema
+-- - Exposes helper functions for common operations
 --
--- TO ADD NEW EVENTS:
--- 1. Create a new .lua file in this folder (e.g., career_sports.lua)
--- 2. Export your events table
--- 3. Add require() below in MODULE_LIST
--- 4. Events will automatically be loaded and validated
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = {}
 
-----------------------------------------------------------------------
--- CONFIG
-----------------------------------------------------------------------
+-- ═══════════════════════════════════════════════════════════════
+-- SAFE MODULE LOADING
+-- ═══════════════════════════════════════════════════════════════
 
-local DEBUG_MODE = true -- Set to true for verbose loading logs
-local VALIDATE_ON_LOAD = true -- Validate events when loading (catches errors early)
-
--- Debug info about script location
-print("[LifeEvents] ═══════════════════════════════════════════")
-print("[LifeEvents] Script:", script:GetFullName())
-print("[LifeEvents] Parent (container folder):", script.Parent and script.Parent:GetFullName() or "nil")
-print("[LifeEvents] Script children:", #script:GetChildren())
-if script.Parent then
-	print("[LifeEvents] Sibling modules in folder:", #script.Parent:GetChildren() - 1) -- -1 for init itself
-	if DEBUG_MODE then
-		for _, sibling in ipairs(script.Parent:GetChildren()) do
-			if sibling ~= script then
-				print("[LifeEvents]   -", sibling.Name, "(" .. sibling.ClassName .. ")")
-			end
-		end
-	end
-end
-
-----------------------------------------------------------------------
--- NAME & DATA GENERATORS (Shared across all event modules)
-----------------------------------------------------------------------
-
-local MaleNames = {
-	"James","Michael","David","Chris","Daniel","Matt","Jake","Ryan","Tyler","Brandon",
-	"Kevin","Justin","Josh","Nick","Alex","Brian","Eric","Andrew","Sean","Kyle",
-	"Adam","Aaron","Ethan","Nathan","Zach","Dylan","Connor","Mason","Logan","Lucas",
-	"Marcus","Darius","Jerome","DeShawn","Jamal","Carlos","Miguel","Antonio","Roberto",
-	"Giovanni","Vladimir","Dmitri","Kenji","Hiroshi","Wei","Jin","Ahmed","Omar","Raj",
-	"Vikram","Liam","Noah","Oliver","William","Henry","Sebastian","Jack","Aiden","Owen",
-	"Samuel","Benjamin","Theodore","Leo","Finn","Caleb","Max","Jasper","Felix"
-}
-
-local FemaleNames = {
-	"Emma","Sophia","Olivia","Ava","Isabella","Mia","Emily","Abigail","Madison",
-	"Elizabeth","Ella","Avery","Chloe","Sofia","Grace","Lily","Hannah","Aria","Zoe",
-	"Riley","Nora","Scarlett","Stella","Luna","Hazel","Jasmine","Aaliyah","Destiny",
-	"Diamond","Keisha","Maria","Carmen","Rosa","Valentina","Yuki","Mei","Sakura",
-	"Priya","Ananya","Fatima","Layla","Charlotte","Amelia","Harper","Evelyn","Penelope",
-	"Camila","Eleanor","Violet"
-}
-
-local LastNames = {
-	"Smith","Johnson","Williams","Brown","Jones","Garcia","Miller","Davis","Rodriguez",
-	"Martinez","Anderson","Taylor","Thomas","Moore","Jackson","Martin","Lee","Thompson",
-	"White","Harris","Clark","Lewis","Robinson","Walker","Young","King","Wright","Scott",
-	"Green","Baker","Adams","Nelson","Hill","Mitchell","Roberts","Campbell","Phillips",
-	"Evans","Turner","Torres","Parker","Collins","Edwards","Stewart","Morris","Murphy",
-	"Rivera","Cook","Rogers","Morgan","Peterson","Cooper","Reed","Bailey","Bell","Gomez",
-	"Kelly","Howard","Ward","Cox","Diaz","Richardson","Wood","Watson","Brooks","Bennett",
-	"Gray","Sanders","Price","Hughes","Fitzgerald","O'Brien","McCarthy","Sullivan","Kim",
-	"Park","Chen","Wang","Nakamura","Tanaka","Patel","Singh","Khan"
-}
-
--- Shared data pools
-local Schools = {"Lincoln High","Washington Academy","Jefferson High","Roosevelt Prep","Kennedy School","Franklin High","Madison Prep","Hamilton Academy"}
-local Universities = {"Harvard","Yale","Stanford","MIT","Princeton","Columbia","State University","City College","Berkeley","UCLA","NYU","Duke","Northwestern"}
-local Colleges = {"Community College","Technical Institute","State College","City Community College"}
-local Companies = {"TechCorp","MegaCorp","GlobalTech","InnovateCo","FutureTech","DataSys","CyberDyn","NexGen","Quantum Industries","Stellar Corp"}
-local Cities = {"New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","Seattle","Boston","Miami","Denver","Atlanta"}
-local Countries = {"France","Japan","Italy","Australia","Canada","UK","Germany","Spain","Brazil","Mexico","Thailand","Greece","Iceland","Norway"}
-local RacingTeams = {"Red Bull Racing","Ferrari","Mercedes","McLaren","Alpine","Thunder Racing","Lightning Motorsport","Velocity Racing"}
-local HackerGroups = {"Anonymous","LulzSec","Zero Day Collective","Binary Brotherhood","Shadow Net","Cyber Legion","Ghost Protocol"}
-local ArtStyles = {"abstract","impressionist","surrealist","pop art","contemporary","street art","digital","minimalist","expressionist"}
-local MusicGenres = {"pop","rock","hip-hop","electronic","R&B","country","jazz","classical","indie","metal"}
-local Sports = {"basketball","football","baseball","soccer","tennis","golf","swimming","track","hockey","volleyball"}
-local Hobbies = {"painting","gaming","reading","hiking","cooking","photography","gardening","yoga","dancing","writing"}
-
-----------------------------------------------------------------------
--- GENERATOR FUNCTIONS (Exported for use in event modules)
-----------------------------------------------------------------------
-
-function LifeEvents.randomMaleName()
-	return MaleNames[math.random(#MaleNames)] .. " " .. LastNames[math.random(#LastNames)]
-end
-
-function LifeEvents.randomFemaleName()
-	return FemaleNames[math.random(#FemaleNames)] .. " " .. LastNames[math.random(#LastNames)]
-end
-
-function LifeEvents.randomName()
-	return math.random(2) == 1 and LifeEvents.randomMaleName() or LifeEvents.randomFemaleName()
-end
-
-function LifeEvents.randomFirstName()
-	local names = math.random(2) == 1 and MaleNames or FemaleNames
-	return names[math.random(#names)]
-end
-
-function LifeEvents.randomLastName()
-	return LastNames[math.random(#LastNames)]
-end
-
-function LifeEvents.randomSchool()
-	return Schools[math.random(#Schools)]
-end
-
-function LifeEvents.randomUniversity()
-	return Universities[math.random(#Universities)]
-end
-
-function LifeEvents.randomCollege()
-	return Colleges[math.random(#Colleges)]
-end
-
-function LifeEvents.randomCompany()
-	return Companies[math.random(#Companies)]
-end
-
-function LifeEvents.randomCity()
-	return Cities[math.random(#Cities)]
-end
-
-function LifeEvents.randomCountry()
-	return Countries[math.random(#Countries)]
-end
-
-function LifeEvents.randomRacingTeam()
-	return RacingTeams[math.random(#RacingTeams)]
-end
-
-function LifeEvents.randomHackerGroup()
-	return HackerGroups[math.random(#HackerGroups)]
-end
-
-function LifeEvents.randomArtStyle()
-	return ArtStyles[math.random(#ArtStyles)]
-end
-
-function LifeEvents.randomMusicGenre()
-	return MusicGenres[math.random(#MusicGenres)]
-end
-
-function LifeEvents.randomSport()
-	return Sports[math.random(#Sports)]
-end
-
-function LifeEvents.randomHobby()
-	return Hobbies[math.random(#Hobbies)]
-end
-
--- Money formatting
-function LifeEvents.formatMoney(amount)
-	if not amount then return "$0" end
-	amount = math.floor(amount)
-	if amount >= 1000000000 then
-		return string.format("$%.1fB", amount / 1000000000)
-	elseif amount >= 1000000 then
-		return string.format("$%.1fM", amount / 1000000)
-	elseif amount >= 1000 then
-		return string.format("$%.1fK", amount / 1000)
-	else
-		return "$" .. tostring(amount)
-	end
-end
-
--- Random range helper
-function LifeEvents.randomRange(min, max)
-	return math.random(min, max)
-end
-
--- Weighted random choice
-function LifeEvents.weightedRandom(options)
-	-- options = { {value = x, weight = n}, ... }
-	local totalWeight = 0
-	for _, opt in ipairs(options) do
-		totalWeight = totalWeight + (opt.weight or 1)
-	end
+local function safeRequire(moduleName)
+	-- script.Parent is the LifeEvents folder - siblings of init, not children
+	local container = script.Parent
+	local module = container:FindFirstChild(moduleName)
 	
-	local roll = math.random() * totalWeight
-	local cumulative = 0
-	
-	for _, opt in ipairs(options) do
-		cumulative = cumulative + (opt.weight or 1)
-		if roll <= cumulative then
-			return opt.value
-		end
-	end
-	
-	return options[#options].value
-end
-
-----------------------------------------------------------------------
--- CAREER CHECK HELPERS (Exported)
-----------------------------------------------------------------------
-
-function LifeEvents.hasNoCareer(state)
-	local f = state.Flags or {}
-	return not (f.teacher or f.racer or f.artist or f.hacker_career or f.gang_member or f.president or f.doctor or f.lawyer or f.athlete)
-end
-
-function LifeEvents.hasNoCriminalRecord(state)
-	local f = state.Flags or {}
-	return not (f.arrested or f.in_prison or f.gang_member or f.ex_convict)
-end
-
-function LifeEvents.isInPrison(state)
-	local f = state.Flags or {}
-	return f.in_prison or f.incarcerated
-end
-
-function LifeEvents.hasJob(state)
-	-- Check ExtendedState for current job (would need to be passed in)
-	local f = state.Flags or {}
-	return f.employed or f.has_job
-end
-
-function LifeEvents.isMarried(state)
-	local f = state.Flags or {}
-	return f.married
-end
-
-function LifeEvents.hasChildren(state)
-	local f = state.Flags or {}
-	return f.has_children or f.parent
-end
-
-----------------------------------------------------------------------
--- RELATIONSHIP CHECK HELPERS (For friend/romance event gating)
-----------------------------------------------------------------------
-
--- Check if player has any friends (checks flags AND actual relationships)
-function LifeEvents.hasFriend(state)
-	local f = state.Flags or {}
-	-- Check flags first
-	if f.has_best_friend or f.has_friend or f.social_butterfly or f.friendly or f.has_friend_group then
-		return true
-	end
-	-- Check actual relationships (flat dictionary format)
-	if state.Relationships then
-		for id, rel in pairs(state.Relationships) do
-			if type(rel) == "table" and rel.type == "friend" and rel.alive ~= false then
-				return true
-			end
-		end
-	end
-	return false
-end
-
--- Check if player has a romantic partner
-function LifeEvents.hasPartner(state)
-	local f = state.Flags or {}
-	if f.married or f.engaged or f.in_relationship or f.dating then
-		return true
-	end
-	if state.Relationships then
-		for id, rel in pairs(state.Relationships) do
-			if type(rel) == "table" and rel.type == "romance" and rel.alive ~= false then
-				return true
-			end
-		end
-	end
-	return false
-end
-
--- Get a friend's name from relationships or generate random
-function LifeEvents.getFriendName(state)
-	if state.Relationships then
-		local friends = {}
-		for id, rel in pairs(state.Relationships) do
-			if type(rel) == "table" and rel.type == "friend" and rel.alive ~= false and rel.name then
-				table.insert(friends, rel.name)
-			end
-		end
-		if #friends > 0 then
-			return friends[math.random(#friends)]
-		end
-	end
-	return LifeEvents.randomFirstName()
-end
-
--- Get a partner's name from relationships or generate random
-function LifeEvents.getPartnerName(state)
-	if state.Relationships then
-		for id, rel in pairs(state.Relationships) do
-			if type(rel) == "table" and rel.type == "romance" and rel.alive ~= false and rel.name then
-				return rel.name
-			end
-		end
-	end
-	return LifeEvents.randomFirstName()
-end
-
-----------------------------------------------------------------------
--- EVENT TEMPLATE HELPERS (Create common event patterns)
-----------------------------------------------------------------------
-
--- Create a simple decision event
-function LifeEvents.createDecisionEvent(config)
-	return {
-		id = config.id,
-		minAge = config.minAge or 0,
-		maxAge = config.maxAge or 120,
-		weight = config.weight or 10,
-		emoji = config.emoji or "❓",
-		title = config.title,
-		text = config.text,
-		category = config.category or "misc",
-		oneTime = config.oneTime or false,
-		cooldown = config.cooldown,
-		requiresFlag = config.requiresFlag,
-		blockIfFlag = config.blockIfFlag,
-		getDynamicData = config.getDynamicData,
-		choices = config.choices,
-	}
-end
-
--- Create a milestone event (high weight, one-time)
-function LifeEvents.createMilestoneEvent(config)
-	local event = LifeEvents.createDecisionEvent(config)
-	event.milestone = true
-	event.oneTime = true
-	event.weight = config.weight or 100
-	return event
-end
-
--- Create a repeatable event (can happen multiple times with cooldown)
-function LifeEvents.createRepeatableEvent(config)
-	local event = LifeEvents.createDecisionEvent(config)
-	event.oneTime = false
-	event.cooldown = config.cooldown or 3
-	return event
-end
-
--- Create a career path event
-function LifeEvents.createCareerEvent(config)
-	local event = LifeEvents.createDecisionEvent(config)
-	event.category = config.category or "work"
-	event.requiresFlag = config.requiresFlag
-	return event
-end
-
--- Create a choice with common effects structure
-function LifeEvents.createChoice(text, effects, resultText, flags)
-	local choice = {
-		text = text,
-		effects = effects or {},
-		resultText = resultText,
-	}
-	
-	if flags then
-		if flags.set then choice.setFlag = flags.set end
-		if flags.setMultiple then choice.setFlags = flags.setMultiple end
-		if flags.clear then choice.clearFlag = flags.clear end
-		if flags.clearMultiple then choice.clearFlags = flags.clearMultiple end
-	end
-	
-	return choice
-end
-
-----------------------------------------------------------------------
--- MODULE LOADING SYSTEM
-----------------------------------------------------------------------
-
--- List of all event modules to load
--- Add new modules here as they're created
-local MODULE_LIST = {
-	-- ═══════════════════════════════════════════════════════════════
-	-- CORE LIFE STAGES (Massive expansion - 700+ events total)
-	-- ═══════════════════════════════════════════════════════════════
-	"child_0_5",          -- Ages 0-5: Birth, infant, toddler, preschool (100+ events)
-	"child_6_12",         -- Ages 6-12: Elementary school years (120+ events)
-	"teen_13_17",         -- Ages 13-17: Middle school & high school (130+ events)
-	"young_adult_18_35",  -- Ages 18-35: College, career start, relationships (140+ events)
-	"middle_aged_36_55",  -- Ages 36-55: Career peak, family, midlife (100+ events)
-	"senior_55_plus",     -- Ages 55+: Retirement, golden years (100+ events)
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- CAREER PATHS (Specialized events)
-	-- ═══════════════════════════════════════════════════════════════
-	"career_criminal",    -- Crime, gangs, prison life
-	"career_political",   -- Politics, elections, government
-	"career_arts",        -- Art, music, entertainment, fame
-	"career_tech",        -- Technology, hacking, startups
-	"career_sports",      -- Athletics, racing, competition
-	"career_business",    -- Business, entrepreneurship
-	"career_medical",     -- Doctor, nurse, healthcare
-	"career_education",   -- Teacher, professor, academia
-	"career_legal",       -- Lawyer, judge, law enforcement
-	"career_military",    -- Military, veteran
-	
-	-- ═══════════════════════════════════════════════════════════════
-	-- LIFE THEMES
-	-- ═══════════════════════════════════════════════════════════════
-	"relationships",      -- Romance, marriage, family, friends
-	"health",             -- Illness, injury, wellness
-	"wealth",             -- Money, investments, inheritance
-	"prison",             -- Prison-specific events
-	"random_encounters",  -- Random life events
-	"disasters",          -- Natural disasters, accidents
-	"fame",               -- Celebrity, social media, influencer
-}
-
--- Storage for loaded events
-local allEvents = {}
-local eventIndex = {} -- Quick lookup by ID
-local moduleStats = {} -- Track events per module
-
--- Load a single module safely
-local function loadModule(moduleName)
-	-- Try multiple ways to find the module
-	local moduleScript = nil
-	
-	-- In Roblox, when init.lua becomes a ModuleScript named "init" inside a folder,
-	-- script refers to the init ModuleScript, and script.Parent is the folder.
-	-- The sibling modules are children of script.Parent, not script.
-	
-	local container = script.Parent -- This is the LifeEvents folder
-	
-	-- Method 1: FindFirstChild on parent folder (siblings of init)
-	if container then
-		moduleScript = container:FindFirstChild(moduleName)
-	end
-	
-	-- Method 2: WaitForChild on parent folder with timeout
-	if not moduleScript and container then
-		local success1, child = pcall(function()
-			return container:WaitForChild(moduleName, 2)
-		end)
-		if success1 and child then
-			moduleScript = child
-		end
-	end
-	
-	-- Method 3: Check if script itself has children (for different folder structures)
-	if not moduleScript then
-		moduleScript = script:FindFirstChild(moduleName)
-	end
-	
-	-- Method 4: Look in ReplicatedStorage.LifeEvents directly
-	if not moduleScript then
-		local success, result = pcall(function()
-			local rs = game:GetService("ReplicatedStorage")
-			local lifeEventsFolder = rs:FindFirstChild("LifeEvents")
-			if lifeEventsFolder then
-				return lifeEventsFolder:FindFirstChild(moduleName)
-			end
-			return nil
-		end)
-		if success and result then
-			moduleScript = result
-		end
-	end
-	
-	if not moduleScript then
-		if DEBUG_MODE then
-			warn("[LifeEvents] Module not found:", moduleName, "- looked in:", container and container:GetFullName() or "nil")
-		end
+	if not module then
+		warn("[LifeEvents] Module not found:", moduleName, "in", container:GetFullName())
 		return nil
 	end
-	
-	-- Make sure it's a ModuleScript before requiring
-	if not moduleScript:IsA("ModuleScript") then
-		if DEBUG_MODE then
-			warn("[LifeEvents] Found", moduleName, "but it's a", moduleScript.ClassName, "not a ModuleScript")
-		end
-		return nil
-	end
-	
-	-- Require the found module
+
 	local success, result = pcall(function()
-		return require(moduleScript)
+		return require(module)
 	end)
-	
-	if not success then
-		warn("[LifeEvents] Failed to require module:", moduleName, "-", result)
+
+	if success then
+		print("[LifeEvents] ✅ Loaded:", moduleName)
+		return result
+	else
+		warn("[LifeEvents] ❌ Failed to load", moduleName, ":", result)
 		return nil
 	end
-	
-	return result
 end
 
--- Validate a single event
-local function validateEvent(event, moduleName)
-	local errors = {}
+-- Load core systems
+local CareerLibrary = safeRequire("CareerLibrary") or { getAllCareers = function() return {} end, getCareer = function() return nil end }
+local CareerSystem = safeRequire("CareerSystem") or {}
+local EventEngine = safeRequire("EventEngine") or {}
+
+-- Export systems
+LifeEvents.CareerLibrary = CareerLibrary
+LifeEvents.CareerSystem = CareerSystem
+LifeEvents.EventEngine = EventEngine
+
+-- ═══════════════════════════════════════════════════════════════
+-- MASTER EVENT REGISTRY
+-- ═══════════════════════════════════════════════════════════════
+
+LifeEvents.AllEvents = {}
+LifeEvents.EventsById = {}
+
+-- ═══════════════════════════════════════════════════════════════
+-- LEGACY EVENT NORMALIZATION
+-- ═══════════════════════════════════════════════════════════════
+
+-- Convert old-style events to new unified schema
+local function normalizeEvent(event)
+	-- If already has conditions table, minimal normalization
+	if event.conditions then
+		-- Ensure id exists
+		if not event.id then
+			event.id = event.title and string.gsub(string.lower(event.title), " ", "_") or ("event_" .. math.random(10000, 99999))
+		end
+		return event
+	end
 	
-	-- Required fields
-	if not event.id then
-		table.insert(errors, "Missing 'id' field")
+	-- Build conditions from legacy fields
+	local conditions = {
+		minAge = event.minAge,
+		maxAge = event.maxAge,
+		requiredAllFlags = nil,
+		requiredAnyFlags = event.requiresAnyFlag,
+		blockedFlags = nil,
+		requiredCareerId = event.requiredCareerId,
+		requiredCareerMinTier = event.requiredCareerMinTier,
+		requiredEducation = event.requiresEducation,
+		minMoney = event.minMoney,  -- Money requirements
+		minStats = event.minStats,   -- Stat requirements
+		custom = event.requires,     -- Legacy custom function
+	}
+	
+	-- Handle single flags (convert to arrays)
+	if event.requiresFlag then
+		conditions.requiredAllFlags = conditions.requiredAllFlags or {}
+		table.insert(conditions.requiredAllFlags, event.requiresFlag)
 	end
-	if not event.text and not event.title then
-		table.insert(errors, "Missing 'text' or 'title' field")
+	if event.requiresFlag2 then
+		conditions.requiredAllFlags = conditions.requiredAllFlags or {}
+		table.insert(conditions.requiredAllFlags, event.requiresFlag2)
 	end
-	if not event.choices or #event.choices == 0 then
-		table.insert(errors, "Missing or empty 'choices' array")
+	if event.blockIfFlag then
+		conditions.blockedFlags = conditions.blockedFlags or {}
+		table.insert(conditions.blockedFlags, event.blockIfFlag)
 	end
 	
-	-- Type checks
-	if event.minAge and type(event.minAge) ~= "number" then
-		table.insert(errors, "'minAge' must be a number")
-	end
-	if event.maxAge and type(event.maxAge) ~= "number" then
-		table.insert(errors, "'maxAge' must be a number")
-	end
-	if event.weight and type(event.weight) ~= "number" then
-		table.insert(errors, "'weight' must be a number")
-	end
+	-- Build normalized event
+	local normalized = {
+		id = event.id or (event.title and string.gsub(string.lower(event.title), " ", "_")) or ("event_" .. math.random(10000, 99999)),
+		emoji = event.emoji,
+		title = event.title or "Life Event",
+		category = event.category or "life",
+		tags = event.tags,
+		
+		weight = event.weight,
+		cooldownYears = event.cooldown,
+		cooldown = event.cooldown, -- Keep legacy field for LifeStageSystem
+		oneTime = event.oneTime,
+		milestone = event.milestone,
+		
+		chainId = event.chainId,
+		chainStep = event.chainStep,
+		
+		-- Keep these at top level for LifeStageSystem compatibility
+		requires = event.requires,
+		minMoney = event.minMoney,
+		minStats = event.minStats,
+		requiresFlag = event.requiresFlag,
+		requiresFlag2 = event.requiresFlag2,
+		requiresAnyFlag = event.requiresAnyFlag,
+		blockIfFlag = event.blockIfFlag,
+		blockIfFlag2 = event.blockIfFlag2,
+		
+		conditions = conditions,
+		
+		getDynamicData = event.getDynamicData,
+		getDynamicEmoji = event.getDynamicEmoji,
+		text = event.text or "",
+		
+		choices = event.choices or {},
+	}
 	
-	-- Age range validation
-	if event.minAge and event.maxAge and event.minAge > event.maxAge then
-		table.insert(errors, "minAge > maxAge")
-	end
-	
-	-- Validate choices
-	if event.choices then
-		for i, choice in ipairs(event.choices) do
-			if not choice.text then
-				table.insert(errors, "Choice " .. i .. " missing 'text'")
+	-- Normalize choices (convert legacy setFlag/effects to new format)
+	for i, choice in ipairs(normalized.choices) do
+		if not choice.flags then
+			choice.flags = {set = {}, clear = {}}
+			
+			if choice.setFlag then
+				table.insert(choice.flags.set, choice.setFlag)
+			end
+			if choice.setFlags then
+				for _, flag in ipairs(choice.setFlags) do
+					table.insert(choice.flags.set, flag)
+				end
+			end
+			if choice.clearFlag then
+				table.insert(choice.flags.clear, choice.clearFlag)
 			end
 		end
 	end
 	
-	-- Check for duplicate ID
-	if event.id and eventIndex[event.id] then
-		table.insert(errors, "Duplicate event ID: " .. event.id .. " (already in " .. eventIndex[event.id] .. ")")
-	end
-	
-	return errors
+	return normalized
 end
+
+-- ═══════════════════════════════════════════════════════════════
+-- EVENT LOADING
+-- ═══════════════════════════════════════════════════════════════
+
+-- List of event modules to load
+local EVENT_MODULES = {
+	-- Age-based events
+	"child_0_5",
+	"child_6_12",
+	"teen_13_17",
+	"young_adult_18_35",
+	"middle_aged_36_55",
+	"senior_55_plus",
+	
+	-- Category events
+	"health",
+	"relationships",
+	"wealth",
+	"fame",
+	"disasters",
+	"random_encounters",
+	"prison",
+	
+	-- Career events
+	"career_tech",
+	"career_medical",
+	"career_legal",
+	"career_business",
+	"career_criminal",
+	"career_arts",
+	"career_sports",
+	"career_military",
+	"career_political",
+	"career_education",
+}
 
 -- Load all event modules
-function LifeEvents.loadAllModules()
-	allEvents = {}
-	eventIndex = {}
-	moduleStats = {}
-	
-	local totalEvents = 0
-	local totalErrors = 0
-	
-	print("[LifeEvents] ═══════════════════════════════════════════")
-	print("[LifeEvents] Loading event modules...")
-	print("[LifeEvents] Available children of script:")
-	for _, child in ipairs(script:GetChildren()) do
-		print("  -", child.Name, "(" .. child.ClassName .. ")")
-	end
-	
-	for _, moduleName in ipairs(MODULE_LIST) do
-		local moduleData = loadModule(moduleName)
-		
-		if moduleData and moduleData.events then
-			local moduleEventCount = 0
-			local moduleErrors = 0
-			
-			for _, event in ipairs(moduleData.events) do
-				-- Validate if enabled
-				if VALIDATE_ON_LOAD then
-					local errors = validateEvent(event, moduleName)
-					if #errors > 0 then
-						moduleErrors = moduleErrors + 1
-						totalErrors = totalErrors + 1
-						warn("[LifeEvents] Event validation failed in", moduleName, ":", event.id or "UNKNOWN")
-						for _, err in ipairs(errors) do
-							warn("  - " .. err)
-						end
+local function loadEventModules()
+	local loaded = 0
+	local failed = 0
+	local container = script.Parent -- LifeEvents folder, NOT script itself
+
+	for _, moduleName in ipairs(EVENT_MODULES) do
+		local success, result = pcall(function()
+			local moduleScript = container:FindFirstChild(moduleName)
+			if moduleScript and moduleScript:IsA("ModuleScript") then
+				local events = require(moduleScript)
+
+				-- Handle different return formats
+				local eventList = events
+				if type(events) == "table" then
+					if events.events then
+						eventList = events.events
+					elseif events.Events then
+						eventList = events.Events
 					end
 				end
-				
-				-- Add event to pool (even if has errors, for debugging)
-				table.insert(allEvents, event)
-				if event.id then
-					eventIndex[event.id] = moduleName
+
+				if type(eventList) == "table" then
+					local moduleEventCount = 0
+					for _, event in ipairs(eventList) do
+						local normalized = normalizeEvent(event)
+
+						-- Validate event has required fields
+						if normalized.id and normalized.text and normalized.choices then
+							table.insert(LifeEvents.AllEvents, normalized)
+							LifeEvents.EventsById[normalized.id] = normalized
+							loaded = loaded + 1
+							moduleEventCount = moduleEventCount + 1
+						else
+							warn("[LifeEvents] Invalid event in " .. moduleName .. ":", normalized.id or "no id")
+						end
+					end
+					print("[LifeEvents] 📦", moduleName, "→", moduleEventCount, "events")
+				else
+					warn("[LifeEvents] Module", moduleName, "did not return a table")
 				end
-				moduleEventCount = moduleEventCount + 1
+			else
+				warn("[LifeEvents] Module not found:", moduleName)
 			end
-			
-			moduleStats[moduleName] = {
-				count = moduleEventCount,
-				errors = moduleErrors,
-			}
-			
-			totalEvents = totalEvents + moduleEventCount
-			
-			if DEBUG_MODE then
-				print("[LifeEvents] ✓ Loaded", moduleName, ":", moduleEventCount, "events", moduleErrors > 0 and ("(" .. moduleErrors .. " errors)") or "")
-			end
-		else
-			if DEBUG_MODE then
-				print("[LifeEvents] ✗ Skipped", moduleName, "(not found or empty)")
-			end
+		end)
+
+		if not success then
+			warn("[LifeEvents] ❌ Failed to load module:", moduleName, result)
+			failed = failed + 1
 		end
 	end
-	
-	print("[LifeEvents] ═══════════════════════════════════════════")
-	print("[LifeEvents] ✅ Loaded", totalEvents, "events from", #MODULE_LIST, "modules")
-	if totalErrors > 0 then
-		warn("[LifeEvents] ⚠️", totalErrors, "validation errors found!")
-	end
-	print("[LifeEvents] ═══════════════════════════════════════════")
-	
-	return allEvents
+
+	print("[LifeEvents] ═══════════════════════════════════════")
+	print("[LifeEvents] ✅ Loaded", loaded, "events from", #EVENT_MODULES - failed, "modules")
+	print("[LifeEvents] ═══════════════════════════════════════")
+	return loaded
 end
 
--- Get all events (load if needed)
-function LifeEvents.getEvents()
-	if #allEvents == 0 then
-		LifeEvents.loadAllModules()
-	end
-	return allEvents
+-- ═══════════════════════════════════════════════════════════════
+-- PUBLIC API
+-- ═══════════════════════════════════════════════════════════════
+
+-- Initialize the event system
+function LifeEvents.initialize()
+	LifeEvents.AllEvents = {}
+	LifeEvents.EventsById = {}
+	return loadEventModules()
+end
+
+-- Get all loaded events
+function LifeEvents.getAllEvents()
+	return LifeEvents.AllEvents
 end
 
 -- Get event by ID
-function LifeEvents.getEventById(id)
-	if #allEvents == 0 then
-		LifeEvents.loadAllModules()
-	end
-	
-	for _, event in ipairs(allEvents) do
-		if event.id == id then
-			return event
+function LifeEvents.getEvent(eventId)
+	return LifeEvents.EventsById[eventId]
+end
+
+-- Get events for a specific age range
+function LifeEvents.getEventsForAge(age)
+	local events = {}
+	for _, event in ipairs(LifeEvents.AllEvents) do
+		local minAge = event.conditions and event.conditions.minAge or 0
+		local maxAge = event.conditions and event.conditions.maxAge or 999
+		if age >= minAge and age <= maxAge then
+			table.insert(events, event)
 		end
 	end
-	
-	return nil
+	return events
 end
 
 -- Get events by category
 function LifeEvents.getEventsByCategory(category)
-	if #allEvents == 0 then
-		LifeEvents.loadAllModules()
-	end
-	
-	local filtered = {}
-	for _, event in ipairs(allEvents) do
+	local events = {}
+	for _, event in ipairs(LifeEvents.AllEvents) do
 		if event.category == category then
-			table.insert(filtered, event)
+			table.insert(events, event)
 		end
 	end
-	return filtered
+	return events
 end
 
--- Get events for age range
-function LifeEvents.getEventsForAge(age)
-	if #allEvents == 0 then
-		LifeEvents.loadAllModules()
-	end
-	
-	local filtered = {}
-	for _, event in ipairs(allEvents) do
-		local minAge = event.minAge or 0
-		local maxAge = event.maxAge or 120
-		if age >= minAge and age <= maxAge then
-			table.insert(filtered, event)
-		end
-	end
-	return filtered
-end
-
--- Get loading statistics
-function LifeEvents.getStats()
-	return {
-		totalEvents = #allEvents,
-		moduleStats = moduleStats,
-		modulesLoaded = #MODULE_LIST,
-	}
-end
-
--- Reload all modules (for development/hot reload)
-function LifeEvents.reload()
-	print("[LifeEvents] Reloading all modules...")
-	return LifeEvents.loadAllModules()
-end
-
--- Validate all events (comprehensive check)
-function LifeEvents.validateAll()
-	if #allEvents == 0 then
-		LifeEvents.loadAllModules()
-	end
-	
-	local errors = {}
-	local seenIds = {}
-	
-	for _, event in ipairs(allEvents) do
-		-- Check duplicates
-		if event.id then
-			if seenIds[event.id] then
-				table.insert(errors, {
-					type = "duplicate_id",
-					id = event.id,
-					message = "Duplicate event ID found",
-				})
-			else
-				seenIds[event.id] = true
+-- Get events by tag
+function LifeEvents.getEventsByTag(tag)
+	local events = {}
+	for _, event in ipairs(LifeEvents.AllEvents) do
+		if event.tags then
+			for _, eventTag in ipairs(event.tags) do
+				if eventTag == tag then
+					table.insert(events, event)
+					break
+				end
 			end
 		end
-		
-		-- Validate structure
-		local eventErrors = validateEvent(event, "unknown")
-		for _, err in ipairs(eventErrors) do
-			table.insert(errors, {
-				type = "validation",
-				id = event.id or "UNKNOWN",
-				message = err,
-			})
+	end
+	return events
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- EVENT SELECTION (Delegates to EventEngine)
+-- ═══════════════════════════════════════════════════════════════
+
+-- Check if an event is eligible for a player
+function LifeEvents.checkConditions(event, state)
+	return EventEngine.isEligible(event, state)
+end
+
+-- Select events for a year
+function LifeEvents.selectEventsForYear(state, config)
+	return EventEngine.selectYearEvents(LifeEvents.AllEvents, state, config)
+end
+
+-- Select a single random event
+function LifeEvents.selectRandomEvent(state)
+	local eligible = {}
+	for _, event in ipairs(LifeEvents.AllEvents) do
+		if EventEngine.isEligible(event, state) then
+			table.insert(eligible, event)
 		end
 	end
 	
-	return {
-		valid = #errors == 0,
-		errorCount = #errors,
-		errors = errors,
-	}
+	if #eligible == 0 then return nil end
+	
+	return EventEngine.weightedSelect(eligible, state)
 end
 
-----------------------------------------------------------------------
--- LEGACY COMPATIBILITY
-----------------------------------------------------------------------
+-- ═══════════════════════════════════════════════════════════════
+-- EVENT PROCESSING (Delegates to EventEngine)
+-- ═══════════════════════════════════════════════════════════════
 
--- For compatibility with existing EventLibrary.lua
--- Returns events in the same format the old system expected
-LifeEvents.Events = setmetatable({}, {
-	__index = function(_, key)
-		if key == "getEvents" then
-			return LifeEvents.getEvents
+-- Process a choice and apply effects
+function LifeEvents.processChoice(event, choiceIndex, state)
+	return EventEngine.completeEvent(event, choiceIndex, state)
+end
+
+-- Get processed event text with placeholders filled
+function LifeEvents.getEventText(event, state)
+	return EventEngine.processEventText(event, state)
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- CAREER FUNCTIONS (Delegates to CareerSystem)
+-- ═══════════════════════════════════════════════════════════════
+
+function LifeEvents.startCareer(state, careerId)
+	return CareerSystem.startCareer(state, careerId)
+end
+
+function LifeEvents.getCareerInfo(state)
+	return CareerSystem.getDisplayInfo(state)
+end
+
+function LifeEvents.getAvailableCareers(state)
+	return CareerSystem.getAvailableCareers(state)
+end
+
+function LifeEvents.calculateCareerIncome(state)
+	return CareerSystem.calculateIncome(state)
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- HELPER FUNCTIONS FOR EVENTS
+-- ═══════════════════════════════════════════════════════════════
+
+-- Random amount generator
+function LifeEvents.randomAmount(min, max)
+	return math.random(min, max)
+end
+
+-- Random percent (0.0 to 1.0)
+function LifeEvents.randomPercent()
+	return math.random() 
+end
+
+-- Check if player has a friend
+function LifeEvents.hasFriend(state)
+	local relationships = state.Relationships or {}
+	for _, rel in ipairs(relationships) do
+		if rel.type == "friend" then return true end
+	end
+	return false
+end
+
+-- Check if player has a partner
+function LifeEvents.hasPartner(state)
+	local relationships = state.Relationships or {}
+	for _, rel in ipairs(relationships) do
+		if rel.type == "partner" or rel.type == "spouse" then return true end
+	end
+	return false
+end
+
+-- Check if player is married
+function LifeEvents.isMarried(state)
+	local relationships = state.Relationships or {}
+	for _, rel in ipairs(relationships) do
+		if rel.type == "spouse" then return true end
+	end
+	return false
+end
+
+-- Check if player has children
+function LifeEvents.hasChildren(state)
+	local relationships = state.Relationships or {}
+	for _, rel in ipairs(relationships) do
+		if rel.type == "child" then return true end
+	end
+	return false
+end
+
+-- Check if player has a job
+function LifeEvents.hasJob(state)
+	return CareerSystem.getPrimaryCareer(state) ~= nil
+end
+
+-- Check if player is in jail
+function LifeEvents.isInJail(state)
+	local flags = state.Flags or {}
+	return flags.in_prison == true or flags.in_jail == true
+end
+
+-- Check if player is enrolled in education
+function LifeEvents.isEnrolled(state)
+	local edu = state.Education or "none"
+	return edu ~= "none" and edu ~= "high_school"
+end
+
+-- Get a random friend name
+function LifeEvents.getFriendName(state)
+	local relationships = state.Relationships or {}
+	local friends = {}
+	for _, rel in ipairs(relationships) do
+		if rel.type == "friend" and rel.name then
+			table.insert(friends, rel.name)
 		end
-		return nil
-	end,
-	__call = function()
-		return LifeEvents.getEvents()
-	end,
-})
+	end
+	if #friends > 0 then
+		return friends[math.random(#friends)]
+	end
+	-- Fallback names
+	local fallbacks = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Sam", "Jamie"}
+	return fallbacks[math.random(#fallbacks)]
+end
 
-----------------------------------------------------------------------
--- AUTO-LOAD ON REQUIRE
-----------------------------------------------------------------------
+-- Get partner name
+function LifeEvents.getPartnerName(state)
+	local relationships = state.Relationships or {}
+	for _, rel in ipairs(relationships) do
+		if rel.type == "partner" or rel.type == "spouse" then
+			return rel.name
+		end
+	end
+	return "your partner"
+end
 
--- Load modules when this file is required
-task.spawn(function()
-	task.wait(0.1) -- Small delay to ensure all modules are available
-	LifeEvents.loadAllModules()
-end)
+-- ═══════════════════════════════════════════════════════════════
+-- EDUCATION HELPERS
+-- ═══════════════════════════════════════════════════════════════
+
+LifeEvents.EducationRanks = {
+	none = 0,
+	high_school = 1,
+	community = 2,
+	bachelor = 3,
+	master = 4,
+	law = 5,
+	medical = 5,
+	phd = 6,
+}
+
+function LifeEvents.hasEducation(state, required)
+	local playerEdu = state.Education or "none"
+	local reqRank = LifeEvents.EducationRanks[required] or 0
+	local playerRank = LifeEvents.EducationRanks[playerEdu] or 0
+	return playerRank >= reqRank
+end
+
+function LifeEvents.getEducationLevel(state)
+	return state.Education or "none"
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- STAT HELPERS
+-- ═══════════════════════════════════════════════════════════════
+
+function LifeEvents.getStat(state, statName)
+	local stats = state.Stats or {}
+	return stats[statName] or 0
+end
+
+function LifeEvents.modifyStat(state, statName, amount)
+	local stats = state.Stats or {}
+	local current = stats[statName] or 0
+	local newVal = current + amount
+	
+	-- Clamp non-money stats
+	if statName ~= "Money" and statName ~= "Karma" then
+		newVal = math.clamp(newVal, 0, 100)
+	end
+	
+	stats[statName] = newVal
+	state.Stats = stats
+	return newVal
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- FLAG HELPERS
+-- ═══════════════════════════════════════════════════════════════
+
+function LifeEvents.hasFlag(state, flag)
+	local flags = state.Flags or {}
+	return flags[flag] == true
+end
+
+function LifeEvents.setFlag(state, flag)
+	local flags = state.Flags or {}
+	flags[flag] = true
+	state.Flags = flags
+end
+
+function LifeEvents.clearFlag(state, flag)
+	local flags = state.Flags or {}
+	flags[flag] = nil
+	state.Flags = flags
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- DEBUG / STATS
+-- ═══════════════════════════════════════════════════════════════
+
+function LifeEvents.getStats()
+	local stats = {
+		totalEvents = #LifeEvents.AllEvents,
+		byCategory = {},
+		byAgeRange = {
+			child = 0,
+			teen = 0,
+			young_adult = 0,
+			middle_aged = 0,
+			senior = 0,
+		},
+		milestones = 0,
+		chainEvents = 0,
+	}
+	
+	for _, event in ipairs(LifeEvents.AllEvents) do
+		local cat = event.category or "unknown"
+		stats.byCategory[cat] = (stats.byCategory[cat] or 0) + 1
+		
+		if event.milestone then
+			stats.milestones = stats.milestones + 1
+		end
+		
+		if event.chainId then
+			stats.chainEvents = stats.chainEvents + 1
+		end
+		
+		-- Count by age range
+		local minAge = event.conditions and event.conditions.minAge or 0
+		if minAge < 13 then
+			stats.byAgeRange.child = stats.byAgeRange.child + 1
+		elseif minAge < 18 then
+			stats.byAgeRange.teen = stats.byAgeRange.teen + 1
+		elseif minAge < 36 then
+			stats.byAgeRange.young_adult = stats.byAgeRange.young_adult + 1
+		elseif minAge < 56 then
+			stats.byAgeRange.middle_aged = stats.byAgeRange.middle_aged + 1
+		else
+			stats.byAgeRange.senior = stats.byAgeRange.senior + 1
+		end
+	end
+	
+	return stats
+end
+
+-- Print detailed stats
+function LifeEvents.printStats()
+	local stats = LifeEvents.getStats()
+	print("═══════════════════════════════════════")
+	print("LIFE EVENTS SYSTEM STATS")
+	print("═══════════════════════════════════════")
+	print("Total Events:", stats.totalEvents)
+	print("Milestones:", stats.milestones)
+	print("Chain Events:", stats.chainEvents)
+	print("")
+	print("By Category:")
+	for cat, count in pairs(stats.byCategory) do
+		print("  " .. cat .. ":", count)
+	end
+	print("")
+	print("By Age Range:")
+	print("  Child (0-12):", stats.byAgeRange.child)
+	print("  Teen (13-17):", stats.byAgeRange.teen)
+	print("  Young Adult (18-35):", stats.byAgeRange.young_adult)
+	print("  Middle Aged (36-55):", stats.byAgeRange.middle_aged)
+	print("  Senior (55+):", stats.byAgeRange.senior)
+	print("═══════════════════════════════════════")
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- AUTO-INITIALIZE
+-- ═══════════════════════════════════════════════════════════════
+
+-- Load events on require
+LifeEvents.initialize()
 
 return LifeEvents
