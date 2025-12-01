@@ -512,15 +512,18 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 
-	-- 1. Age range
-	if eventDef.minAge and age < eventDef.minAge then
+	-- 1. Age range (check both top-level and conditions for compatibility)
+	local minAge = eventDef.minAge or (eventDef.conditions and eventDef.conditions.minAge)
+	local maxAge = eventDef.maxAge or (eventDef.conditions and eventDef.conditions.maxAge)
+	
+	if minAge and age < minAge then
 		result.valid = false
-		table.insert(result.reasons, "Too young (need " .. eventDef.minAge .. ")")
+		table.insert(result.reasons, "Too young (need " .. minAge .. ", have " .. age .. ")")
 	end
 
-	if eventDef.maxAge and age > eventDef.maxAge then
+	if maxAge and age > maxAge then
 		result.valid = false
-		table.insert(result.reasons, "Too old (max " .. eventDef.maxAge .. ")")
+		table.insert(result.reasons, "Too old (max " .. maxAge .. ", have " .. age .. ")")
 	end
 
 	-- 2. Category base validity (age + required flag)
