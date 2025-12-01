@@ -1378,7 +1378,7 @@ local RELATIONSHIP_ACTIONS = {
 	},
 }
 
-DoInteraction.OnServerInvoke = function(player, payload)
+DoInteraction.OnServerInvoke = function(player, payload, arg2, arg3)
 	local state = getLife(player)
 	if not state or not state.Name then
 		return { success = false, message = "No active life." }
@@ -1392,9 +1392,10 @@ DoInteraction.OnServerInvoke = function(player, payload)
 		targetId = payload.targetId
 		cost = payload.cost
 	else
-		-- Old signature: payload is actionId, subsequent args are relType, targetId
+		-- Old signature: payload is actionId, arg2 is relType, arg3 is targetId
 		actionId = payload
-		relType = select(2, ...) -- This won't work in OnServerInvoke, but keeping for reference
+		relType = arg2
+		targetId = arg3
 	end
 	
 	if not actionId then
