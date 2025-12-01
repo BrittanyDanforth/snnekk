@@ -98,6 +98,10 @@ local function serializeState(state, player)
 	-- Get extended state from LifeRemoteHandlers (includes InJail, CurrentJob, Education, etc.)
 	local extState = _G.GetExtendedState and player and _G.GetExtendedState(player) or {}
 
+	-- Get education data
+	local eduData = extState.EducationData or {}
+	local enrolled = state.Enrolled or (eduData.Status == "enrolled") or false
+	
 	return {
 		PlayerId = state.PlayerId,
 		Name = state.Name,
@@ -120,7 +124,22 @@ local function serializeState(state, player)
 		InJail = extState.InJail or false,
 		JailYearsLeft = extState.JailYearsLeft or 0,
 		CurrentJob = extState.CurrentJob,
-		Education = extState.Education or "None",
+		Education = extState.Education or eduData.Level or "None",
+		Enrolled = enrolled,
+		-- Full education tracking data
+		EducationData = {
+			Level = eduData.Level,
+			Institution = eduData.Institution,
+			Major = eduData.Major,
+			GPA = eduData.GPA,
+			Progress = eduData.Progress,
+			Debt = eduData.Debt,
+			Year = eduData.Year,
+			TotalYears = eduData.TotalYears,
+			Status = eduData.Status,
+			CreditsEarned = eduData.CreditsEarned,
+			CreditsRequired = eduData.CreditsRequired,
+		},
 		-- Owned assets (properties, vehicles, items)
 		Assets = {
 			Properties = extState.OwnedProperties or {},
@@ -523,6 +542,20 @@ local function ageUp(player)
 	-- Update extended state (auto-education, etc.)
 	if _G.OnPlayerAgeUp then
 		_G.OnPlayerAgeUp(player)
+	end
+	
+	-- Progress education if enrolled (GPA updates, transcript, graduation)
+	if _G.ProgressPlayerEducation then
+		local eduResult = _G.ProgressPlayerEducation(player)
+		if eduResult then
+			print("[LifeManager] Education progress:", eduResult.type, eduResult.message)
+			if eduResult.type == "graduation" then
+				-- Graduation is a major event - add to feed
+				state:AddFeed(eduResult.message)
+			elseif eduResult.type == "probation" then
+				state:AddFeed(eduResult.message)
+			end
+		end
 	end
 
 	-- Add job income if has job (check both old and new job system)

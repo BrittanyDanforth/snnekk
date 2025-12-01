@@ -137,31 +137,37 @@ local function updateAutoEducation(player)
 	local age = lifeState and lifeState.Age or 0
 	
 	-- Only auto-progress if they don't already have higher education
-	local currentEdu = extState.Education or "None"
+	local currentEdu = extState.Education or "none"
 	
-	-- Education hierarchy for checking
+	-- Education hierarchy for checking (supports both old and new formats)
 	local eduLevels = {
-		["None"] = 0,
+		["None"] = 0, ["none"] = 0,
 		["Elementary"] = 1,
 		["Middle School"] = 2,
-		["High School"] = 3,
-		["Community College"] = 4,
-		["Bachelor's"] = 5,
-		["Master's"] = 6,
-		["Medical School"] = 7,
-		["Law School"] = 7,
-		["PhD"] = 8,
+		["High School"] = 3, ["high_school"] = 3,
+		["Community College"] = 4, ["community"] = 4,
+		["Bachelor's"] = 5, ["bachelor"] = 5,
+		["Master's"] = 6, ["master"] = 6,
+		["Medical School"] = 7, ["medical"] = 7,
+		["Law School"] = 7, ["law"] = 7,
+		["PhD"] = 8, ["phd"] = 8,
 	}
 	
 	local currentLevel = eduLevels[currentEdu] or 0
 	
 	-- Auto-assign education based on age (only if they don't have something higher)
+	-- Now using ID-based system
 	if age >= 18 and currentLevel < 3 then
-		extState.Education = "High School"
-	elseif age >= 14 and currentLevel < 2 then
-		extState.Education = "Middle School"
-	elseif age >= 5 and currentLevel < 1 then
-		extState.Education = "Elementary"
+		extState.Education = "high_school"
+		-- Mark as graduated from high school
+		if lifeState then
+			lifeState:SetFlag("high_school_graduate")
+		end
+	elseif age >= 5 and age < 18 then
+		-- Still in K-12, set as high school (in progress)
+		if currentLevel < 3 then
+			extState.Education = "high_school"
+		end
 	end
 end
 
@@ -270,7 +276,10 @@ local function hasEducation(player, required)
 	updateAutoEducation(player)
 	
 	local extState = getExtendedState(player)
+	
+	-- Support both old string-based and new ID-based education levels
 	local eduLevels = {
+		-- Old string-based
 		["None"] = 0,
 		["Elementary"] = 1,
 		["Middle School"] = 2,
@@ -281,11 +290,22 @@ local function hasEducation(player, required)
 		["Medical School"] = 7,
 		["Law School"] = 7,
 		["PhD"] = 8,
+		-- New ID-based
+		["none"] = 0,
+		["high_school"] = 3,
+		["community"] = 4,
+		["bachelor"] = 5,
+		["master"] = 6,
+		["medical"] = 7,
+		["law"] = 7,
+		["phd"] = 8,
 	}
-	local playerLevel = eduLevels[extState.Education] or 0
+	
+	local playerEdu = extState.Education or "none"
+	local playerLevel = eduLevels[playerEdu] or 0
 	local requiredLevel = eduLevels[required] or 0
 	
-	print("[LifeRemoteHandlers] hasEducation check:", extState.Education, "vs required:", required, "->", playerLevel >= requiredLevel)
+	print("[LifeRemoteHandlers] hasEducation check:", playerEdu, "vs required:", required, "->", playerLevel >= requiredLevel)
 	return playerLevel >= requiredLevel
 end
 
@@ -1495,6 +1515,138 @@ DoWork.OnServerInvoke = function(player)
 	}
 end
 
+----------------------------------------------------------------
+-- EDUCATION HELPER FUNCTIONS
+----------------------------------------------------------------
+
+-- Helper to get institution name based on education level
+local function getInstitutionName(eduId)
+	local institutions = {
+		community = { "Community College", "Technical Institute", "City College", "Metro Community College" },
+		bachelor = { "State University", "City University", "Metro University", "Regional College", "Liberal Arts College" },
+		master = { "State University Graduate School", "Graduate Institute", "Advanced Studies Center" },
+		phd = { "State University Research Program", "Doctoral Institute", "Academy of Sciences" },
+		law = { "State Law School", "City Law School", "Regional Law Academy" },
+		medical = { "Medical School", "School of Medicine", "Health Sciences University" },
+	}
+	local options = institutions[eduId] or { "University" }
+	return options[math.random(1, #options)]
+end
+
+-- Helper to get random major based on education level
+local function getRandomMajor(eduId)
+	if eduId == "community" then
+		local majors = { "General Studies", "Business Administration", "Computer Science", "Nursing", "Engineering Tech", "Liberal Arts" }
+		return majors[math.random(1, #majors)]
+	elseif eduId == "bachelor" then
+		local majors = { "Computer Science", "Business", "Psychology", "Biology", "English", "Engineering", "Economics", "Political Science", "Communications", "Nursing", "Art", "History", "Mathematics", "Chemistry", "Sociology" }
+		return majors[math.random(1, #majors)]
+	elseif eduId == "master" then
+		local majors = { "MBA", "Computer Science", "Education", "Public Administration", "Engineering", "Psychology", "Data Science" }
+		return majors[math.random(1, #majors)]
+	elseif eduId == "law" then
+		return "Law (J.D.)"
+	elseif eduId == "medical" then
+		return "Medicine (M.D.)"
+	elseif eduId == "phd" then
+		local majors = { "Physics", "Chemistry", "Biology", "Computer Science", "Economics", "Psychology", "Engineering", "Mathematics" }
+		return majors[math.random(1, #majors)]
+	end
+	return "Undeclared"
+end
+
+-- Progress education each year (called during age progression)
+local function progressEducation(player)
+	local extState = getExtendedState(player)
+	local state = getPlayerState(player)
+	local lifeState = getLifeManagerState(player)
+	
+	if not extState.EducationData or extState.EducationData.Status ~= "enrolled" then
+		return nil -- Not enrolled
+	end
+	
+	local eduData = extState.EducationData
+	local smarts = state.Stats and state.Stats.Smarts or 50
+	
+	-- Calculate semester GPA based on smarts + some randomness
+	local baseGPA = 2.0 + (smarts / 100) * 2.0
+	local randomFactor = (math.random() - 0.5) * 0.6 -- +/- 0.3
+	local semesterGPA = math.clamp(baseGPA + randomFactor, 0, 4.0)
+	semesterGPA = math.floor(semesterGPA * 100) / 100
+	
+	-- Add to transcript
+	local termNames = { "Fall", "Spring" }
+	local yearNames = { "Freshman", "Sophomore", "Junior", "Senior", "Graduate Year 1", "Graduate Year 2", "Graduate Year 3", "Graduate Year 4", "Graduate Year 5" }
+	local yearName = yearNames[eduData.Year] or ("Year " .. eduData.Year)
+	
+	table.insert(eduData.Grades, {
+		term = yearName .. " " .. termNames[math.random(1, 2)],
+		gpa = semesterGPA,
+		year = eduData.Year,
+	})
+	
+	-- Update cumulative GPA (weighted average)
+	local totalGrades = #eduData.Grades
+	if totalGrades > 0 then
+		local sum = 0
+		for _, g in ipairs(eduData.Grades) do
+			sum = sum + (g.gpa or 0)
+		end
+		eduData.GPA = math.floor((sum / totalGrades) * 100) / 100
+	end
+	
+	-- Progress credits
+	local creditsThisYear = math.random(25, 35)
+	eduData.CreditsEarned = (eduData.CreditsEarned or 0) + creditsThisYear
+	
+	-- Calculate progress percentage
+	if eduData.CreditsRequired and eduData.CreditsRequired > 0 then
+		eduData.Progress = math.clamp((eduData.CreditsEarned / eduData.CreditsRequired) * 100, 0, 100)
+	else
+		eduData.Progress = math.clamp((eduData.Year / eduData.TotalYears) * 100, 0, 100)
+	end
+	
+	-- Check for academic probation
+	if eduData.GPA < 2.0 then
+		eduData.Status = "probation"
+		return { type = "probation", message = "⚠️ Your GPA has dropped below 2.0. You're on academic probation!" }
+	end
+	
+	-- Check for graduation
+	if eduData.Year >= eduData.TotalYears then
+		-- Graduate!
+		eduData.Status = "graduated"
+		eduData.Progress = 100
+		state.Enrolled = false
+		if lifeState then
+			lifeState.Enrolled = false
+			lifeState:ClearFlag("college_student")
+			lifeState:ClearFlag("enrolled_" .. eduData.Level)
+			lifeState:SetFlag(eduData.Level .. "_graduate")
+			lifeState:SetFlag("college_graduate")
+		end
+		
+		-- Update education level
+		state.Education = eduData.Level
+		extState.Education = eduData.Level
+		
+		return { 
+			type = "graduation", 
+			message = "🎓 Congratulations! You graduated from " .. (eduData.Institution or "University") .. " with a " .. string.format("%.2f", eduData.GPA) .. " GPA!",
+			degree = eduData.Level,
+			gpa = eduData.GPA
+		}
+	end
+	
+	-- Move to next year
+	eduData.Year = eduData.Year + 1
+	
+	return { type = "progress", message = "📚 You completed a year of school. GPA: " .. string.format("%.2f", eduData.GPA) }
+end
+
+-- Expose progressEducation globally so LifeManager can call it
+_G.ProgressPlayerEducation = progressEducation
+
 EnrollEducation.OnServerInvoke = function(player, eduId)
 	local state = getPlayerState(player)
 	local age = state.Age
@@ -1621,17 +1773,45 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	
 	-- Enroll!
 	deductMoney(player, actualCost)
-	extState.Education = edu.grants
+	extState.Education = edu.id -- Use ID for consistency (community, bachelor, master, etc.)
+	
+	-- Initialize EducationData for tracking GPA, progress, debt, etc.
+	local smarts = state.Stats and state.Stats.Smarts or 50
+	local startingGPA = 2.5 + (smarts / 100) * 1.5 -- Range 2.5-4.0 based on smarts
+	startingGPA = math.floor(startingGPA * 100) / 100
+	
+	extState.EducationData = {
+		Level = edu.id,
+		Institution = getInstitutionName(edu.id),
+		Major = getRandomMajor(edu.id),
+		GPA = startingGPA,
+		Progress = 0,
+		Debt = actualCost, -- Start with the enrollment cost as debt
+		Year = 1,
+		TotalYears = edu.duration or 4,
+		CreditsEarned = 0,
+		CreditsRequired = (edu.duration or 4) * 30, -- ~30 credits per year
+		Status = "enrolled",
+		Grades = {}, -- Transcript entries
+		EnrollmentYear = state.Age,
+	}
+	
+	-- Mark as enrolled
+	state.Enrolled = true
+	if lifeState then
+		lifeState.Enrolled = true
+	end
 	
 	-- Set college_student flag if applicable
-	if lifeState and (edu.grants == "Bachelor's" or edu.grants == "Master's" or edu.grants == "PhD" 
-		or edu.grants == "Medical School" or edu.grants == "Law School") then
+	if lifeState and (edu.id == "bachelor" or edu.id == "master" or edu.id == "phd" 
+		or edu.id == "medical" or edu.id == "law" or edu.id == "community") then
 		lifeState:SetFlag("college_student")
+		lifeState:SetFlag("enrolled_" .. edu.id)
 	end
 	
 	syncStateToClient(player)
 	
-	local message = "You enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. ")"
+	local message = "🎓 You enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. ")"
 	if isExConvict and actualCost > edu.cost then
 		message = "🎓 Despite your criminal record, you enrolled in " .. edu.name .. "! (Cost: $" .. actualCost .. " - limited financial aid available)"
 	end
@@ -1998,32 +2178,36 @@ end
 GetEducationInfo.OnServerInvoke = function(player)
 	local state = getPlayerState(player)
 	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
 	
-	-- Get education data from extended state (or initialize if not present)
+	-- Get education data from extended state
 	local eduData = extState.EducationData or {}
 	
 	-- Determine current education level
-	local level = state.Education or "none"
-	local enrolled = state.Enrolled or false
+	local level = eduData.Level or extState.Education or state.Education or "none"
+	local enrolled = state.Enrolled or (lifeState and lifeState.Enrolled) or (eduData.Status == "enrolled") or false
 	
-	-- Calculate GPA if not already set
+	-- Get all the tracked data
 	local gpa = eduData.GPA
-	if not gpa and enrolled then
-		-- Default starting GPA based on Smarts stat
-		local smarts = state.Stats and state.Stats.Smarts or 50
-		gpa = 2.0 + (smarts / 100) * 2.0 -- Range 2.0-4.0 based on smarts
-		gpa = math.floor(gpa * 100) / 100 -- Round to 2 decimal places
-	end
-	
-	-- Calculate progress if not already set
-	local progress = eduData.Progress
-	if not progress and enrolled then
-		-- Default to 0% progress
-		progress = 0
-	end
-	
-	-- Get institution name
+	local progress = eduData.Progress or 0
 	local institution = eduData.Institution
+	local major = eduData.Major or "Undeclared"
+	local debt = eduData.Debt or 0
+	local status = eduData.Status or "none"
+	local grades = eduData.Grades or {}
+	local creditsEarned = eduData.CreditsEarned or 0
+	local creditsRequired = eduData.CreditsRequired or 0
+	local year = eduData.Year or 0
+	local totalYears = eduData.TotalYears or 0
+	
+	-- If enrolled but no data, create initial data based on smarts
+	if enrolled and not gpa then
+		local smarts = state.Stats and state.Stats.Smarts or 50
+		gpa = 2.5 + (smarts / 100) * 1.5
+		gpa = math.floor(gpa * 100) / 100
+	end
+	
+	-- Auto-determine institution if not set
 	if not institution then
 		if level == "high_school" then
 			institution = "Local High School"
@@ -2042,33 +2226,42 @@ GetEducationInfo.OnServerInvoke = function(player)
 		end
 	end
 	
-	-- Get major if applicable
-	local major = eduData.Major or "Undeclared"
-	
-	-- Get debt
-	local debt = eduData.Debt or 0
-	
-	-- Get status
-	local status = "none"
-	if enrolled then
-		status = "enrolled"
-		if gpa and gpa < 2.0 then
-			status = "probation"
+	-- Determine status if not set
+	if status == "none" then
+		if enrolled then
+			status = "enrolled"
+			if gpa and gpa < 2.0 then
+				status = "probation"
+			end
+		elseif level and level ~= "none" and level ~= "high_school" then
+			status = "graduated"
 		end
-	elseif level and level ~= "none" and level ~= "high_school" then
-		status = "graduated"
 	end
 	
-	-- Get grades/transcript (per-term GPA history)
-	local grades = eduData.Grades or {}
+	-- Handle high school students (automatic education)
+	local age = state.Age or 0
+	if age >= 5 and age <= 18 and level == "none" then
+		level = "high_school"
+		enrolled = age < 18
+		if enrolled then
+			status = "enrolled"
+			institution = "Local High School"
+			-- Calculate high school progress
+			local hsYear = math.max(0, age - 5)
+			progress = math.clamp((hsYear / 13) * 100, 0, 100) -- K-12 = 13 years
+			year = math.min(hsYear + 1, 12)
+			totalYears = 12
+			
+			-- Generate a GPA based on smarts if none exists
+			if not gpa then
+				local smarts = state.Stats and state.Stats.Smarts or 50
+				gpa = 2.0 + (smarts / 100) * 2.0
+				gpa = math.floor(gpa * 100) / 100
+			end
+		end
+	end
 	
-	-- Get credits if tracking
-	local creditsEarned = eduData.CreditsEarned
-	local creditsRequired = eduData.CreditsRequired
-	
-	-- Get year info if tracking
-	local year = eduData.Year
-	local totalYears = eduData.TotalYears
+	print("[GetEducationInfo] Returning - Level:", level, "GPA:", gpa, "Progress:", progress, "Status:", status, "Enrolled:", enrolled)
 	
 	return {
 		success = true,

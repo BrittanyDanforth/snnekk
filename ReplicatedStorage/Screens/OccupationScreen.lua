@@ -398,7 +398,11 @@ end
 function OccupationScreen:isEnrolled()
 	local state = self.playerState
 	if not state then return false end
-	return state.Enrolled or (state.Career and state.Career.enrolled) or false
+	-- Check multiple sources for enrolled status
+	if state.Enrolled then return true end
+	if state.EducationData and state.EducationData.Status == "enrolled" then return true end
+	if state.Career and state.Career.enrolled then return true end
+	return false
 end
 
 function OccupationScreen:fetchCareerInfo()
@@ -466,6 +470,32 @@ end
 -- ═══════════════════════════════════════════════════════════════
 
 function OccupationScreen:fetchEducationInfo()
+	-- First check if we have education data from synced state
+	local state = self.playerState
+	if state and state.EducationData and state.EducationData.GPA then
+		-- Use synced state data (faster, no remote call needed)
+		local eduData = state.EducationData
+		self.educationInfo = {
+			success = true,
+			level = eduData.Level or state.Education or "none",
+			institution = eduData.Institution,
+			major = eduData.Major,
+			gpa = eduData.GPA,
+			progress = eduData.Progress,
+			debt = eduData.Debt,
+			status = eduData.Status,
+			grades = eduData.Grades or {},
+			creditsEarned = eduData.CreditsEarned,
+			creditsRequired = eduData.CreditsRequired,
+			year = eduData.Year,
+			totalYears = eduData.TotalYears,
+			enrolled = state.Enrolled,
+		}
+		log("Using synced education data - GPA:", eduData.GPA, "Progress:", eduData.Progress)
+		return self.educationInfo
+	end
+	
+	-- Fall back to remote call
 	if not GetEducationInfo then
 		log("GetEducationInfo remote not available")
 		return nil
@@ -477,7 +507,7 @@ function OccupationScreen:fetchEducationInfo()
 
 	if success and result and result.success then
 		self.educationInfo = result
-		log("Fetched education info - Level:", result.level, "GPA:", result.gpa, "Progress:", result.progress)
+		log("Fetched education info from server - Level:", result.level, "GPA:", result.gpa, "Progress:", result.progress)
 		return result
 	end
 
@@ -519,16 +549,54 @@ function OccupationScreen:getEducationEmoji(levelId)
 end
 
 function OccupationScreen:getEducationGPA()
+	-- Check synced state first
+	local state = self.playerState
+	if state and state.EducationData and state.EducationData.GPA then
+		return state.EducationData.GPA
+	end
+	
+	-- Fall back to fetched info
 	local info = self.educationInfo
 	if info and info.gpa then
 		return info.gpa
 	end
+	
+	-- Generate a reasonable GPA for high school students if none exists
+	local age = self:getAge()
+	if age >= 5 and age <= 22 then
+		local smarts = state and state.Stats and state.Stats.Smarts or 50
+		local gpa = 2.0 + (smarts / 100) * 2.0
+		return math.floor(gpa * 100) / 100
+	end
+	
 	return nil
 end
 
 function OccupationScreen:getEducationProgress()
+	-- Check synced state first
+	local state = self.playerState
+	if state and state.EducationData then
+		local eduData = state.EducationData
+		if eduData.Progress and eduData.Progress > 0 then
+			return eduData.Progress
+		end
+		if eduData.CreditsEarned and eduData.CreditsRequired and eduData.CreditsRequired > 0 then
+			return math.clamp((eduData.CreditsEarned / eduData.CreditsRequired) * 100, 0, 100)
+		end
+		if eduData.Year and eduData.TotalYears and eduData.TotalYears > 0 then
+			return math.clamp((eduData.Year / eduData.TotalYears) * 100, 0, 100)
+		end
+	end
+	
+	-- Fall back to fetched info
 	local info = self.educationInfo
 	if not info then
+		-- Calculate high school progress based on age
+		local age = self:getAge()
+		if age >= 5 and age < 18 then
+			local hsYear = math.max(0, age - 5)
+			return math.clamp((hsYear / 13) * 100, 0, 100)
+		end
 		return nil
 	end
 
@@ -548,6 +616,12 @@ function OccupationScreen:getEducationProgress()
 end
 
 function OccupationScreen:getEducationDebt()
+	-- Check synced state first
+	local state = self.playerState
+	if state and state.EducationData and state.EducationData.Debt then
+		return state.EducationData.Debt
+	end
+	
 	local info = self.educationInfo
 	if info and info.debt then
 		return info.debt
@@ -556,6 +630,12 @@ function OccupationScreen:getEducationDebt()
 end
 
 function OccupationScreen:getEducationInstitution()
+	-- Check synced state first
+	local state = self.playerState
+	if state and state.EducationData and state.EducationData.Institution then
+		return state.EducationData.Institution
+	end
+	
 	local info = self.educationInfo
 	if info and info.institution and info.institution ~= "" then
 		return info.institution
@@ -578,6 +658,12 @@ function OccupationScreen:getEducationInstitution()
 end
 
 function OccupationScreen:getEducationMajor()
+	-- Check synced state first
+	local state = self.playerState
+	if state and state.EducationData and state.EducationData.Major then
+		return state.EducationData.Major
+	end
+	
 	local info = self.educationInfo
 	if info and info.major and info.major ~= "" then
 		return info.major
@@ -586,6 +672,12 @@ function OccupationScreen:getEducationMajor()
 end
 
 function OccupationScreen:getEducationStatus()
+	-- Check synced state first
+	local state = self.playerState
+	if state and state.EducationData and state.EducationData.Status then
+		return state.EducationData.Status
+	end
+	
 	local info = self.educationInfo
 	if info and info.status then
 		return info.status
@@ -594,11 +686,18 @@ function OccupationScreen:getEducationStatus()
 	if self:isEnrolled() then
 		return "enrolled"
 	end
+	
+	-- Check if high school student
+	local age = self:getAge()
+	if age >= 5 and age < 18 then
+		return "enrolled"
+	end
 
 	return "none"
 end
 
 function OccupationScreen:getEducationGrades()
+	-- Check synced state first (but grades aren't synced for performance)
 	local info = self.educationInfo
 	if info and type(info.grades) == "table" then
 		return info.grades
