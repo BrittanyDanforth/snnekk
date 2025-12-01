@@ -4,7 +4,58 @@
 -- 140+ deeply thought-out events for college, career, and early adulthood
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
+
+local function hasPartner(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "romance" or rel.category == "romance" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.in_relationship or flags.married or flags.dating or false
+end
+
+local function getPartnerName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "romance" or rel.category == "romance" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -41,7 +92,7 @@ module.events = {
 		emoji = "🛏️", title = "Roommate Situation!",
 		category = "social",
 		getDynamicData = function()
-			return { roommateName = LifeEvents.randomFirstName() }
+			return { roommateName = randomFirstName() }
 		end,
 		text = "You've been paired with %roommateName% as your roommate!",
 		choices = {
@@ -96,7 +147,7 @@ module.events = {
 		weight = 35, cooldown = 2,
 		emoji = "🏖️", title = "Spring Break!",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends to go on spring break with friends
+		requires = hasFriend,  -- MUST have friends to go on spring break with friends
 		getDynamicData = function()
 			local destinations = {"Cancun", "Miami", "Panama City Beach", "Vegas", "road trip", "home"}
 			return { destination = destinations[math.random(#destinations)] }
@@ -311,7 +362,7 @@ module.events = {
 		category = "social",
 		requiresFlag = "employed", -- Must have a job to have a workplace romance!
 		getDynamicData = function()
-			return { coworkerName = LifeEvents.randomFirstName() }
+			return { coworkerName = randomFirstName() }
 		end,
 		text = "You've developed feelings for your coworker %coworkerName%! Is this a good idea?",
 		choices = {
@@ -370,12 +421,12 @@ module.events = {
 		category = "romance",
 		-- CRITICAL: Only fire if player actually has a romantic partner!
 		requires = function(state)
-			return LifeEvents.hasPartner(state)
+			return hasPartner(state)
 		end,
 		requiresAnyFlag = {"dating", "in_relationship", "college_romance", "office_romance", "international_romance"},
 		getDynamicData = function(state)
 			-- Use actual partner name from relationships, or fallback
-			return { partnerName = LifeEvents.getPartnerName(state) }
+			return { partnerName = getPartnerName(state) }
 		end,
 		text = "You and %partnerName% are getting serious! This could be the one!",
 		choices = {
@@ -589,13 +640,13 @@ module.events = {
 		category = "social",
 		-- CRITICAL: Only fire if player actually has friends!
 		requires = function(state)
-			return LifeEvents.hasFriend(state)
+			return hasFriend(state)
 		end,
 		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "good_roommate", "friendly"},
 		getDynamicData = function(state)
 			local milestones = {"getting married", "having a baby", "buying a house", "getting promoted", "starting a business"}
 			-- Use actual friend name if available
-			return { milestone = milestones[math.random(#milestones)], friendName = LifeEvents.getFriendName(state) }
+			return { milestone = milestones[math.random(#milestones)], friendName = getFriendName(state) }
 		end,
 		text = "%friendName% is %milestone%! How do you feel?",
 		choices = {
@@ -1041,7 +1092,7 @@ module.events = {
 		category = "school",
 		requiresFlag = "college_student",
 		getDynamicData = function()
-			return { slackerName = LifeEvents.randomFirstName() }
+			return { slackerName = randomFirstName() }
 		end,
 		text = "Group project worth 30% of your grade! %slackerName% isn't responding to messages!",
 		choices = {

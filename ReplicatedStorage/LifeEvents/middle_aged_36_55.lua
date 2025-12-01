@@ -4,7 +4,35 @@
 -- 100+ deeply thought-out events for peak career and family years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -220,7 +248,7 @@ module.events = {
 		emoji = "💕", title = "Finding Love Again",
 		category = "social",
 		getDynamicData = function()
-			return { partnerName = LifeEvents.randomFirstName() }
+			return { partnerName = randomFirstName() }
 		end,
 		text = "You met %partnerName%. Could this be a second chance at love?",
 		choices = {
@@ -357,7 +385,7 @@ module.events = {
 		category = "career",
 		requiresFlag = "employed", -- Must have work experience to mentor!
 		getDynamicData = function()
-			return { menteeName = LifeEvents.randomFirstName() }
+			return { menteeName = randomFirstName() }
 		end,
 		text = "Young professional %menteeName% looks up to you at work. Want to mentor them?",
 		choices = {
@@ -410,7 +438,7 @@ module.events = {
 		emoji = "💒", title = "Your Child's Wedding!",
 		category = "family",
 		getDynamicData = function()
-			return { spouseName = LifeEvents.randomFirstName() }
+			return { spouseName = randomFirstName() }
 		end,
 		text = "Your baby is getting married to %spouseName%! How are you feeling?",
 		choices = {
@@ -593,7 +621,7 @@ module.events = {
 		emoji = "🎓", title = "Mentoring the Next Generation",
 		category = "career",
 		getDynamicData = function()
-			return { menteeName = LifeEvents.randomFirstName() }
+			return { menteeName = randomFirstName() }
 		end,
 		text = "Young %menteeName% at work looks up to you. They could use guidance.",
 		choices = {
@@ -630,7 +658,7 @@ module.events = {
 		emoji = "👋", title = "Reconnecting with Old Friends",
 		category = "social",
 		getDynamicData = function()
-			return { friendName = LifeEvents.randomFirstName() }
+			return { friendName = randomFirstName() }
 		end,
 		text = "%friendName% from college/high school reached out after decades. Virtual reunion happening!",
 		choices = {

@@ -4,7 +4,35 @@
 -- BitLife-style: Player picks ACTIONS, game decides OUTCOMES
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -423,9 +451,9 @@ module.events = {
 		category = "social",
 		-- Need at least $100 to gamble (cheapest option)
 		requires = function(state)
-			local hasFriend = LifeEvents.hasFriend(state)
+			local friendPresent = hasFriend(state)
 			local hasMoney = (state.Money or 0) >= 100
-			return hasFriend and hasMoney
+			return friendPresent and hasMoney
 		end,
 		text = "Friends want to hit the casino! You've got some money. What do you do?",
 		choices = {

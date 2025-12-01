@@ -4,7 +4,36 @@
 -- 100+ deeply thought-out events for infant, toddler, and preschool years
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local function hasFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	-- Also check for friend-related flags
+	local flags = state.Flags or {}
+	return flags.has_friend or flags.has_best_friend or flags.social_butterfly or false
+end
+
+local function getFriendName(state)
+	if not state then return randomFirstName() end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name or randomFirstName()
+		end
+	end
+	return randomFirstName()
+end
 
 local module = {}
 
@@ -474,7 +503,7 @@ module.events = {
 		emoji = "🛝", title = "Playground Drama",
 		category = "social",
 		getDynamicData = function()
-			return { kidName = LifeEvents.randomFirstName() }
+			return { kidName = randomFirstName() }
 		end,
 		text = "Another kid named %kidName% pushed you on the playground!",
 		choices = {
@@ -538,7 +567,7 @@ module.events = {
 		category = "social",
 		getDynamicData = function()
 			local toys = {"favorite toy", "crayons", "snacks", "playdough", "blocks"}
-			return { item = toys[math.random(#toys)], kidName = LifeEvents.randomFirstName() }
+			return { item = toys[math.random(#toys)], kidName = randomFirstName() }
 		end,
 		text = "%kidName% wants to use your %item%. Will you share?",
 		choices = {
@@ -605,7 +634,7 @@ module.events = {
 		emoji = "🎈", title = "Birthday Party!",
 		category = "social",
 		getDynamicData = function()
-			return { kidName = LifeEvents.randomFirstName() }
+			return { kidName = randomFirstName() }
 		end,
 		text = "You're invited to %kidName%'s birthday party! Cake and games await!",
 		choices = {
@@ -622,9 +651,9 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "🏠", title = "First Sleepover!",
 		category = "social",
-		requires = LifeEvents.hasFriend,  -- MUST have friends for sleepover invite
+		requires = hasFriend,  -- MUST have friends for sleepover invite
 		getDynamicData = function(state)
-			return { friendName = LifeEvents.getFriendName(state) }
+			return { friendName = getFriendName(state) }
 		end,
 		text = "You're invited to your first sleepover at %friendName%'s house!",
 		choices = {
@@ -1009,7 +1038,7 @@ module.events = {
 		emoji = "💕", title = "First Innocent Crush!",
 		category = "social",
 		getDynamicData = function()
-			return { crushName = LifeEvents.randomFirstName() }
+			return { crushName = randomFirstName() }
 		end,
 		text = "You think %crushName% in your class is really really special! Butterflies in your tummy!",
 		choices = {

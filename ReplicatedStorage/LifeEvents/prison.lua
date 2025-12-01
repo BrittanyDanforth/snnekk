@@ -4,7 +4,18 @@
 -- Events that occur while incarcerated
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-local LifeEvents = require(script.Parent.init)
+-- LOCAL HELPER FUNCTIONS (no external dependencies)
+local FIRST_NAMES = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Cameron", "Quinn", "Avery", "Parker", "Skyler", "Dakota", "Reese", "Finley", "Sage", "Rowan", "Charlie", "Emerson", "Hayden"}
+
+local function randomFirstName()
+	return FIRST_NAMES[math.random(#FIRST_NAMES)]
+end
+
+local MALE_NAMES = {"Mike", "Tony", "Marcus", "Darnell", "Big Rick", "Tiny", "Razor", "Snake", "Bull", "Ace", "Ghost", "Bruno", "Vinny", "Carlos", "Jose", "Tommy", "Bobby", "Frank", "Sal", "Vince"}
+
+local function randomMaleName()
+	return MALE_NAMES[math.random(#MALE_NAMES)]
+end
 
 local module = {}
 
@@ -95,7 +106,7 @@ module.events = {
 		category = "prison",
 		requiresFlag = "in_prison",
 		getDynamicData = function()
-			return { inmateName = LifeEvents.randomFirstName() }
+			return { inmateName = randomFirstName() }
 		end,
 		text = "%inmateName% cuts in front of you in the food line.",
 		choices = {
@@ -132,7 +143,7 @@ module.events = {
 		category = "prison",
 		requiresFlag = "in_prison",
 		getDynamicData = function()
-			return { opponent = LifeEvents.randomFirstName() }
+			return { opponent = randomFirstName() }
 		end,
 		text = "%opponent% is picking a fight with you! The guards aren't looking.",
 		choices = {
@@ -175,7 +186,7 @@ module.events = {
 		category = "prison",
 		requiresFlag = "in_prison",
 		getDynamicData = function()
-			return { mentorName = LifeEvents.randomMaleName() }
+			return { mentorName = randomMaleName() }
 		end,
 		text = "%mentorName%, an old-timer, takes you under his wing. 'Let me teach you how to survive in here.'",
 		choices = {
@@ -194,7 +205,7 @@ module.events = {
 		requiresFlag = "in_prison",
 		blockIfFlag = "prison_enemy",
 		getDynamicData = function()
-			return { enemyName = LifeEvents.randomFirstName() }
+			return { enemyName = randomFirstName() }
 		end,
 		text = "%enemyName% has it out for you. You stepped on their turf somehow.",
 		choices = {
@@ -397,7 +408,7 @@ module.events = {
 		requiresFlag = "in_prison",
 		requiresFlag2 = "prison_enemy",
 		getDynamicData = function()
-			return { attackerName = LifeEvents.randomFirstName() }
+			return { attackerName = randomFirstName() }
 		end,
 		text = "%attackerName% attacked you with a shank! You're bleeding!",
 		choices = {
