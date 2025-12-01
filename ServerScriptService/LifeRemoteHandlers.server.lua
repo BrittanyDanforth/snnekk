@@ -116,7 +116,7 @@ local ExtendedStates = {} -- [UserId] = { Education, Experience, CurrentJob, etc
 local function getExtendedState(player)
 	if not ExtendedStates[player.UserId] then
 		ExtendedStates[player.UserId] = {
-			Education = "None",
+			Education = "none",  -- Use ID-based format for consistency
 			Experience = 0,
 			CurrentJob = nil,
 			OwnedProperties = {},
@@ -625,13 +625,14 @@ local CareerLadders = {
 
 -- Education options for MANUAL enrollment (College+)
 -- Elementary/Middle/High School are AUTOMATIC based on age
+-- FIXED: Now uses ID-based requirements that match what we set in extState.Education
 local EducationOptions = {
-	{ id = "community", name = "Community College", minAge = 18, maxAge = 99, cost = 15000, requirement = "High School", grants = "Community College", duration = 2 },
-	{ id = "bachelor", name = "Bachelor's Degree", minAge = 18, maxAge = 99, cost = 80000, requirement = "High School", grants = "Bachelor's", duration = 4 },
-	{ id = "master", name = "Master's Degree", minAge = 22, maxAge = 99, cost = 60000, requirement = "Bachelor's", grants = "Master's", duration = 2 },
-	{ id = "medical", name = "Medical School", minAge = 22, maxAge = 45, cost = 200000, requirement = "Bachelor's", grants = "Medical School", duration = 4 },
-	{ id = "law", name = "Law School", minAge = 22, maxAge = 50, cost = 150000, requirement = "Bachelor's", grants = "Law School", duration = 3 },
-	{ id = "phd", name = "PhD Program", minAge = 24, maxAge = 99, cost = 100000, requirement = "Master's", grants = "PhD", duration = 5 },
+	{ id = "community", name = "Community College", minAge = 18, maxAge = 99, cost = 15000, requirement = "high_school", grants = "community", duration = 2 },
+	{ id = "bachelor", name = "Bachelor's Degree", minAge = 18, maxAge = 99, cost = 80000, requirement = "high_school", grants = "bachelor", duration = 4 },
+	{ id = "master", name = "Master's Degree", minAge = 22, maxAge = 99, cost = 60000, requirement = "bachelor", grants = "master", duration = 2 },
+	{ id = "medical", name = "Medical School", minAge = 22, maxAge = 45, cost = 200000, requirement = "bachelor", grants = "medical", duration = 4 },
+	{ id = "law", name = "Law School", minAge = 22, maxAge = 50, cost = 150000, requirement = "bachelor", grants = "law", duration = 3 },
+	{ id = "phd", name = "PhD Program", minAge = 24, maxAge = 99, cost = 100000, requirement = "master", grants = "phd", duration = 5 },
 }
 
 -- EXPANDED FREELANCE GIGS (25+ options)
@@ -3456,9 +3457,9 @@ end
 _G.ResetExtendedState = function(player)
 	if not player or not player.UserId then return end
 	
-	-- Create fresh extended state
+	-- Create fresh extended state (use ID-based education format)
 	ExtendedStates[player.UserId] = {
-		Education = "None",
+		Education = "none",
 		Experience = 0,
 		CurrentJob = nil,
 		OwnedProperties = {},

@@ -968,6 +968,176 @@ module.events = {
 			},
 		},
 	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- COLLEGE/UNIVERSITY ACADEMIC EVENTS (GPA AFFECTING)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	{
+		id = "m_college_midterm",
+		minAge = 18, maxAge = 25,
+		weight = 45, cooldown = 2,
+		emoji = "📝", title = "College Midterms!",
+		category = "school",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			local courses = {"Organic Chemistry", "Calculus II", "Macroeconomics", "Literary Theory", "Statistics", "Psychology 101"}
+			return { course = courses[math.random(#courses)] }
+		end,
+		text = "Midterm in %course%! This is worth 25% of your grade!",
+		choices = {
+			{ text = "📚 Studied extensively", effects = { Smarts = 14, Happiness = 8 }, resultText = "A! Your GPA is safe! Professor was impressed!", setFlag = "honor_roll" },
+			{ text = "☕ All-nighter cram session", chanceSuccess = 0.55, effectsOnSuccess = { Smarts = 9, Happiness = 3, Health = -4 }, effectsOnFail = { Smarts = 4, Happiness = -5, Health = -6 },
+			  resultText = "B! Caffeine and adrenaline saved you!", resultTextFail = "C-. Fell asleep during the exam. Oops." },
+			{ text = "🤝 Study group helped", effects = { Smarts = 11, Happiness = 6 }, resultText = "A-! Group study works!", setFlag = "collaborative" },
+			{ text = "🎲 Winged it completely", chanceSuccess = 0.25, effectsOnSuccess = { Smarts = 6, Happiness = 10 }, effectsOnFail = { Smarts = 2, Happiness = -8 },
+			  resultText = "B-! Your BS skills are legendary!", resultTextFail = "F. Academic probation warning!", setFlag = "academic_probation" },
+		},
+	},
+	
+	{
+		id = "m_college_finals",
+		minAge = 18, maxAge = 25,
+		weight = 40, cooldown = 2,
+		emoji = "📋", title = "College Finals Week!",
+		category = "school",
+		requiresFlag = "college_student",
+		text = "FINALS! 4 exams in 5 days! Your GPA hangs in the balance!",
+		choices = {
+			{ text = "📚 Prepared the whole semester", effects = { Smarts = 16, Happiness = 10 }, resultText = "DEAN'S LIST! 4.0 this semester!", setFlags = {"deans_list", "academic_achiever"} },
+			{ text = "🏃 Sprint studying mode", effects = { Smarts = 10, Happiness = 2, Health = -5 }, resultText = "B average! GPA survives another semester!" },
+			{ text = "😱 Adderall and prayer", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 8, Happiness = 4 }, effectsOnFail = { Smarts = 4, Happiness = -6, Health = -8 },
+			  resultText = "C's get degrees! Scraped by!", resultTextFail = "Failed a class. Have to retake it.", setFlag = "academic_trouble" },
+			{ text = "🆘 Emergency tutoring", effects = { Smarts = 12, Happiness = 5, Money = -200 }, resultText = "A-! Worth every penny for that tutoring!" },
+		},
+	},
+	
+	{
+		id = "m_professor_office_hours",
+		minAge = 18, maxAge = 25,
+		weight = 30, cooldown = 3,
+		emoji = "👨‍🏫", title = "Professor Office Hours",
+		category = "school",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			local issues = {"confused about the material", "need help with an assignment", "want to discuss your grade", "interested in research opportunities"}
+			return { issue = issues[math.random(#issues)] }
+		end,
+		text = "You're %issue%. Should you visit your professor's office hours?",
+		choices = {
+			{ text = "📚 Yes, get help!", effects = { Smarts = 8, Happiness = 5 }, resultText = "Professor explained it perfectly! You're getting it now!", setFlag = "proactive_student" },
+			{ text = "🤝 Ask about research", effects = { Smarts = 10, Happiness = 6 }, resultText = "Professor invited you to join their research team!", setFlag = "research_assistant" },
+			{ text = "🙏 Beg for grade bump", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 3, Happiness = 8 }, effectsOnFail = { Smarts = 1, Happiness = -4 },
+			  resultText = "Professor gave you extra credit opportunity!", resultTextFail = "No dice. Earn your grade." },
+			{ text = "😬 Too awkward, skip it", effects = { Happiness = -2 }, resultText = "Still confused. Should have gone." },
+		},
+	},
+	
+	{
+		id = "m_group_project_college",
+		minAge = 18, maxAge = 25,
+		weight = 35, cooldown = 2,
+		emoji = "👥", title = "College Group Project!",
+		category = "school",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			return { slackerName = LifeEvents.randomFirstName() }
+		end,
+		text = "Group project worth 30% of your grade! %slackerName% isn't responding to messages!",
+		choices = {
+			{ text = "🦸 Do it all yourself", effects = { Smarts = 10, Happiness = -4 }, resultText = "A! But you did ALL the work. Exhausted.", setFlag = "reliable" },
+			{ text = "📧 Email the professor", effects = { Smarts = 7, Happiness = 2 }, resultText = "Professor made %slackerName% contribute. Crisis averted!" },
+			{ text = "🗣️ Confront the slacker", chanceSuccess = 0.5, effectsOnSuccess = { Smarts = 8, Happiness = 5 }, effectsOnFail = { Smarts = 5, Happiness = -4 },
+			  resultText = "They stepped up! Great presentation!", resultTextFail = "Drama. Awkward presentation. B-." },
+			{ text = "🤷 Let the grade suffer", effects = { Smarts = 4, Happiness = -3 }, resultText = "C. Could have been worse." },
+		},
+	},
+	
+	{
+		id = "m_thesis_crunch",
+		minAge = 21, maxAge = 30,
+		weight = 25, oneTime = true,
+		emoji = "📚", title = "Thesis Deadline!",
+		category = "school",
+		requiresAnyFlag = {"college_student", "grad_student", "advanced_degree"},
+		getDynamicData = function()
+			local topics = {"machine learning applications", "climate change impacts", "literary analysis", "economic theory", "social psychology", "biomedical research"}
+			return { topic = topics[math.random(#topics)] }
+		end,
+		text = "Your thesis on '%topic%' is due in 2 weeks! You're not done!",
+		choices = {
+			{ text = "📝 Lock in and grind", effects = { Smarts = 18, Happiness = 2, Health = -6 }, resultText = "SUBMITTED! Advisor says it's publishable quality!", setFlag = "published_research" },
+			{ text = "🆘 Request extension", chanceSuccess = 0.6, effectsOnSuccess = { Smarts = 10, Happiness = 5 }, effectsOnFail = { Smarts = 6, Happiness = -4 },
+			  resultText = "Got 2 more weeks! Finished with quality!", resultTextFail = "No extension. Had to submit incomplete." },
+			{ text = "🤝 Get advisor's help", effects = { Smarts = 14, Happiness = 4 }, resultText = "Advisor guided you to the finish line! A!", setFlag = "mentored" },
+			{ text = "😭 Stress breakdown", effects = { Smarts = 5, Happiness = -10, Health = -8 }, resultText = "Barely finished. C. But it's DONE.", setFlag = "burnout" },
+		},
+	},
+	
+	{
+		id = "m_class_participation",
+		minAge = 18, maxAge = 25,
+		weight = 30, cooldown = 2,
+		emoji = "🙋", title = "Class Participation!",
+		category = "school",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			local questions = {"a tricky philosophical question", "a complex math problem", "a controversial topic", "a literature interpretation"}
+			return { question = questions[math.random(#questions)] }
+		end,
+		text = "Professor asks %question% and looks right at you! 10% of grade is participation!",
+		choices = {
+			{ text = "🎯 Nail the answer", effects = { Smarts = 10, Happiness = 8 }, resultText = "PERFECT! 'Exactly right!' says the professor!", setFlag = "class_star" },
+			{ text = "🤔 Take a shot at it", chanceSuccess = 0.6, effectsOnSuccess = { Smarts = 6, Happiness = 5 }, effectsOnFail = { Smarts = 3, Happiness = -2 },
+			  resultText = "Not bad! Professor built on your answer!", resultTextFail = "Close but not quite. At least you tried!" },
+			{ text = "🙈 Avoid eye contact", effects = { Smarts = 2, Happiness = -2 }, resultText = "Someone else got picked. Dodged a bullet?" },
+			{ text = "🤡 Make a joke about it", effects = { Happiness = 6, Smarts = 4 }, resultText = "Class laughed! Professor smiled! Participation points!", setFlag = "class_clown" },
+		},
+	},
+	
+	{
+		id = "m_major_paper",
+		minAge = 18, maxAge = 25,
+		weight = 35, cooldown = 2,
+		emoji = "📄", title = "Major Paper Due!",
+		category = "school",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			local pages = {"8", "12", "15", "20"}
+			local types = {"research paper", "argumentative essay", "literature review", "case study analysis"}
+			return { pages = pages[math.random(#pages)], type = types[math.random(#types)] }
+		end,
+		text = "Your %pages%-page %type% is due in 3 days! How's it going?",
+		choices = {
+			{ text = "✅ First draft done!", effects = { Smarts = 14, Happiness = 6 }, resultText = "A! Time for revisions made it perfect!", setFlag = "organized" },
+			{ text = "📝 Outline complete, writing now", effects = { Smarts = 10, Happiness = 4 }, resultText = "B+! Solid work under pressure!" },
+			{ text = "😅 Haven't started...", chanceSuccess = 0.4, effectsOnSuccess = { Smarts = 6, Happiness = 4, Health = -4 }, effectsOnFail = { Smarts = 3, Happiness = -6, Health = -6 },
+			  resultText = "Red Bull-fueled miracle! C+!", resultTextFail = "Barely readable. D." },
+			{ text = "🤖 AI 'assistance'", chanceSuccess = 0.35, effectsOnSuccess = { Smarts = 4, Happiness = 5 }, effectsOnFail = { Smarts = -6, Happiness = -12 },
+			  resultText = "Got away with it. B-.", resultTextFail = "TURNITIN FLAGGED IT! Academic integrity hearing!", setFlag = "academic_misconduct" },
+		},
+	},
+	
+	{
+		id = "m_lab_work",
+		minAge = 18, maxAge = 25,
+		weight = 25, cooldown = 2,
+		emoji = "🔬", title = "Lab Report Due!",
+		category = "school",
+		requiresFlag = "college_student",
+		getDynamicData = function()
+			local experiments = {"titration", "dissection", "circuit building", "data analysis", "chemical synthesis", "microscopy"}
+			return { experiment = experiments[math.random(#experiments)] }
+		end,
+		text = "Your %experiment% lab report is due! Did you take good notes in lab?",
+		choices = {
+			{ text = "📋 Detailed notes + photos", effects = { Smarts = 12, Happiness = 6 }, resultText = "A! Your data was perfect!", setFlag = "meticulous" },
+			{ text = "📝 Basic notes", effects = { Smarts = 8, Happiness = 4 }, resultText = "B+! Enough to write a solid report!" },
+			{ text = "🤝 Borrowed partner's notes", effects = { Smarts = 6, Happiness = 3 }, resultText = "B-. Thank god for lab partners." },
+			{ text = "😬 Barely remember the lab", chanceSuccess = 0.3, effectsOnSuccess = { Smarts = 4, Happiness = 5 }, effectsOnFail = { Smarts = 2, Happiness = -5 },
+			  resultText = "Made up plausible data. C!", resultTextFail = "Clearly didn't understand. D." },
+		},
+	},
 }
 
 return module
