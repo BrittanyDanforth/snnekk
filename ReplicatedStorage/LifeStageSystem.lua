@@ -861,35 +861,110 @@ function LifeStageSystem.getDeathCause(state)
 	local flags = state.Flags or {}
 	local stats = state.Stats or {}
 	local health = stats.Health or state.Health or 0
+	local healthConditions = state.HealthConditions or {}
+	local addictions = state.Addictions or {}
 	
 	-- Build a list of possible causes weighted by relevance
 	local possibleCauses = {}
 	
 	-- ═══════════════════════════════════════════════════════════════
-	-- HEALTH-SPECIFIC CAUSES (when health hits 0%)
+	-- HEALTH CONDITIONS (from HealthConditions table - prioritized)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	for _, condition in ipairs(healthConditions) do
+		local severity = condition.severity or "mild"
+		local conditionId = condition.id or ""
+		local conditionName = condition.name or conditionId
+		
+		if severity == "terminal" or severity == "severe" then
+			if conditionId == "cancer" then
+				table.insert(possibleCauses, { cause = "cancer", weight = 100 })
+				table.insert(possibleCauses, { cause = "a long battle with " .. conditionName, weight = 80 })
+			elseif conditionId == "heart_disease" or conditionId == "heart_condition" then
+				table.insert(possibleCauses, { cause = "heart failure", weight = 100 })
+				table.insert(possibleCauses, { cause = "a massive heart attack", weight = 80 })
+			elseif conditionId == "stroke" then
+				table.insert(possibleCauses, { cause = "a stroke", weight = 100 })
+			elseif conditionId == "lung_disease" or conditionId == "copd" then
+				table.insert(possibleCauses, { cause = "respiratory failure", weight = 100 })
+			elseif conditionId == "kidney_disease" or conditionId == "kidney_failure" then
+				table.insert(possibleCauses, { cause = "kidney failure", weight = 100 })
+			elseif conditionId == "liver_disease" or conditionId == "cirrhosis" then
+				table.insert(possibleCauses, { cause = "liver failure", weight = 100 })
+			elseif conditionId == "diabetes" then
+				table.insert(possibleCauses, { cause = "diabetes complications", weight = 90 })
+			elseif conditionId == "aids" or conditionId == "hiv" then
+				table.insert(possibleCauses, { cause = "AIDS-related complications", weight = 100 })
+			elseif conditionId == "alzheimers" or conditionId == "dementia" then
+				table.insert(possibleCauses, { cause = "Alzheimer's disease", weight = 100 })
+			else
+				-- Generic severe condition
+				table.insert(possibleCauses, { cause = "complications from " .. conditionName, weight = 70 })
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- ADDICTIONS (from Addictions table)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	for _, addiction in ipairs(addictions) do
+		if not addiction.inRecovery then
+			local severity = addiction.severity or 0
+			local addictionId = addiction.id or ""
+			
+			if severity >= 60 then  -- Severe addiction
+				if addictionId == "heroin" or addictionId == "opioids" then
+					table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+					table.insert(possibleCauses, { cause = "opioid-related complications", weight = 70 })
+				elseif addictionId == "cocaine" or addictionId == "meth" then
+					table.insert(possibleCauses, { cause = "a stimulant overdose", weight = 90 })
+					table.insert(possibleCauses, { cause = "drug-induced cardiac arrest", weight = 80 })
+				elseif addictionId == "alcohol" or addictionId == "alcoholism" then
+					table.insert(possibleCauses, { cause = "liver failure", weight = 90 })
+					table.insert(possibleCauses, { cause = "alcohol poisoning", weight = 70 })
+					table.insert(possibleCauses, { cause = "cirrhosis of the liver", weight = 60 })
+				elseif addictionId == "drugs" then
+					table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+					table.insert(possibleCauses, { cause = "substance abuse complications", weight = 60 })
+				end
+			end
+		end
+	end
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- FLAG-BASED CAUSES (legacy support + special circumstances)
 	-- ═══════════════════════════════════════════════════════════════
 	
 	if health <= 0 then
-		-- Check flags for specific health conditions
+		-- Check flags for specific health conditions (legacy)
 		if flags.terminal_illness or flags.cancer then
-			table.insert(possibleCauses, { cause = "cancer", weight = 100 })
-			table.insert(possibleCauses, { cause = "a long battle with illness", weight = 80 })
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "cancer", weight = 100 })
+				table.insert(possibleCauses, { cause = "a long battle with illness", weight = 80 })
+			end
 		end
 		
 		if flags.heart_disease or flags.heart_condition then
-			table.insert(possibleCauses, { cause = "heart failure", weight = 100 })
-			table.insert(possibleCauses, { cause = "a massive heart attack", weight = 80 })
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "heart failure", weight = 100 })
+				table.insert(possibleCauses, { cause = "a massive heart attack", weight = 80 })
+			end
 		end
 		
 		if flags.drug_addict or flags.drug_addiction then
-			table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
-			table.insert(possibleCauses, { cause = "substance abuse complications", weight = 60 })
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "a drug overdose", weight = 100 })
+				table.insert(possibleCauses, { cause = "substance abuse complications", weight = 60 })
+			end
 		end
 		
 		if flags.alcoholic or flags.alcohol_addiction then
-			table.insert(possibleCauses, { cause = "liver failure", weight = 90 })
-			table.insert(possibleCauses, { cause = "alcohol poisoning", weight = 70 })
-			table.insert(possibleCauses, { cause = "cirrhosis of the liver", weight = 60 })
+			if #possibleCauses == 0 then
+				table.insert(possibleCauses, { cause = "liver failure", weight = 90 })
+				table.insert(possibleCauses, { cause = "alcohol poisoning", weight = 70 })
+				table.insert(possibleCauses, { cause = "cirrhosis of the liver", weight = 60 })
+			end
 		end
 		
 		if flags.in_prison then
@@ -920,7 +995,12 @@ function LifeStageSystem.getDeathCause(state)
 			table.insert(possibleCauses, { cause = "complications from mental illness", weight = 50 })
 		end
 		
-		-- If no specific flags, use general health-failure causes
+		if flags.homeless then
+			table.insert(possibleCauses, { cause = "exposure to the elements", weight = 70 })
+			table.insert(possibleCauses, { cause = "malnutrition", weight = 60 })
+		end
+		
+		-- If no specific causes found, use general health-failure causes
 		if #possibleCauses == 0 then
 			table.insert(possibleCauses, { cause = "organ failure", weight = 40 })
 			table.insert(possibleCauses, { cause = "a sudden medical emergency", weight = 40 })
@@ -997,6 +1077,9 @@ function LifeStageSystem.calculateDeathChance(state)
 	local stats = state.Stats or {}
 	local health = stats.Health or state.Health or 50
 	local flags = state.Flags or {}
+	local healthConditions = state.HealthConditions or {}
+	local addictions = state.Addictions or {}
+	local fitness = state.Fitness or 50
 
 	-- ═══════════════════════════════════════════════════════════════
 	-- INSTANT DEATH: Health at or below 0% = guaranteed death
@@ -1029,7 +1112,77 @@ function LifeStageSystem.calculateDeathChance(state)
 	local healthMod = (100 - health) / 100
 	baseChance = baseChance * (1 + healthMod * 2)
 
-	-- Flag-based modifiers
+	-- ═══════════════════════════════════════════════════════════════
+	-- HEALTH CONDITIONS (from HealthConditions table, not just flags)
+	-- ═══════════════════════════════════════════════════════════════
+	for _, condition in ipairs(healthConditions) do
+		local severity = condition.severity or "mild"
+		local treated = condition.treated or false
+		
+		if severity == "terminal" then
+			baseChance = baseChance * (treated and 3 or 5)
+		elseif severity == "severe" then
+			baseChance = baseChance * (treated and 1.5 or 2.5)
+		elseif severity == "moderate" then
+			baseChance = baseChance * (treated and 1.1 or 1.5)
+		-- mild conditions have minimal impact on death chance
+		end
+		
+		-- Specific condition multipliers
+		if condition.id == "cancer" then
+			baseChance = baseChance * (treated and 1.5 or 3)
+		elseif condition.id == "heart_disease" or condition.id == "heart_condition" then
+			baseChance = baseChance * (treated and 1.3 or 2)
+		elseif condition.id == "diabetes" then
+			baseChance = baseChance * (treated and 1.1 or 1.5)
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- ADDICTIONS (from Addictions table, not just flags)
+	-- ═══════════════════════════════════════════════════════════════
+	for _, addiction in ipairs(addictions) do
+		if not addiction.inRecovery then
+			local severity = addiction.severity or 0
+			
+			-- Higher severity = higher death risk
+			if severity >= 80 then
+				baseChance = baseChance * 3
+			elseif severity >= 60 then
+				baseChance = baseChance * 2
+			elseif severity >= 40 then
+				baseChance = baseChance * 1.5
+			elseif severity >= 20 then
+				baseChance = baseChance * 1.2
+			end
+			
+			-- Specific addiction type multipliers
+			if addiction.id == "heroin" or addiction.id == "opioids" then
+				baseChance = baseChance * 2  -- Opioids are particularly deadly
+			elseif addiction.id == "cocaine" or addiction.id == "meth" then
+				baseChance = baseChance * 1.8
+			elseif addiction.id == "alcohol" or addiction.id == "alcoholism" then
+				baseChance = baseChance * 1.4
+			end
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- FITNESS MODIFIER (protects against death)
+	-- ═══════════════════════════════════════════════════════════════
+	if fitness >= 80 then
+		baseChance = baseChance * 0.5  -- Very fit = 50% less likely to die
+	elseif fitness >= 60 then
+		baseChance = baseChance * 0.7
+	elseif fitness >= 40 then
+		baseChance = baseChance * 0.85
+	elseif fitness < 20 then
+		baseChance = baseChance * 1.3  -- Very unfit = 30% more likely to die
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- FLAG-BASED MODIFIERS (legacy support + additional factors)
+	-- ═══════════════════════════════════════════════════════════════
 	if flags.terminal_illness then
 		baseChance = baseChance * 5
 	end
@@ -1053,6 +1206,15 @@ function LifeStageSystem.calculateDeathChance(state)
 	end
 	if flags.fugitive then
 		baseChance = baseChance * 1.3
+	end
+	if flags.war_veteran then
+		baseChance = baseChance * 1.2  -- PTSD, injuries from service
+	end
+	if flags.homeless then
+		baseChance = baseChance * 2  -- Harsh living conditions
+	end
+	if flags.wealthy or flags.millionaire then
+		baseChance = baseChance * 0.8  -- Better healthcare access
 	end
 
 	return math.min(baseChance, 0.99)

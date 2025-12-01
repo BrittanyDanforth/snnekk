@@ -651,7 +651,10 @@ local function ageUp(player)
 		local validation = EventRunner.getEventValidation(state, eventDef)
 		if not validation.valid then
 			-- Event somehow passed initial filter but failed validation
-			-- Just skip this year
+			-- Show quiet year message instead
+			local quietText = EventRunner.buildYearRecap(state) or "Life continues..."
+			state:AddFeed(quietText)
+			pushState(player, state, quietText)
 			return
 		end
 		
@@ -670,6 +673,12 @@ local function ageUp(player)
 		
 		-- Present event (state already synced above)
 		PresentEvent:FireClient(player, payload, nil)
+	else
+		-- No event this year - show a "life continues" message
+		-- This makes quiet years feel intentional, not broken
+		local quietYearText = EventRunner.buildYearRecap(state) or "Life continues..."
+		state:AddFeed(quietYearText)
+		pushState(player, state, quietYearText)
 	end
 end
 
