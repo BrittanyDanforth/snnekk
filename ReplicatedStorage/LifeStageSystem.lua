@@ -222,6 +222,10 @@ LifeStageSystem.StageOrder = {
 ----------------------------------------------------------------------
 
 LifeStageSystem.EventCategories = {
+	-- ═══════════════════════════════════════════════════════════════
+	-- CORE LIFE CATEGORIES (always available at appropriate ages)
+	-- ═══════════════════════════════════════════════════════════════
+	
 	family = {
 		name = "Family",
 		emoji = "👨‍👩‍👧",
@@ -244,6 +248,14 @@ LifeStageSystem.EventCategories = {
 		description = "Education events.",
 		minAge = 5,
 		maxAge = 30,
+	},
+	
+	education = {
+		name = "Education",
+		emoji = "📚",
+		description = "Education and learning events.",
+		minAge = 5,
+		maxAge = 60,
 	},
 
 	social = {
@@ -270,14 +282,6 @@ LifeStageSystem.EventCategories = {
 		maxAge = 75,
 	},
 
-	crime = {
-		name = "Crime",
-		emoji = "🔪",
-		description = "Criminal activities.",
-		minAge = 10,
-		maxAge = 70,
-	},
-
 	money = {
 		name = "Money",
 		emoji = "💰",
@@ -292,6 +296,28 @@ LifeStageSystem.EventCategories = {
 		description = "Major life milestones.",
 		minAge = 0,
 		maxAge = 120,
+	},
+	
+	life = {
+		name = "Life",
+		emoji = "🌟",
+		description = "General life events and opportunities.",
+		minAge = 0,
+		maxAge = 120,
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CAREER PATH CATEGORIES (require interest/progression flags)
+	-- ═══════════════════════════════════════════════════════════════
+
+	crime = {
+		name = "Crime",
+		emoji = "🔪",
+		description = "Criminal activities.",
+		minAge = 10,
+		maxAge = 70,
+		-- Crime category doesn't require a flag - anyone can stumble into crime
+		-- But serious criminal events should use requiredAllFlags in the event itself
 	},
 
 	prison = {
@@ -333,10 +359,29 @@ LifeStageSystem.EventCategories = {
 	hacking = {
 		name = "Hacking",
 		emoji = "💻",
-		description = "Hacker career events.",
+		description = "Hacker/cybersecurity career events.",
 		minAge = 12,
 		maxAge = 60,
 		requiresFlag = "computer_interest",
+	},
+	
+	tech = {
+		name = "Tech",
+		emoji = "💻",
+		description = "Technology and software career events.",
+		minAge = 12,
+		maxAge = 70,
+		-- Tech origin events (like "first coding project") don't require flags
+		-- But advanced tech events should use requiredAllFlags in the event
+	},
+	
+	cybersecurity = {
+		name = "Cybersecurity",
+		emoji = "🔐",
+		description = "Security and ethical hacking events.",
+		minAge = 16,
+		maxAge = 65,
+		requiresFlag = "security_interested",
 	},
 
 	teaching = {
@@ -346,6 +391,67 @@ LifeStageSystem.EventCategories = {
 		minAge = 22,
 		maxAge = 70,
 		requiresFlag = "teaching_interest",
+	},
+	
+	medical = {
+		name = "Medical",
+		emoji = "🏥",
+		description = "Medical career events.",
+		minAge = 16,
+		maxAge = 80,
+		requiresFlag = "medical_interest_sparked",
+	},
+	
+	legal = {
+		name = "Legal",
+		emoji = "⚖️",
+		description = "Legal career events.",
+		minAge = 18,
+		maxAge = 75,
+		requiresFlag = "legal_interest",
+	},
+	
+	business = {
+		name = "Business",
+		emoji = "📈",
+		description = "Business and entrepreneurship events.",
+		minAge = 16,
+		maxAge = 80,
+		-- Business doesn't require a flag - anyone can start
+	},
+	
+	military = {
+		name = "Military",
+		emoji = "🎖️",
+		description = "Military career events.",
+		minAge = 17,
+		maxAge = 65,
+		requiresFlag = "military_interest",
+	},
+	
+	sports = {
+		name = "Sports",
+		emoji = "⚽",
+		description = "Sports career events.",
+		minAge = 8,
+		maxAge = 45,
+		requiresFlag = "sports_interest",
+	},
+	
+	entertainment = {
+		name = "Entertainment",
+		emoji = "🎬",
+		description = "Entertainment and fame events.",
+		minAge = 10,
+		maxAge = 80,
+	},
+	
+	fame = {
+		name = "Fame",
+		emoji = "⭐",
+		description = "Fame and celebrity events.",
+		minAge = 14,
+		maxAge = 100,
 	},
 
 	death = {
@@ -708,6 +814,103 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		if not inSchool and not flags.college_student then
 			result.valid = false
 			table.insert(result.reasons, "Not in school")
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 13. CAREER VALIDATION (requiredCareerId, requiredCareerMinTier)
+	-- This is CRITICAL for path-gated events
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local requiredCareerId = eventDef.requiredCareerId or (conditions and conditions.requiredCareerId)
+	if requiredCareerId then
+		local career = state.Career or {}
+		local currentCareerId = career.path or career.id
+		
+		-- Check if player has the required career
+		if currentCareerId ~= requiredCareerId then
+			-- Also check flags for career (some systems use flags instead of Career table)
+			local hasCareerFlag = flags["career_" .. requiredCareerId] or flags["career_" .. requiredCareerId .. "_started"]
+			if not hasCareerFlag then
+				result.valid = false
+				table.insert(result.reasons, "Requires career: " .. requiredCareerId)
+			end
+		end
+	end
+	
+	local requiredCareerMinTier = eventDef.requiredCareerMinTier or (conditions and conditions.requiredCareerMinTier)
+	if requiredCareerMinTier and requiredCareerMinTier > 0 then
+		local career = state.Career or {}
+		local currentTier = career.tier or career.level or 0
+		
+		-- If tier not tracked in Career, estimate from experience or flags
+		if currentTier == 0 then
+			local experience = career.experience or 0
+			if experience >= 10 then currentTier = 3
+			elseif experience >= 5 then currentTier = 2
+			elseif experience >= 1 then currentTier = 1
+			end
+		end
+		
+		if currentTier < requiredCareerMinTier then
+			result.valid = false
+			table.insert(result.reasons, "Requires career tier " .. requiredCareerMinTier .. " (have tier " .. currentTier .. ")")
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 14. EDUCATION VALIDATION (requiredEducation)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local requiredEducation = eventDef.requiredEducation or (conditions and conditions.requiredEducation)
+	if requiredEducation then
+		local education = state.Education or {}
+		local currentLevel = education.level or state.EducationLevel or "none"
+		
+		-- Education hierarchy
+		local educationLevels = {
+			none = 0,
+			elementary = 1,
+			middle = 2,
+			high_school = 3,
+			highschool = 3,
+			some_college = 4,
+			associate = 5,
+			bachelor = 6,
+			bachelors = 6,
+			master = 7,
+			masters = 7,
+			doctorate = 8,
+			phd = 8,
+		}
+		
+		local requiredLevel = educationLevels[requiredEducation] or 0
+		local currentLevelNum = educationLevels[currentLevel] or 0
+		
+		if currentLevelNum < requiredLevel then
+			result.valid = false
+			table.insert(result.reasons, "Requires education: " .. requiredEducation)
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 15. MAX STATS VALIDATION (maxStats - e.g., events for poor/unhealthy)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	local maxStats = eventDef.maxStats or (conditions and conditions.maxStats)
+	if maxStats and type(maxStats) == "table" then
+		local stats = state.Stats or {}
+		for statName, maxValue in pairs(maxStats) do
+			local currentValue = 0
+			if statName == "Money" then
+				currentValue = state.Money or 0
+			else
+				currentValue = stats[statName] or state[statName] or 50
+			end
+			if currentValue > maxValue then
+				result.valid = false
+				table.insert(result.reasons, statName .. " too high (max " .. maxValue .. ", have " .. currentValue .. ")")
+			end
 		end
 	end
 

@@ -36,7 +36,7 @@ table.insert(events, {
 	conditions = {
 		minAge = 12,
 		maxAge = 25,
-		blockedFlags = {"career_software_developer_started", "career_tech_rejected"},
+		blockedFlags = {"career_software_developer_started", "career_tech_rejected", "computer_interest"},
 		minStats = {Smarts = 30},
 	},
 	
@@ -53,17 +53,19 @@ table.insert(events, {
 		{
 			id = "keep_learning",
 			text = "This is amazing! I want to learn more.",
-			resultText = "You dive deeper into programming, spending hours watching tutorials and building small projects.",
+			resultText = "You dive deeper into programming, spending hours watching tutorials and building small projects. You're hooked.",
 			effects = {Smarts = 3, Happiness = 4},
-			flags = {set = {"tech_interested", "coding_hobby"}},
+			-- CRITICAL: Set computer_interest - this unlocks the tech/hacking career paths
+			flags = {set = {"tech_interested", "coding_hobby", "computer_interest"}},
 			careerXP = 5,
 		},
 		{
 			id = "cool_but_hard",
 			text = "It's cool, but also really hard...",
-			resultText = "You bookmark some resources for later. Maybe you'll come back to it someday.",
+			resultText = "You bookmark some resources for later. The interest is there, you just need more time.",
 			effects = {Smarts = 1},
-			flags = {set = {"tech_curious"}},
+			-- Still set computer_interest but at a basic level
+			flags = {set = {"tech_curious", "computer_interest"}},
 		},
 		{
 			id = "not_for_me",
@@ -93,9 +95,10 @@ table.insert(events, {
 	conditions = {
 		minAge = 14,
 		maxAge = 28,
-		blockedFlags = {"career_cybersecurity_started", "security_rejected"},
+		blockedFlags = {"career_cybersecurity_started", "security_rejected", "security_interested"},
 		minStats = {Smarts = 35},
-		requiredAnyFlags = {"tech_interested", "coding_hobby", "tech_curious"},
+		-- MUST have shown interest in tech/coding first
+		requiredAnyFlags = {"tech_interested", "coding_hobby", "tech_curious", "computer_interest"},
 	},
 	
 	text = "You stumble across a video about how websites get compromised. The techniques are fascinating - like digital lockpicking. You realize security is basically a puzzle where the stakes are real.",
@@ -104,17 +107,25 @@ table.insert(events, {
 		{
 			id = "deep_dive",
 			text = "This is exactly what I want to do!",
-			resultText = "You spend weeks learning about networks, encryption, and how systems can be protected - or broken.",
+			resultText = "You spend weeks learning about networks, encryption, and how systems can be protected - or broken. You practice on legal platforms and virtual labs.",
 			effects = {Smarts = 4, Happiness = 3},
-			flags = {set = {"security_interested", "security_hobby"}},
+			-- CRITICAL: Set security_interested AND security_hobby - required for security career events
+			flags = {set = {"security_interested", "security_hobby", "computer_interest"}},
 			careerXP = 10,
 		},
 		{
 			id = "interesting_scary",
 			text = "Interesting, but also kind of scary.",
-			resultText = "You learn the basics of staying safe online but don't go too deep.",
+			resultText = "You learn the basics of staying safe online but don't pursue it further. Maybe someday.",
 			effects = {Smarts = 2},
 			flags = {set = {"security_aware"}},
+		},
+		{
+			id = "too_risky",
+			text = "This seems illegal. I'll stay away.",
+			resultText = "You close the browser. Some rabbit holes are better left unexplored.",
+			effects = {Karma = 1},
+			flags = {set = {"security_rejected"}},
 		},
 	},
 })
@@ -556,53 +567,76 @@ table.insert(events, {
 	id = "security_ethical_choice",
 	emoji = "⚖️",
 	title = "The Ethical Line",
-	category = "tech",
+	category = "hacking",  -- Changed from "tech" to use proper category with flag requirement
 	tags = {"career", "cybersecurity", "morality", "branch_choice"},
 	
-	weight = 100,
+	weight = 15,  -- Reduced from 100 - shouldn't be super common
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = false, -- Career events should NOT be milestones
+	milestone = false,
 	
 	chainId = "security_branch",
 	chainStep = 1,
 	
+	-- PROPER GATING: Only fires for players who have actually pursued security/hacking
 	conditions = {
 		minAge = 18,
-		maxAge = 35,
+		maxAge = 45,
+		-- Must already be in the cybersecurity career path
 		requiredCareerId = "cybersecurity",
 		requiredCareerMinTier = 1,
+		-- Must have one of these flags proving they're actually in security work
+		requiredAnyFlags = {"bug_bounty_hunter", "security_professional", "security_hobby", "security_employed", "pentester"},
+		-- Must have basic computer interest (origin flag)
+		requiredAllFlags = {"computer_interest"},
+		-- Needs actual skill
+		minStats = {Smarts = 55},
+		-- Can't have already chosen a branch
 		blockedFlags = {"security_branch_chosen"},
 	},
 	
-	text = "You discover a major vulnerability in a company that doesn't have a bug bounty program. You could report it responsibly and get nothing, sell the info to the highest bidder, or just ignore it.",
+	text = "Through your security work and late-night research, you stumble upon a critical vulnerability in a major company's system. They don't have a bug bounty program. If exploited, this could cause massive damage - or be worth a fortune on the dark web.",
 	
 	choices = {
 		{
 			id = "ethical_report",
-			text = "Report it responsibly anyway.",
-			resultText = "You do the right thing. The company thanks you privately and offers you a consulting gig.",
-			effects = {Karma = 8, Money = 2000, Happiness = 3},
-			flags = {set = {"security_branch_chosen", "cybersecurity_ethical"}},
+			text = "Report it responsibly and request a bounty.",
+			resultText = "You document the issue thoroughly and report it through official channels. The company is grateful and offers you a consulting contract plus a modest bounty.",
+			effects = {Karma = 8, Money = 5000, Happiness = 4},
+			flags = {set = {"security_branch_chosen", "cybersecurity_ethical", "white_hat", "elite_hacker"}},
 			careerBranch = "ethical",
-			careerXP = 30,
-			careerReputation = 15,
+			careerXP = 35,
+			careerReputation = 20,
 		},
 		{
 			id = "gray_area",
-			text = "Reach out to them first, then negotiate payment.",
-			resultText = "It's a gray area, but you manage to get paid for your work without crossing legal lines.",
-			effects = {Karma = -2, Money = 8000, Happiness = 2},
-			flags = {set = {"security_branch_chosen", "cybersecurity_gray"}},
+			text = "Reach out privately and negotiate payment first.",
+			resultText = "It's a gray area ethically, but you manage to get paid well for your discovery without crossing legal lines. Some might call it extortion, you call it fair compensation.",
+			effects = {Karma = -3, Money = 15000, Happiness = 2},
+			flags = {set = {"security_branch_chosen", "cybersecurity_gray", "gray_hat"}},
 			careerBranch = "gray_hat",
-			careerXP = 20,
+			careerXP = 25,
+			careerReputation = 5,
+		},
+		{
+			id = "sell_exploit",
+			text = "Sell the exploit on the dark web.",
+			chanceSuccess = 0.70,
+			resultTextSuccess = "You find a buyer through encrypted channels. The money hits your crypto wallet. You feel powerful, but also paranoid - you're a black hat now.",
+			resultTextFail = "The buyer ghosts you, and you notice strange activity on your accounts. Someone might be investigating. You've made enemies.",
+			effectsOnSuccess = {Karma = -10, Money = 50000, Happiness = -2, Health = -3},
+			effectsOnFail = {Karma = -8, Money = 0, Happiness = -8, Health = -5},
+			flags = {set = {"security_branch_chosen", "cybersecurity_criminal", "black_hat", "under_investigation"}},
+			careerBranch = "black_hat",
+			careerXP = 15,
+			careerReputation = -15,
 		},
 		{
 			id = "ignore",
-			text = "Not my problem. Ignore it.",
-			resultText = "You move on. Someone else will probably find it eventually.",
-			effects = {Karma = -1},
-			flags = {set = {"security_branch_chosen"}},
+			text = "Walk away. Too much heat.",
+			resultText = "You decide this isn't worth the risk or the moral dilemma. You sleep easier, but wonder what could have been.",
+			effects = {Karma = 1, Happiness = -2},
+			flags = {set = {"security_branch_chosen", "security_cautious"}},
 		},
 	},
 })
