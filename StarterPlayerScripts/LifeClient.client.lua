@@ -1217,39 +1217,39 @@ eventOverlay.Visible = false
 eventOverlay.ZIndex = 60
 eventOverlay.Parent = screenGui
 
--- outer shadow frame
+-- outer shadow frame - WIDER for better title display
 local eventShadowFrame = Instance.new("Frame")
-eventShadowFrame.Size = UDim2.new(0, 340, 0, 0)
+eventShadowFrame.Size = UDim2.new(0, 360, 0, 0)  -- Wider (was 340)
 eventShadowFrame.AutomaticSize = Enum.AutomaticSize.Y
 eventShadowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 eventShadowFrame.Position = UDim2.fromScale(0.5, 0.5)
 eventShadowFrame.BackgroundColor3 = C.Black
-eventShadowFrame.BackgroundTransparency = 0.92
+eventShadowFrame.BackgroundTransparency = 0.88  -- Slightly more visible shadow
 eventShadowFrame.ZIndex = 61
 eventShadowFrame.Parent = eventOverlay
-corner(eventShadowFrame, 28)
+corner(eventShadowFrame, 24)
 
--- red shell (outer border)
+-- BitLife-style colored shell (outer border) - premium look
 local eventShell = Instance.new("Frame")
 eventShell.Name = "EventShell"
-eventShell.Size = UDim2.new(1, -6, 1, -6)
-eventShell.Position = UDim2.new(0, 3, 0, 3)
-eventShell.BackgroundColor3 = C.Red
+eventShell.Size = UDim2.new(1, -4, 1, -4)
+eventShell.Position = UDim2.new(0, 2, 0, 2)
+eventShell.BackgroundColor3 = C.Red  -- BitLife signature red
 eventShell.ZIndex = 62
 eventShell.Parent = eventShadowFrame
-corner(eventShell, 30)
-stroke(eventShell, 2, 0.4, C.RedDark)
-createShadow(eventShell, 4, 18, C.Black, 0.9)
+corner(eventShell, 22)
+stroke(eventShell, 2, 0.3, C.RedDark)
+createShadow(eventShell, 6, 20, C.Black, 0.85)  -- Better shadow
 
--- inner white card
+-- inner white card - clean BitLife style
 local eventCard = Instance.new("Frame")
 eventCard.Name = "EventCard"
-eventCard.Size = UDim2.new(1, -10, 1, -10)
-eventCard.Position = UDim2.new(0, 5, 0, 5)
+eventCard.Size = UDim2.new(1, -8, 1, -8)
+eventCard.Position = UDim2.new(0, 4, 0, 4)
 eventCard.BackgroundColor3 = C.White
 eventCard.ZIndex = 63
 eventCard.Parent = eventShell
-corner(eventCard, 26)
+corner(eventCard, 20)
 
 local eventLayout = Instance.new("UIListLayout")
 eventLayout.Padding = UDim.new(0, 0)
@@ -1315,38 +1315,51 @@ relationLbl.Text = "Classmate"
 relationLbl.ZIndex = 66
 relationLbl.Parent = relationBanner
 
--- title section (emoji + event title)
+-- title section (emoji + event title) - BitLife style with proper sizing
 local titleSection = Instance.new("Frame")
-titleSection.Size = UDim2.new(1, 0, 0, 100)
+titleSection.Size = UDim2.new(1, 0, 0, 0)
+titleSection.AutomaticSize = Enum.AutomaticSize.Y  -- EXPAND to fit content
 titleSection.BackgroundTransparency = 1
 titleSection.LayoutOrder = 2
 titleSection.ZIndex = 64
 titleSection.Parent = eventCard
 
+-- Add padding to title section so emoji doesn't clip at top
+local titlePadding = Instance.new("UIPadding")
+titlePadding.PaddingTop = UDim.new(0, 16)
+titlePadding.PaddingBottom = UDim.new(0, 8)
+titlePadding.PaddingLeft = UDim.new(0, 16)
+titlePadding.PaddingRight = UDim.new(0, 16)
+titlePadding.Parent = titleSection
+
 local titleLayout = Instance.new("UIListLayout")
 titleLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-titleLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-titleLayout.Padding = UDim.new(0, 8)
+titleLayout.VerticalAlignment = Enum.VerticalAlignment.Top  -- Top align so it stacks properly
+titleLayout.Padding = UDim.new(0, 10)
 titleLayout.Parent = titleSection
 
+-- Emoji container with proper sizing
 local eventEmoji = Instance.new("TextLabel")
-eventEmoji.Size = UDim2.new(0, 72, 0, 72)
+eventEmoji.Size = UDim2.new(0, 64, 0, 64)  -- Slightly smaller for balance
 eventEmoji.BackgroundTransparency = 1
 eventEmoji.Font = F.Body
-eventEmoji.TextSize = 60  -- BIGGER emoji
+eventEmoji.TextSize = 52  -- Balanced emoji size
 eventEmoji.Text = "🙂"
 eventEmoji.LayoutOrder = 1
 eventEmoji.ZIndex = 65
 eventEmoji.Parent = titleSection
 
+-- Event title - AutomaticSize so it NEVER clips!
 local eventTitle = Instance.new("TextLabel")
-eventTitle.Size = UDim2.new(0.95, 0, 0, 38)
+eventTitle.Size = UDim2.new(1, 0, 0, 0)  -- Full width, auto height
+eventTitle.AutomaticSize = Enum.AutomaticSize.Y  -- EXPAND for long titles
 eventTitle.BackgroundTransparency = 1
 eventTitle.Font = F.Title
-eventTitle.TextSize = 32  -- 20% BIGGER (was 26)
+eventTitle.TextSize = 26  -- Slightly smaller for better fit
 eventTitle.TextColor3 = C.Gray900
 eventTitle.Text = "Life Event"
-eventTitle.TextWrapped = true
+eventTitle.TextWrapped = true  -- Wrap long titles to multiple lines
+eventTitle.TextXAlignment = Enum.TextXAlignment.Center
 eventTitle.LayoutOrder = 2
 eventTitle.ZIndex = 65
 eventTitle.Parent = titleSection
