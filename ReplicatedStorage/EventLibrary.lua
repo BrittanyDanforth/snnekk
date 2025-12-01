@@ -475,7 +475,14 @@ end
 
 -- For backwards compatibility, expose events as EventLibrary.events
 -- This allows old code that does `for _, event in ipairs(EventLibrary.events)` to work
-EventLibrary.events = LifeEvents.getAllEvents()
+EventLibrary.events = LifeEvents.getAllEvents() or {}
+
+-- Also expose as Events (capital E) for LifeManager compatibility
+-- NEVER let this be nil - use empty table as fallback
+EventLibrary.Events = EventLibrary.events
+
+-- Debug: verify events were loaded
+print("[EventLibrary] Events array initialized with", #EventLibrary.Events, "events")
 
 -- ═══════════════════════════════════════════════════════════════
 -- UTILITY FUNCTIONS
