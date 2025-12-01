@@ -2029,24 +2029,41 @@ end
 
 function Minigames:play(gameType, callback, options)
 	options = options or {}
+	
+	print("[Minigames] 🎮 Starting minigame:", gameType)
 
-	if gameType == "debate" then
-		self:startDebate(callback)
-	elseif gameType == "heist" then
-		self:startHeist(callback)
-	elseif gameType == "getaway" then
-		self:startGetaway(callback)
-	elseif gameType == "qte" then
-		self:startQTE(callback, options.difficulty)
-	elseif gameType == "prison_escape" then
-		self:startPrisonEscape(callback)
-	elseif gameType == "mash" then
-		self:startMash(callback, options)
-	elseif gameType == "hacking" then
-		self:startHacking(callback, options)
-	else
+	local success, err = pcall(function()
+		if gameType == "debate" then
+			self:startDebate(callback)
+		elseif gameType == "heist" then
+			self:startHeist(callback)
+		elseif gameType == "getaway" then
+			self:startGetaway(callback)
+		elseif gameType == "qte" then
+			self:startQTE(callback, options.difficulty)
+		elseif gameType == "prison_escape" then
+			self:startPrisonEscape(callback)
+		elseif gameType == "mash" then
+			self:startMash(callback, options)
+		elseif gameType == "hacking" then
+			self:startHacking(callback, options)
+		elseif gameType == "typing" then
+			-- Typing minigame - use mash as fallback
+			self:startMash(callback, options)
+		else
+			warn("[Minigames] ⚠️ Unknown minigame type:", gameType, "- auto-failing")
+			if callback then
+				-- IMPORTANT: Return FALSE for unknown types, not true!
+				callback(false, { error = "Unknown minigame type: " .. tostring(gameType) })
+			end
+		end
+	end)
+	
+	if not success then
+		warn("[Minigames] ❌ Error starting minigame:", err)
 		if callback then
-			callback(true, { error = "Unknown minigame type: " .. tostring(gameType) })
+			-- If minigame crashes, return false (fail)
+			callback(false, { error = "Minigame error: " .. tostring(err) })
 		end
 	end
 end
