@@ -1,9 +1,26 @@
 -- LifeState.lua
 -- Server-side representation of a player's life state with BitLife-style systems
 -- Extended with career paths, relationships, assets, and proper helpers
+-- INTEGRATED with EventMemory for comprehensive history tracking
 
 local LifeState = {}
 LifeState.__index = LifeState
+
+-- Load EventMemory module for comprehensive player history tracking
+local EventMemory = nil
+local function loadEventMemory()
+	if EventMemory then return EventMemory end
+	local success, result = pcall(function()
+		return require(script.Parent:WaitForChild("EventMemory", 2))
+	end)
+	if success and result then
+		EventMemory = result
+		print("[LifeState] EventMemory module loaded successfully")
+	else
+		warn("[LifeState] EventMemory module not found, using basic flag tracking")
+	end
+	return EventMemory
+end
 
 local function clamp(n, minVal, maxVal)
 	if n < minVal then
@@ -135,6 +152,18 @@ function LifeState.new(player)
 	-- Feed log
 	self.Feed = {}
 
+	-- ═══════════════════════════════════════════════════════════════
+	-- COMPREHENSIVE EVENT MEMORY (AAA BitLife-style history tracking)
+	-- This tracks EVERYTHING the player does for proper event validation
+	-- ═══════════════════════════════════════════════════════════════
+	local mem = loadEventMemory()
+	if mem then
+		self.Memory = mem.create()
+	else
+		-- Fallback if EventMemory module fails to load
+		self.Memory = nil
+	end
+
 	return self
 end
 
@@ -186,6 +215,149 @@ function LifeState:ApplyEffects(effects)
 	end
 
 	self:ClampStats()
+end
+
+----------------------------------------------------------------------
+-- EVENT MEMORY INTEGRATION (AAA BitLife-style tracking)
+----------------------------------------------------------------------
+
+-- Record an event to memory (call this when events occur)
+function LifeState:RecordEvent(eventType, data)
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		mem.recordEvent(self.Memory, eventType, data, self.Age)
+		-- Sync memory-derived flags to state flags
+		mem.syncToState(self.Memory, self)
+	end
+end
+
+-- Validate if an event can fire based on player's actual history
+function LifeState:ValidateEvent(eventDef)
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.validateEvent(eventDef, self, self.Memory)
+	end
+	return { valid = true, reasons = {} } -- Allow if no memory available
+end
+
+-- Get comprehensive life summary from memory
+function LifeState:GetLifeSummary()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.getLifeSummary(self.Memory)
+	end
+	return {}
+end
+
+-- Memory-backed validation helpers (use these in events!)
+function LifeState:HasEverWorked()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasEverWorked(self.Memory)
+	end
+	-- Fallback to flags
+	return self:HasFlag("employed") or self:HasFlag("has_job") or self:HasFlag("ever_worked")
+end
+
+function LifeState:IsCurrentlyEmployed()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.isCurrentlyEmployed(self.Memory)
+	end
+	return self:HasFlag("employed") or self:HasFlag("has_job")
+end
+
+function LifeState:HasEducation(level)
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasEducation(self.Memory, level)
+	end
+	-- Fallback to Education table
+	local educationLevels = {
+		none = 0, elementary = 1, middle = 2, high_school = 3, highschool = 3,
+		some_college = 4, associate = 5, bachelor = 6, bachelors = 6,
+		master = 7, masters = 7, doctorate = 8, phd = 8,
+	}
+	local currentLevel = educationLevels[self.Education.level or "none"] or 0
+	local requiredLevel = educationLevels[level] or 0
+	return currentLevel >= requiredLevel
+end
+
+function LifeState:HasDroppedOut()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasDroppedOut(self.Memory)
+	end
+	return self:HasFlag("dropped_out") or self:HasFlag("expelled")
+end
+
+function LifeState:HasActualFriends()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasFriends(self.Memory)
+	end
+	-- Fallback to relationships
+	for _, rel in pairs(self.Relationships) do
+		if (rel.type == "friend") and rel.alive ~= false then
+			return true
+		end
+	end
+	return false
+end
+
+function LifeState:GetFriendName()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.getFriendName(self.Memory)
+	end
+	-- Fallback to relationships
+	for _, rel in pairs(self.Relationships) do
+		if (rel.type == "friend") and rel.alive ~= false and rel.name then
+			return rel.name
+		end
+	end
+	return nil
+end
+
+function LifeState:HasRomanticPartner()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasPartner(self.Memory)
+	end
+	local _, partner = self:GetPartner()
+	return partner ~= nil
+end
+
+function LifeState:HasCriminalRecord()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasCriminalRecord(self.Memory)
+	end
+	return #self.CriminalRecord > 0 or self:HasFlag("criminal")
+end
+
+function LifeState:CanFileTaxes()
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.canFileTaxes(self.Memory)
+	end
+	return self:HasEverWorked()
+end
+
+function LifeState:HasSkill(skillName)
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasSkill(self.Memory, skillName)
+	end
+	return self:HasFlag("knows_" .. string.lower(skillName):gsub(" ", "_"))
+end
+
+function LifeState:HasLicense(licenseType)
+	local mem = loadEventMemory()
+	if mem and self.Memory then
+		return mem.hasLicense(self.Memory, licenseType)
+	end
+	return self:HasFlag("has_" .. licenseType .. "_license") or self:HasFlag("has_license")
 end
 
 ----------------------------------------------------------------------
@@ -351,6 +523,22 @@ function LifeState:AddRelationship(categoryOrType, person)
 	}
 	
 	self.Relationships[uniqueId] = entry
+	
+	-- RECORD TO MEMORY (AAA BitLife-style tracking)
+	if standardType == "friend" then
+		self:RecordEvent("made_friend", {
+			name = entry.name,
+			id = uniqueId,
+		})
+		self:SetFlag("ever_had_friend")
+		self:SetFlag("has_friend")
+	elseif standardType == "romance" then
+		self:RecordEvent("started_dating", {
+			partner = entry.name,
+			id = uniqueId,
+		})
+	end
+	
 	return entry, uniqueId
 end
 
@@ -444,9 +632,29 @@ function LifeState:SetCareer(path, title, employer, salary)
 	self.Job = employer
 	self.JobTitle = title
 	self.JobSalary = salary or 0
+	
+	-- Set employment flags
+	self:SetFlag("employed")
+	self:SetFlag("has_job")
+	self:SetFlag("ever_worked")
+	
+	-- RECORD TO MEMORY (AAA BitLife-style tracking)
+	self:RecordEvent("job_started", {
+		path = path,
+		title = title,
+		employer = employer,
+		salary = salary or 0,
+	})
 end
 
-function LifeState:ClearCareer()
+function LifeState:ClearCareer(reason)
+	local previousJob = {
+		path = self.Career.path,
+		title = self.Career.jobTitle,
+		employer = self.Career.employer,
+		salary = self.Career.salary,
+	}
+	
 	self.Career = {
 		path = nil,
 		jobTitle = nil,
@@ -459,6 +667,14 @@ function LifeState:ClearCareer()
 	self.Job = nil
 	self.JobTitle = nil
 	self.JobSalary = 0
+	
+	-- Clear employment flags
+	self:ClearFlag("employed")
+	self:ClearFlag("has_job")
+	
+	-- RECORD TO MEMORY
+	local eventType = reason == "fired" and "job_fired" or (reason == "quit" and "job_quit" or "job_ended")
+	self:RecordEvent(eventType, previousJob)
 end
 
 function LifeState:HasJob()
@@ -496,6 +712,29 @@ function LifeState:Graduate(degree)
 			major = self.Education.major,
 		})
 	end
+	
+	-- RECORD TO MEMORY (AAA BitLife-style tracking)
+	self:RecordEvent("school_graduated", {
+		level = self.Education.level,
+		degree = degree,
+		schoolName = self.Education.schoolName,
+		major = self.Education.major,
+	})
+	
+	-- Set appropriate flags
+	if self.Education.level == "highschool" or self.Education.level == "high_school" then
+		self:SetFlag("high_school_graduate")
+	elseif self.Education.level == "university" or self.Education.level == "bachelor" then
+		self:SetFlag("college_graduate")
+		self:SetFlag("bachelors_degree")
+	elseif self.Education.level == "graduate" or self.Education.level == "master" then
+		self:SetFlag("masters_degree")
+		self:SetFlag("advanced_degree")
+	elseif self.Education.level == "doctorate" then
+		self:SetFlag("doctorate")
+		self:SetFlag("phd")
+		self:SetFlag("advanced_degree")
+	end
 end
 
 function LifeState:HasDegree(degreeType)
@@ -505,6 +744,40 @@ function LifeState:HasDegree(degreeType)
 		end
 	end
 	return false
+end
+
+function LifeState:DropOut(level)
+	local dropoutLevel = level or self.Education.level
+	
+	-- Set flags
+	self:SetFlag("dropped_out")
+	if dropoutLevel == "highschool" or dropoutLevel == "high_school" then
+		self:SetFlag("high_school_dropout")
+	end
+	
+	-- RECORD TO MEMORY (AAA BitLife-style tracking)
+	self:RecordEvent("school_dropped_out", {
+		level = dropoutLevel,
+	})
+end
+
+function LifeState:GetGED()
+	self:SetFlag("ged_graduate")
+	self:ClearFlag("high_school_dropout") -- GED removes dropout stigma
+	
+	-- RECORD TO MEMORY
+	self:RecordEvent("got_ged", {})
+end
+
+function LifeState:Expelled()
+	self:SetFlag("expelled")
+	self:SetFlag("dropped_out")
+	
+	-- RECORD TO MEMORY
+	self:RecordEvent("school_dropped_out", {
+		level = self.Education.level,
+		reason = "expelled",
+	})
 end
 
 ----------------------------------------------------------------------
@@ -898,23 +1171,40 @@ end
 -- CRIMINAL RECORD
 ----------------------------------------------------------------------
 
-function LifeState:AddCrime(crime)
+function LifeState:AddCrime(crime, caught)
 	table.insert(self.CriminalRecord, {
 		crime = crime,
 		year = self.Year,
 		age = self.Age,
+		caught = caught or false,
 	})
+	
+	-- RECORD TO MEMORY (AAA BitLife-style tracking)
+	self:RecordEvent("committed_crime", {
+		type = crime,
+		caught = caught or false,
+	})
+	self:SetFlag("criminal")
+	self:SetFlag("committed_crime")
 end
 
 function LifeState:HasCriminalRecord()
 	return #self.CriminalRecord > 0
 end
 
-function LifeState:GoToJail(years)
+function LifeState:GoToJail(years, crime)
 	self.InJail = true
 	self.JailSentence = years
 	self.JailTime = years
 	self:SetFlag("in_prison")
+	self:SetFlag("criminal_record")
+	
+	-- RECORD TO MEMORY (AAA BitLife-style tracking)
+	self:RecordEvent("arrested", { crime = crime })
+	self:RecordEvent("went_to_prison", {
+		years = years,
+		crime = crime,
+	})
 end
 
 function LifeState:ServeTime(years)
@@ -926,6 +1216,10 @@ function LifeState:ServeTime(years)
 		self.JailTime = 0
 		self:ClearFlag("in_prison")
 		self:SetFlag("ex_con")
+		
+		-- RECORD TO MEMORY (AAA BitLife-style tracking)
+		self:RecordEvent("released_from_prison", {})
+		
 		return true  -- Released
 	end
 	return false
@@ -1189,6 +1483,9 @@ function LifeState:Serialize()
 		
 		-- Feed log (recent entries only to save space)
 		Feed = self:GetRecentFeed(50),
+		
+		-- Comprehensive Event Memory (AAA BitLife-style tracking)
+		Memory = self.Memory,
 	}
 end
 
@@ -1299,6 +1596,17 @@ function LifeState.fromSerialized(player, data)
 	
 	-- Feed
 	self.Feed = data.Feed or {}
+	
+	-- Restore Event Memory (AAA BitLife-style tracking)
+	local mem = loadEventMemory()
+	if mem and data.Memory then
+		self.Memory = data.Memory
+	elseif mem then
+		-- Create fresh memory if no saved data
+		self.Memory = mem.create()
+	else
+		self.Memory = nil
+	end
 	
 	return self
 end

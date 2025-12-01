@@ -68,9 +68,23 @@ module.events = {
 	{
 		id = "m_college_start",
 		minAge = 18, maxAge = 18,
-		weight = 90, milestone = true, oneTime = true,
+		weight = 90, milestone = false, oneTime = true, -- NOT a milestone - requires prerequisites!
 		emoji = "🎓", title = "Starting College!",
 		category = "school",
+		-- CRITICAL: Must have graduated high school (or GED) AND been accepted to college
+		requiresAnyFlag = {"high_school_graduate", "ged_graduate", "college_accepted", "scholarship"},
+		-- Block dropouts without GED and those already in college
+		blockIfFlag = "college_student",
+		-- Additional validation
+		requires = function(state)
+			local flags = state.Flags or {}
+			-- Must have completed high school education
+			if flags.high_school_dropout and not flags.ged_graduate then
+				return false
+			end
+			-- Must have high school diploma or equivalent
+			return flags.high_school_graduate or flags.ged_graduate
+		end,
 		getDynamicData = function()
 			local dorms = {"ancient dorm with no AC", "modern suite-style living", "party dorm", "quiet study dorm", "themed living community"}
 			local majors = {"Undeclared", "Pre-Med", "Engineering", "Business", "Liberal Arts", "Computer Science", "Psychology", "Communications"}
@@ -1051,23 +1065,69 @@ module.events = {
 		},
 	},
 	
+	-- ═══════════════════════════════════════════════════════════════
+	-- WINDFALL EVENTS - Split by source type for proper validation
+	-- ═══════════════════════════════════════════════════════════════
+	
 	{
-		id = "m_unexpected_money",
-		minAge = 22, maxAge = 35,
-		weight = 15, cooldown = 3,
-		emoji = "💰", title = "Unexpected Money!",
+		id = "m_work_bonus",
+		minAge = 22, maxAge = 60,
+		weight = 20, cooldown = 2,
+		emoji = "💰", title = "Work Bonus!",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must have job to get bonus
 		getDynamicData = function()
-			local sources = {"inheritance", "tax refund", "bonus", "winning scratch-off", "old savings you forgot about", "returned security deposit"}
-			local amount = math.random(1000, 20000)
+			local amount = math.random(2000, 15000)
+			return { amount = amount }
+		end,
+		text = "Your employer gave you a $%amount% bonus! All that hard work paid off!",
+		choices = {
+			{ text = "💰 Save it all", effects = { Money = 10000, Happiness = 4, Smarts = 3 }, resultText = "Future you will thank present you!", setFlag = "saver" },
+			{ text = "💸 Treat yourself!", effects = { Money = 4000, Happiness = 10 }, resultText = "You earned it! Time to celebrate!" },
+			{ text = "📈 Invest it", effects = { Money = 7000, Smarts = 5 }, resultText = "Making money work for you!", setFlag = "investor" },
+			{ text = "💳 Pay off debt", effects = { Money = 2000, Happiness = 6, Smarts = 4 }, resultText = "Responsible choice!", setFlag = "financially_responsible" },
+		},
+	},
+	
+	{
+		id = "m_tax_refund",
+		minAge = 19, maxAge = 65,
+		weight = 15, cooldown = 3,
+		emoji = "💵", title = "Tax Refund!",
+		category = "career",
+		-- CRITICAL: Must have worked at some point to get a tax refund
+		requiresAnyFlag = {"employed", "has_job", "career_starter", "ever_worked", "first_job", "good_worker", "worked_parttime"},
+		getDynamicData = function()
+			local amount = math.random(500, 5000)
+			return { amount = amount }
+		end,
+		text = "Tax season! You're getting a $%amount% refund!",
+		choices = {
+			{ text = "💰 Straight to savings", effects = { Money = 3000, Happiness = 4, Smarts = 3 }, resultText = "Smart choice! Building that emergency fund!", setFlag = "saver" },
+			{ text = "💸 Splurge time!", effects = { Money = 1000, Happiness = 8 }, resultText = "Tax return = shopping spree!" },
+			{ text = "📈 Invest in retirement", effects = { Money = 2500, Smarts = 5 }, resultText = "IRA contribution! Future you is grateful!", setFlag = "retirement_saver" },
+			{ text = "💳 Clear some debt", effects = { Money = 1500, Happiness = 5, Smarts = 3 }, resultText = "Paying down that credit card!", setFlag = "financially_responsible" },
+		},
+	},
+	
+	{
+		id = "m_unexpected_windfall",
+		minAge = 18, maxAge = 70,
+		weight = 10, cooldown = 4,
+		emoji = "💰", title = "Unexpected Money!",
+		category = "social",
+		-- These sources don't require employment
+		getDynamicData = function()
+			local sources = {"winning a scratch-off", "old savings you forgot about", "a returned security deposit", "selling old stuff online", "a small inheritance from a distant relative"}
+			local amount = math.random(500, 5000)
 			return { source = sources[math.random(#sources)], amount = amount }
 		end,
 		text = "You received $%amount% from %source%! What do you do?",
 		choices = {
-			{ text = "💰 Save it all", effects = { Money = 15000, Happiness = 4, Smarts = 3 }, resultText = "Future you will thank present you!", setFlag = "saver" },
-			{ text = "💸 Spend it!", effects = { Money = 5000, Happiness = 10 }, resultText = "YOLO! Enjoyed every penny!" },
-			{ text = "📈 Invest it", effects = { Money = 8000, Smarts = 5 }, resultText = "Making money work for you!", setFlag = "investor" },
-			{ text = "💳 Pay off debt", effects = { Money = -2000, Happiness = 6, Smarts = 4 }, resultText = "Responsible choice! One step closer to financial freedom!", setFlag = "financially_responsible" },
+			{ text = "💰 Save it all", effects = { Money = 3000, Happiness = 4, Smarts = 3 }, resultText = "Every bit counts! Saved!", setFlag = "saver" },
+			{ text = "💸 Spend it!", effects = { Money = 1000, Happiness = 8 }, resultText = "Treat yourself! Life's short!" },
+			{ text = "📈 Invest it", effects = { Money = 2000, Smarts = 4 }, resultText = "Small investments add up!", setFlag = "investor" },
+			{ text = "💳 Pay a bill", effects = { Money = 1500, Happiness = 4, Smarts = 2 }, resultText = "Responsible choice!" },
 		},
 	},
 	
@@ -1235,8 +1295,30 @@ module.events = {
 		weight = 30, oneTime = true,
 		emoji = "🌟", title = "Academic Excellence Pays Off!",
 		category = "school",
-		requiresAnyFlag = {"honors_student", "honor_student", "valedictorian", "award_winner"},
+		-- CRITICAL: Must have ACTUAL academic achievements to trigger this event
+		-- Requires at least one of these flags that prove academic excellence
+		requiresAnyFlag = {"honors_student", "honor_student", "valedictorian", "award_winner", "deans_list", "honor_roll", "academic_achiever", "academic_focused", "high_test_scores", "scholarship"},
+		-- Block if never actually studied or dropped out
 		blockIfFlag = "high_school_dropout",
+		-- Also verify they actually have academic history
+		requires = function(state)
+			local flags = state.Flags or {}
+			-- Must not be a dropout without GED
+			if flags.high_school_dropout and not flags.ged_graduate then
+				return false
+			end
+			-- Must have at least graduated high school OR be a college student
+			local hasEducation = flags.high_school_graduate or flags.college_student or flags.college_graduate or flags.ged_graduate
+			if not hasEducation then
+				return false
+			end
+			-- Must have demonstrated academic excellence (not just attendance)
+			local hasAcademicExcellence = flags.honors_student or flags.honor_student or flags.valedictorian 
+				or flags.award_winner or flags.deans_list or flags.honor_roll 
+				or flags.academic_achiever or flags.academic_focused or flags.high_test_scores
+				or flags.scholarship or flags.dedicated_student
+			return hasAcademicExcellence
+		end,
 		text = "Your academic achievements caught someone's attention! A prestigious program wants you!",
 		choices = {
 			{ 

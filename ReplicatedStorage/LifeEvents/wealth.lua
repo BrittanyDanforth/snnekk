@@ -44,6 +44,8 @@ module.events = {
 		weight = 20, oneTime = true,
 		emoji = "💵", title = "First Paycheck!",
 		category = "work",
+		-- CRITICAL: Must have a job to get a paycheck!
+		requiresFlag = "has_job",
 		getDynamicData = function()
 			local amounts = {300, 400, 500, 600}
 			return { amount = amounts[math.random(#amounts)] }

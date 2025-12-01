@@ -34,6 +34,31 @@ local function getFriendName(state)
 	return randomFirstName()
 end
 
+-- Returns actual friend name or nil if no friend exists
+-- Use this for events that REQUIRE an existing relationship
+local function getActualFriendName(state)
+	if not state then return nil end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name
+		end
+	end
+	return nil
+end
+
+-- Check if player has ACTUAL friends in relationships (not just flags)
+local function hasActualFriend(state)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return true
+		end
+	end
+	return false
+end
+
 local module = {}
 
 module.events = {
@@ -266,14 +291,15 @@ module.events = {
 		weight = 20, cooldown = 3,
 		emoji = "🆘", title = "Friend in Need",
 		category = "social",
-		-- CRITICAL: Only fire if player actually has friends!
+		-- CRITICAL: Only fire if player has ACTUAL friends in Relationships table!
 		requires = function(state)
-			return hasFriend(state)
+			return hasActualFriend(state) -- Must have real friend in relationships, not just flags
 		end,
-		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
 		getDynamicData = function(state)
 			-- Use actual friend name from relationships
-			return { friendName = getFriendName(state) }
+			local name = getActualFriendName(state)
+			if not name then return nil end -- Prevent event from firing with nil data
+			return { friendName = name }
 		end,
 		text = "%friendName% needs help. They're going through a tough time.",
 		choices = {
@@ -289,14 +315,15 @@ module.events = {
 		weight = 15, cooldown = 5,
 		emoji = "💔", title = "Friend Betrayal",
 		category = "social",
-		-- CRITICAL: Only fire if player actually has friends!
+		-- CRITICAL: Only fire if player has ACTUAL friends in Relationships table!
 		requires = function(state)
-			return hasFriend(state)
+			return hasActualFriend(state) -- Must have real friend in relationships, not just flags
 		end,
-		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
 		getDynamicData = function(state)
 			-- Use actual friend name from relationships
-			return { friendName = getFriendName(state) }
+			local name = getActualFriendName(state)
+			if not name then return nil end -- Prevent event from firing with nil data
+			return { friendName = name }
 		end,
 		text = "%friendName% betrayed your trust. They shared your secrets.",
 		choices = {
@@ -312,14 +339,15 @@ module.events = {
 		weight = 15, cooldown = 3,
 		emoji = "☠️", title = "Toxic Friend",
 		category = "social",
-		-- CRITICAL: Only fire if player actually has friends!
+		-- CRITICAL: Only fire if player has ACTUAL friends in Relationships table!
 		requires = function(state)
-			return hasFriend(state)
+			return hasActualFriend(state) -- Must have real friend in relationships, not just flags
 		end,
-		requiresAnyFlag = {"has_friend", "has_best_friend", "social_butterfly", "friendly"},
 		getDynamicData = function(state)
 			-- Use actual friend name from relationships
-			return { friendName = getFriendName(state) }
+			local name = getActualFriendName(state)
+			if not name then return nil end -- Prevent event from firing with nil data
+			return { friendName = name }
 		end,
 		text = "%friendName% has become toxic. Always negative, always drama.",
 		choices = {

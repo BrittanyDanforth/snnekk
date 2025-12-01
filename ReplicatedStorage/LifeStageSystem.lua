@@ -1,6 +1,7 @@
 -- LifeStageSystem.lua
 -- Comprehensive BitLife-style life stage management.
 -- Controls what events, actions, and content are available at each stage.
+-- INTEGRATED with EventMemory for AAA-quality validation
 
 local LifeStageSystem = {}
 
@@ -9,6 +10,19 @@ local LifeStageSystem = {}
 ----------------------------------------------------------------------
 
 local DEBUG_EVENT_VALIDATION = false
+
+-- Load EventMemory for comprehensive validation
+local EventMemory = nil
+local function loadEventMemory()
+	if EventMemory then return EventMemory end
+	local success, result = pcall(function()
+		return require(script.Parent:WaitForChild("EventMemory", 2))
+	end)
+	if success and result then
+		EventMemory = result
+	end
+	return EventMemory
+end
 
 local function dprint(...)
 	if DEBUG_EVENT_VALIDATION then
@@ -555,6 +569,13 @@ function LifeStageSystem.getCapabilities(state)
 	local flags = state.Flags or {}
 
 	local inPrison = flags.in_prison or flags.incarcerated or state.InJail
+	
+	-- Check dropout/expelled status
+	local hasDroppedOut = flags.dropped_out or flags.expelled or flags.quit_school
+	
+	-- Determine if in school: must be in school-age stage AND not dropped out
+	-- OR be a college student (separate enrollment)
+	local inSchool = (stage.inSchool and not hasDroppedOut) or flags.college_student
 
 	return {
 		canWork = stage.canWork and age >= 14 and not inPrison,
@@ -569,8 +590,9 @@ function LifeStageSystem.getCapabilities(state)
 		canEnrollCollege = age >= 18 and age <= 50,
 		canRetire = age >= 50,
 
-		inSchool = stage.inSchool or flags.college_student,
+		inSchool = inSchool,
 		schoolType = flags.college_student and "university" or stage.schoolType,
+		hasDroppedOut = hasDroppedOut,
 
 		canStartPolitics = age >= 18 and flags.political_interest,
 		canStartRacing = age >= 16 and flags.racing_interest,
@@ -810,10 +832,17 @@ function LifeStageSystem.validateEvent(eventDef, state)
 
 	-- 12. School events require being in school or college
 	if eventDef.category == "school" and not caps.inPrison then
-		local inSchool = caps.inSchool or (age >= 5 and age <= 18)
-		if not inSchool and not flags.college_student then
+		-- Check dropout/expelled flags first - these block school events entirely
+		local hasDroppedOut = flags.dropped_out or flags.expelled or flags.quit_school
+		if hasDroppedOut and not flags.college_student then
 			result.valid = false
-			table.insert(result.reasons, "Not in school")
+			table.insert(result.reasons, "Dropped out of school")
+		else
+			local inSchool = caps.inSchool or (age >= 5 and age <= 18 and not hasDroppedOut)
+			if not inSchool and not flags.college_student then
+				result.valid = false
+				table.insert(result.reasons, "Not in school")
+			end
 		end
 	end
 
@@ -910,6 +939,122 @@ function LifeStageSystem.validateEvent(eventDef, state)
 			if currentValue > maxValue then
 				result.valid = false
 				table.insert(result.reasons, statName .. " too high (max " .. maxValue .. ", have " .. currentValue .. ")")
+			end
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 16. DYNAMIC DATA VALIDATION
+	-- If getDynamicData returns nil, the event cannot fire
+	-- This prevents events with missing required relationships from firing
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if result.valid and eventDef.getDynamicData then
+		local ok, dynamicData = pcall(eventDef.getDynamicData, state)
+		if not ok then
+			result.valid = false
+			table.insert(result.reasons, "getDynamicData failed: " .. tostring(dynamicData))
+		elseif dynamicData == nil then
+			result.valid = false
+			table.insert(result.reasons, "getDynamicData returned nil (missing required data)")
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 17. COMPREHENSIVE MEMORY-BASED VALIDATION (AAA BitLife-style)
+	-- Uses EventMemory to check player's ACTUAL history, not just flags
+	-- This prevents illogical events like "tax returns" for non-workers
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if result.valid then
+		local mem = loadEventMemory()
+		if mem and state.Memory then
+			local memoryValidation = mem.validateEvent(eventDef, state, state.Memory)
+			if not memoryValidation.valid then
+				result.valid = false
+				for _, reason in ipairs(memoryValidation.reasons or {}) do
+					table.insert(result.reasons, "[Memory] " .. reason)
+				end
+			end
+		end
+		
+		-- Additional memory-specific checks using LifeState methods if available
+		if result.valid then
+			-- Work history checks
+			if eventDef.requiresWorkHistory then
+				local hasWorked = state.HasEverWorked and state:HasEverWorked() 
+					or flags.employed or flags.has_job or flags.ever_worked
+				if not hasWorked then
+					result.valid = false
+					table.insert(result.reasons, "Requires work history")
+				end
+			end
+			
+			if eventDef.requiresCurrentJob then
+				local employed = state.IsCurrentlyEmployed and state:IsCurrentlyEmployed()
+					or flags.employed or flags.has_job
+				if not employed then
+					result.valid = false
+					table.insert(result.reasons, "Requires current employment")
+				end
+			end
+			
+			-- Tax history (must have worked to file taxes)
+			if eventDef.requiresTaxHistory then
+				local canTax = state.CanFileTaxes and state:CanFileTaxes()
+					or flags.employed or flags.has_job or flags.ever_worked
+				if not canTax then
+					result.valid = false
+					table.insert(result.reasons, "Requires work/tax history")
+				end
+			end
+			
+			-- Friend requirements (must have actual friends)
+			if eventDef.requiresFriends then
+				local hasFriends = state.HasActualFriends and state:HasActualFriends()
+				if not hasFriends then
+					result.valid = false
+					table.insert(result.reasons, "Requires actual friends")
+				end
+			end
+			
+			-- Partner requirements
+			if eventDef.requiresPartner then
+				local hasPartner = state.HasRomanticPartner and state:HasRomanticPartner()
+					or flags.dating or flags.married or flags.in_relationship
+				if not hasPartner then
+					result.valid = false
+					table.insert(result.reasons, "Requires romantic partner")
+				end
+			end
+			
+			-- Block if dropout (for education-requiring events)
+			if eventDef.blocksDropout then
+				local isDropout = state.HasDroppedOut and state:HasDroppedOut()
+					or flags.dropped_out or flags.expelled
+				if isDropout then
+					result.valid = false
+					table.insert(result.reasons, "Blocked for school dropouts")
+				end
+			end
+			
+			-- Criminal history checks
+			if eventDef.requiresCriminalHistory then
+				local hasCrime = state.HasCriminalRecord and state:HasCriminalRecord()
+					or flags.criminal or flags.committed_crime
+				if not hasCrime then
+					result.valid = false
+					table.insert(result.reasons, "Requires criminal history")
+				end
+			end
+			
+			if eventDef.blocksIfCriminal then
+				local hasCrime = state.HasCriminalRecord and state:HasCriminalRecord()
+					or flags.criminal or flags.criminal_record
+				if hasCrime then
+					result.valid = false
+					table.insert(result.reasons, "Blocked by criminal record")
+				end
 			end
 		end
 	end
@@ -1508,6 +1653,128 @@ function LifeStageSystem.serializeForClient(state)
 		inSchool = caps.inSchool,
 		inPrison = caps.inPrison,
 	}
+end
+
+----------------------------------------------------------------------
+-- CENTRALIZED STATE VALIDATION HELPERS
+-- Use these in events to properly validate player history
+----------------------------------------------------------------------
+
+-- Check if player has EVER worked (any job, any time)
+function LifeStageSystem.hasEverWorked(state)
+	-- First check via LifeState method (uses Memory if available)
+	if state.HasEverWorked then
+		return state:HasEverWorked()
+	end
+	
+	-- Also check via EventMemory directly
+	local mem = loadEventMemory()
+	if mem and state.Memory then
+		if mem.hasEverWorked(state.Memory) then
+			return true
+		end
+	end
+	
+	-- Fallback to flags
+	local flags = state.Flags or {}
+	return flags.employed or flags.has_job or flags.career_starter 
+		or flags.ever_worked or flags.first_job or flags.good_worker 
+		or flags.worked_parttime or flags.intern_experience 
+		or flags.internship_completed or flags.side_hustler
+		or flags.entrepreneur or flags.business_owner
+end
+
+-- Check if player is CURRENTLY employed
+function LifeStageSystem.isCurrentlyEmployed(state)
+	-- First check via LifeState method (uses Memory if available)
+	if state.IsCurrentlyEmployed then
+		return state:IsCurrentlyEmployed()
+	end
+	
+	local flags = state.Flags or {}
+	return flags.employed or flags.has_job or flags.side_hustler
+end
+
+-- Check if player has completed high school (diploma or GED)
+function LifeStageSystem.hasHighSchoolEducation(state)
+	local flags = state.Flags or {}
+	-- Must not be a dropout without GED
+	if flags.high_school_dropout and not flags.ged_graduate then
+		return false
+	end
+	return flags.high_school_graduate or flags.ged_graduate or flags.college_student or flags.college_graduate
+end
+
+-- Check if player has college education
+function LifeStageSystem.hasCollegeEducation(state)
+	local flags = state.Flags or {}
+	return flags.college_graduate or flags.advanced_degree or flags.bachelors_degree
+		or flags.masters_degree or flags.doctorate or flags.phd
+end
+
+-- Check if player is currently in school (any level)
+function LifeStageSystem.isInSchool(state)
+	local caps = LifeStageSystem.getCapabilities(state)
+	return caps.inSchool
+end
+
+-- Check if player has demonstrated academic excellence
+function LifeStageSystem.hasAcademicExcellence(state)
+	local flags = state.Flags or {}
+	return flags.honors_student or flags.honor_student or flags.valedictorian 
+		or flags.award_winner or flags.deans_list or flags.honor_roll 
+		or flags.academic_achiever or flags.academic_focused or flags.high_test_scores
+		or flags.scholarship or flags.dedicated_student
+end
+
+-- Check if player has any friends in relationships
+function LifeStageSystem.hasActualFriends(state)
+	-- First check via LifeState method (uses Memory if available)
+	if state.HasActualFriends then
+		return state:HasActualFriends()
+	end
+	
+	-- Check via EventMemory directly
+	local mem = loadEventMemory()
+	if mem and state.Memory then
+		if mem.hasFriends(state.Memory) then
+			return true
+		end
+	end
+	
+	-- Fallback to relationships check
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if (rel.type == "friend" or rel.category == "friends") and rel.alive ~= false then
+			return true
+		end
+	end
+	return false
+end
+
+-- Check if player has romantic partner
+function LifeStageSystem.hasRomanticPartner(state)
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if (rel.type == "romance" or rel.category == "romance") and rel.alive ~= false then
+			return true
+		end
+	end
+	local flags = state.Flags or {}
+	return flags.in_relationship or flags.married or flags.dating or flags.engaged
+end
+
+-- Check if player can afford something (minimum money check)
+function LifeStageSystem.canAfford(state, amount)
+	return (state.Money or 0) >= amount
+end
+
+-- Check if player has any social history (for events about reconnecting, etc.)
+function LifeStageSystem.hasSocialHistory(state)
+	local flags = state.Flags or {}
+	return flags.ever_had_friend or flags.college_graduate or flags.high_school_diploma 
+		or flags.social_butterfly or flags.had_childhood_friend or flags.had_college_friends
+		or flags.good_roommate or flags.friendly or LifeStageSystem.hasActualFriends(state)
 end
 
 return LifeStageSystem
