@@ -28,7 +28,7 @@ table.insert(events, {
 	weight = 12,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "software_dev_origin",
 	chainStep = 1,
@@ -85,7 +85,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "security_origin",
 	chainStep = 1,
@@ -129,7 +129,7 @@ table.insert(events, {
 	weight = 12,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "game_dev_origin",
 	chainStep = 1,
@@ -189,7 +189,7 @@ table.insert(events, {
 	weight = 15,
 	cooldownYears = 3,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "software_dev_career",
 	chainStep = 1,
@@ -251,7 +251,7 @@ table.insert(events, {
 	weight = 15,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "software_dev_career",
 	chainStep = 2,
@@ -354,7 +354,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 3,
 	oneTime = false,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 23,
@@ -452,7 +452,7 @@ table.insert(events, {
 	weight = 6,
 	cooldownYears = 5,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 25,
@@ -508,7 +508,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "security_career",
 	chainStep = 1,
@@ -562,7 +562,7 @@ table.insert(events, {
 	weight = 100,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "security_branch",
 	chainStep = 1,
@@ -617,7 +617,7 @@ table.insert(events, {
 	weight = 12,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "security_career",
 	chainStep = 2,
@@ -671,7 +671,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 4,
 	oneTime = false,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 22,
@@ -725,7 +725,7 @@ table.insert(events, {
 	weight = 15,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "game_dev_career",
 	chainStep = 1,
@@ -778,7 +778,7 @@ table.insert(events, {
 	weight = 5,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "game_dev_career",
 	chainStep = 2,
@@ -832,7 +832,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 18,

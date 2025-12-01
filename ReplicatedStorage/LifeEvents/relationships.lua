@@ -125,10 +125,10 @@ module.events = {
 	{
 		id = "m_baby_born",
 		minAge = 18, maxAge = 50,
-		weight = 80, oneTime = false, milestone = true,
+		weight = 100, oneTime = false, milestone = false, -- NOT a milestone - requires expecting flag
 		emoji = "👶", title = "Baby Born!",
 		category = "family",
-		requiresFlag = "expecting",
+		requiresFlag = "expecting", -- Only fires if pregnant
 		getDynamicData = function()
 			local genders = {"boy", "girl"}
 			return { gender = genders[math.random(#genders)] }

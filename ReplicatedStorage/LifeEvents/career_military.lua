@@ -19,7 +19,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "military_origin",
 	chainStep = 1,
@@ -77,7 +77,7 @@ table.insert(events, {
 	weight = 20,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 17,
@@ -249,7 +249,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 38,
@@ -294,7 +294,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 21,

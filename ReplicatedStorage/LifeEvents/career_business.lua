@@ -19,7 +19,7 @@ table.insert(events, {
 	weight = 12,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "entrepreneur_origin",
 	chainStep = 1,
@@ -77,7 +77,7 @@ table.insert(events, {
 	weight = 15,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "entrepreneur_origin",
 	chainStep = 2,
@@ -127,7 +127,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 18,
@@ -227,7 +227,7 @@ table.insert(events, {
 	weight = 5,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 22,
@@ -280,7 +280,7 @@ table.insert(events, {
 	weight = 12,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "finance_origin",
 	chainStep = 1,
@@ -433,7 +433,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "real_estate_origin",
 	chainStep = 1,
@@ -477,7 +477,7 @@ table.insert(events, {
 	weight = 15,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 18,

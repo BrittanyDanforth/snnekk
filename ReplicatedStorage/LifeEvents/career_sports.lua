@@ -19,7 +19,7 @@ table.insert(events, {
 	weight = 12,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "athlete_origin",
 	chainStep = 1,
@@ -77,7 +77,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "athlete_career",
 	chainStep = 1,
@@ -130,7 +130,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 19,
@@ -173,7 +173,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 20,
@@ -219,7 +219,7 @@ table.insert(events, {
 	weight = 6,
 	cooldownYears = 5,
 	oneTime = false,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 18,
@@ -306,7 +306,7 @@ table.insert(events, {
 	weight = 5,
 	cooldownYears = 3,
 	oneTime = false,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 21,
@@ -349,7 +349,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 30,
@@ -393,7 +393,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 25,

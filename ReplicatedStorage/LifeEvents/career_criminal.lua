@@ -31,7 +31,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "street_life_origin",
 	chainStep = 1,
@@ -139,7 +139,7 @@ table.insert(events, {
 	weight = 10,
 	cooldownYears = 3,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 17,
@@ -199,7 +199,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "con_artist_origin",
 	chainStep = 1,
@@ -341,7 +341,7 @@ table.insert(events, {
 	weight = 8,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "car_thief_origin",
 	chainStep = 1,
@@ -494,7 +494,7 @@ table.insert(events, {
 	weight = 7,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	chainId = "burglar_origin",
 	chainStep = 1,
@@ -588,7 +588,7 @@ table.insert(events, {
 	weight = 6,
 	cooldownYears = 5,
 	oneTime = false,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 16,
@@ -685,7 +685,7 @@ table.insert(events, {
 	weight = 15,
 	cooldownYears = 99,
 	oneTime = false,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 18,
@@ -728,7 +728,7 @@ table.insert(events, {
 	weight = 6,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 20,
@@ -774,7 +774,7 @@ table.insert(events, {
 	weight = 5,
 	cooldownYears = 99,
 	oneTime = true,
-	milestone = true,
+	milestone = false, -- Career events should NOT be milestones
 	
 	conditions = {
 		minAge = 28,

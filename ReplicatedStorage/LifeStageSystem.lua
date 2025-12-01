@@ -584,7 +584,7 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		end
 	end
 
-	-- 7. Simple required flags
+	-- 7. Simple required flags (check both legacy and normalized format)
 	if eventDef.requiresFlag and not flags[eventDef.requiresFlag] then
 		result.valid = false
 		table.insert(result.reasons, "Missing required flag: " .. eventDef.requiresFlag)
@@ -594,8 +594,20 @@ function LifeStageSystem.validateEvent(eventDef, state)
 		result.valid = false
 		table.insert(result.reasons, "Missing required flag: " .. eventDef.requiresFlag2)
 	end
+	
+	-- 7b. Check normalized conditions.requiredAllFlags
+	local conditions = eventDef.conditions or {}
+	if conditions.requiredAllFlags and type(conditions.requiredAllFlags) == "table" then
+		for _, flagName in ipairs(conditions.requiredAllFlags) do
+			if not flags[flagName] then
+				result.valid = false
+				table.insert(result.reasons, "Missing required flag: " .. flagName)
+				break
+			end
+		end
+	end
 
-	-- 8. Any-of flags
+	-- 8. Any-of flags (check both legacy and normalized format)
 	if eventDef.requiresAnyFlag and type(eventDef.requiresAnyFlag) == "table" then
 		local hasAny = false
 		for _, flagName in ipairs(eventDef.requiresAnyFlag) do
@@ -609,8 +621,23 @@ function LifeStageSystem.validateEvent(eventDef, state)
 			table.insert(result.reasons, "Missing any required flag from: " .. table.concat(eventDef.requiresAnyFlag, ", "))
 		end
 	end
+	
+	-- 8b. Check normalized conditions.requiredAnyFlags
+	if conditions.requiredAnyFlags and type(conditions.requiredAnyFlags) == "table" then
+		local hasAny = false
+		for _, flagName in ipairs(conditions.requiredAnyFlags) do
+			if flags[flagName] then
+				hasAny = true
+				break
+			end
+		end
+		if not hasAny then
+			result.valid = false
+			table.insert(result.reasons, "Missing any required flag from: " .. table.concat(conditions.requiredAnyFlags, ", "))
+		end
+	end
 
-	-- 9. Block flags
+	-- 9. Block flags (check both legacy and normalized format)
 	if eventDef.blockIfFlag and flags[eventDef.blockIfFlag] then
 		result.valid = false
 		table.insert(result.reasons, "Blocked by flag: " .. eventDef.blockIfFlag)
@@ -619,6 +646,17 @@ function LifeStageSystem.validateEvent(eventDef, state)
 	if eventDef.blockIfFlag2 and flags[eventDef.blockIfFlag2] then
 		result.valid = false
 		table.insert(result.reasons, "Blocked by flag: " .. eventDef.blockIfFlag2)
+	end
+	
+	-- 9b. Check normalized conditions.blockedFlags
+	if conditions.blockedFlags and type(conditions.blockedFlags) == "table" then
+		for _, flagName in ipairs(conditions.blockedFlags) do
+			if flags[flagName] then
+				result.valid = false
+				table.insert(result.reasons, "Blocked by flag: " .. flagName)
+				break
+			end
+		end
 	end
 
 	-- 10. Prison events must be in prison
