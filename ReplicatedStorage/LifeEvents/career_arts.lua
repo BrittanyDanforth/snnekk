@@ -112,6 +112,7 @@ module.events = {
 		emoji = "📀", title = "Record Label Interested!",
 		category = "work",
 		requiresFlag = "performing_musician",
+		blockIfFlag = "signed_artist", -- Only one record deal
 		getDynamicData = function()
 			local labels = {"a major label", "an indie label", "a startup label"}
 			local advance = math.random(20000, 80000)
@@ -119,10 +120,34 @@ module.events = {
 		end,
 		text = "%label% wants to sign you! $%advance% advance offered. What do you do?",
 		choices = {
-			{ text = "✍️ Sign immediately!", effects = { Happiness = 20, Money = 50000 }, resultText = "Signed! You're officially a recording artist! Dreams coming true!", setFlags = {"signed_artist", "record_deal"} },
-			{ text = "📋 Hire a lawyer first", effects = { Happiness = 25, Money = 70000, Smarts = 5 }, resultText = "Lawyer found bad clauses! Negotiated better terms! Smart move!", setFlags = {"signed_artist", "record_deal"} },
-			{ text = "🤔 Stay independent", effects = { Happiness = 8, Smarts = 3 }, resultText = "Keeping creative control. Harder path but YOUR path.", setFlag = "indie_artist" },
-			{ text = "😬 Don't read the contract", effects = { Happiness = -10, Money = 20000 }, resultText = "Signed blind. TERRIBLE terms! They own everything. Big mistake!", setFlags = {"signed_artist", "bad_contract"} },
+			{ 
+				text = "✍️ Sign immediately!", 
+				effects = { Happiness = 20, Money = 50000 }, 
+				resultText = "Signed! You're officially a recording artist! Dreams coming true!", 
+				setFlags = {"signed_artist", "record_deal", "employed"},
+				setJob = { id = "recording_artist", title = "Recording Artist", salary = 50000 }
+			},
+			{ 
+				text = "📋 Hire a lawyer first", 
+				effects = { Happiness = 25, Money = 70000, Smarts = 5 }, 
+				resultText = "Lawyer found bad clauses! Negotiated better terms! Smart move!", 
+				setFlags = {"signed_artist", "record_deal", "employed"},
+				setJob = { id = "recording_artist", title = "Recording Artist", salary = 70000 }
+			},
+			{ 
+				text = "🤔 Stay independent", 
+				effects = { Happiness = 8, Smarts = 3 }, 
+				resultText = "Keeping creative control. Harder path but YOUR path.", 
+				setFlags = {"indie_artist", "employed"},
+				setJob = { id = "indie_musician", title = "Independent Musician", salary = 25000 }
+			},
+			{ 
+				text = "😬 Don't read the contract", 
+				effects = { Happiness = -10, Money = 20000 }, 
+				resultText = "Signed blind. TERRIBLE terms! They own everything. Big mistake!", 
+				setFlags = {"signed_artist", "bad_contract", "employed"},
+				setJob = { id = "recording_artist", title = "Recording Artist", salary = 20000 }
+			},
 		},
 	},
 	

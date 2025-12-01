@@ -80,10 +80,28 @@ module.events = {
 		end,
 		text = "Interview at %company%! Big opportunity! How do you prepare?",
 		choices = {
-			{ text = "📚 Research everything", effects = { Happiness = 20, Money = 15000, Smarts = 5 }, resultText = "Nailed every question! HIRED! Dream internship secured!", setFlags = {"elite_intern", "resume_builder"} },
-			{ text = "😎 Wing it on charm", effects = { Happiness = 5, Money = 5000 }, resultText = "Got a different offer. Not prestigious but it's something.", setFlag = "intern" },
+			{ 
+				text = "📚 Research everything", 
+				effects = { Happiness = 20, Money = 15000, Smarts = 5 }, 
+				resultText = "Nailed every question! HIRED! Dream internship secured!", 
+				setFlags = {"elite_intern", "resume_builder"},
+				setJob = { id = "elite_intern", title = "Business Analyst Intern", salary = 25000 }
+			},
+			{ 
+				text = "😎 Wing it on charm", 
+				effects = { Happiness = 5, Money = 5000 }, 
+				resultText = "Got a different offer. Not prestigious but it's something.", 
+				setFlag = "intern",
+				setJob = { id = "intern", title = "Intern", salary = 15000 }
+			},
 			{ text = "😰 Nervous mess", effects = { Happiness = -10 }, resultText = "Blanked on questions. Rejection email came fast. Ouch." },
-			{ text = "🤝 Network beforehand", effects = { Happiness = 18, Money = 12000, Smarts = 5 }, resultText = "Inside connection helped! Got the job! Networking works!", setFlags = {"elite_intern", "networker"} },
+			{ 
+				text = "🤝 Network beforehand", 
+				effects = { Happiness = 18, Money = 12000, Smarts = 5 }, 
+				resultText = "Inside connection helped! Got the job! Networking works!", 
+				setFlags = {"elite_intern", "networker"},
+				setJob = { id = "elite_intern", title = "Consultant Intern", salary = 22000 }
+			},
 		},
 	},
 	
@@ -97,16 +115,35 @@ module.events = {
 		weight = 20, oneTime = true,
 		emoji = "💼", title = "First Real Job Offer!",
 		category = "work",
+		blockIfFlag = "employed", -- Don't fire if already employed
 		getDynamicData = function()
 			local salaries = {55000, 65000, 75000, 85000}
 			return { salary = salaries[math.random(#salaries)] }
 		end,
 		text = "Job offer! $%salary% per year! Do you take it?",
 		choices = {
-			{ text = "✅ Accept immediately", effects = { Happiness = 15, Money = 5000 }, resultText = "EMPLOYED! First day jitters! Career officially begins!", setFlags = {"employed", "corporate_worker"} },
-			{ text = "📋 Negotiate higher", effects = { Happiness = 18, Money = 8000, Smarts = 5 }, resultText = "Got $10k more! Always negotiate! Strong start!", setFlags = {"employed", "corporate_worker", "negotiator"} },
+			{ 
+				text = "✅ Accept immediately", 
+				effects = { Happiness = 15 }, 
+				resultText = "EMPLOYED! First day jitters! Career officially begins!", 
+				setFlags = {"employed", "corporate_worker"},
+				setJob = { id = "corporate_entry", title = "Associate", salary = 55000 }
+			},
+			{ 
+				text = "📋 Negotiate higher", 
+				effects = { Happiness = 18, Smarts = 5 }, 
+				resultText = "Got $10k more! Always negotiate! Strong start!", 
+				setFlags = {"employed", "corporate_worker", "negotiator"},
+				setJob = { id = "corporate_entry", title = "Associate", salary = 65000 }
+			},
 			{ text = "🙅 Hold out for better", effects = { Happiness = -10, Money = -5000 }, resultText = "Turned it down. Job market dried up. Now desperate. Bad call." },
-			{ text = "🤔 Ask for more time", effects = { Happiness = 8, Money = 6000 }, resultText = "Used the time to get another offer! Leverage worked!", setFlags = {"employed", "corporate_worker"} },
+			{ 
+				text = "🤔 Ask for more time", 
+				effects = { Happiness = 8 }, 
+				resultText = "Used the time to get another offer! Leverage worked!", 
+				setFlags = {"employed", "corporate_worker"},
+				setJob = { id = "corporate_entry", title = "Associate", salary = 60000 }
+			},
 		},
 	},
 	
@@ -133,10 +170,23 @@ module.events = {
 		emoji = "📈", title = "Promotion Opening!",
 		category = "work",
 		requiresFlag = "corporate_worker",
+		blockIfFlag = "manager", -- Only promote once via this event
 		text = "Management position opened up! Multiple people want it. What do you do?",
 		choices = {
-			{ text = "📊 Build a case", effects = { Happiness = 20, Money = 25000, Smarts = 5 }, resultText = "Presented your accomplishments! GOT THE PROMOTION! Manager now!", setFlags = {"manager", "promoted"} },
-			{ text = "🤝 Lobby decision makers", effects = { Happiness = 15, Money = 20000 }, resultText = "Relationships paid off! Promoted! Politics matter!", setFlags = {"manager", "political_player"} },
+			{ 
+				text = "📊 Build a case", 
+				effects = { Happiness = 20, Smarts = 5 }, 
+				resultText = "Presented your accomplishments! GOT THE PROMOTION! Manager now!", 
+				setFlags = {"manager", "promoted"},
+				setJob = { id = "manager", title = "Manager", salary = 95000 }
+			},
+			{ 
+				text = "🤝 Lobby decision makers", 
+				effects = { Happiness = 15 }, 
+				resultText = "Relationships paid off! Promoted! Politics matter!", 
+				setFlags = {"manager", "political_player"},
+				setJob = { id = "manager", title = "Manager", salary = 90000 }
+			},
 			{ text = "🤷 Hope they notice me", effects = { Happiness = -15 }, resultText = "They didn't. Someone else got it. You have to advocate for yourself!" },
 			{ text = "😰 Don't apply", effects = { Happiness = -10, Smarts = -3 }, resultText = "Too scared to try. Watched someone less qualified get it. Regret." },
 		},

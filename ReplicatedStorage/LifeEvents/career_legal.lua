@@ -96,12 +96,37 @@ module.events = {
 		emoji = "💼", title = "First Legal Job!",
 		category = "work",
 		requiresFlag = "attorney",
+		blockIfFlag = "employed", -- Only fire if not already employed
 		text = "Time to start your legal career! What path do you take?",
 		choices = {
-			{ text = "🏛️ Big Law firm", effects = { Happiness = 10, Money = 200000, Health = -10 }, resultText = "200k starting! Billing 80 hours a week! Brutal but lucrative!", setFlags = {"biglaw", "corporate_lawyer"} },
-			{ text = "⚖️ Public defender", effects = { Happiness = 15, Money = 55000 }, resultText = "Fighting for those who can't afford lawyers! Noble calling!", setFlags = {"public_defender", "courtroom_lawyer"} },
-			{ text = "🏛️ Prosecutor", effects = { Happiness = 12, Money = 65000 }, resultText = "Seeking justice! In court every day! Trial experience!", setFlags = {"prosecutor", "courtroom_lawyer"} },
-			{ text = "🏠 Start own practice", effects = { Happiness = 18, Money = 30000 }, resultText = "Your own boss! Chasing clients! Entrepreneurial lawyer!", setFlags = {"solo_practice", "own_firm"} },
+			{ 
+				text = "🏛️ Big Law firm", 
+				effects = { Happiness = 10, Health = -10 }, 
+				resultText = "200k starting! Billing 80 hours a week! Brutal but lucrative!", 
+				setFlags = {"biglaw", "corporate_lawyer", "employed"},
+				setJob = { id = "biglaw_associate", title = "Associate Attorney", salary = 200000 }
+			},
+			{ 
+				text = "⚖️ Public defender", 
+				effects = { Happiness = 15 }, 
+				resultText = "Fighting for those who can't afford lawyers! Noble calling!", 
+				setFlags = {"public_defender", "courtroom_lawyer", "employed"},
+				setJob = { id = "public_defender", title = "Public Defender", salary = 55000 }
+			},
+			{ 
+				text = "🏛️ Prosecutor", 
+				effects = { Happiness = 12 }, 
+				resultText = "Seeking justice! In court every day! Trial experience!", 
+				setFlags = {"prosecutor", "courtroom_lawyer", "employed"},
+				setJob = { id = "prosecutor", title = "Assistant District Attorney", salary = 65000 }
+			},
+			{ 
+				text = "🏠 Start own practice", 
+				effects = { Happiness = 18 }, 
+				resultText = "Your own boss! Chasing clients! Entrepreneurial lawyer!", 
+				setFlags = {"solo_practice", "own_firm", "employed"},
+				setJob = { id = "solo_attorney", title = "Solo Attorney", salary = 80000 }
+			},
 		},
 	},
 	

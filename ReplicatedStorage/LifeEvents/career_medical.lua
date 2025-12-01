@@ -128,15 +128,34 @@ module.events = {
 		emoji = "🏥", title = "Match Day!",
 		category = "work",
 		requiresFlag = "med_student",
+		blockIfFlag = "resident", -- Only one match day
 		getDynamicData = function()
 			local specialties = {"Surgery", "Internal Medicine", "Pediatrics", "Emergency Medicine", "Radiology", "Psychiatry"}
 			return { specialty = specialties[math.random(#specialties)] }
 		end,
 		text = "MATCH DAY! The envelope that determines where you'll train! You wanted %specialty%!",
 		choices = {
-			{ text = "📬 Open nervously", effects = { Happiness = 35, Money = 60000 }, resultText = "YOU MATCHED! At a great program! Doctor journey continues!", setFlags = {"resident", "doctor_in_training"} },
-			{ text = "👥 Open with family", effects = { Happiness = 38 }, resultText = "Shared the moment! Everyone crying! You're going to be a doctor!", setFlags = {"resident", "doctor_in_training"} },
-			{ text = "😰 Didn't match first choice", effects = { Happiness = 15, Money = 55000 }, resultText = "Not where you wanted but you MATCHED! Still becoming a doctor!", setFlags = {"resident", "chip_on_shoulder"} },
+			{ 
+				text = "📬 Open nervously", 
+				effects = { Happiness = 35 }, 
+				resultText = "YOU MATCHED! At a great program! Doctor journey continues!", 
+				setFlags = {"resident", "doctor_in_training", "employed"},
+				setJob = { id = "resident", title = "Medical Resident", salary = 60000 }
+			},
+			{ 
+				text = "👥 Open with family", 
+				effects = { Happiness = 38 }, 
+				resultText = "Shared the moment! Everyone crying! You're going to be a doctor!", 
+				setFlags = {"resident", "doctor_in_training", "employed"},
+				setJob = { id = "resident", title = "Medical Resident", salary = 58000 }
+			},
+			{ 
+				text = "😰 Didn't match first choice", 
+				effects = { Happiness = 15 }, 
+				resultText = "Not where you wanted but you MATCHED! Still becoming a doctor!", 
+				setFlags = {"resident", "chip_on_shoulder", "employed"},
+				setJob = { id = "resident", title = "Medical Resident", salary = 55000 }
+			},
 			{ text = "💔 Didn't match anywhere", effects = { Happiness = -40 }, resultText = "Devastating. SOAP (backup match) or try again next year. Heartbreaking." },
 		},
 	},
@@ -220,16 +239,41 @@ module.events = {
 		emoji = "🏥", title = "Subspecialty Opportunity!",
 		category = "work",
 		requiresFlag = "confident_doctor",
+		blockIfFlag = "attending_physician", -- Only one specialty choice
 		getDynamicData = function()
 			local subspecialties = {"Cardiology", "Oncology", "Neurosurgery", "Plastic Surgery", "Orthopedics"}
 			return { subspecialty = subspecialties[math.random(#subspecialties)] }
 		end,
 		text = "Offered fellowship in %subspecialty%! More training but higher earning potential. What do you do?",
 		choices = {
-			{ text = "🎓 Take the fellowship", effects = { Happiness = 20, Money = -50000, Smarts = 10 }, resultText = "More years of training but you'll be elite in your field!", setFlags = {"subspecialist", "fellowship_trained"} },
-			{ text = "💰 Start earning now", effects = { Happiness = 15, Money = 200000 }, resultText = "General practice pays well enough! Time to make money!", setFlag = "attending_physician" },
-			{ text = "👥 Open your own practice", effects = { Happiness = 18, Money = -100000 }, resultText = "Your name on the door! Own boss! Entrepreneur doctor!", setFlags = {"private_practice", "business_owner"} },
-			{ text = "🏥 Stay at academic hospital", effects = { Happiness = 12, Money = 150000 }, resultText = "Teaching the next generation. Research opportunities. Prestige.", setFlags = {"academic_medicine", "professor"} },
+			{ 
+				text = "🎓 Take the fellowship", 
+				effects = { Happiness = 20, Smarts = 10 }, 
+				resultText = "More years of training but you'll be elite in your field!", 
+				setFlags = {"subspecialist", "fellowship_trained", "attending_physician"},
+				setJob = { id = "specialist_md", title = "Specialist Physician", salary = 280000 }
+			},
+			{ 
+				text = "💰 Start earning now", 
+				effects = { Happiness = 15 }, 
+				resultText = "General practice pays well enough! Time to make money!", 
+				setFlag = "attending_physician",
+				setJob = { id = "attending_md", title = "Attending Physician", salary = 200000 }
+			},
+			{ 
+				text = "👥 Open your own practice", 
+				effects = { Happiness = 18 }, 
+				resultText = "Your name on the door! Own boss! Entrepreneur doctor!", 
+				setFlags = {"private_practice", "business_owner", "attending_physician"},
+				setJob = { id = "private_practice_md", title = "Private Practice Physician", salary = 250000 }
+			},
+			{ 
+				text = "🏥 Stay at academic hospital", 
+				effects = { Happiness = 12 }, 
+				resultText = "Teaching the next generation. Research opportunities. Prestige.", 
+				setFlags = {"academic_medicine", "professor", "attending_physician"},
+				setJob = { id = "academic_md", title = "Academic Physician", salary = 180000 }
+			},
 		},
 	},
 	

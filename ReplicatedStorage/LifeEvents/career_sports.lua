@@ -128,11 +128,30 @@ module.events = {
 		emoji = "📺", title = "Draft Day!",
 		category = "work",
 		requiresFlag = "college_athlete",
+		blockIfFlag = "pro_athlete", -- Only one draft event
 		text = "The professional draft is today! Your family is watching! Commissioner approaches the mic! What's your mindset?",
 		choices = {
-			{ text = "🙏 Hopeful and ready", effects = { Happiness = 35, Money = 2000000 }, resultText = "YOUR NAME CALLED! First round pick! Millions guaranteed!", setFlags = {"pro_athlete", "first_rounder"} },
-			{ text = "😰 Nervous wreck", effects = { Happiness = 15, Money = 500000 }, resultText = "Went later than hoped. Chip on shoulder. Prove them wrong!", setFlags = {"pro_athlete", "chip_on_shoulder"} },
-			{ text = "😎 Know your worth", effects = { Happiness = 25, Money = 1500000 }, resultText = "Confidence showed! Good pick! Ready for the league!", setFlag = "pro_athlete" },
+			{ 
+				text = "🙏 Hopeful and ready", 
+				effects = { Happiness = 35 }, 
+				resultText = "YOUR NAME CALLED! First round pick! Millions guaranteed!", 
+				setFlags = {"pro_athlete", "first_rounder", "employed"},
+				setJob = { id = "pro_athlete", title = "Professional Athlete", salary = 2000000 }
+			},
+			{ 
+				text = "😰 Nervous wreck", 
+				effects = { Happiness = 15 }, 
+				resultText = "Went later than hoped. Chip on shoulder. Prove them wrong!", 
+				setFlags = {"pro_athlete", "chip_on_shoulder", "employed"},
+				setJob = { id = "pro_athlete", title = "Professional Athlete", salary = 500000 }
+			},
+			{ 
+				text = "😎 Know your worth", 
+				effects = { Happiness = 25 }, 
+				resultText = "Confidence showed! Good pick! Ready for the league!", 
+				setFlags = {"pro_athlete", "employed"},
+				setJob = { id = "pro_athlete", title = "Professional Athlete", salary = 1500000 }
+			},
 			{ text = "😔 Accept any outcome", effects = { Happiness = -10, Money = 100000 }, resultText = "Undrafted. Free agent route. Long shot but possible.", setFlag = "undrafted" },
 		},
 	},

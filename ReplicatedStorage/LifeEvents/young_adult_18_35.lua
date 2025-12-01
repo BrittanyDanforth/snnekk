@@ -150,16 +150,39 @@ module.events = {
 		weight = 40, cooldown = 2,
 		emoji = "💼", title = "College Internship!",
 		category = "career",
+		requiresFlag = "college_student",
 		getDynamicData = function()
-			local companies = {"tech startup", "Fortune 500 company", "non-profit", "research lab", "media company", "finance firm", "hospital"}
+			local companies = {"TechStart Inc", "GlobalCorp", "CareFoundation", "Innovation Labs", "MediaMax", "Capital Partners", "City Hospital"}
 			return { company = companies[math.random(#companies)] }
 		end,
-		text = "You landed a summer internship at a %company%!",
+		text = "You landed a summer internship at %company%!",
 		choices = {
-			{ text = "🌟 Return offer!", effects = { Smarts = 8, Money = 4000, Happiness = 10 }, resultText = "They want you back full-time after graduation!", setFlag = "has_job_offer" },
-			{ text = "📚 Great experience", effects = { Smarts = 6, Money = 2500, Happiness = 5 }, resultText = "Resume looks amazing now! Valuable skills learned." },
-			{ text = "😴 Coffee runs and filing", effects = { Smarts = 2, Money = 1500, Happiness = -2 }, resultText = "Grunt work. At least it pays?" },
-			{ text = "🔗 Networking gold", effects = { Smarts = 4, Money = 2000, Happiness = 6 }, resultText = "Made invaluable connections!", setFlag = "well_connected" },
+			{ 
+				text = "🌟 Return offer!", 
+				effects = { Smarts = 8, Money = 4000, Happiness = 10 }, 
+				resultText = "They want you back full-time after graduation!", 
+				setFlag = "has_job_offer",
+				setJob = { id = "intern", title = "Intern", salary = 20000 }
+			},
+			{ 
+				text = "📚 Great experience", 
+				effects = { Smarts = 6, Money = 2500, Happiness = 5 }, 
+				resultText = "Resume looks amazing now! Valuable skills learned.",
+				setJob = { id = "intern", title = "Intern", salary = 18000 }
+			},
+			{ 
+				text = "😴 Coffee runs and filing", 
+				effects = { Smarts = 2, Money = 1500, Happiness = -2 }, 
+				resultText = "Grunt work. At least it pays?",
+				setJob = { id = "intern", title = "Intern", salary = 15000 }
+			},
+			{ 
+				text = "🔗 Networking gold", 
+				effects = { Smarts = 4, Money = 2000, Happiness = 6 }, 
+				resultText = "Made invaluable connections!", 
+				setFlag = "well_connected",
+				setJob = { id = "intern", title = "Intern", salary = 18000 }
+			},
 		},
 	},
 	
@@ -192,17 +215,52 @@ module.events = {
 		weight = 70, oneTime = true,
 		emoji = "💼", title = "First Real Job!",
 		category = "career",
+		blockIfFlag = "employed", -- Don't fire if already employed
 		getDynamicData = function()
-			local fields = {"tech", "finance", "healthcare", "marketing", "education", "engineering", "consulting", "retail management", "government"}
-			local salary = math.random(35000, 75000)
-			return { field = fields[math.random(#fields)], salary = salary }
+			local fields = {
+				{ name = "tech", title = "Junior Developer", salary = 55000 },
+				{ name = "finance", title = "Financial Analyst", salary = 52000 },
+				{ name = "healthcare", title = "Healthcare Coordinator", salary = 42000 },
+				{ name = "marketing", title = "Marketing Associate", salary = 45000 },
+				{ name = "education", title = "Teaching Assistant", salary = 35000 },
+				{ name = "engineering", title = "Junior Engineer", salary = 58000 },
+				{ name = "consulting", title = "Associate Consultant", salary = 60000 },
+				{ name = "retail management", title = "Assistant Manager", salary = 38000 },
+				{ name = "government", title = "Government Analyst", salary = 48000 },
+			}
+			local chosen = fields[math.random(#fields)]
+			return { field = chosen.name, title = chosen.title, salary = chosen.salary }
 		end,
 		text = "You got your first full-time job in %field%! Starting salary: $%salary%!",
 		choices = {
-			{ text = "🎉 Dream job!", effects = { Happiness = 12, Money = 5000, Smarts = 3 }, resultText = "You love what you do! That's the dream!", setFlags = {"employed", "career_starter"} },
-			{ text = "🤷 It's a job", effects = { Happiness = 4, Money = 4000, Smarts = 2 }, resultText = "Not perfect, but pays the bills.", setFlags = {"employed", "career_starter"} },
-			{ text = "😫 Entry-level grind", effects = { Happiness = 2, Money = 3500, Smarts = 4 }, resultText = "Everyone starts somewhere. Working your way up!", setFlags = {"employed", "career_starter"} },
-			{ text = "💰 Negotiate salary up!", effects = { Happiness = 8, Money = 6000, Smarts = 5 }, resultText = "You asked for more and got it! Always negotiate!", setFlags = {"employed", "negotiator", "career_starter"} },
+			{ 
+				text = "🎉 Dream job!", 
+				effects = { Happiness = 12, Smarts = 3 }, 
+				resultText = "You love what you do! That's the dream!", 
+				setFlags = {"employed", "career_starter"},
+				setJob = { id = "entry_level", title = "%title%", salary = 50000 }
+			},
+			{ 
+				text = "🤷 It's a job", 
+				effects = { Happiness = 4, Smarts = 2 }, 
+				resultText = "Not perfect, but pays the bills.", 
+				setFlags = {"employed", "career_starter"},
+				setJob = { id = "entry_level", title = "%title%", salary = 45000 }
+			},
+			{ 
+				text = "😫 Entry-level grind", 
+				effects = { Happiness = 2, Smarts = 4 }, 
+				resultText = "Everyone starts somewhere. Working your way up!", 
+				setFlags = {"employed", "career_starter"},
+				setJob = { id = "entry_level", title = "%title%", salary = 42000 }
+			},
+			{ 
+				text = "💰 Negotiate salary up!", 
+				effects = { Happiness = 8, Smarts = 5 }, 
+				resultText = "You asked for more and got it! Always negotiate!", 
+				setFlags = {"employed", "negotiator", "career_starter"},
+				setJob = { id = "entry_level", title = "%title%", salary = 58000 }
+			},
 		},
 	},
 	

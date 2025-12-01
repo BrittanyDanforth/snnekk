@@ -831,17 +831,26 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	if jobToSet and results.wasSuccess ~= false then
 		print("[LifeManager] Setting job from event:", jobToSet.id, "title:", jobToSet.title)
 		
+		-- Process dynamic text in job fields
+		local processedTitle = jobToSet.title or "Employee"
 		local processedCompany = jobToSet.company or "Company"
-		if processedCompany and dynamicData then
+		local processedSalary = jobToSet.salary or 30000
+		
+		if dynamicData then
+			processedTitle = EventRunner.processDynamicText(processedTitle, dynamicData)
 			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
+			-- Handle dynamic salary if it's from dynamicData
+			if type(dynamicData.salary) == "number" then
+				processedSalary = dynamicData.salary
+			end
 		end
 		
 		if _G.SetPlayerJob then
 			_G.SetPlayerJob(player, {
 				id = jobToSet.id,
-				title = jobToSet.title,
+				title = processedTitle,
 				company = processedCompany,
-				salary = jobToSet.salary or 30000,
+				salary = processedSalary,
 				requirement = jobToSet.requirement,
 				storyFlag = choiceDef.setFlag or jobToSet.storyFlag,
 			})
@@ -1094,7 +1103,7 @@ local function createSpecialActionRemote(name)
 end
 
 local DoSpecialAction = createSpecialActionRemote("DoSpecialAction")
-local DoInteraction = createSpecialActionRemote("DoInteraction")
+-- NOTE: DoInteraction is handled by LifeRemoteHandlers.server.lua - don't create duplicate here!
 
 DoSpecialAction.OnServerInvoke = function(player, actionId)
 	local state = getLife(player)
@@ -1203,345 +1212,6 @@ DoSpecialAction.OnServerInvoke = function(player, actionId)
 	return { success = false, message = "Action not available." }
 end
 
-----------------------------------------------------------------
--- RELATIONSHIP INTERACTIONS (DoInteraction Remote)
--- Handles interactions from RelationshipsScreen
-----------------------------------------------------------------
-
--- Define available interactions and their effects
-local RELATIONSHIP_ACTIONS = {
-	-- Family actions
-	spend_time = {
-		name = "Spend Time",
-		baseCost = 0,
-		effects = { Happiness = 5 },
-		relationshipBoost = 8,
-		successMessages = {
-			"You had a wonderful time together!",
-			"Quality time well spent!",
-			"You bonded and shared memories.",
-		},
-	},
-	compliment = {
-		name = "Compliment",
-		baseCost = 0,
-		effects = { Happiness = 3 },
-		relationshipBoost = 5,
-		successMessages = {
-			"They appreciated your kind words!",
-			"Your compliment made them smile.",
-			"They felt valued and appreciated.",
-		},
-	},
-	gift = {
-		name = "Give Gift",
-		baseCost = 50,
-		effects = { Happiness = 8 },
-		relationshipBoost = 12,
-		successMessages = {
-			"They loved the gift!",
-			"Your thoughtfulness touched them.",
-			"The gift strengthened your bond.",
-		},
-	},
-	expensive_gift = {
-		name = "Expensive Gift",
-		baseCost = 500,
-		effects = { Happiness = 15 },
-		relationshipBoost = 20,
-		successMessages = {
-			"They were overwhelmed with joy!",
-			"Such generosity! They adore you.",
-			"An unforgettable gift that meant the world.",
-		},
-	},
-	hug = {
-		name = "Hug",
-		baseCost = 0,
-		effects = { Happiness = 4 },
-		relationshipBoost = 6,
-		successMessages = {
-			"A warm, comforting hug.",
-			"Sometimes a hug says everything.",
-			"You felt the love between you.",
-		},
-	},
-	have_conversation = {
-		name = "Have Conversation",
-		baseCost = 0,
-		effects = { Happiness = 3, Smarts = 1 },
-		relationshipBoost = 5,
-		successMessages = {
-			"You had a meaningful conversation.",
-			"Great discussion! You learned something.",
-			"The conversation brought you closer.",
-		},
-	},
-	apologize = {
-		name = "Apologize",
-		baseCost = 0,
-		effects = { Happiness = -2 },
-		relationshipBoost = 10,
-		successMessages = {
-			"They accepted your apology.",
-			"Your sincerity mended things.",
-			"Forgiveness was granted.",
-		},
-		failMessages = {
-			"They're not ready to forgive yet.",
-			"The apology fell on deaf ears.",
-			"They need more time.",
-		},
-		chanceSuccess = 0.7,
-	},
-	insult = {
-		name = "Insult",
-		baseCost = 0,
-		effects = { Happiness = 3 },
-		relationshipBoost = -15,
-		successMessages = {
-			"You said something hurtful. Why?",
-			"Your words stung. They're upset.",
-			"That was cruel. They won't forget.",
-		},
-	},
-	argue = {
-		name = "Argue",
-		baseCost = 0,
-		effects = { Happiness = -5 },
-		relationshipBoost = -10,
-		successMessages = {
-			"The argument got heated.",
-			"Words were exchanged. Tension remains.",
-			"Neither of you backed down.",
-		},
-	},
-	-- Romance-specific
-	date = {
-		name = "Go on Date",
-		baseCost = 100,
-		effects = { Happiness = 10 },
-		relationshipBoost = 15,
-		successMessages = {
-			"What a lovely date!",
-			"You had a romantic evening together.",
-			"Sparks flew! Great chemistry.",
-		},
-		failMessages = {
-			"The date was awkward...",
-			"Not your best outing.",
-			"They seemed distracted.",
-		},
-		chanceSuccess = 0.8,
-	},
-	propose = {
-		name = "Propose",
-		baseCost = 5000,
-		effects = { Happiness = 30 },
-		relationshipBoost = 50,
-		successMessages = {
-			"They said YES! You're engaged!",
-			"Tears of joy! Wedding bells await!",
-			"The happiest moment of your life!",
-		},
-		failMessages = {
-			"They said no... heartbreaking.",
-			"Not the right time, apparently.",
-			"They need more time to think.",
-		},
-		chanceSuccess = 0.6,
-		setFlagOnSuccess = "engaged",
-	},
-	-- Friend-specific
-	hangout = {
-		name = "Hang Out",
-		baseCost = 20,
-		effects = { Happiness = 6 },
-		relationshipBoost = 8,
-		successMessages = {
-			"You had a blast hanging out!",
-			"Good times with good friends.",
-			"Laughter and memories.",
-		},
-	},
-	-- Meet new people
-	meet_someone = {
-		name = "Meet Someone",
-		baseCost = 0,
-		effects = { Happiness = 5 },
-		createsRelationship = true,
-		successMessages = {
-			"You met someone interesting!",
-			"A new connection was made.",
-			"You hit it off right away!",
-		},
-	},
-}
-
-DoInteraction.OnServerInvoke = function(player, payload, arg2, arg3)
-	local state = getLife(player)
-	if not state or not state.Name then
-		return { success = false, message = "No active life." }
-	end
-	
-	-- Handle both old signature (actionId, relType, personId) and new signature (payload table)
-	local actionId, relType, targetId, cost
-	if type(payload) == "table" then
-		actionId = payload.actionId
-		relType = payload.relationshipType
-		targetId = payload.targetId
-		cost = payload.cost
-	else
-		-- Old signature: payload is actionId, arg2 is relType, arg3 is targetId
-		actionId = payload
-		relType = arg2
-		targetId = arg3
-	end
-	
-	if not actionId then
-		return { success = false, message = "No action specified." }
-	end
-	
-	-- Get the action definition
-	local actionDef = RELATIONSHIP_ACTIONS[actionId]
-	if not actionDef then
-		return { success = false, message = "Unknown action: " .. tostring(actionId) }
-	end
-	
-	-- Check cost
-	local actionCost = cost or actionDef.baseCost or 0
-	if actionCost > 0 and (state.Money or 0) < actionCost then
-		return { 
-			success = false, 
-			message = "Not enough money! Need $" .. actionCost,
-			title = "Can't Afford It"
-		}
-	end
-	
-	-- Deduct cost
-	if actionCost > 0 then
-		state.Money = (state.Money or 0) - actionCost
-	end
-	
-	-- Store state before
-	local beforeHappiness = state.Stats.Happiness or 50
-	local beforeHealth = state.Stats.Health or 100
-	
-	-- Check for success (if action has chance)
-	local wasSuccess = true
-	if actionDef.chanceSuccess then
-		wasSuccess = math.random() < actionDef.chanceSuccess
-	end
-	
-	-- Apply stat effects
-	if actionDef.effects then
-		for stat, delta in pairs(actionDef.effects) do
-			if stat == "Money" then
-				state.Money = (state.Money or 0) + delta
-			elseif state.Stats[stat] then
-				state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + (wasSuccess and delta or -delta), 0, 100)
-			end
-		end
-	end
-	
-	-- Apply relationship change if we have a target
-	local targetPerson = nil
-	if targetId and state.Relationships then
-		for _, rel in ipairs(state.Relationships) do
-			if rel.id == targetId then
-				targetPerson = rel
-				break
-			end
-		end
-		
-		if targetPerson then
-			local relDelta = actionDef.relationshipBoost or 0
-			if not wasSuccess and relDelta > 0 then
-				relDelta = math.floor(relDelta / 2) -- Half boost on fail
-			end
-			targetPerson.relationship = math.clamp((targetPerson.relationship or 50) + relDelta, 0, 100)
-		end
-	end
-	
-	-- Handle "meet someone" - creates new relationship
-	if actionDef.createsRelationship and wasSuccess then
-		local newRelId = "friend_" .. tostring(os.time()) .. "_" .. math.random(1000, 9999)
-		local genders = {"Male", "Female"}
-		local firstNames = {"Alex", "Jordan", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Quinn", "Avery", "Blake"}
-		local newPerson = {
-			id = newRelId,
-			name = firstNames[math.random(#firstNames)],
-			type = relType or "friend",
-			role = "Friend",
-			age = math.clamp((state.Age or 18) + math.random(-5, 5), 16, 80),
-			gender = genders[math.random(#genders)],
-			relationship = 50,
-			alive = true,
-			metAge = state.Age or 18,
-		}
-		state.Relationships = state.Relationships or {}
-		table.insert(state.Relationships, newPerson)
-		targetPerson = newPerson
-	end
-	
-	-- Set flags on success
-	if wasSuccess and actionDef.setFlagOnSuccess then
-		state:SetFlag(actionDef.setFlagOnSuccess)
-	end
-	
-	-- Pick result message
-	local resultMessage
-	if wasSuccess then
-		local msgs = actionDef.successMessages or {"Done!"}
-		resultMessage = msgs[math.random(#msgs)]
-	else
-		local msgs = actionDef.failMessages or {"It didn't go well."}
-		resultMessage = msgs[math.random(#msgs)]
-	end
-	
-	-- Add target name to message if applicable
-	if targetPerson and targetPerson.name then
-		resultMessage = resultMessage:gsub("They", targetPerson.name)
-		resultMessage = resultMessage:gsub("they", targetPerson.name:lower())
-	end
-	
-	-- Check for immediate death
-	if checkAndHandleImmediateDeath(player, state, resultMessage) then
-		return { success = false, message = "You died...", isDeath = true }
-	end
-	
-	-- Build title
-	local title = actionDef.name or "Interaction"
-	if targetPerson and targetPerson.name then
-		title = title .. " with " .. targetPerson.name
-	end
-	
-	-- Calculate deltas for UI
-	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
-	local healthDelta = (state.Stats.Health or 100) - beforeHealth
-	
-	-- Add to feed
-	local feedText = title .. ": " .. resultMessage
-	state:AddFeed(feedText)
-	
-	-- Sync state
-	pushState(player, state, feedText, nil)
-	
-	return {
-		success = wasSuccess,
-		title = title,
-		message = resultMessage,
-		happiness = happinessDelta ~= 0 and happinessDelta or nil,
-		health = healthDelta ~= 0 and healthDelta or nil,
-		money = actionCost > 0 and -actionCost or nil,
-		newState = serializeState(state, player),
-		targetPerson = targetPerson and {
-			id = targetPerson.id,
-			name = targetPerson.name,
-			relationship = targetPerson.relationship,
-		} or nil,
-	}
-end
 
 ----------------------------------------------------------------
 -- STAT MODIFICATION HELPERS (Global API for other scripts)

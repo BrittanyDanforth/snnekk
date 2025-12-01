@@ -72,14 +72,27 @@ module.events = {
 		emoji = "👨‍💻", title = "First Tech Job Interview!",
 		category = "work",
 		requiresFlag = "programmer",
+		blockIfFlag = "software_engineer", -- Don't fire if already employed as engineer
 		getDynamicData = function()
-			local companies = {"Google", "Facebook", "a hot startup", "Microsoft", "Amazon"}
+			local companies = {"TechCorp", "InnovateTech", "CodeWorks", "ByteSoft", "DevStack"}
 			return { company = companies[math.random(#companies)] }
 		end,
 		text = "Interview at %company%! The coding challenge is hard. How do you approach it?",
 		choices = {
-			{ text = "🧠 Solve it cleanly", effects = { Happiness = 25, Money = 120000, Smarts = 5 }, resultText = "NAILED IT! Offer letter incoming! Six figures!", setFlags = {"software_engineer", "employed"} },
-			{ text = "🤔 Talk through your thinking", effects = { Happiness = 18, Money = 100000 }, resultText = "Didn't solve it perfectly but they liked your process! Hired!", setFlags = {"software_engineer", "employed"} },
+			{ 
+				text = "🧠 Solve it cleanly", 
+				effects = { Happiness = 25, Smarts = 5 }, 
+				resultText = "NAILED IT! Offer letter incoming! Six figures!", 
+				setFlags = {"software_engineer", "employed"},
+				setJob = { id = "junior_dev", title = "Junior Software Developer", salary = 75000 }
+			},
+			{ 
+				text = "🤔 Talk through your thinking", 
+				effects = { Happiness = 18 }, 
+				resultText = "Didn't solve it perfectly but they liked your process! Hired!", 
+				setFlags = {"software_engineer", "employed"},
+				setJob = { id = "junior_dev", title = "Junior Software Developer", salary = 65000 }
+			},
 			{ text = "😰 Panic and blank", effects = { Happiness = -15 }, resultText = "Froze under pressure. Rejection email. Practice more." },
 			{ text = "🤷 Guess randomly", effects = { Happiness = -10 }, resultText = "They could tell you were guessing. No offer. Not ready yet." },
 		},
@@ -132,6 +145,7 @@ module.events = {
 		emoji = "🏢", title = "FAANG Company Offer!",
 		category = "work",
 		requiresFlag = "software_engineer",
+		blockIfFlag = "faang_engineer", -- Only one FAANG offer
 		getDynamicData = function()
 			local companies = {"Google", "Apple", "Meta", "Amazon", "Netflix"}
 			local packages = {350000, 400000, 450000, 500000}
@@ -139,9 +153,27 @@ module.events = {
 		end,
 		text = "%company% offering $%package%/year total comp! The dream! What do you do?",
 		choices = {
-			{ text = "✅ Accept!", effects = { Happiness = 30, Money = 200000, Looks = 3 }, resultText = "You work at %company% now! Prestige unlocked! Golden handcuffs on!", setFlags = {"faang_engineer", "big_tech"} },
-			{ text = "📋 Negotiate higher", effects = { Happiness = 28, Money = 250000, Smarts = 5 }, resultText = "Got a signing bonus bump! Always negotiate!", setFlags = {"faang_engineer", "big_tech"} },
-			{ text = "🚀 Reject for startup", effects = { Happiness = 20, Money = 50000 }, resultText = "Chose equity over salary! High risk high reward!", setFlag = "startup_bet" },
+			{ 
+				text = "✅ Accept!", 
+				effects = { Happiness = 30, Looks = 3 }, 
+				resultText = "You work at %company% now! Prestige unlocked! Golden handcuffs on!", 
+				setFlags = {"faang_engineer", "big_tech"},
+				setJob = { id = "faang_swe", title = "Senior Software Engineer", salary = 200000 }
+			},
+			{ 
+				text = "📋 Negotiate higher", 
+				effects = { Happiness = 28, Smarts = 5 }, 
+				resultText = "Got a signing bonus bump! Always negotiate!", 
+				setFlags = {"faang_engineer", "big_tech"},
+				setJob = { id = "faang_swe", title = "Senior Software Engineer", salary = 220000 }
+			},
+			{ 
+				text = "🚀 Reject for startup", 
+				effects = { Happiness = 20 }, 
+				resultText = "Chose equity over salary! High risk high reward!", 
+				setFlag = "startup_bet",
+				setJob = { id = "startup_swe", title = "Lead Engineer", salary = 120000 }
+			},
 			{ text = "😰 Fail the interview", effects = { Happiness = -15 }, resultText = "Bombed the system design round. No offer. Try again in 6 months." },
 		},
 	},
@@ -157,12 +189,36 @@ module.events = {
 		emoji = "👥", title = "Management Opportunity!",
 		category = "work",
 		requiresFlag = "software_engineer",
+		blockIfFlag = "engineering_manager", -- Only one manager promotion
 		text = "Offered to lead a team of engineers! But you'd write less code. What do you do?",
 		choices = {
-			{ text = "👥 Become a manager", effects = { Happiness = 15, Money = 50000 }, resultText = "Engineering Manager now! Different skills! Leading people!", setFlags = {"engineering_manager", "people_leader"} },
-			{ text = "💻 Stay technical (IC)", effects = { Happiness = 18, Money = 40000, Smarts = 5 }, resultText = "Principal Engineer path! Deep technical work! Individual contributor!", setFlag = "senior_ic" },
-			{ text = "⚖️ Try manager, can switch back", effects = { Happiness = 12, Money = 40000 }, resultText = "Trying it out! Can always return to coding if you hate it!" },
-			{ text = "🚀 Leave for CTO role", effects = { Happiness = 20, Money = 30000 }, resultText = "Startup offered CTO title! Smaller company, bigger role!", setFlags = {"cto", "startup_executive"} },
+			{ 
+				text = "👥 Become a manager", 
+				effects = { Happiness = 15 }, 
+				resultText = "Engineering Manager now! Different skills! Leading people!", 
+				setFlags = {"engineering_manager", "people_leader"},
+				setJob = { id = "eng_manager", title = "Engineering Manager", salary = 180000 }
+			},
+			{ 
+				text = "💻 Stay technical (IC)", 
+				effects = { Happiness = 18, Smarts = 5 }, 
+				resultText = "Principal Engineer path! Deep technical work! Individual contributor!", 
+				setFlag = "senior_ic",
+				setJob = { id = "principal_eng", title = "Principal Engineer", salary = 200000 }
+			},
+			{ 
+				text = "⚖️ Try manager, can switch back", 
+				effects = { Happiness = 12 }, 
+				resultText = "Trying it out! Can always return to coding if you hate it!",
+				setJob = { id = "eng_manager_trial", title = "Engineering Manager", salary = 165000 }
+			},
+			{ 
+				text = "🚀 Leave for CTO role", 
+				effects = { Happiness = 20 }, 
+				resultText = "Startup offered CTO title! Smaller company, bigger role!", 
+				setFlags = {"cto", "startup_executive"},
+				setJob = { id = "startup_cto", title = "Chief Technology Officer", salary = 150000 }
+			},
 		},
 	},
 	

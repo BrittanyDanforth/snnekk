@@ -2292,7 +2292,23 @@ local function getRandomName(gender)
 	return names[math.random(#names)]
 end
 
-DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId)
+DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
+	-- Support both signatures:
+	-- 1. New: payload table with { actionId, relationshipType, targetId, cost }
+	-- 2. Old: (actionId, relationType, personId) as separate args
+	local actionId, relationType, personId
+	if type(arg1) == "table" then
+		-- New payload format from updated RelationshipsScreen
+		actionId = arg1.actionId
+		relationType = arg1.relationshipType
+		personId = arg1.targetId
+	else
+		-- Old format with separate arguments
+		actionId = arg1
+		relationType = arg2
+		personId = arg3
+	end
+	
 	print("[LifeRemoteHandlers] DoInteraction called:", actionId, relationType, personId)
 	
 	local age = getAge(player)
