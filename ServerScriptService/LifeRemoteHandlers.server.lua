@@ -1171,6 +1171,10 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	
 	-- Set job-specific flags
 	if lifeState then
+		-- CRITICAL: Set 'employed' flag for event system
+		lifeState:SetFlag("employed")
+		print("[LifeRemoteHandlers] Set 'employed' flag via ApplyForJob")
+		
 		if job.category == "military" then lifeState:SetFlag("military_service") end
 		if job.category == "government" and job.id == "police_officer" then lifeState:SetFlag("police_officer") end
 		if job.category == "medical" and string.find(job.id, "doctor") then lifeState:SetFlag("medical_professional") end
@@ -1221,6 +1225,7 @@ end
 QuitJob.OnServerInvoke = function(player)
 	local extState = getExtendedState(player)
 	local careerData = getCareerData(player)
+	local lifeState = getLifeManagerState(player)
 	
 	if extState.CurrentJob then
 		local job = extState.CurrentJob
@@ -1243,6 +1248,12 @@ QuitJob.OnServerInvoke = function(player)
 		careerData.PromotionProgress = 0
 		careerData.Warnings = 0
 		careerData.Raises = 0
+		
+		-- CRITICAL: Clear 'employed' flag when quitting job
+		if lifeState then
+			lifeState:ClearFlag("employed")
+			print("[LifeRemoteHandlers] Cleared 'employed' flag via QuitJob")
+		end
 		
 		syncStateToClient(player)
 		return { success = true, message = "You quit " .. jobTitle .. ". You're now unemployed." }
@@ -1438,6 +1449,13 @@ DoWork.OnServerInvoke = function(player)
 		careerData.Warnings = 0
 		careerData.YearsAtCurrentJob = 0
 		careerData.PromotionProgress = 0
+		
+		-- CRITICAL: Clear 'employed' flag when getting fired
+		if lifeState then
+			lifeState:ClearFlag("employed")
+			print("[LifeRemoteHandlers] Cleared 'employed' flag - got fired")
+		end
+		
 		syncStateToClient(player)
 		
 		return {
@@ -2744,10 +2762,12 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 			life.Flags.incarcerated = true
 			life.Flags.arrested = true
 			life.Flags.did_time = true
+			-- CRITICAL: Clear 'employed' flag when going to jail
+			life.Flags.employed = nil
 			-- IMPORTANT: Clear sentence_complete when going to prison (prevents bugs from previous stints)
 			life.Flags.sentence_complete = nil
 			life.Flags.released_from_prison = nil
-			print("[LifeRemoteHandlers] Set prison flags in life state, cleared any previous release flags")
+			print("[LifeRemoteHandlers] Set prison flags, cleared 'employed' flag")
 		end
 		
 		syncStateToClient(player)
@@ -3258,6 +3278,8 @@ _G.SendToJail = function(player, years)
 		life.Flags.in_prison = true
 		life.Flags.incarcerated = true
 		life.Flags.did_time = true
+		-- CRITICAL: Clear 'employed' flag when going to jail
+		life.Flags.employed = nil
 		-- Clear any release flags
 		life.Flags.sentence_complete = nil
 		life.Flags.released_from_prison = nil
@@ -3275,6 +3297,7 @@ _G.SetPlayerJob = function(player, jobData)
 	end
 	
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	print("[LifeRemoteHandlers] SetPlayerJob - Setting job for:", player.Name)
 	print("[LifeRemoteHandlers] Job:", jobData.id or "unknown", jobData.title or "unknown")
 	
@@ -3290,6 +3313,14 @@ _G.SetPlayerJob = function(player, jobData)
 		storyFlag = jobData.storyFlag or nil, -- e.g., "teacher", "hacker_career"
 	}
 	
+	-- CRITICAL: Set the 'employed' flag in player's Flags for event system
+	-- This allows career events to properly fire/block based on employment status
+	if life then
+		life.Flags = life.Flags or {}
+		life.Flags.employed = true
+		print("[LifeRemoteHandlers] Set 'employed' flag = true")
+	end
+	
 	print("[LifeRemoteHandlers] Job set:", extState.CurrentJob.title, "at", extState.CurrentJob.company, "- Salary:", extState.CurrentJob.salary)
 	
 	syncStateToClient(player)
@@ -3299,9 +3330,18 @@ end
 -- Quit player job (callable from scripts)
 _G.QuitPlayerJob = function(player)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	if extState.CurrentJob then
 		local oldJob = extState.CurrentJob.title or "job"
 		extState.CurrentJob = nil
+		
+		-- CRITICAL: Clear the 'employed' flag when quitting
+		if life then
+			life.Flags = life.Flags or {}
+			life.Flags.employed = nil
+			print("[LifeRemoteHandlers] Cleared 'employed' flag")
+		end
+		
 		print("[LifeRemoteHandlers] Player quit job:", oldJob)
 		syncStateToClient(player)
 		return true

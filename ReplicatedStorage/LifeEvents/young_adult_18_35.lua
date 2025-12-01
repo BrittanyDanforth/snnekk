@@ -305,6 +305,7 @@ module.events = {
 		weight = 20, oneTime = true,
 		emoji = "💕", title = "Office Romance",
 		category = "social",
+		requiresFlag = "employed", -- Must have a job to have a workplace romance!
 		getDynamicData = function()
 			return { coworkerName = LifeEvents.randomFirstName() }
 		end,
@@ -323,6 +324,7 @@ module.events = {
 		weight = 35, cooldown = 3,
 		emoji = "📈", title = "Promotion Opportunity!",
 		category = "career",
+		requiresFlag = "employed", -- MUST be employed to get a promotion!
 		getDynamicData = function()
 			local titles = {"Senior", "Team Lead", "Manager", "Specialist", "Associate Director"}
 			local raise = math.random(5000, 15000)
@@ -464,12 +466,13 @@ module.events = {
 		weight = 35, oneTime = true,
 		emoji = "🔀", title = "Career Crossroads",
 		category = "career",
+		requiresFlag = "employed", -- Must have a career to be at crossroads!
 		text = "Stay on current path, or make a big change? Pivot, or climb?",
 		choices = {
-			{ text = "🔄 Complete career change", effects = { Happiness = 8, Money = -5000, Smarts = 5 }, resultText = "Started over in a new field! Scary but exciting!", setFlag = "career_pivot" },
+			{ text = "🔄 Complete career change", effects = { Happiness = 8, Money = -5000, Smarts = 5 }, resultText = "Started over in a new field! Scary but exciting!", setFlag = "career_pivot", clearFlag = "employed" },
 			{ text = "🚀 Go all in", effects = { Money = 8000, Happiness = 6, Smarts = 4 }, resultText = "Doubled down on your career. Leadership track!", setFlag = "career_focused" },
 			{ text = "🎓 Back to school", effects = { Smarts = 12, Money = -20000, Happiness = 4 }, resultText = "Grad degree to level up!", setFlag = "pursuing_grad" },
-			{ text = "💼 Start a business", effects = { Money = -10000, Happiness = 8, Smarts = 6 }, resultText = "Entrepreneur life! Your own boss!", setFlag = "entrepreneur" },
+			{ text = "💼 Start a business", effects = { Money = -10000, Happiness = 8, Smarts = 6 }, resultText = "Entrepreneur life! Your own boss!", setFlags = {"entrepreneur", "business_owner"} },
 		},
 	},
 	
@@ -498,6 +501,8 @@ module.events = {
 		weight = 30, oneTime = true,
 		emoji = "🏆", title = "Major Career Win!",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must be employed to have career success!
+		blockIfFlag = "career_achiever", -- Only fire once
 		getDynamicData = function()
 			local wins = {"big promotion", "industry award", "major project completion", "executive position", "salary milestone"}
 			return { win = wins[math.random(#wins)] }
@@ -683,6 +688,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🤝", title = "Networking Event",
 		category = "career",
+		requiresFlag = "employed", -- Must have a job/career to attend career networking
 		getDynamicData = function()
 			local events = {"industry conference", "alumni mixer", "professional meetup", "business dinner", "charity gala"}
 			return { event = events[math.random(#events)] }
@@ -702,6 +708,7 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "🔥", title = "Burnout",
 		category = "health",
+		requiresFlag = "employed", -- Can only burn out if you have a job!
 		text = "You hit the wall. Complete burnout. Can't keep going like this.",
 		choices = {
 			{ text = "🏝️ Take a real break", effects = { Health = 8, Happiness = 6, Money = -2000 }, resultText = "Took time off. Came back refreshed and with new perspective.", setFlag = "recovered_burnout" },
@@ -737,7 +744,8 @@ module.events = {
 		weight = 30, oneTime = true,
 		emoji = "😰", title = "Imposter Syndrome",
 		category = "career",
-		text = "You feel like a fraud. Like any day, everyone will realize you don't belong.",
+		requiresFlag = "employed", -- Must have a job to feel imposter syndrome at work!
+		text = "You feel like a fraud at work. Like any day, everyone will realize you don't belong.",
 		choices = {
 			{ text = "🗣️ Open up about it", effects = { Happiness = 5, Smarts = 4 }, resultText = "Turns out EVERYONE feels this way! You're not alone.", setFlag = "self_aware" },
 			{ text = "📊 Look at accomplishments", effects = { Happiness = 6, Smarts = 3 }, resultText = "The evidence says you earned your spot!" },

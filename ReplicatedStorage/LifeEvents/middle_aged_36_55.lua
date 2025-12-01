@@ -20,6 +20,8 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "👔", title = "Executive Opportunity!",
 		category = "career",
+		requiresFlag = "employed", -- CRITICAL: Must have a job to get executive promotion!
+		blockIfFlag = "executive", -- Only one executive promotion
 		getDynamicData = function()
 			local titles = {"Vice President", "Director", "Senior Director", "Chief Officer", "Partner"}
 			local salary = math.random(150000, 350000)
@@ -27,8 +29,20 @@ module.events = {
 		end,
 		text = "There's an opening for %title%! Salary: $%salary%! How do you approach it?",
 		choices = {
-			{ text = "📊 Prepare a strong pitch", effects = { Happiness = 18, Money = 50000, Smarts = 5 }, resultText = "Nailed it! Promoted! Corner office, here you come!", setFlag = "executive" },
-			{ text = "💼 Express interest formally", effects = { Happiness = 10, Money = 40000, Smarts = 4 }, resultText = "Got it! Big responsibility but bigger paycheck!", setFlag = "executive" },
+			{ 
+				text = "📊 Prepare a strong pitch", 
+				effects = { Happiness = 18, Smarts = 5 }, 
+				resultText = "Nailed it! Promoted! Corner office, here you come!", 
+				setFlag = "executive",
+				setJob = { id = "executive", title = "%title%", salary = 200000 }
+			},
+			{ 
+				text = "💼 Express interest formally", 
+				effects = { Happiness = 10, Smarts = 4 }, 
+				resultText = "Got it! Big responsibility but bigger paycheck!", 
+				setFlag = "executive",
+				setJob = { id = "executive", title = "%title%", salary = 175000 }
+			},
 			{ text = "⚖️ Decline - work-life balance", effects = { Happiness = 4, Smarts = 3, Money = 20000 }, resultText = "Turned it down for sanity. Got a smaller raise for staying." },
 			{ text = "🤷 Don't pursue it", effects = { Happiness = -10 }, resultText = "Someone more aggressive got it. Watching them in the corner office stings." },
 		},
@@ -111,6 +125,7 @@ module.events = {
 		weight = 20, oneTime = true,
 		emoji = "🔀", title = "Late Career Change",
 		category = "career",
+		requiresFlag = "employed", -- Must have a career to pivot from!
 		getDynamicData = function()
 			local changes = {"consulting", "teaching", "starting a business", "non-profit work", "creative field", "complete industry change"}
 			return { change = changes[math.random(#changes)] }
@@ -261,6 +276,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "😤", title = "Office Politics!",
 		category = "career",
+		requiresFlag = "employed", -- Must be employed to deal with office politics!
 		getDynamicData = function()
 			local situations = {"someone took credit for your work", "layoff rumors", "toxic boss", "backstabbing colleague", "merger anxiety"}
 			return { situation = situations[math.random(#situations)] }
@@ -280,6 +296,7 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "💰", title = "Financial Milestone!",
 		category = "career",
+		requiresFlag = "employed", -- Must have income to hit financial milestones!
 		getDynamicData = function()
 			local milestones = {"paid off the house", "hit six figures", "retirement account goal", "college fund complete", "became debt-free"}
 			return { milestone = milestones[math.random(#milestones)] }
@@ -338,10 +355,11 @@ module.events = {
 		weight = 25, oneTime = true,
 		emoji = "🎓", title = "Becoming a Mentor",
 		category = "career",
+		requiresFlag = "employed", -- Must have work experience to mentor!
 		getDynamicData = function()
 			return { menteeName = LifeEvents.randomFirstName() }
 		end,
-		text = "Young professional %menteeName% looks up to you. Want to mentor them?",
+		text = "Young professional %menteeName% looks up to you at work. Want to mentor them?",
 		choices = {
 			{ text = "🤝 Happy to guide!", effects = { Happiness = 10, Smarts = 4 }, resultText = "Paying it forward! Helping the next generation.", setFlag = "mentor" },
 			{ text = "📚 Sharing wisdom", effects = { Happiness = 8, Smarts = 5 }, resultText = "Your experience matters to someone. Beautiful.", setFlag = "mentor" },
@@ -409,6 +427,7 @@ module.events = {
 		weight = 40, oneTime = true,
 		emoji = "📊", title = "Retirement Planning Serious",
 		category = "career",
+		requiresFlag = "employed", -- Must have job to plan retirement from it!
 		text = "Meeting with financial advisor. Is retirement actually possible?",
 		choices = {
 			{ text = "✅ On track!", effects = { Happiness = 12, Smarts = 4 }, resultText = "The numbers work! Retirement is in sight!", setFlag = "retirement_ready" },
