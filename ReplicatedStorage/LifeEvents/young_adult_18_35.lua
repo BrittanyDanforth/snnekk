@@ -105,6 +105,8 @@ module.events = {
 		weight = 50, oneTime = true,
 		emoji = "🛏️", title = "Roommate Situation!",
 		category = "social",
+		-- CRITICAL: Must be in college to have a college roommate
+		requiresFlag = "college_student",
 		getDynamicData = function()
 			return { roommateName = randomFirstName() }
 		end,
@@ -123,6 +125,9 @@ module.events = {
 		weight = 60, oneTime = true,
 		emoji = "📋", title = "Declaring Your Major!",
 		category = "school",
+		-- CRITICAL: Must be in college to declare a major
+		requiresFlag = "college_student",
+		blockIfFlag = "declared_major",  -- Can only declare once
 		getDynamicData = function()
 			local majors = {"Computer Science", "Business", "Pre-Med", "Engineering", "Psychology", "English", "Art", "Music", "Biology", "Political Science", "Economics", "Communications", "Nursing", "Education"}
 			return { major = majors[math.random(#majors)] }
@@ -142,6 +147,9 @@ module.events = {
 		weight = 40, cooldown = 2,
 		emoji = "🎉", title = "College Party!",
 		category = "social",
+		-- CRITICAL: Must be in college to attend college parties
+		requiresFlag = "college_student",
+		conditions = { blocksInPrison = true },
 		getDynamicData = function()
 			local types = {"frat party", "house party", "dorm party", "club event", "tailgate"}
 			return { partyType = types[math.random(#types)] }
@@ -161,6 +169,9 @@ module.events = {
 		weight = 35, cooldown = 2,
 		emoji = "🏖️", title = "Spring Break!",
 		category = "social",
+		-- CRITICAL: Must be in college for spring break
+		requiresFlag = "college_student",
+		conditions = { blocksInPrison = true },
 		requires = hasFriend,  -- MUST have friends to go on spring break with friends
 		getDynamicData = function()
 			local destinations = {"Cancun", "Miami", "Panama City Beach", "Vegas", "road trip", "home"}
@@ -181,6 +192,8 @@ module.events = {
 		weight = 45, cooldown = 2,
 		emoji = "📋", title = "Semester Grades!",
 		category = "school",
+		-- CRITICAL: Must be in college to get semester grades
+		requiresFlag = "college_student",
 		text = "Finals are over. How did you approach this semester?",
 		choices = {
 			{ text = "📚 Studied hard all semester", effects = { Smarts = 12, Happiness = 10 }, resultText = "DEAN'S LIST! 4.0! All those library nights paid off!", setFlag = "deans_list" },
@@ -194,12 +207,15 @@ module.events = {
 		id = "m_study_abroad",
 		minAge = 19, maxAge = 21,
 		weight = 25, oneTime = true,
+		emoji = "✈️", title = "Study Abroad!",
+		category = "school",
+		-- CRITICAL: Must be in college AND have money to study abroad
+		requiresFlag = "college_student",
+		conditions = { blocksInPrison = true },
 		-- Need at least $2500 to study abroad (cheapest option)
 		requires = function(state)
 			return (state.Money or 0) >= 2500
 		end,
-		emoji = "✈️", title = "Study Abroad!",
-		category = "school",
 		getDynamicData = function()
 			local countries = {"Italy", "Spain", "England", "France", "Japan", "Australia", "Germany", "South Korea"}
 			return { country = countries[math.random(#countries)] }
@@ -261,6 +277,9 @@ module.events = {
 		weight = 90, milestone = true, oneTime = true,
 		emoji = "🎓", title = "COLLEGE GRADUATION!",
 		category = "school",
+		-- CRITICAL: Must be in college to graduate from college!
+		requiresFlag = "college_student",
+		blockIfFlag = "college_graduate",  -- Can only graduate once
 		getDynamicData = function()
 			local honors = {"summa cum laude", "magna cum laude", "cum laude", "", ""}
 			return { honor = honors[math.random(#honors)] }

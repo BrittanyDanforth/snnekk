@@ -24,6 +24,19 @@ local function loadEventMemory()
 	return EventMemory
 end
 
+-- Load EventEngine for auto-inference validation
+local EventEngine = nil
+local function loadEventEngine()
+	if EventEngine then return EventEngine end
+	local success, result = pcall(function()
+		return require(script.Parent:WaitForChild("LifeEvents"):WaitForChild("EventEngine", 2))
+	end)
+	if success and result then
+		EventEngine = result
+	end
+	return EventEngine
+end
+
 local function dprint(...)
 	if DEBUG_EVENT_VALIDATION then
 		print("[LifeStageSystem]", ...)
@@ -1055,6 +1068,23 @@ function LifeStageSystem.validateEvent(eventDef, state)
 					result.valid = false
 					table.insert(result.reasons, "Blocked by criminal record")
 				end
+			end
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 18. EVENTENGINE AUTO-INFERENCE VALIDATION
+	-- Uses pattern-matching to catch events the author forgot to gate
+	-- (e.g., car_accident without car ownership)
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if result.valid then
+		local engine = loadEventEngine()
+		if engine and engine.isEligible then
+			local engineValid, engineReason = engine.isEligible(eventDef, state)
+			if not engineValid then
+				result.valid = false
+				table.insert(result.reasons, "[EventEngine] " .. (engineReason or "failed validation"))
 			end
 		end
 	end

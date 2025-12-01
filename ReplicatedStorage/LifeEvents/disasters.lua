@@ -293,7 +293,13 @@ module.events = {
 		weight = 20, cooldown = 4,
 		emoji = "🚗", title = "Accident About to Happen!",
 		category = "disaster",
-		text = "A car is swerving toward you! Split second to react!",
+		-- SMART RANDOM: Only trigger if player actually drives
+		conditions = {
+			requiresVehicle = true,  -- Must own a car or have license
+			blocksInPrison = true,   -- Can't drive while in prison
+		},
+		requiresFlag = "has_license", -- Must have driver's license
+		text = "You're driving when a car is swerving toward you! Split second to react!",
 		choices = {
 			{ 
 				text = "🔀 Swerve to avoid", 
