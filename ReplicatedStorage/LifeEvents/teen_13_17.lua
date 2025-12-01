@@ -273,10 +273,10 @@ module.events = {
 		category = "family",
 		text = "The big day! Your driving test is TODAY! How do you feel going in?",
 		choices = {
-			{ text = "😎 Super confident", effects = { Happiness = 15, Smarts = 2 }, resultText = "PASSED! Your confidence showed! FREEDOM is yours!", setFlag = "can_drive" },
+			{ text = "😎 Super confident", effects = { Happiness = 15, Smarts = 2 }, resultText = "PASSED! Your confidence showed! FREEDOM is yours!", setFlag = "has_license" },
 			{ text = "😰 Really nervous", effects = { Happiness = -8 }, resultText = "Nerves got you. Failed parallel parking. Reschedule..." },
-			{ text = "🧘 Stay calm and focused", effects = { Happiness = 12, Smarts = 5 }, resultText = "PERFECT SCORE! Calm and collected wins the day!", setFlags = {"can_drive", "perfect_driver"} },
-			{ text = "🤞 Just hope for the best", effects = { Happiness = 6 }, resultText = "Barely passed! Made some mistakes but you're legal! A pass is a pass!", setFlag = "can_drive" },
+			{ text = "🧘 Stay calm and focused", effects = { Happiness = 12, Smarts = 5 }, resultText = "PERFECT SCORE! Calm and collected wins the day!", setFlags = {"has_license", "perfect_driver"} },
+			{ text = "🤞 Just hope for the best", effects = { Happiness = 6 }, resultText = "Barely passed! Made some mistakes but you're legal! A pass is a pass!", setFlag = "has_license" },
 		},
 	},
 	
@@ -285,7 +285,7 @@ module.events = {
 		minAge = 15, maxAge = 17,
 		weight = 40, oneTime = true,
 		emoji = "💼", title = "First Part-Time Job!",
-		category = "career",
+		category = "work",
 		getDynamicData = function()
 			local jobs = {"fast food worker", "retail associate", "movie theater attendant", "grocery bagger", "lifeguard", "tutor", "babysitter", "lawn care"}
 			local wage = math.random(10, 15)
@@ -540,7 +540,7 @@ module.events = {
 		weight = 35, cooldown = 2,
 		requiresFlag = "has_job",
 		emoji = "☀️", title = "Summer Work!",
-		category = "career",
+		category = "work",
 		text = "Summer break means more hours at your job! Time to grind!",
 		choices = {
 			{ text = "💪 Work full time!", effects = { Money = 800, Health = -4, Happiness = 2 }, resultText = "Bank account growing! But no vacation." },
@@ -573,7 +573,7 @@ module.events = {
 		id = "m_car_first",
 		minAge = 16, maxAge = 17,
 		weight = 30, oneTime = true,
-		requiresFlag = "can_drive",
+		requiresFlag = "has_license",
 		emoji = "🚗", title = "First Car!",
 		category = "family",
 		getDynamicData = function()
@@ -669,7 +669,7 @@ module.events = {
 		minAge = 16, maxAge = 17,
 		weight = 25, oneTime = true,
 		emoji = "💼", title = "High School Internship!",
-		category = "career",
+		category = "work",
 		getDynamicData = function()
 			local fields = {"tech company", "law firm", "hospital", "design studio", "research lab", "local business"}
 			return { field = fields[math.random(#fields)] }

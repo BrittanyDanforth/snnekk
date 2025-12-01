@@ -555,6 +555,13 @@ function LifeStageSystem.getCapabilities(state)
 	local flags = state.Flags or {}
 
 	local inPrison = flags.in_prison or flags.incarcerated or state.InJail
+	
+	-- Check dropout/expelled status
+	local hasDroppedOut = flags.dropped_out or flags.expelled or flags.quit_school
+	
+	-- Determine if in school: must be in school-age stage AND not dropped out
+	-- OR be a college student (separate enrollment)
+	local inSchool = (stage.inSchool and not hasDroppedOut) or flags.college_student
 
 	return {
 		canWork = stage.canWork and age >= 14 and not inPrison,
@@ -569,8 +576,9 @@ function LifeStageSystem.getCapabilities(state)
 		canEnrollCollege = age >= 18 and age <= 50,
 		canRetire = age >= 50,
 
-		inSchool = stage.inSchool or flags.college_student,
+		inSchool = inSchool,
 		schoolType = flags.college_student and "university" or stage.schoolType,
+		hasDroppedOut = hasDroppedOut,
 
 		canStartPolitics = age >= 18 and flags.political_interest,
 		canStartRacing = age >= 16 and flags.racing_interest,
@@ -810,10 +818,17 @@ function LifeStageSystem.validateEvent(eventDef, state)
 
 	-- 12. School events require being in school or college
 	if eventDef.category == "school" and not caps.inPrison then
-		local inSchool = caps.inSchool or (age >= 5 and age <= 18)
-		if not inSchool and not flags.college_student then
+		-- Check dropout/expelled flags first - these block school events entirely
+		local hasDroppedOut = flags.dropped_out or flags.expelled or flags.quit_school
+		if hasDroppedOut and not flags.college_student then
 			result.valid = false
-			table.insert(result.reasons, "Not in school")
+			table.insert(result.reasons, "Dropped out of school")
+		else
+			local inSchool = caps.inSchool or (age >= 5 and age <= 18 and not hasDroppedOut)
+			if not inSchool and not flags.college_student then
+				result.valid = false
+				table.insert(result.reasons, "Not in school")
+			end
 		end
 	end
 
@@ -911,6 +926,23 @@ function LifeStageSystem.validateEvent(eventDef, state)
 				result.valid = false
 				table.insert(result.reasons, statName .. " too high (max " .. maxValue .. ", have " .. currentValue .. ")")
 			end
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- 16. DYNAMIC DATA VALIDATION
+	-- If getDynamicData returns nil, the event cannot fire
+	-- This prevents events with missing required relationships from firing
+	-- ═══════════════════════════════════════════════════════════════
+	
+	if result.valid and eventDef.getDynamicData then
+		local ok, dynamicData = pcall(eventDef.getDynamicData, state)
+		if not ok then
+			result.valid = false
+			table.insert(result.reasons, "getDynamicData failed: " .. tostring(dynamicData))
+		elseif dynamicData == nil then
+			result.valid = false
+			table.insert(result.reasons, "getDynamicData returned nil (missing required data)")
 		end
 	end
 

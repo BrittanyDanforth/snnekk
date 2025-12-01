@@ -34,6 +34,31 @@ local function getFriendName(state)
 	return randomFirstName()
 end
 
+-- Returns actual friend name or nil if no friend exists
+-- Use this for events that REQUIRE an existing relationship
+local function getActualFriendName(state)
+	if not state then return nil end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" or rel.category == "friends" then
+			return rel.name
+		end
+	end
+	return nil
+end
+
+-- Check if player has any actual relationships of a given type
+local function hasRelationshipOfType(state, relType)
+	if not state then return false end
+	local relationships = state.Relationships or {}
+	for _, rel in pairs(relationships) do
+		if rel.type == relType or rel.category == relType then
+			return true
+		end
+	end
+	return false
+end
+
 local module = {}
 
 module.events = {
@@ -721,6 +746,8 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🕊️", title = "Losing Peers",
 		category = "social",
+		-- This event implies the player HAD friends at some point
+		requiresAnyFlag = {"ever_had_friend", "social_butterfly", "had_childhood_friend", "has_friend", "had_college_friends"},
 		getDynamicData = function()
 			return { friendName = randomFirstName() }
 		end,
