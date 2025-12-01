@@ -6,6 +6,25 @@
 local EventLibrary = {}
 
 ----------------------------------------------------------------------
+-- LOAD RELATIONSHIP SERVICE (Single source of truth for relationships)
+----------------------------------------------------------------------
+
+local RelationshipService = nil
+local function getRelationshipService()
+	if RelationshipService then return RelationshipService end
+	local success, result = pcall(function()
+		return require(script.Parent:WaitForChild("RelationshipService", 2))
+	end)
+	if success and result then
+		RelationshipService = result
+		print("[EventLibrary] ✅ RelationshipService loaded")
+	else
+		warn("[EventLibrary] ⚠️ RelationshipService not found, using fallbacks")
+	end
+	return RelationshipService
+end
+
+----------------------------------------------------------------------
 -- NAME & DATA GENERATORS
 ----------------------------------------------------------------------
 
@@ -44,19 +63,21 @@ local function hasNoCriminalRecord(state)
 end
 
 ----------------------------------------------------------------------
--- RELATIONSHIP CHECK HELPERS
+-- RELATIONSHIP CHECK HELPERS (Use RelationshipService when available)
 ----------------------------------------------------------------------
 
--- Check if player has any friends (checks both flags AND actual relationships)
+-- Check if player has any friends
 local function hasFriend(state)
-	-- Check flags first (fast path)
+	local RS = getRelationshipService()
+	if RS then return RS.hasFriend(state) end
+	
+	-- Fallback
 	local f = state.Flags or {}
 	if f.has_best_friend or f.has_friend or f.social_butterfly or f.friendly then
 		return true
 	end
-	-- Also check actual relationships (flat dictionary format)
 	if state.Relationships then
-		for id, rel in pairs(state.Relationships) do
+		for _, rel in pairs(state.Relationships) do
 			if rel.type == "friend" and rel.alive ~= false then
 				return true
 			end
@@ -65,16 +86,18 @@ local function hasFriend(state)
 	return false
 end
 
--- Check if player has a romantic partner (checks both flags AND actual relationships)
+-- Check if player has a romantic partner
 local function hasPartner(state)
-	-- Check flags first (fast path)
+	local RS = getRelationshipService()
+	if RS then return RS.hasPartner(state) end
+	
+	-- Fallback
 	local f = state.Flags or {}
 	if f.married or f.engaged or f.in_relationship or f.dating then
 		return true
 	end
-	-- Also check actual relationships (flat dictionary format)
 	if state.Relationships then
-		for id, rel in pairs(state.Relationships) do
+		for _, rel in pairs(state.Relationships) do
 			if rel.type == "romance" and rel.alive ~= false then
 				return true
 			end
@@ -102,9 +125,83 @@ local function hasSibling(state)
 	return f.has_sibling or f.has_brother or f.has_sister
 end
 
--- Get a random friend name from relationships if available, otherwise generate one
--- Works with FLAT dictionary format: state.Relationships["friend_123"] = { type = "friend", name = "..." }
+----------------------------------------------------------------------
+-- NEW: Get REAL friend from RelationshipService (or create one)
+-- Returns: { id = "friend_123", name = "Ryan Smith", ... }
+-- This ensures events reference ACTUAL people in state.Relationships
+----------------------------------------------------------------------
+local function getOrCreateFriend(state, opts)
+	opts = opts or {}
+	local RS = getRelationshipService()
+	
+	if RS then
+		local friend, isNew = RS.getOrCreateFriend(state, opts)
+		return friend
+	end
+	
+	-- Fallback if RelationshipService not available
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if rel.type == "friend" and rel.alive ~= false then
+				return rel
+			end
+		end
+	end
+	
+	-- Create a placeholder (won't be stored, but at least has name)
+	return { id = "temp_friend", name = randomName(), relationship = 60, alive = true }
+end
+
+-- NEW: Get REAL best friend from RelationshipService (or create one)
+local function getOrCreateBestFriend(state, opts)
+	opts = opts or {}
+	local RS = getRelationshipService()
+	
+	if RS then
+		local friend, isNew = RS.getOrCreateBestFriend(state, opts)
+		return friend
+	end
+	
+	return getOrCreateFriend(state, opts)
+end
+
+-- NEW: Get REAL partner from RelationshipService (or create one)
+local function getOrCreatePartner(state, opts)
+	opts = opts or {}
+	local RS = getRelationshipService()
+	
+	if RS then
+		local partner, isNew = RS.getOrCreatePartner(state, opts)
+		return partner
+	end
+	
+	-- Fallback
+	if state.Relationships then
+		for id, rel in pairs(state.Relationships) do
+			if rel.type == "romance" and rel.alive ~= false then
+				return rel
+			end
+		end
+	end
+	
+	return { id = "temp_partner", name = randomName(), relationship = 70, alive = true }
+end
+
+-- LEGACY: Get a friend name (now uses getOrCreateFriend)
+-- Still works for events that just need a name string
 local function getFriendName(state)
+	local friend = getOrCreateFriend(state)
+	return friend and friend.name or randomName()
+end
+
+-- LEGACY: Get a partner name
+local function getPartnerName(state)
+	local partner = getOrCreatePartner(state)
+	return partner and partner.name or randomName()
+end
+
+-- OLD FALLBACK (for backwards compatibility, but prefer getFriendName which uses real relationships)
+local function getFriendNameLegacy(state)
 	-- Try to get from actual relationships first
 	if state.Relationships then
 		local friends = {}
@@ -118,18 +215,6 @@ local function getFriendName(state)
 		end
 	end
 	-- Fallback to random name
-	return randomName()
-end
-
--- Get a random partner name from relationships if available
-local function getPartnerName(state)
-	if state.Relationships then
-		for id, rel in pairs(state.Relationships) do
-			if rel.type == "romance" and rel.alive ~= false and rel.name then
-				return rel.name
-			end
-		end
-	end
 	return randomName()
 end
 

@@ -63,6 +63,9 @@ end
 -- Load LifeStageSystem for capability checks
 local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
 
+-- Load RelationshipService (single source of truth for all relationships)
+local RelationshipService = require(ReplicatedStorage:WaitForChild("RelationshipService"))
+
 -- Get all remotes
 local GetCapabilities = getRemote("GetCapabilities", true)
 local ApplyForJob = getRemote("ApplyForJob", true)
@@ -2320,75 +2323,50 @@ DoInteraction.OnServerInvoke = function(player, actionId, relationType, personId
 	
 	-- Handle special actions
 	if action.special == "meet_romance" then
-		-- Generate a new romantic interest
-		local partnerGender = math.random() > 0.5 and "male" or "female"
-		local partnerName = getRandomName(partnerGender)
-		local partnerAge = math.max(18, age + math.random(-5, 5))
-		
-		-- Add to relationships (FLAT DICTIONARY FORMAT)
+		-- Use RelationshipService to create a new romantic interest
 		if lifeState then
-			lifeState.Relationships = lifeState.Relationships or {}
-			local id = "romance_" .. tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
-			lifeState.Relationships[id] = {
-				type = "romance",  -- Must be exactly "romance" for UI to show it
-				name = partnerName,
+			local partnerAge = math.max(18, age + math.random(-5, 5))
+			local partner = RelationshipService.create(lifeState, "romance", {
 				role = "Dating",
 				age = partnerAge,
 				relationship = 50 + math.random(0, 20),
-				alive = true,
-				gender = partnerGender,
-			}
-			print("[LifeRemoteHandlers] ✅ Created new partner:", id, "Name:", partnerName, "Type:", lifeState.Relationships[id].type)
+				tags = { dating = true, met_via_ui = true },
+			})
 			
-			-- Also set flags so events know
-			if lifeState.Flags then
-				lifeState.Flags.dating = true
-				lifeState.Flags.in_relationship = true
-			end
+			print("[LifeRemoteHandlers] ✅ Created new partner via RelationshipService:", partner.id, "Name:", partner.name)
+			
+			syncStateToClient(player)
+			return { 
+				success = true, 
+				message = "You met " .. partner.name .. " (" .. partnerAge .. ") and hit it off! You're now dating."
+			}
 		else
 			print("[LifeRemoteHandlers] ❌ ERROR: No lifeState to add partner to!")
+			return { success = false, message = "Error: Could not create relationship" }
 		end
 		
-		syncStateToClient(player)
-		return { 
-			success = true, 
-			message = "You met " .. partnerName .. " (" .. partnerAge .. ") and hit it off! You're now dating."
-		}
-		
 	elseif action.special == "make_friend" then
-		-- Generate a new friend
-		local friendGender = math.random() > 0.5 and "male" or "female"
-		local friendName = getRandomName(friendGender)
-		local friendAge = math.max(5, age + math.random(-3, 3))
-		
-		-- Add to relationships (FLAT DICTIONARY FORMAT)
+		-- Use RelationshipService to create a new friend
 		if lifeState then
-			lifeState.Relationships = lifeState.Relationships or {}
-			local id = "friend_" .. tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
-			lifeState.Relationships[id] = {
-				type = "friend",  -- Must be exactly "friend" for UI to show it
-				name = friendName,
+			local friendAge = math.max(5, age + math.random(-3, 3))
+			local friend = RelationshipService.create(lifeState, "friend", {
 				role = "Friend",
 				age = friendAge,
 				relationship = 50 + math.random(0, 30),
-				alive = true,
-				gender = friendGender,
-			}
-			print("[LifeRemoteHandlers] ✅ Created new friend:", id, "Name:", friendName, "Type:", lifeState.Relationships[id].type)
+				tags = { met_via_ui = true },
+			})
 			
-			-- Also set the has_friend flag so events know
-			if lifeState.Flags then
-				lifeState.Flags.has_friend = true
-			end
+			print("[LifeRemoteHandlers] ✅ Created new friend via RelationshipService:", friend.id, "Name:", friend.name)
+			
+			syncStateToClient(player)
+			return { 
+				success = true, 
+				message = "You made a new friend! " .. friend.name .. " seems cool."
+			}
 		else
 			print("[LifeRemoteHandlers] ❌ ERROR: No lifeState to add friend to!")
+			return { success = false, message = "Error: Could not create relationship" }
 		end
-		
-		syncStateToClient(player)
-		return { 
-			success = true, 
-			message = "You made a new friend! " .. friendName .. " seems cool."
-		}
 		
 	elseif action.giveMoney then
 		-- Ask for money action

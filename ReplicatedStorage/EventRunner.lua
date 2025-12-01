@@ -143,6 +143,7 @@ local EventRunner = {}
 
 local NarrativeContent = require(script.Parent:WaitForChild("NarrativeContent"))
 local LifeStageSystem = require(script.Parent:WaitForChild("LifeStageSystem"))
+local RelationshipService = require(script.Parent:WaitForChild("RelationshipService"))
 
 local StatNarrative = NarrativeContent.StatNarrative
 local MoneyNarrative = NarrativeContent.MoneyNarrative
@@ -953,67 +954,33 @@ function EventRunner.applyChoice(
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 11: ADD RELATIONSHIP
+	-- STEP 11: ADD RELATIONSHIP (via RelationshipService)
 	-- ═══════════════════════════════════════════════════════════════
-	-- RelationshipsScreen expects FLAT dictionary format with these exact types:
-	-- "friend", "romance", "family", "enemy"
-	-- Format: state.Relationships["friend_123456"] = { type = "friend", name = "...", ... }
+	-- Uses RelationshipService for single source of truth
 	if choice.addRelationship then
-		state.Relationships = state.Relationships or {}
 		local relData = choice.addRelationship
 		
-		-- Determine the standard relationship type for UI display
-		-- Map categories/types to the 4 standard types the UI expects
+		-- Map categories/types to the 4 standard types
 		local typeMapping = {
-			-- Friend types (all map to "friend")
-			friends = "friend",
-			friend = "friend",
-			best_friend = "friend",
-			childhood_friend = "friend",
-			school_friend = "friend",
-			club_friend = "friend",
-			camp_friend = "friend",
-			daycare_friend = "friend",
-			kindergarten_friend = "friend",
-			study_buddy = "friend",
-			neighbor = "friend",
-			reformed_bully_friend = "friend",
-			preschool_friend = "friend",
-			classmates = "friend",
-			coworkers = "friend",
-			acquaintance = "friend",  -- Added
-			former_student = "friend", -- Added
-			work_friend = "friend", -- Added
-			college_friend = "friend", -- Added
-			gym_buddy = "friend", -- Added
-			online_friend = "friend", -- Added
-			mentor = "friend", -- Added
-			mentee = "friend", -- Added
-			-- Romance types (all map to "romance")
-			romance = "romance",
-			lovers = "romance",
-			partner = "romance",
-			dating = "romance",
-			spouse = "romance",
-			interest = "romance", -- Added
-			crush = "romance", -- Added
-			ex = "romance", -- Added (for tracking exes)
-			fiance = "romance", -- Added
-			-- Family types (all map to "family")
-			family = "family",
-			parent = "family",
-			sibling = "family",
-			child = "family",
-			grandparent = "family", -- Added
-			grandchild = "family", -- Added
-			cousin = "family", -- Added
-			aunt = "family", -- Added
-			uncle = "family", -- Added
-			in_law = "family", -- Added
-			-- Enemy types (all map to "enemy")
-			enemies = "enemy",
-			enemy = "enemy",
-			rival = "enemy",
+			-- Friend types
+			friends = "friend", friend = "friend", best_friend = "friend",
+			childhood_friend = "friend", school_friend = "friend", club_friend = "friend",
+			camp_friend = "friend", daycare_friend = "friend", kindergarten_friend = "friend",
+			study_buddy = "friend", neighbor = "friend", reformed_bully_friend = "friend",
+			preschool_friend = "friend", classmates = "friend", coworkers = "friend",
+			acquaintance = "friend", former_student = "friend", work_friend = "friend",
+			college_friend = "friend", gym_buddy = "friend", online_friend = "friend",
+			mentor = "friend", mentee = "friend",
+			-- Romance types
+			romance = "romance", lovers = "romance", partner = "romance",
+			dating = "romance", spouse = "romance", interest = "romance",
+			crush = "romance", ex = "romance", fiance = "romance",
+			-- Family types
+			family = "family", parent = "family", sibling = "family",
+			child = "family", grandparent = "family", grandchild = "family",
+			cousin = "family", aunt = "family", uncle = "family", in_law = "family",
+			-- Enemy types
+			enemies = "enemy", enemy = "enemy", rival = "enemy",
 		}
 		
 		local category = relData.category or "friends"
@@ -1026,28 +993,107 @@ function EventRunner.applyChoice(
 			personName = tostring(dynamicData[relData.dynamicNameKey])
 		end
 		
-		-- Generate unique ID using the standard type
-		local uniqueId = standardType .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
-		
-		-- Create the relationship entry in FLAT DICTIONARY format
-		-- This matches what RelationshipsScreen.lua expects
-		local newPerson = {
-			type = standardType,  -- Must be exactly: "friend", "romance", "family", or "enemy"
-			name = personName or "Unknown",
+		-- Use RelationshipService to create the relationship
+		local newPerson = RelationshipService.create(state, standardType, {
+			name = personName,
 			role = relData.role or (standardType == "friend" and "Friend" or standardType == "romance" and "Partner" or standardType == "family" and "Family" or "Rival"),
-			relationship = relData.startingRelationship or 50,
+			relationship = relData.startingRelationship or 60,
 			age = relData.age or state.Age or 18,
-			met = state.Age or 0,
-			alive = true,
-			subtype = relType,  -- Keep original type as subtype for reference
-		}
+			subtype = relType,
+			tags = {
+				[relType] = true,
+				[category] = true,
+			},
+		})
 		
-		-- Store in flat dictionary format (NOT nested arrays)
-		state.Relationships[uniqueId] = newPerson
 		results.relationshipAdded = newPerson
-		results.relationshipId = uniqueId
+		results.relationshipId = newPerson.id
 		
-		print("[EventRunner] Added relationship:", uniqueId, "Type:", standardType, "Name:", personName)
+		-- Store the new ID in dynamicData for follow-up operations
+		if relData.storeIdAs and dynamicData then
+			dynamicData[relData.storeIdAs] = newPerson.id
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 11b: CHANGE RELATIONSHIP (NEW!)
+	-- ═══════════════════════════════════════════════════════════════
+	-- For events that modify existing relationships (fight with friend, etc.)
+	-- Usage: changeRelationship = { targetIdKey = "friendId", delta = -20, killIfBelow = 5 }
+	if choice.changeRelationship then
+		local cfg = choice.changeRelationship
+		local targetRel = nil
+		
+		-- Try to get by ID from dynamicData
+		if cfg.targetIdKey and dynamicData and dynamicData[cfg.targetIdKey] then
+			local targetId = dynamicData[cfg.targetIdKey]
+			targetRel = RelationshipService.get(state, targetId)
+		end
+		
+		-- If no ID provided, pick a random one of the specified type
+		if not targetRel and cfg.relType then
+			targetRel = RelationshipService.pick(state, cfg.relType, cfg.filterFn)
+		end
+		
+		-- Apply the change
+		if targetRel then
+			-- Apply delta to relationship value
+			if cfg.delta then
+				RelationshipService.delta(state, targetRel.id, cfg.delta)
+			end
+			
+			-- Set relationship to specific value
+			if cfg.setRelationship then
+				RelationshipService.setRelationship(state, targetRel.id, cfg.setRelationship)
+			end
+			
+			-- Kill/remove if below threshold
+			if cfg.killIfBelow and targetRel.relationship <= cfg.killIfBelow then
+				RelationshipService.kill(state, targetRel.id, cfg.killReason or "relationship_ended")
+			end
+			
+			-- Remove entirely (unfriend, breakup)
+			if cfg.remove then
+				RelationshipService.remove(state, targetRel.id)
+			end
+			
+			-- Update role
+			if cfg.newRole then
+				targetRel.role = cfg.newRole
+			end
+			
+			-- Add/remove tags
+			if cfg.addTag then
+				RelationshipService.addTag(state, targetRel.id, cfg.addTag)
+			end
+			if cfg.removeTag then
+				RelationshipService.removeTag(state, targetRel.id, cfg.removeTag)
+			end
+			
+			results.relationshipChanged = targetRel
+			print("[EventRunner] Changed relationship:", targetRel.id, "Name:", targetRel.name, "Delta:", cfg.delta or 0)
+		else
+			print("[EventRunner] Warning: changeRelationship couldn't find target relationship")
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 11c: KILL RELATIONSHIP (convenience shortcut)
+	-- ═══════════════════════════════════════════════════════════════
+	-- Usage: killRelationship = { targetIdKey = "friendId", reason = "died" }
+	if choice.killRelationship then
+		local cfg = choice.killRelationship
+		local targetId = nil
+		
+		if cfg.targetIdKey and dynamicData and dynamicData[cfg.targetIdKey] then
+			targetId = dynamicData[cfg.targetIdKey]
+		end
+		
+		if targetId then
+			RelationshipService.kill(state, targetId, cfg.reason or "event")
+			results.relationshipKilled = targetId
+			print("[EventRunner] Killed relationship:", targetId)
+		end
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
