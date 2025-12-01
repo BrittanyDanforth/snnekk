@@ -203,6 +203,15 @@ module.events = {
 		weight = 20, cooldown = 3,
 		emoji = "😠", title = "Road Rage!",
 		category = "social",
+		-- CRITICAL: Must be driving to experience road rage
+		conditions = {
+			requiresVehicle = true,
+			blocksInPrison = true,
+		},
+		requires = function(state)
+			local flags = state.Flags or {}
+			return flags.has_license or flags.owns_car or flags.can_drive
+		end,
 		text = "Someone is FURIOUS at you in traffic! Honking, yelling, gesturing! What do you do?",
 		choices = {
 			{ 
@@ -273,6 +282,15 @@ module.events = {
 		weight = 25, cooldown = 3,
 		emoji = "🚗", title = "Flat Tire!",
 		category = "social",
+		-- CRITICAL: Must own a car and be driving to get a flat tire
+		conditions = {
+			requiresVehicle = true,
+			blocksInPrison = true,
+		},
+		requires = function(state)
+			local flags = state.Flags or {}
+			return flags.owns_car or flags.has_vehicle or flags.can_drive
+		end,
 		text = "Your tire just blew out! You're on the side of the road. What do you do?",
 		choices = {
 			{ 
@@ -374,6 +392,17 @@ module.events = {
 		weight = 20, cooldown = 4,
 		emoji = "🔧", title = "Home Emergency!",
 		category = "family",
+		-- Requires having a home (owned or rented) - assume adults have housing unless homeless
+		requires = function(state)
+			local flags = state.Flags or {}
+			-- Block if explicitly homeless
+			if flags.homeless then return false end
+			-- Must be at least a young adult with some living situation
+			return (state.Age or 0) >= 18 and not flags.in_prison
+		end,
+		conditions = {
+			blocksInPrison = true,
+		},
 		getDynamicData = function()
 			local problems = {
 				{ type = "burst pipe", desc = "water everywhere!" },
@@ -1278,8 +1307,24 @@ module.events = {
 		weight = 35, cooldown = 3,
 		emoji = "😰", title = "Can't Make Rent",
 		category = "social",
-		-- Only fires when very broke (less than $100)
+		conditions = {
+			blocksInPrison = true,
+		},
+		-- CRITICAL: Only fires if player is renting their own place AND is broke
+		-- Don't fire if: homeless, living with parents, in prison, or owns home
 		requires = function(state)
+			local flags = state.Flags or {}
+			-- Must have apartment/rental and be broke
+			local hasRental = flags.has_apartment or flags.renting
+			-- Block if not renting
+			if not hasRental then return false end
+			-- Block if has other housing situations
+			if flags.homeless then return false end
+			if flags.living_with_parents then return false end
+			if flags.moved_back_home then return false end
+			if flags.in_prison then return false end
+			if flags.homeowner then return false end
+			-- Must be broke
 			return (state.Money or 0) < 100
 		end,
 		text = "Rent is due and you don't have it. Landlord is asking questions. What now?",
@@ -1323,15 +1368,25 @@ module.events = {
 		requires = function(state)
 			return (state.Money or 0) < 300
 		end,
-		getDynamicData = function()
+		getDynamicData = function(state)
+			-- Build sources dynamically based on player state
 			local sources = {
 				"You found $50 in an old jacket!",
 				"A friend paid back money they owed you!",
 				"You won a small scratch-off lottery!",
 				"Someone Venmo'd you by accident and said keep it!",
-				"Your tax refund came early!"
 			}
-			local amounts = {50, 100, 75, 30, 200}
+			local amounts = {50, 100, 75, 30}
+			
+			-- ONLY add tax refund if player has actually worked
+			local flags = state and state.Flags or {}
+			local hasWorked = flags.employed or flags.has_job or flags.ever_worked 
+				or flags.first_job or flags.career_starter or flags.worked_parttime
+			if hasWorked then
+				table.insert(sources, "Your tax refund came early!")
+				table.insert(amounts, 200)
+			end
+			
 			local idx = math.random(1, #sources)
 			return { source = sources[idx], amount = amounts[idx] }
 		end,
