@@ -6172,6 +6172,7 @@ local events = {
 		emoji = "💰", title = "Millionaire!",
 		category = "money",
 		requires = function(state) return (state.Money or 0) >= 1000000 end,
+		blockIfFlag = "millionaire",  -- Don't fire twice (wealth.lua has another version)
 		text = "Your net worth just crossed one million dollars!",
 		choices = {
 			{ text = "💰 I made it!", effects = { Happiness = 25 }, resultText = "You're officially a millionaire!", setFlag = "millionaire" },
