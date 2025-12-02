@@ -66,11 +66,15 @@ local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"
 -- Get all remotes
 local GetCapabilities = getRemote("GetCapabilities", true)
 local ApplyForJob = getRemote("ApplyForJob", true)
-local QuitJob = getRemote("QuitJob", false)
+local QuitJob = getRemote("QuitJob", true)
 local DoWork = getRemote("DoWork", true)
 local EnrollEducation = getRemote("EnrollEducation", true)
 local DoFreelance = getRemote("DoFreelance", true)
 local TrySpecialCareer = getRemote("TrySpecialCareer", true)
+
+local RequestPromotion = getRemote("RequestPromotion", true)
+local RequestRaise = getRemote("RequestRaise", true)
+local GetCareerInfo = getRemote("GetCareerInfo", true)
 
 local BuyProperty = getRemote("BuyProperty", true)
 local BuyVehicle = getRemote("BuyVehicle", true)
@@ -289,21 +293,310 @@ local function modifyStat(player, statName, amount)
 end
 
 ----------------------------------------------------------------
--- JOB DATA
+-- CAREER SYSTEM DATA (TRIPLE AAA - 70+ CAREERS)
 ----------------------------------------------------------------
 
+-- Career Categories for organization
+local CareerCategories = {
+	ENTRY = "entry",           -- No education, part-time, teen jobs
+	SERVICE = "service",       -- Customer service, hospitality
+	TRADES = "trades",         -- Skilled labor, manual work
+	OFFICE = "office",         -- Business, administrative
+	TECH = "tech",             -- Technology, engineering
+	MEDICAL = "medical",       -- Healthcare
+	LAW = "law",               -- Legal profession
+	FINANCE = "finance",       -- Banking, accounting
+	CREATIVE = "creative",     -- Arts, media, entertainment
+	GOVERNMENT = "government", -- Public service
+	EDUCATION = "education",   -- Teaching, academia
+	SCIENCE = "science",       -- Research, laboratory
+	CRIMINAL = "criminal",     -- Illegal careers
+	SPORTS = "sports",         -- Athletics, fitness
+	MILITARY = "military",     -- Armed forces
+}
+
+-- Career Skills that affect performance
+local CareerSkills = {
+	Technical = 0,   -- Affects tech, science, trades jobs
+	Creative = 0,    -- Affects creative, entertainment jobs
+	Social = 0,      -- Affects service, sales, management jobs
+	Physical = 0,    -- Affects trades, sports, military jobs
+	Analytical = 0,  -- Affects finance, law, medical jobs
+	Leadership = 0,  -- Affects management, executive positions
+}
+
+-- Career Perks (passive bonuses while employed)
+local CareerPerks = {
+	health_insurance = { stat = "Health", bonus = 2, desc = "Health insurance" },
+	gym_membership = { stat = "Health", bonus = 3, desc = "Free gym membership" },
+	["401k"] = { money_bonus = 0.05, desc = "401k matching" },
+	stock_options = { money_bonus = 0.10, desc = "Stock options" },
+	company_car = { asset = "vehicle", desc = "Company car" },
+	travel = { stat = "Happiness", bonus = 5, desc = "Travel opportunities" },
+	fame_boost = { fame = 0.5, desc = "Media exposure" },
+	networking = { social = 5, desc = "Industry connections" },
+	flexible_hours = { stat = "Happiness", bonus = 3, desc = "Flexible schedule" },
+	remote_work = { stat = "Happiness", bonus = 4, desc = "Work from home" },
+	danger_pay = { money_bonus = 0.15, desc = "Hazard pay" },
+	prestige = { looks = 2, desc = "Social prestige" },
+}
+
+-- MASSIVE JOB LISTINGS - 75+ CAREERS
 local JobListings = {
-	{ id = "fastfood", title = "Fast Food Worker", company = "Burger Palace", salary = 22000, education = "None", minAge = 14, exp = 0, acceptance = 95 },
-	{ id = "retail", title = "Retail Associate", company = "MegaMart", salary = 26000, education = "None", minAge = 16, exp = 0, acceptance = 90 },
-	{ id = "janitor", title = "Janitor", company = "CleanCo Services", salary = 28000, education = "None", minAge = 18, exp = 0, acceptance = 92 },
-	{ id = "receptionist", title = "Receptionist", company = "Corporate Office", salary = 32000, education = "High School", minAge = 18, exp = 0, acceptance = 80 },
-	{ id = "office", title = "Office Assistant", company = "Business Solutions", salary = 35000, education = "High School", minAge = 18, exp = 1, acceptance = 75 },
-	{ id = "accountant_jr", title = "Junior Accountant", company = "Financial Services", salary = 48000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 60 },
-	{ id = "marketing", title = "Marketing Associate", company = "AdVenture Agency", salary = 52000, education = "Bachelor's", minAge = 22, exp = 2, acceptance = 55 },
-	{ id = "developer", title = "Software Developer", company = "TechStart Inc", salary = 85000, education = "Bachelor's", minAge = 22, exp = 2, acceptance = 45 },
-	{ id = "senior_dev", title = "Senior Developer", company = "BigTech Corp", salary = 140000, education = "Bachelor's", minAge = 26, exp = 5, acceptance = 30 },
-	{ id = "doctor", title = "Doctor", company = "City Hospital", salary = 250000, education = "Medical School", minAge = 30, exp = 8, acceptance = 15 },
-	{ id = "lawyer", title = "Lawyer", company = "Smith & Associates", salary = 180000, education = "Law School", minAge = 28, exp = 5, acceptance = 25 },
+	-- ════════════════════════════════════════════════════════════════
+	-- ENTRY LEVEL / PART-TIME (No Education - Teen Jobs)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "fastfood", title = "Fast Food Worker", company = "Burger Palace", emoji = "🍔", salary = 22000, education = "None", minAge = 14, exp = 0, acceptance = 95, category = "entry", perks = {} },
+	{ id = "retail", title = "Retail Associate", company = "MegaMart", emoji = "🛒", salary = 26000, education = "None", minAge = 16, exp = 0, acceptance = 90, category = "entry", perks = {"flexible_hours"} },
+	{ id = "cashier", title = "Cashier", company = "QuickMart", emoji = "💵", salary = 24000, education = "None", minAge = 15, exp = 0, acceptance = 92, category = "entry", perks = {} },
+	{ id = "bagger", title = "Grocery Bagger", company = "Fresh Foods", emoji = "🛍️", salary = 18000, education = "None", minAge = 14, exp = 0, acceptance = 98, category = "entry", perks = {} },
+	{ id = "movie_usher", title = "Movie Usher", company = "CineMax", emoji = "🎬", salary = 20000, education = "None", minAge = 14, exp = 0, acceptance = 95, category = "entry", perks = {"flexible_hours"} },
+	{ id = "lifeguard", title = "Lifeguard", company = "City Pool", emoji = "🏊", salary = 28000, education = "None", minAge = 16, exp = 0, acceptance = 70, category = "entry", perks = {"gym_membership"}, reqSmarts = 30 },
+	{ id = "camp_counselor", title = "Camp Counselor", company = "Summer Camp", emoji = "🏕️", salary = 22000, education = "None", minAge = 16, exp = 0, acceptance = 85, category = "entry", perks = {"travel"}, seasonal = true },
+	{ id = "newspaper_delivery", title = "Newspaper Delivery", company = "Daily News", emoji = "📰", salary = 15000, education = "None", minAge = 12, exp = 0, acceptance = 98, category = "entry", perks = {} },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- SERVICE INDUSTRY (High School)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "waiter", title = "Waiter/Waitress", company = "The Grand Restaurant", emoji = "🍽️", salary = 32000, education = "None", minAge = 16, exp = 0, acceptance = 88, category = "service", perks = {"flexible_hours"} },
+	{ id = "bartender", title = "Bartender", company = "The Tipsy Owl", emoji = "🍸", salary = 38000, education = "None", minAge = 21, exp = 0, acceptance = 75, category = "service", perks = {"flexible_hours"} },
+	{ id = "barista", title = "Barista", company = "Bean Scene", emoji = "☕", salary = 28000, education = "None", minAge = 16, exp = 0, acceptance = 85, category = "service", perks = {} },
+	{ id = "hotel_front_desk", title = "Hotel Receptionist", company = "Grand Hotel", emoji = "🏨", salary = 32000, education = "High School", minAge = 18, exp = 0, acceptance = 80, category = "service", perks = {"travel"} },
+	{ id = "flight_attendant", title = "Flight Attendant", company = "SkyWays Airlines", emoji = "✈️", salary = 55000, education = "High School", minAge = 21, exp = 1, acceptance = 45, category = "service", perks = {"travel", "health_insurance"}, reqLooks = 50 },
+	{ id = "tour_guide", title = "Tour Guide", company = "City Tours", emoji = "🗺️", salary = 35000, education = "High School", minAge = 18, exp = 0, acceptance = 70, category = "service", perks = {"travel"}, reqSmarts = 40 },
+	{ id = "casino_dealer", title = "Casino Dealer", company = "Lucky Star Casino", emoji = "🎰", salary = 45000, education = "High School", minAge = 21, exp = 0, acceptance = 60, category = "service", perks = {"flexible_hours"} },
+	{ id = "cruise_staff", title = "Cruise Ship Staff", company = "Ocean Voyages", emoji = "🚢", salary = 42000, education = "High School", minAge = 18, exp = 0, acceptance = 65, category = "service", perks = {"travel", "flexible_hours"} },
+	{ id = "personal_trainer", title = "Personal Trainer", company = "FitLife Gym", emoji = "💪", salary = 48000, education = "High School", minAge = 18, exp = 1, acceptance = 55, category = "service", perks = {"gym_membership"}, reqHealth = 60 },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- TRADES & SKILLED LABOR (High School / Vocational)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "janitor", title = "Janitor", company = "CleanCo Services", emoji = "🧹", salary = 28000, education = "None", minAge = 18, exp = 0, acceptance = 92, category = "trades", perks = {} },
+	{ id = "construction", title = "Construction Worker", company = "BuildRight Co", emoji = "👷", salary = 42000, education = "None", minAge = 18, exp = 0, acceptance = 85, category = "trades", perks = {"danger_pay"}, reqHealth = 50 },
+	{ id = "electrician_apprentice", title = "Electrician Apprentice", company = "Spark Electric", emoji = "⚡", salary = 35000, education = "High School", minAge = 18, exp = 0, acceptance = 70, category = "trades", perks = {} },
+	{ id = "electrician", title = "Electrician", company = "PowerPro Electric", emoji = "⚡", salary = 62000, education = "High School", minAge = 22, exp = 4, acceptance = 60, category = "trades", perks = {"health_insurance"}, promotesFrom = "electrician_apprentice" },
+	{ id = "plumber_apprentice", title = "Plumber Apprentice", company = "DrainMaster", emoji = "🔧", salary = 32000, education = "High School", minAge = 18, exp = 0, acceptance = 75, category = "trades", perks = {} },
+	{ id = "plumber", title = "Licensed Plumber", company = "FlowRight Plumbing", emoji = "🔧", salary = 58000, education = "High School", minAge = 22, exp = 4, acceptance = 60, category = "trades", perks = {"health_insurance"}, promotesFrom = "plumber_apprentice" },
+	{ id = "mechanic", title = "Auto Mechanic", company = "QuickFix Auto", emoji = "🔩", salary = 45000, education = "High School", minAge = 18, exp = 1, acceptance = 70, category = "trades", perks = {} },
+	{ id = "hvac_tech", title = "HVAC Technician", company = "CoolAir Systems", emoji = "❄️", salary = 52000, education = "High School", minAge = 20, exp = 2, acceptance = 65, category = "trades", perks = {"health_insurance"} },
+	{ id = "welder", title = "Welder", company = "Steel Works Inc", emoji = "🔥", salary = 48000, education = "High School", minAge = 18, exp = 1, acceptance = 70, category = "trades", perks = {"danger_pay"}, reqHealth = 50 },
+	{ id = "carpenter", title = "Carpenter", company = "WoodCraft Co", emoji = "🪚", salary = 46000, education = "High School", minAge = 18, exp = 1, acceptance = 72, category = "trades", perks = {} },
+	{ id = "truck_driver", title = "Truck Driver", company = "FastFreight Logistics", emoji = "🚛", salary = 55000, education = "High School", minAge = 21, exp = 0, acceptance = 75, category = "trades", perks = {"travel"} },
+	{ id = "foreman", title = "Construction Foreman", company = "BuildRight Co", emoji = "🏗️", salary = 72000, education = "High School", minAge = 28, exp = 6, acceptance = 40, category = "trades", perks = {"health_insurance", "company_car"}, promotesFrom = "construction" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- OFFICE & BUSINESS (High School / Bachelor's)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "receptionist", title = "Receptionist", company = "Corporate Office", emoji = "📞", salary = 32000, education = "High School", minAge = 18, exp = 0, acceptance = 80, category = "office", perks = {"health_insurance"} },
+	{ id = "office_assistant", title = "Office Assistant", company = "Business Solutions", emoji = "📋", salary = 35000, education = "High School", minAge = 18, exp = 1, acceptance = 75, category = "office", perks = {"health_insurance"} },
+	{ id = "data_entry", title = "Data Entry Clerk", company = "DataCorp", emoji = "⌨️", salary = 34000, education = "High School", minAge = 18, exp = 0, acceptance = 82, category = "office", perks = {"remote_work"} },
+	{ id = "administrative_assistant", title = "Administrative Assistant", company = "Executive Office", emoji = "📁", salary = 42000, education = "High School", minAge = 20, exp = 2, acceptance = 70, category = "office", perks = {"health_insurance", "401k"} },
+	{ id = "hr_coordinator", title = "HR Coordinator", company = "PeopleFirst HR", emoji = "👥", salary = 48000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 60, category = "office", perks = {"health_insurance", "401k"} },
+	{ id = "hr_manager", title = "HR Manager", company = "PeopleFirst HR", emoji = "👥", salary = 78000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 40, category = "office", perks = {"health_insurance", "401k", "stock_options"}, promotesFrom = "hr_coordinator" },
+	{ id = "recruiter", title = "Corporate Recruiter", company = "TalentFind Inc", emoji = "🔍", salary = 58000, education = "Bachelor's", minAge = 24, exp = 2, acceptance = 55, category = "office", perks = {"health_insurance", "networking"} },
+	{ id = "office_manager", title = "Office Manager", company = "CorpWorld Inc", emoji = "🏢", salary = 62000, education = "Bachelor's", minAge = 26, exp = 4, acceptance = 50, category = "office", perks = {"health_insurance", "401k"}, promotesFrom = "administrative_assistant" },
+	{ id = "executive_assistant", title = "Executive Assistant", company = "CEO Office", emoji = "👔", salary = 72000, education = "Bachelor's", minAge = 26, exp = 4, acceptance = 40, category = "office", perks = {"health_insurance", "401k", "prestige"} },
+	{ id = "project_manager", title = "Project Manager", company = "ManageAll Corp", emoji = "📊", salary = 85000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 45, category = "office", perks = {"health_insurance", "401k", "stock_options"} },
+	{ id = "operations_director", title = "Operations Director", company = "Global Corp", emoji = "🎯", salary = 145000, education = "Master's", minAge = 35, exp = 10, acceptance = 25, category = "office", perks = {"health_insurance", "401k", "stock_options", "company_car"}, promotesFrom = "project_manager" },
+	{ id = "coo", title = "Chief Operating Officer", company = "Fortune 500", emoji = "🏆", salary = 350000, education = "Master's", minAge = 42, exp = 18, acceptance = 10, category = "office", perks = {"health_insurance", "401k", "stock_options", "company_car", "prestige"}, promotesFrom = "operations_director" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- TECHNOLOGY (Bachelor's+)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "it_support", title = "IT Support Technician", company = "TechHelp Inc", emoji = "🖥️", salary = 45000, education = "High School", minAge = 18, exp = 0, acceptance = 70, category = "tech", perks = {"remote_work"}, reqSmarts = 45 },
+	{ id = "junior_developer", title = "Junior Developer", company = "CodeStart Inc", emoji = "💻", salary = 65000, education = "Bachelor's", minAge = 21, exp = 0, acceptance = 55, category = "tech", perks = {"remote_work", "flexible_hours"}, reqSmarts = 55 },
+	{ id = "developer", title = "Software Developer", company = "TechStart Inc", emoji = "💻", salary = 95000, education = "Bachelor's", minAge = 23, exp = 2, acceptance = 50, category = "tech", perks = {"remote_work", "flexible_hours", "401k"}, reqSmarts = 60, promotesFrom = "junior_developer" },
+	{ id = "senior_developer", title = "Senior Developer", company = "BigTech Corp", emoji = "💻", salary = 145000, education = "Bachelor's", minAge = 27, exp = 5, acceptance = 35, category = "tech", perks = {"remote_work", "flexible_hours", "401k", "stock_options"}, reqSmarts = 65, promotesFrom = "developer" },
+	{ id = "tech_lead", title = "Tech Lead", company = "BigTech Corp", emoji = "👨‍💻", salary = 175000, education = "Bachelor's", minAge = 30, exp = 8, acceptance = 25, category = "tech", perks = {"remote_work", "401k", "stock_options"}, reqSmarts = 70, promotesFrom = "senior_developer" },
+	{ id = "software_architect", title = "Software Architect", company = "MegaTech Inc", emoji = "🏗️", salary = 195000, education = "Master's", minAge = 32, exp = 10, acceptance = 20, category = "tech", perks = {"remote_work", "401k", "stock_options", "prestige"}, reqSmarts = 75, promotesFrom = "tech_lead" },
+	{ id = "web_developer", title = "Web Developer", company = "WebWorks Studio", emoji = "🌐", salary = 78000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 55, category = "tech", perks = {"remote_work", "flexible_hours"}, reqSmarts = 55 },
+	{ id = "mobile_developer", title = "Mobile App Developer", company = "AppFactory", emoji = "📱", salary = 92000, education = "Bachelor's", minAge = 23, exp = 2, acceptance = 50, category = "tech", perks = {"remote_work", "flexible_hours"}, reqSmarts = 58 },
+	{ id = "data_analyst", title = "Data Analyst", company = "DataDriven Co", emoji = "📈", salary = 72000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 55, category = "tech", perks = {"remote_work", "401k"}, reqSmarts = 60 },
+	{ id = "data_scientist", title = "Data Scientist", company = "AI Innovations", emoji = "🧠", salary = 135000, education = "Master's", minAge = 26, exp = 3, acceptance = 35, category = "tech", perks = {"remote_work", "401k", "stock_options"}, reqSmarts = 70, promotesFrom = "data_analyst" },
+	{ id = "ml_engineer", title = "Machine Learning Engineer", company = "AI Labs", emoji = "🤖", salary = 165000, education = "Master's", minAge = 28, exp = 5, acceptance = 25, category = "tech", perks = {"remote_work", "401k", "stock_options"}, reqSmarts = 75 },
+	{ id = "cybersecurity_analyst", title = "Cybersecurity Analyst", company = "SecureNet", emoji = "🔐", salary = 95000, education = "Bachelor's", minAge = 24, exp = 2, acceptance = 45, category = "tech", perks = {"remote_work", "401k"}, reqSmarts = 65 },
+	{ id = "security_engineer", title = "Security Engineer", company = "CyberShield", emoji = "🛡️", salary = 140000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 30, category = "tech", perks = {"remote_work", "401k", "stock_options"}, reqSmarts = 70, promotesFrom = "cybersecurity_analyst" },
+	{ id = "devops_engineer", title = "DevOps Engineer", company = "CloudOps Inc", emoji = "☁️", salary = 125000, education = "Bachelor's", minAge = 26, exp = 4, acceptance = 40, category = "tech", perks = {"remote_work", "401k"}, reqSmarts = 65 },
+	{ id = "cto", title = "Chief Technology Officer", company = "Tech Giant", emoji = "🚀", salary = 380000, education = "Master's", minAge = 38, exp = 15, acceptance = 8, category = "tech", perks = {"stock_options", "company_car", "prestige"}, reqSmarts = 80, promotesFrom = "software_architect" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- MEDICAL / HEALTHCARE (Varies)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "hospital_orderly", title = "Hospital Orderly", company = "City Hospital", emoji = "🏥", salary = 28000, education = "None", minAge = 18, exp = 0, acceptance = 88, category = "medical", perks = {"health_insurance"} },
+	{ id = "medical_assistant", title = "Medical Assistant", company = "Family Clinic", emoji = "💉", salary = 36000, education = "High School", minAge = 18, exp = 0, acceptance = 75, category = "medical", perks = {"health_insurance"} },
+	{ id = "emt", title = "EMT / Paramedic", company = "City Ambulance", emoji = "🚑", salary = 42000, education = "High School", minAge = 18, exp = 0, acceptance = 60, category = "medical", perks = {"health_insurance", "danger_pay"}, reqHealth = 50 },
+	{ id = "nurse_lpn", title = "Licensed Practical Nurse", company = "Regional Hospital", emoji = "👩‍⚕️", salary = 52000, education = "Community College", minAge = 20, exp = 1, acceptance = 65, category = "medical", perks = {"health_insurance", "401k"} },
+	{ id = "nurse_rn", title = "Registered Nurse", company = "City Hospital", emoji = "👩‍⚕️", salary = 78000, education = "Bachelor's", minAge = 22, exp = 2, acceptance = 55, category = "medical", perks = {"health_insurance", "401k"}, promotesFrom = "nurse_lpn" },
+	{ id = "nurse_practitioner", title = "Nurse Practitioner", company = "Medical Center", emoji = "👩‍⚕️", salary = 118000, education = "Master's", minAge = 28, exp = 5, acceptance = 40, category = "medical", perks = {"health_insurance", "401k"}, promotesFrom = "nurse_rn" },
+	{ id = "physical_therapist", title = "Physical Therapist", company = "RehabCare Center", emoji = "🦿", salary = 92000, education = "Master's", minAge = 26, exp = 2, acceptance = 50, category = "medical", perks = {"health_insurance", "401k"} },
+	{ id = "pharmacist", title = "Pharmacist", company = "MediPharm", emoji = "💊", salary = 128000, education = "PhD", minAge = 28, exp = 2, acceptance = 45, category = "medical", perks = {"health_insurance", "401k"} },
+	{ id = "dentist", title = "Dentist", company = "Bright Smiles Dental", emoji = "🦷", salary = 175000, education = "Medical School", minAge = 28, exp = 2, acceptance = 35, category = "medical", perks = {"health_insurance", "401k", "prestige"} },
+	{ id = "doctor_resident", title = "Medical Resident", company = "Teaching Hospital", emoji = "🩺", salary = 65000, education = "Medical School", minAge = 26, exp = 0, acceptance = 40, category = "medical", perks = {"health_insurance"} },
+	{ id = "doctor", title = "Doctor", company = "City Hospital", emoji = "🩺", salary = 250000, education = "Medical School", minAge = 30, exp = 4, acceptance = 30, category = "medical", perks = {"health_insurance", "401k", "prestige"}, promotesFrom = "doctor_resident" },
+	{ id = "surgeon", title = "Surgeon", company = "Medical Center", emoji = "🔪", salary = 420000, education = "Medical School", minAge = 34, exp = 8, acceptance = 15, category = "medical", perks = {"health_insurance", "401k", "prestige"}, promotesFrom = "doctor" },
+	{ id = "chief_of_medicine", title = "Chief of Medicine", company = "University Hospital", emoji = "👨‍⚕️", salary = 550000, education = "Medical School", minAge = 45, exp = 18, acceptance = 5, category = "medical", perks = {"health_insurance", "401k", "prestige", "company_car"}, promotesFrom = "surgeon" },
+	{ id = "psychiatrist", title = "Psychiatrist", company = "Mental Health Center", emoji = "🧠", salary = 280000, education = "Medical School", minAge = 32, exp = 6, acceptance = 25, category = "medical", perks = {"health_insurance", "401k"} },
+	{ id = "veterinarian", title = "Veterinarian", company = "Pet Care Clinic", emoji = "🐾", salary = 105000, education = "Medical School", minAge = 28, exp = 2, acceptance = 40, category = "medical", perks = {"health_insurance", "401k"} },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- LEGAL (Law School)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "paralegal", title = "Paralegal", company = "Legal Associates", emoji = "📜", salary = 52000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 65, category = "law", perks = {"health_insurance"}, reqSmarts = 50 },
+	{ id = "legal_assistant", title = "Legal Assistant", company = "Smith & Partners", emoji = "📝", salary = 42000, education = "High School", minAge = 18, exp = 0, acceptance = 70, category = "law", perks = {"health_insurance"} },
+	{ id = "associate_lawyer", title = "Associate Attorney", company = "Law Firm LLP", emoji = "⚖️", salary = 95000, education = "Law School", minAge = 26, exp = 0, acceptance = 45, category = "law", perks = {"health_insurance", "401k"}, reqSmarts = 65 },
+	{ id = "lawyer", title = "Attorney", company = "Smith & Associates", emoji = "⚖️", salary = 145000, education = "Law School", minAge = 28, exp = 2, acceptance = 35, category = "law", perks = {"health_insurance", "401k", "prestige"}, reqSmarts = 70, promotesFrom = "associate_lawyer" },
+	{ id = "senior_partner", title = "Senior Partner", company = "Elite Law Firm", emoji = "⚖️", salary = 350000, education = "Law School", minAge = 38, exp = 12, acceptance = 15, category = "law", perks = {"health_insurance", "401k", "prestige", "stock_options"}, reqSmarts = 75, promotesFrom = "lawyer" },
+	{ id = "prosecutor", title = "Prosecutor", company = "District Attorney", emoji = "🏛️", salary = 95000, education = "Law School", minAge = 28, exp = 2, acceptance = 40, category = "law", perks = {"health_insurance", "401k"}, reqSmarts = 65 },
+	{ id = "public_defender", title = "Public Defender", company = "Public Defender's Office", emoji = "🏛️", salary = 72000, education = "Law School", minAge = 26, exp = 0, acceptance = 55, category = "law", perks = {"health_insurance"}, reqSmarts = 60 },
+	{ id = "judge", title = "Judge", company = "Superior Court", emoji = "👨‍⚖️", salary = 195000, education = "Law School", minAge = 45, exp = 18, acceptance = 8, category = "law", perks = {"health_insurance", "401k", "prestige"}, reqSmarts = 80, promotesFrom = "senior_partner" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- FINANCE (Bachelor's+)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "bank_teller", title = "Bank Teller", company = "First National Bank", emoji = "🏦", salary = 34000, education = "High School", minAge = 18, exp = 0, acceptance = 78, category = "finance", perks = {"health_insurance"} },
+	{ id = "loan_officer", title = "Loan Officer", company = "City Bank", emoji = "💰", salary = 58000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 60, category = "finance", perks = {"health_insurance", "401k"}, promotesFrom = "bank_teller" },
+	{ id = "accountant_jr", title = "Junior Accountant", company = "Financial Services", emoji = "📊", salary = 52000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 65, category = "finance", perks = {"health_insurance", "401k"}, reqSmarts = 55 },
+	{ id = "accountant", title = "Senior Accountant", company = "Big4 Accounting", emoji = "📊", salary = 78000, education = "Bachelor's", minAge = 25, exp = 3, acceptance = 50, category = "finance", perks = {"health_insurance", "401k"}, reqSmarts = 60, promotesFrom = "accountant_jr" },
+	{ id = "cpa", title = "Certified Public Accountant", company = "CPA Partners", emoji = "📊", salary = 95000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 40, category = "finance", perks = {"health_insurance", "401k"}, reqSmarts = 65, promotesFrom = "accountant" },
+	{ id = "financial_analyst", title = "Financial Analyst", company = "Investment Group", emoji = "📈", salary = 85000, education = "Bachelor's", minAge = 23, exp = 1, acceptance = 50, category = "finance", perks = {"health_insurance", "401k"}, reqSmarts = 65 },
+	{ id = "investment_banker_jr", title = "Investment Banking Analyst", company = "Goldman & Partners", emoji = "💹", salary = 120000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 25, category = "finance", perks = {"health_insurance", "401k"}, reqSmarts = 70 },
+	{ id = "investment_banker", title = "Investment Banker", company = "Wall Street Bank", emoji = "💹", salary = 225000, education = "Master's", minAge = 28, exp = 5, acceptance = 20, category = "finance", perks = {"health_insurance", "401k", "stock_options"}, reqSmarts = 75, promotesFrom = "investment_banker_jr" },
+	{ id = "hedge_fund_manager", title = "Hedge Fund Manager", company = "Elite Capital", emoji = "🏦", salary = 750000, education = "Master's", minAge = 35, exp = 12, acceptance = 5, category = "finance", perks = {"stock_options", "prestige"}, reqSmarts = 80, promotesFrom = "investment_banker" },
+	{ id = "actuary", title = "Actuary", company = "Insurance Corp", emoji = "🧮", salary = 125000, education = "Bachelor's", minAge = 26, exp = 3, acceptance = 35, category = "finance", perks = {"health_insurance", "401k"}, reqSmarts = 75 },
+	{ id = "cfo", title = "Chief Financial Officer", company = "Fortune 500", emoji = "💼", salary = 450000, education = "Master's", minAge = 42, exp = 18, acceptance = 8, category = "finance", perks = {"stock_options", "company_car", "prestige"}, reqSmarts = 80, promotesFrom = "hedge_fund_manager" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- CREATIVE / MEDIA / ENTERTAINMENT
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "graphic_designer_jr", title = "Junior Graphic Designer", company = "Design Studio", emoji = "🎨", salary = 42000, education = "Bachelor's", minAge = 21, exp = 0, acceptance = 60, category = "creative", perks = {"flexible_hours"} },
+	{ id = "graphic_designer", title = "Graphic Designer", company = "Creative Agency", emoji = "🎨", salary = 62000, education = "Bachelor's", minAge = 24, exp = 2, acceptance = 50, category = "creative", perks = {"flexible_hours", "remote_work"}, promotesFrom = "graphic_designer_jr" },
+	{ id = "art_director", title = "Art Director", company = "Top Agency", emoji = "🎨", salary = 115000, education = "Bachelor's", minAge = 30, exp = 8, acceptance = 30, category = "creative", perks = {"flexible_hours", "prestige"}, promotesFrom = "graphic_designer" },
+	{ id = "photographer", title = "Photographer", company = "Photo Studio", emoji = "📷", salary = 48000, education = "None", minAge = 18, exp = 1, acceptance = 55, category = "creative", perks = {"flexible_hours"} },
+	{ id = "videographer", title = "Videographer", company = "Video Productions", emoji = "🎥", salary = 55000, education = "Bachelor's", minAge = 21, exp = 1, acceptance = 50, category = "creative", perks = {"flexible_hours"} },
+	{ id = "journalist_jr", title = "Junior Journalist", company = "City News", emoji = "📰", salary = 38000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 55, category = "creative", perks = {} },
+	{ id = "journalist", title = "Journalist", company = "National Times", emoji = "📰", salary = 62000, education = "Bachelor's", minAge = 26, exp = 3, acceptance = 40, category = "creative", perks = {"travel"}, promotesFrom = "journalist_jr" },
+	{ id = "editor", title = "Editor", company = "Publishing House", emoji = "✍️", salary = 72000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 35, category = "creative", perks = {"remote_work"}, promotesFrom = "journalist" },
+	{ id = "social_media_manager", title = "Social Media Manager", company = "Digital Agency", emoji = "📱", salary = 55000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 55, category = "creative", perks = {"remote_work", "flexible_hours"} },
+	{ id = "marketing_associate", title = "Marketing Associate", company = "AdVenture Agency", emoji = "📈", salary = 52000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 55, category = "creative", perks = {"health_insurance"} },
+	{ id = "marketing_manager", title = "Marketing Manager", company = "Brand Corp", emoji = "📈", salary = 95000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 40, category = "creative", perks = {"health_insurance", "401k"}, promotesFrom = "marketing_associate" },
+	{ id = "cmo", title = "Chief Marketing Officer", company = "Fortune 500", emoji = "📢", salary = 320000, education = "Master's", minAge = 40, exp = 15, acceptance = 10, category = "creative", perks = {"stock_options", "company_car", "prestige"}, promotesFrom = "marketing_manager" },
+	{ id = "actor_extra", title = "Background Actor", company = "Hollywood Studios", emoji = "🎭", salary = 25000, education = "None", minAge = 18, exp = 0, acceptance = 75, category = "creative", perks = {"flexible_hours"}, reqLooks = 40 },
+	{ id = "actor", title = "Actor", company = "Talent Agency", emoji = "🎭", salary = 85000, education = "None", minAge = 21, exp = 3, acceptance = 15, category = "creative", perks = {"fame_boost"}, reqLooks = 60, promotesFrom = "actor_extra" },
+	{ id = "movie_star", title = "Movie Star", company = "Major Studios", emoji = "⭐", salary = 2500000, education = "None", minAge = 25, exp = 8, acceptance = 2, category = "creative", perks = {"fame_boost", "prestige"}, reqLooks = 75, promotesFrom = "actor" },
+	{ id = "musician_local", title = "Local Musician", company = "Self-Employed", emoji = "🎸", salary = 28000, education = "None", minAge = 16, exp = 0, acceptance = 70, category = "creative", perks = {"flexible_hours"} },
+	{ id = "musician_signed", title = "Signed Musician", company = "Record Label", emoji = "🎸", salary = 95000, education = "None", minAge = 20, exp = 3, acceptance = 12, category = "creative", perks = {"fame_boost", "travel"}, promotesFrom = "musician_local" },
+	{ id = "pop_star", title = "Pop Star", company = "Global Records", emoji = "🎤", salary = 5000000, education = "None", minAge = 22, exp = 6, acceptance = 1, category = "creative", perks = {"fame_boost", "prestige", "travel"}, promotesFrom = "musician_signed" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- GOVERNMENT / PUBLIC SERVICE
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "postal_worker", title = "Postal Worker", company = "US Postal Service", emoji = "📮", salary = 45000, education = "High School", minAge = 18, exp = 0, acceptance = 70, category = "government", perks = {"health_insurance", "401k"} },
+	{ id = "dmv_clerk", title = "DMV Clerk", company = "Dept of Motor Vehicles", emoji = "🚗", salary = 38000, education = "High School", minAge = 18, exp = 0, acceptance = 80, category = "government", perks = {"health_insurance"} },
+	{ id = "social_worker", title = "Social Worker", company = "Family Services", emoji = "🤝", salary = 52000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 60, category = "government", perks = {"health_insurance", "401k"} },
+	{ id = "probation_officer", title = "Probation Officer", company = "Corrections Dept", emoji = "🔒", salary = 55000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 55, category = "government", perks = {"health_insurance", "401k"} },
+	{ id = "police_officer", title = "Police Officer", company = "City Police Dept", emoji = "👮", salary = 62000, education = "High School", minAge = 21, exp = 0, acceptance = 45, category = "government", perks = {"health_insurance", "401k", "danger_pay"}, reqHealth = 60 },
+	{ id = "detective", title = "Detective", company = "City Police Dept", emoji = "🔍", salary = 85000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 30, category = "government", perks = {"health_insurance", "401k", "danger_pay"}, promotesFrom = "police_officer" },
+	{ id = "police_chief", title = "Police Chief", company = "City Police Dept", emoji = "👮‍♂️", salary = 145000, education = "Bachelor's", minAge = 40, exp = 15, acceptance = 10, category = "government", perks = {"health_insurance", "401k", "prestige", "company_car"}, promotesFrom = "detective" },
+	{ id = "firefighter", title = "Firefighter", company = "Fire Department", emoji = "🚒", salary = 58000, education = "High School", minAge = 18, exp = 0, acceptance = 40, category = "government", perks = {"health_insurance", "401k", "danger_pay"}, reqHealth = 70 },
+	{ id = "fire_captain", title = "Fire Captain", company = "Fire Department", emoji = "🚒", salary = 95000, education = "High School", minAge = 32, exp = 10, acceptance = 20, category = "government", perks = {"health_insurance", "401k", "prestige"}, promotesFrom = "firefighter" },
+	{ id = "city_council", title = "City Council Member", company = "City Government", emoji = "🏛️", salary = 72000, education = "Bachelor's", minAge = 25, exp = 2, acceptance = 25, category = "government", perks = {"prestige", "networking"} },
+	{ id = "mayor", title = "Mayor", company = "City Hall", emoji = "🏛️", salary = 185000, education = "Bachelor's", minAge = 35, exp = 10, acceptance = 8, category = "government", perks = {"prestige", "networking", "fame_boost"}, promotesFrom = "city_council" },
+	{ id = "fbi_agent", title = "FBI Agent", company = "Federal Bureau of Investigation", emoji = "🕵️", salary = 95000, education = "Bachelor's", minAge = 25, exp = 2, acceptance = 20, category = "government", perks = {"health_insurance", "401k", "danger_pay"}, reqSmarts = 65, reqHealth = 60 },
+	{ id = "cia_agent", title = "CIA Agent", company = "Central Intelligence Agency", emoji = "🕵️‍♂️", salary = 105000, education = "Bachelor's", minAge = 26, exp = 3, acceptance = 12, category = "government", perks = {"health_insurance", "401k", "danger_pay", "travel"}, reqSmarts = 70, reqHealth = 55 },
+	{ id = "diplomat", title = "Diplomat", company = "State Department", emoji = "🌍", salary = 125000, education = "Master's", minAge = 30, exp = 5, acceptance = 15, category = "government", perks = {"travel", "prestige", "health_insurance"}, reqSmarts = 70 },
+	{ id = "senator", title = "Senator", company = "US Senate", emoji = "🏛️", salary = 174000, education = "Bachelor's", minAge = 35, exp = 10, acceptance = 3, category = "government", perks = {"prestige", "fame_boost", "networking"}, promotesFrom = "mayor" },
+	{ id = "president", title = "President", company = "United States", emoji = "🇺🇸", salary = 400000, education = "Bachelor's", minAge = 35, exp = 15, acceptance = 0.1, category = "government", perks = {"prestige", "fame_boost"}, promotesFrom = "senator" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- EDUCATION
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "teaching_assistant", title = "Teaching Assistant", company = "Local School", emoji = "📚", salary = 28000, education = "High School", minAge = 18, exp = 0, acceptance = 75, category = "education", perks = {} },
+	{ id = "substitute_teacher", title = "Substitute Teacher", company = "School District", emoji = "📚", salary = 32000, education = "Bachelor's", minAge = 21, exp = 0, acceptance = 70, category = "education", perks = {"flexible_hours"} },
+	{ id = "teacher", title = "Teacher", company = "Public School", emoji = "👨‍🏫", salary = 52000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 60, category = "education", perks = {"health_insurance", "401k"}, promotesFrom = "substitute_teacher" },
+	{ id = "department_head", title = "Department Head", company = "High School", emoji = "👨‍🏫", salary = 72000, education = "Master's", minAge = 32, exp = 8, acceptance = 40, category = "education", perks = {"health_insurance", "401k"}, promotesFrom = "teacher" },
+	{ id = "principal", title = "School Principal", company = "Local School District", emoji = "🏫", salary = 105000, education = "Master's", minAge = 38, exp = 12, acceptance = 25, category = "education", perks = {"health_insurance", "401k", "prestige"}, promotesFrom = "department_head" },
+	{ id = "superintendent", title = "School Superintendent", company = "School District", emoji = "🏫", salary = 185000, education = "PhD", minAge = 45, exp = 18, acceptance = 10, category = "education", perks = {"health_insurance", "401k", "prestige", "company_car"}, promotesFrom = "principal" },
+	{ id = "professor_assistant", title = "Assistant Professor", company = "State University", emoji = "🎓", salary = 72000, education = "PhD", minAge = 28, exp = 2, acceptance = 35, category = "education", perks = {"health_insurance"}, reqSmarts = 70 },
+	{ id = "professor", title = "Professor", company = "University", emoji = "🎓", salary = 115000, education = "PhD", minAge = 35, exp = 8, acceptance = 25, category = "education", perks = {"health_insurance", "401k", "prestige"}, reqSmarts = 75, promotesFrom = "professor_assistant" },
+	{ id = "dean", title = "Dean", company = "University", emoji = "🎓", salary = 225000, education = "PhD", minAge = 45, exp = 18, acceptance = 10, category = "education", perks = {"health_insurance", "401k", "prestige"}, reqSmarts = 80, promotesFrom = "professor" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- SCIENCE / RESEARCH
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "lab_technician", title = "Lab Technician", company = "Research Lab", emoji = "🔬", salary = 42000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 60, category = "science", perks = {"health_insurance"}, reqSmarts = 55 },
+	{ id = "research_assistant", title = "Research Assistant", company = "University Lab", emoji = "🔬", salary = 48000, education = "Bachelor's", minAge = 22, exp = 1, acceptance = 55, category = "science", perks = {"health_insurance"}, reqSmarts = 60 },
+	{ id = "scientist", title = "Scientist", company = "Research Institute", emoji = "🧪", salary = 85000, education = "Master's", minAge = 26, exp = 3, acceptance = 40, category = "science", perks = {"health_insurance", "401k"}, reqSmarts = 70, promotesFrom = "research_assistant" },
+	{ id = "senior_scientist", title = "Senior Scientist", company = "BioTech Corp", emoji = "🧪", salary = 125000, education = "PhD", minAge = 32, exp = 8, acceptance = 30, category = "science", perks = {"health_insurance", "401k", "stock_options"}, reqSmarts = 75, promotesFrom = "scientist" },
+	{ id = "research_director", title = "Research Director", company = "Innovation Labs", emoji = "🔬", salary = 195000, education = "PhD", minAge = 40, exp = 15, acceptance = 15, category = "science", perks = {"health_insurance", "401k", "stock_options", "prestige"}, reqSmarts = 80, promotesFrom = "senior_scientist" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- SPORTS / ATHLETICS
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "gym_instructor", title = "Gym Instructor", company = "Fitness Center", emoji = "🏋️", salary = 35000, education = "None", minAge = 18, exp = 0, acceptance = 65, category = "sports", perks = {"gym_membership"}, reqHealth = 60 },
+	{ id = "minor_league", title = "Minor League Player", company = "Farm Team", emoji = "⚾", salary = 45000, education = "None", minAge = 18, exp = 0, acceptance = 15, category = "sports", perks = {"gym_membership", "travel"}, reqHealth = 80 },
+	{ id = "professional_athlete", title = "Professional Athlete", company = "Sports Team", emoji = "🏆", salary = 850000, education = "None", minAge = 21, exp = 3, acceptance = 5, category = "sports", perks = {"fame_boost", "travel"}, reqHealth = 90, promotesFrom = "minor_league" },
+	{ id = "star_athlete", title = "Star Athlete", company = "Champion Team", emoji = "⭐", salary = 15000000, education = "None", minAge = 24, exp = 6, acceptance = 1, category = "sports", perks = {"fame_boost", "prestige"}, reqHealth = 95, promotesFrom = "professional_athlete" },
+	{ id = "sports_coach", title = "Sports Coach", company = "High School", emoji = "📋", salary = 55000, education = "Bachelor's", minAge = 25, exp = 3, acceptance = 50, category = "sports", perks = {"health_insurance"}, reqHealth = 50 },
+	{ id = "head_coach", title = "Head Coach", company = "Pro Team", emoji = "📋", salary = 2500000, education = "Bachelor's", minAge = 40, exp = 15, acceptance = 5, category = "sports", perks = {"fame_boost", "prestige"}, promotesFrom = "sports_coach" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- MILITARY
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "enlisted", title = "Enlisted Soldier", company = "US Army", emoji = "🪖", salary = 35000, education = "High School", minAge = 18, exp = 0, acceptance = 70, category = "military", perks = {"health_insurance", "danger_pay"}, reqHealth = 60 },
+	{ id = "sergeant", title = "Sergeant", company = "US Army", emoji = "🪖", salary = 55000, education = "High School", minAge = 24, exp = 4, acceptance = 50, category = "military", perks = {"health_insurance", "danger_pay"}, reqHealth = 60, promotesFrom = "enlisted" },
+	{ id = "officer", title = "Military Officer", company = "US Armed Forces", emoji = "🎖️", salary = 75000, education = "Bachelor's", minAge = 22, exp = 0, acceptance = 35, category = "military", perks = {"health_insurance", "danger_pay", "prestige"}, reqHealth = 65 },
+	{ id = "captain", title = "Captain", company = "US Armed Forces", emoji = "🎖️", salary = 95000, education = "Bachelor's", minAge = 28, exp = 5, acceptance = 25, category = "military", perks = {"health_insurance", "danger_pay", "prestige"}, reqHealth = 60, promotesFrom = "officer" },
+	{ id = "colonel", title = "Colonel", company = "US Armed Forces", emoji = "🎖️", salary = 135000, education = "Master's", minAge = 38, exp = 15, acceptance = 12, category = "military", perks = {"health_insurance", "prestige"}, promotesFrom = "captain" },
+	{ id = "general", title = "General", company = "Pentagon", emoji = "⭐", salary = 220000, education = "Master's", minAge = 50, exp = 25, acceptance = 3, category = "military", perks = {"health_insurance", "prestige", "fame_boost"}, promotesFrom = "colonel" },
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- CRIMINAL CAREERS (Illegal - High Risk/Reward)
+	-- ════════════════════════════════════════════════════════════════
+	{ id = "drug_dealer_street", title = "Street Dealer", company = "The Streets", emoji = "💊", salary = 45000, education = "None", minAge = 16, exp = 0, acceptance = 80, category = "criminal", perks = {"danger_pay"}, illegal = true },
+	{ id = "drug_dealer", title = "Drug Dealer", company = "The Organization", emoji = "💊", salary = 120000, education = "None", minAge = 20, exp = 2, acceptance = 50, category = "criminal", perks = {"danger_pay"}, illegal = true, promotesFrom = "drug_dealer_street" },
+	{ id = "hitman", title = "Hitman", company = "Unknown", emoji = "🔫", salary = 200000, education = "None", minAge = 25, exp = 5, acceptance = 15, category = "criminal", perks = {"danger_pay"}, illegal = true, reqHealth = 60 },
+	{ id = "gang_member", title = "Gang Member", company = "The Gang", emoji = "🔪", salary = 55000, education = "None", minAge = 16, exp = 0, acceptance = 70, category = "criminal", perks = {"danger_pay"}, illegal = true },
+	{ id = "gang_lieutenant", title = "Gang Lieutenant", company = "The Gang", emoji = "🔪", salary = 150000, education = "None", minAge = 22, exp = 4, acceptance = 30, category = "criminal", perks = {"danger_pay"}, illegal = true, promotesFrom = "gang_member" },
+	{ id = "crime_boss", title = "Crime Boss", company = "The Syndicate", emoji = "🎩", salary = 500000, education = "None", minAge = 30, exp = 10, acceptance = 5, category = "criminal", perks = {"danger_pay", "prestige"}, illegal = true, promotesFrom = "gang_lieutenant" },
+	{ id = "smuggler", title = "Smuggler", company = "Import/Export", emoji = "📦", salary = 95000, education = "None", minAge = 21, exp = 2, acceptance = 40, category = "criminal", perks = {"danger_pay", "travel"}, illegal = true },
+	{ id = "fence", title = "Fence", company = "Underground Market", emoji = "💎", salary = 85000, education = "None", minAge = 20, exp = 1, acceptance = 55, category = "criminal", perks = {}, illegal = true },
+}
+
+-- Career ladders for promotions
+local CareerLadders = {
+	-- Tech ladder
+	tech = {"junior_developer", "developer", "senior_developer", "tech_lead", "software_architect", "cto"},
+	-- Medical ladder
+	medical = {"hospital_orderly", "medical_assistant", "nurse_lpn", "nurse_rn", "nurse_practitioner"},
+	medical_doctor = {"doctor_resident", "doctor", "surgeon", "chief_of_medicine"},
+	-- Law ladder
+	law = {"legal_assistant", "paralegal", "associate_lawyer", "lawyer", "senior_partner", "judge"},
+	-- Finance ladder
+	finance = {"bank_teller", "loan_officer", "financial_analyst", "investment_banker_jr", "investment_banker", "hedge_fund_manager", "cfo"},
+	-- Creative ladder
+	creative_design = {"graphic_designer_jr", "graphic_designer", "art_director"},
+	creative_acting = {"actor_extra", "actor", "movie_star"},
+	creative_music = {"musician_local", "musician_signed", "pop_star"},
+	-- Government ladder
+	government_police = {"police_officer", "detective", "police_chief"},
+	government_fire = {"firefighter", "fire_captain"},
+	government_political = {"city_council", "mayor", "senator", "president"},
+	-- Education ladder
+	education_k12 = {"teaching_assistant", "substitute_teacher", "teacher", "department_head", "principal", "superintendent"},
+	education_higher = {"professor_assistant", "professor", "dean"},
+	-- Trades ladder
+	trades_electric = {"electrician_apprentice", "electrician"},
+	trades_plumbing = {"plumber_apprentice", "plumber"},
+	trades_construction = {"construction", "foreman"},
+	-- Military ladder
+	military_enlisted = {"enlisted", "sergeant"},
+	military_officer = {"officer", "captain", "colonel", "general"},
+	-- Sports ladder
+	sports_player = {"minor_league", "professional_athlete", "star_athlete"},
+	sports_coach = {"sports_coach", "head_coach"},
+	-- Criminal ladder
+	criminal_gang = {"gang_member", "gang_lieutenant", "crime_boss"},
+	criminal_drugs = {"drug_dealer_street", "drug_dealer"},
 }
 
 -- Education options for MANUAL enrollment (College+)
@@ -317,15 +610,153 @@ local EducationOptions = {
 	{ id = "phd", name = "PhD Program", minAge = 24, maxAge = 99, cost = 100000, requirement = "Master's", grants = "PhD", duration = 5 },
 }
 
+-- EXPANDED FREELANCE GIGS (25+ options)
 local FreelanceGigs = {
-	{ id = "food_delivery", name = "Deliver Food", minAge = 16, payMin = 30, payMax = 80 },
-	{ id = "dog_walking", name = "Walk Dogs", minAge = 10, payMin = 20, payMax = 50 },
-	{ id = "babysit", name = "Babysit", minAge = 12, payMin = 50, payMax = 120 },
-	{ id = "mow_lawns", name = "Mow Lawns", minAge = 10, payMin = 40, payMax = 100 },
-	{ id = "tutor", name = "Tutor Students", minAge = 14, payMin = 30, payMax = 75 },
-	{ id = "rideshare", name = "Drive Rideshare", minAge = 21, payMin = 50, payMax = 150 },
-	{ id = "writing", name = "Freelance Writing", minAge = 16, payMin = 100, payMax = 500 },
-	{ id = "design", name = "Graphic Design", minAge = 16, payMin = 150, payMax = 800 },
+	-- Youth Gigs (Ages 10-14)
+	{ id = "lemonade_stand", name = "Lemonade Stand", emoji = "🍋", minAge = 8, payMin = 5, payMax = 25, category = "youth" },
+	{ id = "dog_walking", name = "Walk Dogs", emoji = "🐕", minAge = 10, payMin = 20, payMax = 50, category = "youth" },
+	{ id = "mow_lawns", name = "Mow Lawns", emoji = "🌿", minAge = 10, payMin = 40, payMax = 100, category = "youth" },
+	{ id = "wash_cars", name = "Wash Cars", emoji = "🚗", minAge = 10, payMin = 15, payMax = 40, category = "youth" },
+	{ id = "rake_leaves", name = "Rake Leaves", emoji = "🍂", minAge = 10, payMin = 25, payMax = 60, category = "youth" },
+	{ id = "shovel_snow", name = "Shovel Snow", emoji = "❄️", minAge = 10, payMin = 30, payMax = 80, category = "youth" },
+	{ id = "babysit", name = "Babysit", emoji = "👶", minAge = 12, payMin = 50, payMax = 120, category = "youth" },
+	{ id = "pet_sitting", name = "Pet Sitting", emoji = "🐾", minAge = 12, payMin = 40, payMax = 100, category = "youth" },
+	
+	-- Teen/Adult Gigs (Ages 14+)
+	{ id = "tutor", name = "Tutor Students", emoji = "📚", minAge = 14, payMin = 30, payMax = 75, category = "service", reqSmarts = 60 },
+	{ id = "food_delivery", name = "Deliver Food", emoji = "🍕", minAge = 16, payMin = 30, payMax = 80, category = "delivery" },
+	{ id = "package_delivery", name = "Package Delivery", emoji = "📦", minAge = 18, payMin = 50, payMax = 150, category = "delivery" },
+	{ id = "writing", name = "Freelance Writing", emoji = "✍️", minAge = 16, payMin = 100, payMax = 500, category = "creative", reqSmarts = 55 },
+	{ id = "design", name = "Graphic Design", emoji = "🎨", minAge = 16, payMin = 150, payMax = 800, category = "creative" },
+	{ id = "photography", name = "Photography Gig", emoji = "📸", minAge = 16, payMin = 100, payMax = 400, category = "creative" },
+	{ id = "dj_gig", name = "DJ at Party", emoji = "🎧", minAge = 16, payMin = 150, payMax = 500, category = "entertainment" },
+	{ id = "house_cleaning", name = "House Cleaning", emoji = "🧹", minAge = 16, payMin = 80, payMax = 200, category = "service" },
+	{ id = "yard_work", name = "Landscaping Work", emoji = "🌳", minAge = 16, payMin = 100, payMax = 300, category = "labor" },
+	{ id = "moving_help", name = "Help Moving", emoji = "📦", minAge = 18, payMin = 100, payMax = 300, category = "labor", reqHealth = 50 },
+	{ id = "furniture_assembly", name = "Furniture Assembly", emoji = "🪑", minAge = 18, payMin = 80, payMax = 200, category = "labor" },
+	
+	-- Adult Gigs (Ages 18+)
+	{ id = "rideshare", name = "Drive Rideshare", emoji = "🚙", minAge = 21, payMin = 50, payMax = 200, category = "delivery" },
+	{ id = "bartending_event", name = "Event Bartending", emoji = "🍸", minAge = 21, payMin = 150, payMax = 400, category = "service" },
+	{ id = "catering", name = "Catering Work", emoji = "🍽️", minAge = 18, payMin = 100, payMax = 300, category = "service" },
+	{ id = "modeling", name = "Modeling Gig", emoji = "📷", minAge = 18, payMin = 200, payMax = 1500, category = "entertainment", reqLooks = 65 },
+	{ id = "voice_over", name = "Voice Over Work", emoji = "🎙️", minAge = 18, payMin = 150, payMax = 800, category = "creative" },
+	{ id = "fitness_coaching", name = "Fitness Coaching", emoji = "💪", minAge = 18, payMin = 75, payMax = 200, category = "service", reqHealth = 60 },
+	{ id = "music_lessons", name = "Music Lessons", emoji = "🎹", minAge = 16, payMin = 50, payMax = 150, category = "creative" },
+	{ id = "web_dev_freelance", name = "Web Development", emoji = "💻", minAge = 16, payMin = 200, payMax = 1500, category = "tech", reqSmarts = 60 },
+	{ id = "consulting", name = "Business Consulting", emoji = "💼", minAge = 25, payMin = 500, payMax = 3000, category = "professional", reqSmarts = 70 },
+	{ id = "handyman", name = "Handyman Services", emoji = "🔧", minAge = 18, payMin = 100, payMax = 400, category = "labor" },
+	{ id = "personal_shopping", name = "Personal Shopping", emoji = "🛍️", minAge = 18, payMin = 50, payMax = 150, category = "service" },
+	{ id = "house_sitting", name = "House Sitting", emoji = "🏠", minAge = 18, payMin = 100, payMax = 300, category = "service" },
+	{ id = "translation", name = "Translation Work", emoji = "🌐", minAge = 18, payMin = 100, payMax = 500, category = "professional", reqSmarts = 65 },
+	{ id = "market_research", name = "Market Research Survey", emoji = "📊", minAge = 18, payMin = 25, payMax = 100, category = "professional" },
+}
+
+-- Job Performance Tracking (per player)
+local PlayerCareerData = {} -- [UserId] = { performance = 0-100, yearsAtJob = 0, promotionProgress = 0-100, ... }
+
+local function getCareerData(player)
+	if not PlayerCareerData[player.UserId] then
+		PlayerCareerData[player.UserId] = {
+			Performance = 75,           -- 0-100, affects raises and promotions
+			YearsAtCurrentJob = 0,      -- Time at current position
+			TotalExperience = 0,        -- Overall career experience
+			PromotionProgress = 0,      -- 0-100, progress toward promotion
+			Raises = 0,                 -- Number of raises received
+			Warnings = 0,               -- Disciplinary warnings
+			Skills = {                  -- Career skills
+				Technical = 0,
+				Creative = 0,
+				Social = 0,
+				Physical = 0,
+				Analytical = 0,
+				Leadership = 0,
+			},
+			CareerHistory = {},         -- Previous jobs
+			Achievements = {},          -- Career milestones
+		}
+	end
+	return PlayerCareerData[player.UserId]
+end
+
+-- Job events that can happen while working
+local JobEvents = {
+	-- Positive events
+	{ id = "praised_by_boss", type = "positive", chance = 10, 
+		message = "Your boss praised your excellent work!",
+		effects = { performance = 5, happiness = 5, promotionProgress = 10 } },
+	{ id = "successful_project", type = "positive", chance = 8,
+		message = "You completed a major project successfully!",
+		effects = { performance = 8, happiness = 8, promotionProgress = 15, money = 500 } },
+	{ id = "coworker_help", type = "positive", chance = 12,
+		message = "You helped a coworker and made a new friend.",
+		effects = { social = 3, happiness = 3 } },
+	{ id = "client_compliment", type = "positive", chance = 7,
+		message = "A client sent a glowing review about you!",
+		effects = { performance = 10, promotionProgress = 12 } },
+	{ id = "innovation_bonus", type = "positive", chance = 5,
+		message = "You suggested an innovation that saved the company money!",
+		effects = { performance = 12, money = 1000, promotionProgress = 20, smarts = 2 } },
+	{ id = "teamwork_award", type = "positive", chance = 6,
+		message = "You received a teamwork award!",
+		effects = { performance = 6, happiness = 10, social = 5 } },
+	
+	-- Negative events
+	{ id = "late_to_work", type = "negative", chance = 8,
+		message = "You were late to work and got a warning.",
+		effects = { performance = -5, warnings = 1 } },
+	{ id = "missed_deadline", type = "negative", chance = 6,
+		message = "You missed an important deadline.",
+		effects = { performance = -8, happiness = -3, promotionProgress = -10 } },
+	{ id = "office_drama", type = "negative", chance = 10,
+		message = "You got caught up in office drama.",
+		effects = { happiness = -5, social = -2 } },
+	{ id = "difficult_customer", type = "negative", chance = 12,
+		message = "You dealt with a difficult customer who complained.",
+		effects = { happiness = -3, performance = -3 } },
+	{ id = "mistake_at_work", type = "negative", chance = 7,
+		message = "You made a costly mistake at work.",
+		effects = { performance = -10, happiness = -5, money = -200 } },
+	{ id = "boss_criticism", type = "negative", chance = 8,
+		message = "Your boss criticized your recent work.",
+		effects = { performance = -6, happiness = -8, promotionProgress = -8 } },
+	
+	-- Neutral events
+	{ id = "new_coworker", type = "neutral", chance = 8,
+		message = "A new coworker joined your team.",
+		effects = { social = 2 } },
+	{ id = "company_meeting", type = "neutral", chance = 10,
+		message = "You attended a company-wide meeting.",
+		effects = {} },
+	{ id = "training_session", type = "neutral", chance = 6,
+		message = "You completed a training session.",
+		effects = { smarts = 1, technical = 2 } },
+	{ id = "work_anniversary", type = "neutral", chance = 3,
+		message = "Happy work anniversary! You've been here another year.",
+		effects = { happiness = 5, performance = 3 } },
+	
+	-- Category-specific events
+	{ id = "tech_breakthrough", type = "positive", chance = 4, category = "tech",
+		message = "You had a breakthrough solving a complex technical problem!",
+		effects = { technical = 5, smarts = 3, performance = 10, promotionProgress = 15 } },
+	{ id = "creative_recognition", type = "positive", chance = 5, category = "creative",
+		message = "Your creative work was recognized by industry peers!",
+		effects = { creative = 5, performance = 10, fame = 0.2 } },
+	{ id = "patient_saved", type = "positive", chance = 4, category = "medical",
+		message = "You helped save a patient's life!",
+		effects = { performance = 15, happiness = 20, analytical = 3 } },
+	{ id = "case_won", type = "positive", chance = 5, category = "law",
+		message = "You won an important case!",
+		effects = { performance = 12, money = 2000, analytical = 3, promotionProgress = 15 } },
+	{ id = "big_deal", type = "positive", chance = 4, category = "finance",
+		message = "You closed a major financial deal!",
+		effects = { performance = 15, money = 5000, analytical = 2, promotionProgress = 20 } },
+	{ id = "arrest_made", type = "positive", chance = 6, category = "government",
+		message = "You made an important arrest!",
+		effects = { performance = 10, physical = 2, promotionProgress = 12 } },
+	{ id = "student_success", type = "positive", chance = 7, category = "education",
+		message = "A student you mentored achieved great success!",
+		effects = { happiness = 15, social = 3, performance = 8 } },
 }
 
 ----------------------------------------------------------------
@@ -422,13 +853,15 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	local extState = getExtendedState(player)
 	local lifeState = getLifeManagerState(player)
 	local flags = lifeState and lifeState.Flags or {}
+	local stats = lifeState and lifeState.Stats or {}
+	local careerData = getCareerData(player)
 	
 	-- Update auto-education first (high school etc. based on age)
 	updateAutoEducation(player)
 	
-	-- ========================================
+	-- ════════════════════════════════════════════════════════════════
 	-- CRIMINAL RECORD CHECKS (Ex-Convict System)
-	-- ========================================
+	-- ════════════════════════════════════════════════════════════════
 	
 	-- Fugitives can't apply for jobs (they're on the run!)
 	if flags.fugitive then
@@ -456,8 +889,8 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 		return { success = false, message = "Job not found: " .. tostring(jobId) }
 	end
 	
-	print("[LifeRemoteHandlers] Found job:", job.title, "for player age:", age)
-	print("[LifeRemoteHandlers] Player flags - ex_convict:", flags.ex_convict, "reformed:", flags.reformed, "second_chance:", flags.second_chance)
+	print("[LifeRemoteHandlers] Found job:", job.title, "Category:", job.category or "none")
+	print("[LifeRemoteHandlers] Player age:", age, "Smarts:", stats.Smarts or 50, "Health:", stats.Health or 50, "Looks:", stats.Looks or 50)
 	
 	-- Already have a job?
 	if extState.CurrentJob then
@@ -468,6 +901,48 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	if extState.InJail then
 		return { success = false, message = "You can't work while in jail!" }
 	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- ILLEGAL JOB HANDLING
+	-- ════════════════════════════════════════════════════════════════
+	if job.illegal then
+		-- Criminal jobs have different requirements
+		if job.category == "criminal" then
+			-- Need criminal tendencies or connections
+			local hasCriminalBackground = flags.criminal_tendencies or flags.gang_member or flags.petty_thief or flags.burglar
+			
+			-- Higher tier criminal jobs need to be promoted into
+			if job.promotesFrom then
+				local hasRequiredJob = false
+				for _, historyJob in ipairs(careerData.CareerHistory or {}) do
+					if historyJob.id == job.promotesFrom then
+						hasRequiredJob = true
+						break
+					end
+				end
+				-- Also check current job
+				if extState.CurrentJob and extState.CurrentJob.id == job.promotesFrom then
+					hasRequiredJob = true
+				end
+				
+				if not hasRequiredJob then
+					return { success = false, message = "You need to work your way up in the criminal world first." }
+				end
+			end
+			
+			-- Set criminal flags when getting illegal job
+			if lifeState then
+				lifeState:SetFlag("criminal_tendencies")
+				if job.id == "gang_member" or job.id == "gang_lieutenant" or job.id == "crime_boss" then
+					lifeState:SetFlag("gang_member")
+				end
+			end
+		end
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- STANDARD REQUIREMENTS
+	-- ════════════════════════════════════════════════════════════════
 	
 	-- Check age
 	if age < job.minAge then
@@ -480,61 +955,168 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	end
 	
 	-- Check experience
-	if extState.Experience < job.exp then
-		return { success = false, message = "You need " .. job.exp .. " years of experience." }
+	local totalExp = (extState.Experience or 0) + (careerData.TotalExperience or 0)
+	if totalExp < job.exp then
+		return { success = false, message = "You need " .. job.exp .. " years of experience. You have " .. string.format("%.1f", totalExp) .. " years." }
 	end
 	
-	-- ========================================
+	-- ════════════════════════════════════════════════════════════════
+	-- STAT REQUIREMENTS (NEW!)
+	-- ════════════════════════════════════════════════════════════════
+	
+	local smarts = stats.Smarts or 50
+	local health = stats.Health or 50
+	local looks = stats.Looks or 50
+	
+	-- Check Smarts requirement
+	if job.reqSmarts and smarts < job.reqSmarts then
+		return { success = false, message = "This job requires higher intelligence. (Need " .. job.reqSmarts .. " Smarts, you have " .. math.floor(smarts) .. ")" }
+	end
+	
+	-- Check Health requirement
+	if job.reqHealth and health < job.reqHealth then
+		return { success = false, message = "This job requires better physical fitness. (Need " .. job.reqHealth .. " Health, you have " .. math.floor(health) .. ")" }
+	end
+	
+	-- Check Looks requirement
+	if job.reqLooks and looks < job.reqLooks then
+		return { success = false, message = "This job requires a certain appearance. (Need " .. job.reqLooks .. " Looks, you have " .. math.floor(looks) .. ")" }
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- PROMOTION PATH CHECK
+	-- ════════════════════════════════════════════════════════════════
+	
+	-- Check if this job requires promotion from another job
+	if job.promotesFrom and not job.illegal then
+		local hasRequiredExperience = false
+		
+		-- Check career history
+		for _, historyJob in ipairs(careerData.CareerHistory or {}) do
+			if historyJob.id == job.promotesFrom and (historyJob.yearsWorked or 0) >= 1 then
+				hasRequiredExperience = true
+				break
+			end
+		end
+		
+		-- Alternatively, if they have lots of general experience, allow it
+		if careerData.TotalExperience >= job.exp * 1.5 then
+			hasRequiredExperience = true
+		end
+		
+		if not hasRequiredExperience then
+			-- Find the previous job title
+			local prevJobTitle = job.promotesFrom
+			for _, j in ipairs(JobListings) do
+				if j.id == job.promotesFrom then
+					prevJobTitle = j.title
+					break
+				end
+			end
+			return { success = false, message = "This is a senior position. You should work as a " .. prevJobTitle .. " first." }
+		end
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
 	-- EX-CONVICT EMPLOYMENT PENALTIES
-	-- ========================================
+	-- ════════════════════════════════════════════════════════════════
 	
 	local acceptanceChance = job.acceptance
 	local isExConvict = flags.ex_convict or flags.did_time or flags.released_from_prison
 	local hasSecondChance = flags.second_chance
 	local isReformed = flags.reformed
 	
-	-- Jobs that require background checks (professional jobs) - block or severe penalty for ex-convicts
-	local backgroundCheckJobs = {
-		government = true, teacher = true, lawyer = true, doctor = true, nurse = true,
-		accountant = true, banker = true, financial = true, security = true, police = true,
-		daycare = true, school = true, hospital = true, pharmacy = true
-	}
-	
-	-- Check if job requires background check (based on job ID keywords)
-	local requiresBackgroundCheck = false
-	local jobIdLower = string.lower(job.id or "")
-	local jobTitleLower = string.lower(job.title or "")
-	for keyword, _ in pairs(backgroundCheckJobs) do
-		if string.find(jobIdLower, keyword) or string.find(jobTitleLower, keyword) then
-			requiresBackgroundCheck = true
-			break
+	-- Skip background check for illegal jobs
+	if not job.illegal then
+		-- Jobs that require background checks (professional jobs)
+		local backgroundCheckJobs = {
+			government = true, teacher = true, lawyer = true, doctor = true, nurse = true,
+			accountant = true, banker = true, financial = true, security = true, police = true,
+			daycare = true, school = true, hospital = true, pharmacy = true, fbi = true, cia = true
+		}
+		
+		-- Also check by category
+		local strictCategories = { government = true, medical = true, law = true, education = true, military = true }
+		local requiresBackgroundCheck = strictCategories[job.category] or false
+		
+		-- Check job ID keywords
+		local jobIdLower = string.lower(job.id or "")
+		local jobTitleLower = string.lower(job.title or "")
+		for keyword, _ in pairs(backgroundCheckJobs) do
+			if string.find(jobIdLower, keyword) or string.find(jobTitleLower, keyword) then
+				requiresBackgroundCheck = true
+				break
+			end
+		end
+		
+		if isExConvict then
+			print("[LifeRemoteHandlers] Ex-convict applying for job. Background check required:", requiresBackgroundCheck)
+			
+			if requiresBackgroundCheck and not hasSecondChance then
+				return { 
+					success = false, 
+					message = "⛔ " .. job.company .. " ran a background check. Your criminal record disqualifies you for this position." 
+				}
+			end
+			
+			-- Reduce acceptance chance for ex-convicts
+			if hasSecondChance or isReformed then
+				acceptanceChance = math.floor(acceptanceChance * 0.7)
+			else
+				acceptanceChance = math.floor(acceptanceChance * 0.4)
+			end
 		end
 	end
 	
-	if isExConvict then
-		print("[LifeRemoteHandlers] Ex-convict applying for job. Background check required:", requiresBackgroundCheck)
-		
-		-- Block background check jobs entirely for ex-convicts (unless they have second_chance)
-		if requiresBackgroundCheck and not hasSecondChance then
-			return { 
-				success = false, 
-				message = "⛔ " .. job.company .. " ran a background check. Your criminal record disqualifies you for this position." 
-			}
-		end
-		
-		-- Reduce acceptance chance significantly for ex-convicts
-		if hasSecondChance or isReformed then
-			-- Reformed/second chance reduces penalty
-			acceptanceChance = math.floor(acceptanceChance * 0.7) -- 30% penalty
-			print("[LifeRemoteHandlers] Reformed ex-convict penalty applied. New acceptance:", acceptanceChance)
-		else
-			-- Standard ex-convict penalty
-			acceptanceChance = math.floor(acceptanceChance * 0.4) -- 60% penalty
-			print("[LifeRemoteHandlers] Ex-convict penalty applied. New acceptance:", acceptanceChance)
+	-- ════════════════════════════════════════════════════════════════
+	-- STAT-BASED ACCEPTANCE MODIFIERS
+	-- ════════════════════════════════════════════════════════════════
+	
+	-- Smarts helps with intellectual jobs
+	if job.category == "tech" or job.category == "science" or job.category == "finance" or job.category == "law" then
+		if smarts >= 70 then acceptanceChance = acceptanceChance + 10
+		elseif smarts >= 80 then acceptanceChance = acceptanceChance + 20
+		elseif smarts <= 40 then acceptanceChance = acceptanceChance - 10
 		end
 	end
 	
-	-- Roll for acceptance
+	-- Looks helps with customer-facing and creative jobs
+	if job.category == "service" or job.category == "creative" or job.category == "entertainment" then
+		if looks >= 70 then acceptanceChance = acceptanceChance + 8
+		elseif looks >= 85 then acceptanceChance = acceptanceChance + 15
+		end
+	end
+	
+	-- Health helps with physical jobs
+	if job.category == "trades" or job.category == "military" or job.category == "sports" or job.category == "government" then
+		if health >= 70 then acceptanceChance = acceptanceChance + 8
+		elseif health >= 85 then acceptanceChance = acceptanceChance + 15
+		elseif health <= 40 then acceptanceChance = acceptanceChance - 10
+		end
+	end
+	
+	-- Career skills boost
+	if careerData.Skills then
+		local categorySkillMap = {
+			tech = "Technical", science = "Technical", trades = "Technical",
+			creative = "Creative", entertainment = "Creative",
+			service = "Social", office = "Social",
+			sports = "Physical", military = "Physical",
+			finance = "Analytical", law = "Analytical", medical = "Analytical",
+		}
+		local relevantSkill = categorySkillMap[job.category]
+		if relevantSkill and careerData.Skills[relevantSkill] then
+			local skillBonus = math.floor(careerData.Skills[relevantSkill] / 10)
+			acceptanceChance = acceptanceChance + skillBonus
+		end
+	end
+	
+	acceptanceChance = math.clamp(acceptanceChance, 5, 95)
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- ROLL FOR ACCEPTANCE
+	-- ════════════════════════════════════════════════════════════════
+	
 	local roll = math.random(100)
 	print("[LifeRemoteHandlers] Acceptance roll:", roll, "vs", acceptanceChance)
 	
@@ -542,45 +1124,134 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 		local message = "Unfortunately, " .. job.company .. " decided not to hire you."
 		if isExConvict then
 			message = "📋 " .. job.company .. " reviewed your application but passed. Your criminal record may have been a factor."
+		elseif job.reqSmarts and smarts < job.reqSmarts + 10 then
+			message = job.company .. " felt you weren't quite qualified for this position."
+		elseif job.reqLooks and looks < job.reqLooks + 10 then
+			message = job.company .. " decided to go with another candidate."
 		end
 		return { success = false, message = message }
 	end
 	
-	-- Hired!
+	-- ════════════════════════════════════════════════════════════════
+	-- HIRED! SET UP JOB
+	-- ════════════════════════════════════════════════════════════════
+	
 	extState.CurrentJob = {
 		id = job.id,
 		title = job.title,
 		company = job.company,
 		salary = job.salary,
+		category = job.category,
+		perks = job.perks or {},
+		illegal = job.illegal or false,
+		startAge = age,
+		promotesTo = nil, -- Will be set if there's a promotion path
 	}
-	syncStateToClient(player)
 	
-	local message = "Congratulations! You got hired as a " .. job.title .. " at " .. job.company .. "!"
-	if isExConvict then
-		message = "🌟 Despite your criminal record, " .. job.company .. " decided to give you a chance! You got hired as a " .. job.title .. "!"
-		-- If they got hired as ex-convict, set the second_chance flag
-		if lifeState then
+	-- Find promotion path
+	if job.category then
+		for ladderName, ladder in pairs(CareerLadders) do
+			for i, jobId in ipairs(ladder) do
+				if jobId == job.id and i < #ladder then
+					extState.CurrentJob.promotesTo = ladder[i + 1]
+					break
+				end
+			end
+		end
+	end
+	
+	-- Reset career progress for new job
+	careerData.YearsAtCurrentJob = 0
+	careerData.PromotionProgress = 0
+	careerData.Warnings = 0
+	careerData.Raises = 0
+	
+	-- Set job-specific flags
+	if lifeState then
+		if job.category == "military" then lifeState:SetFlag("military_service") end
+		if job.category == "government" and job.id == "police_officer" then lifeState:SetFlag("police_officer") end
+		if job.category == "medical" and string.find(job.id, "doctor") then lifeState:SetFlag("medical_professional") end
+		if job.category == "law" and string.find(job.id, "lawyer") then lifeState:SetFlag("legal_professional") end
+		if job.id == "teacher" then lifeState:SetFlag("teacher") end
+		
+		-- Ex-convict second chance
+		if isExConvict and not job.illegal then
 			lifeState:SetFlag("second_chance")
 		end
+	end
+	
+	syncStateToClient(player)
+	
+	-- Build success message
+	local message = "🎉 Congratulations! You got hired as a " .. job.title .. " at " .. job.company .. "!"
+	
+	-- Add salary info
+	message = message .. " Salary: $" .. string.format("%d", job.salary) .. "/year"
+	
+	-- Add perks info
+	if job.perks and #job.perks > 0 then
+		local perkNames = {}
+		for _, perkId in ipairs(job.perks) do
+			local perk = CareerPerks[perkId]
+			if perk then
+				table.insert(perkNames, perk.desc)
+			end
+		end
+		if #perkNames > 0 then
+			message = message .. " | Perks: " .. table.concat(perkNames, ", ")
+		end
+	end
+	
+	if isExConvict and not job.illegal then
+		message = "🌟 Despite your criminal record, " .. job.company .. " decided to give you a chance! " .. message
 	end
 	
 	return { 
 		success = true, 
 		message = message,
-		salary = job.salary
+		salary = job.salary,
+		category = job.category,
+		perks = job.perks
 	}
 end
 
-QuitJob.OnServerEvent:Connect(function(player)
+QuitJob.OnServerInvoke = function(player)
 	local extState = getExtendedState(player)
+	local careerData = getCareerData(player)
+	
 	if extState.CurrentJob then
+		local job = extState.CurrentJob
+		local jobTitle = job.title or "your job"
+		
+		-- Save to career history
+		table.insert(careerData.CareerHistory, {
+			id = job.id,
+			title = job.title,
+			company = job.company,
+			salary = job.salary,
+			category = job.category,
+			yearsWorked = careerData.YearsAtCurrentJob or 0,
+			reason = "quit",
+		})
+		
+		-- Reset job-related data
 		extState.CurrentJob = nil
+		careerData.YearsAtCurrentJob = 0
+		careerData.PromotionProgress = 0
+		careerData.Warnings = 0
+		careerData.Raises = 0
+		
 		syncStateToClient(player)
+		return { success = true, message = "You quit " .. jobTitle .. ". You're now unemployed." }
+	else
+		return { success = false, message = "You don't have a job to quit!" }
 	end
-end)
+end
 
 DoWork.OnServerInvoke = function(player)
 	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
+	local careerData = getCareerData(player)
 	
 	if not extState.CurrentJob then
 		return { success = false, message = "You don't have a job!" }
@@ -590,17 +1261,215 @@ DoWork.OnServerInvoke = function(player)
 		return { success = false, message = "You can't work while in jail!" }
 	end
 	
-	-- Daily pay = annual / 365
-	local dailyPay = math.floor(extState.CurrentJob.salary / 365)
+	local job = extState.CurrentJob
+	local stats = lifeState and lifeState.Stats or {}
+	local flags = lifeState and lifeState.Flags or {}
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- CALCULATE EARNINGS (Performance-based)
+	-- ════════════════════════════════════════════════════════════════
+	
+	local baseDailyPay = math.floor(job.salary / 365)
+	local performanceMultiplier = 1.0
+	
+	-- Performance affects pay
+	local performance = careerData.Performance or 75
+	if performance >= 90 then performanceMultiplier = 1.2
+	elseif performance >= 80 then performanceMultiplier = 1.1
+	elseif performance >= 70 then performanceMultiplier = 1.05
+	elseif performance <= 40 then performanceMultiplier = 0.85
+	elseif performance <= 50 then performanceMultiplier = 0.95
+	end
+	
+	-- Apply perks bonuses
+	local perkBonus = 0
+	if job.perks then
+		for _, perkId in ipairs(job.perks) do
+			local perk = CareerPerks[perkId]
+			if perk and perk.money_bonus then
+				perkBonus = perkBonus + perk.money_bonus
+			end
+		end
+	end
+	
+	-- Raises accumulated
+	local raiseBonus = (careerData.Raises or 0) * 0.03 -- 3% per raise
+	
+	local totalMultiplier = performanceMultiplier + perkBonus + raiseBonus
+	local dailyPay = math.floor(baseDailyPay * totalMultiplier)
+	
 	addMoney(player, dailyPay)
 	
+	-- ════════════════════════════════════════════════════════════════
+	-- GAIN EXPERIENCE & SKILLS
+	-- ════════════════════════════════════════════════════════════════
+	
 	-- Gain experience
-	extState.Experience = extState.Experience + 0.01 -- Small XP per work day
+	local expGain = 0.02 + (performance / 5000) -- 0.02-0.04 per work day
+	extState.Experience = (extState.Experience or 0) + expGain
+	careerData.TotalExperience = (careerData.TotalExperience or 0) + expGain
+	
+	-- Gain career skills based on job category
+	local categorySkillMap = {
+		tech = "Technical", science = "Technical", trades = "Technical",
+		creative = "Creative", entertainment = "Creative",
+		service = "Social", office = "Social",
+		sports = "Physical", military = "Physical",
+		finance = "Analytical", law = "Analytical", medical = "Analytical",
+	}
+	local relevantSkill = categorySkillMap[job.category]
+	if relevantSkill and careerData.Skills then
+		local skillGain = 0.1 + (math.random() * 0.1) -- 0.1-0.2 per work
+		careerData.Skills[relevantSkill] = math.min(100, (careerData.Skills[relevantSkill] or 0) + skillGain)
+	end
+	
+	-- Leadership gain for management positions
+	if job.title and (string.find(job.title:lower(), "manager") or string.find(job.title:lower(), "director") or 
+		string.find(job.title:lower(), "chief") or string.find(job.title:lower(), "lead") or 
+		string.find(job.title:lower(), "head") or string.find(job.title:lower(), "boss")) then
+		careerData.Skills.Leadership = math.min(100, (careerData.Skills.Leadership or 0) + 0.15)
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- APPLY PERKS (Stat bonuses)
+	-- ════════════════════════════════════════════════════════════════
+	
+	if job.perks and lifeState then
+		for _, perkId in ipairs(job.perks) do
+			local perk = CareerPerks[perkId]
+			if perk and perk.stat then
+				-- Small chance (10%) to apply stat bonus each work day
+				if math.random(100) <= 10 then
+					local currentStat = lifeState.Stats[perk.stat] or 50
+					lifeState.Stats[perk.stat] = math.min(100, currentStat + math.random(1, perk.bonus))
+				end
+			end
+		end
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- PROMOTION PROGRESS
+	-- ════════════════════════════════════════════════════════════════
+	
+	local promotionGain = 1 + (performance - 50) / 50 -- 0.5-2.0 based on performance
+	careerData.PromotionProgress = math.min(100, (careerData.PromotionProgress or 0) + promotionGain)
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- JOB EVENTS (Random workplace scenarios)
+	-- ════════════════════════════════════════════════════════════════
+	
+	local eventMessage = nil
+	local eventTriggered = nil
+	
+	-- 15% chance of a job event each work day
+	if math.random(100) <= 15 then
+		-- Build list of applicable events
+		local applicableEvents = {}
+		for _, event in ipairs(JobEvents) do
+			if not event.category or event.category == job.category then
+				table.insert(applicableEvents, event)
+			end
+		end
+		
+		-- Roll for each event
+		for _, event in ipairs(applicableEvents) do
+			if math.random(100) <= event.chance then
+				eventTriggered = event
+				break
+			end
+		end
+		
+		-- Apply event effects
+		if eventTriggered then
+			eventMessage = eventTriggered.message
+			local effects = eventTriggered.effects or {}
+			
+			-- Apply effects
+			if effects.performance then
+				careerData.Performance = math.clamp((careerData.Performance or 75) + effects.performance, 0, 100)
+			end
+			if effects.promotionProgress then
+				careerData.PromotionProgress = math.clamp((careerData.PromotionProgress or 0) + effects.promotionProgress, 0, 100)
+			end
+			if effects.warnings then
+				careerData.Warnings = (careerData.Warnings or 0) + effects.warnings
+			end
+			if effects.happiness and lifeState then
+				lifeState.Stats.Happiness = math.clamp((lifeState.Stats.Happiness or 50) + effects.happiness, 0, 100)
+			end
+			if effects.smarts and lifeState then
+				lifeState.Stats.Smarts = math.clamp((lifeState.Stats.Smarts or 50) + effects.smarts, 0, 100)
+			end
+			if effects.money then
+				addMoney(player, effects.money)
+			end
+			
+			-- Career skill effects
+			if careerData.Skills then
+				if effects.technical then careerData.Skills.Technical = math.min(100, (careerData.Skills.Technical or 0) + effects.technical) end
+				if effects.creative then careerData.Skills.Creative = math.min(100, (careerData.Skills.Creative or 0) + effects.creative) end
+				if effects.social then careerData.Skills.Social = math.min(100, (careerData.Skills.Social or 0) + effects.social) end
+				if effects.physical then careerData.Skills.Physical = math.min(100, (careerData.Skills.Physical or 0) + effects.physical) end
+				if effects.analytical then careerData.Skills.Analytical = math.min(100, (careerData.Skills.Analytical or 0) + effects.analytical) end
+			end
+			
+			print("[LifeRemoteHandlers] Job event triggered:", eventTriggered.id, "-", eventTriggered.message)
+		end
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- TOO MANY WARNINGS = FIRED
+	-- ════════════════════════════════════════════════════════════════
+	
+	if (careerData.Warnings or 0) >= 3 then
+		-- Save to career history
+		table.insert(careerData.CareerHistory, {
+			id = job.id,
+			title = job.title,
+			company = job.company,
+			yearsWorked = careerData.YearsAtCurrentJob or 0,
+			reason = "fired",
+		})
+		
+		extState.CurrentJob = nil
+		careerData.Warnings = 0
+		careerData.YearsAtCurrentJob = 0
+		careerData.PromotionProgress = 0
+		syncStateToClient(player)
+		
+		return {
+			success = false,
+			message = "😱 You've been FIRED from " .. job.company .. " due to too many warnings!",
+			fired = true
+		}
+	end
+	
+	-- ════════════════════════════════════════════════════════════════
+	-- BUILD RESULT MESSAGE
+	-- ════════════════════════════════════════════════════════════════
+	
+	syncStateToClient(player)
+	
+	local message = "You worked hard at " .. job.company .. "!"
+	
+	-- Add event message if one occurred
+	if eventMessage then
+		message = message .. "\n\n📢 " .. eventMessage
+	end
+	
+	-- Show promotion progress if close
+	if job.promotesTo and (careerData.PromotionProgress or 0) >= 75 then
+		message = message .. "\n\n📈 Promotion progress: " .. math.floor(careerData.PromotionProgress) .. "%"
+	end
 	
 	return { 
 		success = true, 
-		message = "You worked hard at " .. extState.CurrentJob.company .. "!",
-		earned = dailyPay
+		message = message,
+		earned = dailyPay,
+		performance = careerData.Performance,
+		promotionProgress = careerData.PromotionProgress,
+		event = eventTriggered and eventTriggered.id or nil,
+		eventMessage = eventMessage
 	}
 end
 
@@ -754,6 +1623,9 @@ end
 DoFreelance.OnServerInvoke = function(player, gigId)
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
+	local stats = lifeState and lifeState.Stats or {}
+	local careerData = getCareerData(player)
 	
 	-- Find gig
 	local gig = nil
@@ -777,31 +1649,112 @@ DoFreelance.OnServerInvoke = function(player, gigId)
 		return { success = false, message = "You must be at least " .. gig.minAge .. " years old for this gig." }
 	end
 	
-	-- Do gig!
-	local earnings = math.random(gig.payMin, gig.payMax)
+	-- Check stat requirements
+	local smarts = stats.Smarts or 50
+	local health = stats.Health or 50
+	local looks = stats.Looks or 50
+	
+	if gig.reqSmarts and smarts < gig.reqSmarts then
+		return { success = false, message = "You need at least " .. gig.reqSmarts .. " Smarts for this gig." }
+	end
+	if gig.reqHealth and health < gig.reqHealth then
+		return { success = false, message = "You need at least " .. gig.reqHealth .. " Health for this gig." }
+	end
+	if gig.reqLooks and looks < gig.reqLooks then
+		return { success = false, message = "You need at least " .. gig.reqLooks .. " Looks for this gig." }
+	end
+	
+	-- Calculate earnings with stat bonuses
+	local baseEarnings = math.random(gig.payMin, gig.payMax)
+	local bonusMultiplier = 1.0
+	
+	-- Category-specific bonuses
+	if gig.category == "creative" and smarts >= 60 then
+		bonusMultiplier = bonusMultiplier + 0.1
+	end
+	if gig.category == "labor" and health >= 70 then
+		bonusMultiplier = bonusMultiplier + 0.15
+	end
+	if gig.category == "service" and looks >= 65 then
+		bonusMultiplier = bonusMultiplier + 0.1
+	end
+	if gig.category == "tech" and smarts >= 70 then
+		bonusMultiplier = bonusMultiplier + 0.2
+	end
+	if gig.category == "professional" and smarts >= 75 then
+		bonusMultiplier = bonusMultiplier + 0.25
+	end
+	
+	-- Career skills bonus
+	if careerData.Skills then
+		local categorySkillMap = {
+			creative = "Creative", tech = "Technical", labor = "Physical",
+			service = "Social", professional = "Analytical", entertainment = "Creative"
+		}
+		local relevantSkill = categorySkillMap[gig.category]
+		if relevantSkill and careerData.Skills[relevantSkill] then
+			bonusMultiplier = bonusMultiplier + (careerData.Skills[relevantSkill] / 200) -- Up to 50% bonus
+		end
+	end
+	
+	local earnings = math.floor(baseEarnings * bonusMultiplier)
 	addMoney(player, earnings)
+	
+	-- Small chance to gain relevant skill
+	if careerData.Skills and math.random(100) <= 30 then
+		local categorySkillMap = {
+			creative = "Creative", tech = "Technical", labor = "Physical",
+			service = "Social", professional = "Analytical", entertainment = "Creative"
+		}
+		local relevantSkill = categorySkillMap[gig.category]
+		if relevantSkill then
+			careerData.Skills[relevantSkill] = math.min(100, (careerData.Skills[relevantSkill] or 0) + 0.5)
+		end
+	end
+	
+	local emoji = gig.emoji or "💰"
+	local message = emoji .. " You completed " .. gig.name .. " and earned $" .. earnings .. "!"
+	if bonusMultiplier > 1.1 then
+		message = message .. " (Bonus: +" .. math.floor((bonusMultiplier - 1) * 100) .. "%)"
+	end
 	
 	return { 
 		success = true, 
-		message = "You completed " .. gig.name .. " and earned $" .. earnings .. "!",
-		earned = earnings
+		message = message,
+		earned = earnings,
+		bonus = bonusMultiplier > 1 and (bonusMultiplier - 1) or nil
 	}
 end
 
 TrySpecialCareer.OnServerInvoke = function(player, careerId)
 	local extState = getExtendedState(player)
+	local lifeState = getLifeManagerState(player)
+	local stats = lifeState and lifeState.Stats or {}
+	local careerData = getCareerData(player)
 	
 	if extState.InJail then
 		return { success = false, message = "You can't pursue a career while in jail!" }
 	end
 	
-	-- 30% success chance for special careers
-	local success = math.random(100) <= 30
+	-- Base 30% success chance, modified by relevant stats and skills
+	local successChance = 30
+	
+	-- Smarts helps with all special careers
+	local smarts = stats.Smarts or 50
+	successChance = successChance + math.floor((smarts - 50) / 5)
+	
+	-- Leadership helps
+	if careerData.Skills and careerData.Skills.Leadership then
+		successChance = successChance + math.floor(careerData.Skills.Leadership / 10)
+	end
+	
+	successChance = math.clamp(successChance, 5, 70)
+	local success = math.random(100) <= successChance
 	
 	if success then
 		return { 
 			success = true, 
-			message = "You made it! Your special career has begun!"
+			message = "🌟 You made it! Your special career has begun!"
 		}
 	else
 		return { 
@@ -809,6 +1762,211 @@ TrySpecialCareer.OnServerInvoke = function(player, careerId)
 			message = "It didn't work out this time. Keep trying!"
 		}
 	end
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- PROMOTION & RAISE HANDLERS (NEW!)
+-- ════════════════════════════════════════════════════════════════
+
+RequestPromotion.OnServerInvoke = function(player)
+	local extState = getExtendedState(player)
+	local careerData = getCareerData(player)
+	local lifeState = getLifeManagerState(player)
+	
+	if not extState.CurrentJob then
+		return { success = false, message = "You don't have a job!" }
+	end
+	
+	local job = extState.CurrentJob
+	
+	-- Check if there's a promotion available
+	if not job.promotesTo then
+		return { success = false, message = "There's no promotion available for your current position." }
+	end
+	
+	-- Find the promotion job
+	local promotionJob = nil
+	for _, j in ipairs(JobListings) do
+		if j.id == job.promotesTo then
+			promotionJob = j
+			break
+		end
+	end
+	
+	if not promotionJob then
+		return { success = false, message = "Promotion path not found." }
+	end
+	
+	-- Check promotion progress
+	local progress = careerData.PromotionProgress or 0
+	if progress < 80 then
+		return { success = false, message = "You need more experience before requesting a promotion. Progress: " .. math.floor(progress) .. "/80%" }
+	end
+	
+	-- Check stats/requirements
+	local stats = lifeState and lifeState.Stats or {}
+	local smarts = stats.Smarts or 50
+	local health = stats.Health or 50
+	local looks = stats.Looks or 50
+	
+	if promotionJob.reqSmarts and smarts < promotionJob.reqSmarts then
+		return { success = false, message = "The promotion requires " .. promotionJob.reqSmarts .. " Smarts. You have " .. math.floor(smarts) .. "." }
+	end
+	if promotionJob.reqHealth and health < promotionJob.reqHealth then
+		return { success = false, message = "The promotion requires " .. promotionJob.reqHealth .. " Health. You have " .. math.floor(health) .. "." }
+	end
+	
+	-- Check education
+	if promotionJob.education and not hasEducation(player, promotionJob.education) then
+		return { success = false, message = "The promotion requires " .. promotionJob.education .. " education." }
+	end
+	
+	-- Calculate promotion chance
+	local promotionChance = 50
+	promotionChance = promotionChance + (careerData.Performance or 75) - 75 -- Performance bonus/penalty
+	promotionChance = promotionChance + math.floor((progress - 80) / 4) -- Extra progress bonus
+	
+	-- Leadership bonus
+	if careerData.Skills and careerData.Skills.Leadership then
+		promotionChance = promotionChance + math.floor(careerData.Skills.Leadership / 10)
+	end
+	
+	promotionChance = math.clamp(promotionChance, 20, 90)
+	local success = math.random(100) <= promotionChance
+	
+	if success then
+		-- Save current job to history
+		table.insert(careerData.CareerHistory, {
+			id = job.id,
+			title = job.title,
+			company = job.company,
+			salary = job.salary,
+			yearsWorked = careerData.YearsAtCurrentJob or 0,
+			reason = "promoted",
+		})
+		
+		-- Apply promotion
+		extState.CurrentJob = {
+			id = promotionJob.id,
+			title = promotionJob.title,
+			company = promotionJob.company or job.company, -- Keep same company if not specified
+			salary = promotionJob.salary,
+			category = promotionJob.category,
+			perks = promotionJob.perks or {},
+			illegal = promotionJob.illegal or false,
+			startAge = getAge(player),
+			promotesTo = nil, -- Will be found
+		}
+		
+		-- Find next promotion
+		for ladderName, ladder in pairs(CareerLadders) do
+			for i, jobId in ipairs(ladder) do
+				if jobId == promotionJob.id and i < #ladder then
+					extState.CurrentJob.promotesTo = ladder[i + 1]
+					break
+				end
+			end
+		end
+		
+		-- Reset progress
+		careerData.PromotionProgress = 0
+		careerData.YearsAtCurrentJob = 0
+		careerData.Raises = 0
+		
+		-- Gain leadership skill
+		if careerData.Skills then
+			careerData.Skills.Leadership = math.min(100, (careerData.Skills.Leadership or 0) + 5)
+		end
+		
+		syncStateToClient(player)
+		
+		local salaryIncrease = promotionJob.salary - job.salary
+		return { 
+			success = true, 
+			message = "🎉 PROMOTION! You've been promoted to " .. promotionJob.title .. "! Salary: $" .. promotionJob.salary .. "/year (+" .. salaryIncrease .. ")",
+			newTitle = promotionJob.title,
+			newSalary = promotionJob.salary
+		}
+	else
+		-- Failed promotion attempt
+		careerData.PromotionProgress = math.max(0, (careerData.PromotionProgress or 0) - 20)
+		return { success = false, message = "Your promotion request was denied. Keep working hard and try again later." }
+	end
+end
+
+RequestRaise.OnServerInvoke = function(player)
+	local extState = getExtendedState(player)
+	local careerData = getCareerData(player)
+	
+	if not extState.CurrentJob then
+		return { success = false, message = "You don't have a job!" }
+	end
+	
+	local job = extState.CurrentJob
+	
+	-- Can only request raise every so often
+	local raises = careerData.Raises or 0
+	if raises >= 5 then
+		return { success = false, message = "You've received the maximum number of raises for this position." }
+	end
+	
+	-- Need good performance
+	local performance = careerData.Performance or 75
+	if performance < 60 then
+		return { success = false, message = "Your performance needs to improve before you can request a raise. (Performance: " .. math.floor(performance) .. "%)" }
+	end
+	
+	-- Calculate success chance
+	local successChance = 30
+	successChance = successChance + (performance - 60) -- Performance bonus
+	successChance = successChance - (raises * 10) -- Each previous raise makes it harder
+	
+	if careerData.Skills and careerData.Skills.Social then
+		successChance = successChance + math.floor(careerData.Skills.Social / 10)
+	end
+	
+	successChance = math.clamp(successChance, 10, 80)
+	local success = math.random(100) <= successChance
+	
+	if success then
+		careerData.Raises = raises + 1
+		local raisePercent = 3 + math.random(0, 2) -- 3-5% raise
+		local oldSalary = job.salary
+		local newSalary = math.floor(job.salary * (1 + raisePercent / 100))
+		job.salary = newSalary
+		
+		syncStateToClient(player)
+		
+		return { 
+			success = true, 
+			message = "💰 You got a raise! New salary: $" .. newSalary .. "/year (+" .. raisePercent .. "%)",
+			newSalary = newSalary,
+			raisePercent = raisePercent
+		}
+	else
+		-- Failed raise request
+		careerData.Performance = math.max(0, (careerData.Performance or 75) - 5) -- Slight performance hit from rejected request
+		return { success = false, message = "Your raise request was denied. Focus on your performance and try again later." }
+	end
+end
+
+GetCareerInfo.OnServerInvoke = function(player)
+	local extState = getExtendedState(player)
+	local careerData = getCareerData(player)
+	
+	return {
+		success = true,
+		currentJob = extState.CurrentJob,
+		performance = careerData.Performance or 75,
+		promotionProgress = careerData.PromotionProgress or 0,
+		yearsAtJob = careerData.YearsAtCurrentJob or 0,
+		totalExperience = careerData.TotalExperience or 0,
+		raises = careerData.Raises or 0,
+		warnings = careerData.Warnings or 0,
+		skills = careerData.Skills or {},
+		careerHistory = careerData.CareerHistory or {},
+		achievements = careerData.Achievements or {},
+	}
 end
 
 ----------------------------------------------------------------
@@ -1321,6 +2479,7 @@ end
 DoActivity.OnServerInvoke = function(player, activityId)
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
 	
 	local activity = nil
 	for _, a in ipairs(Activities) do
@@ -1350,28 +2509,127 @@ DoActivity.OnServerInvoke = function(player, activityId)
 		deductMoney(player, activity.cost)
 	end
 	
-	-- Apply stat effects using the helper function
+	-- ═══════════════════════════════════════════════════════════
+	-- ADVANCED SKILL-BASED MODIFIERS (Triple AAA Polish)
+	-- ═══════════════════════════════════════════════════════════
+	
+	-- Get player stats and flags for advanced modifiers
+	local happiness = life and life.Stats and life.Stats.Happiness or 50
+	local smarts = life and life.Stats and life.Stats.Smarts or 50
+	local health = life and life.Stats and life.Stats.Health or 50
+	local flags = life and life.Flags or {}
+	
+	-- Calculate effectiveness multiplier based on current stats
+	-- Happiness affects motivation (0.7x to 1.3x)
+	local moodBonus = 1.0
+	if happiness >= 80 then
+		moodBonus = 1.3  -- Very happy = super effective
+	elseif happiness >= 60 then
+		moodBonus = 1.15 -- Happy = more effective
+	elseif happiness <= 20 then
+		moodBonus = 0.7  -- Depressed = less effective
+	elseif happiness <= 40 then
+		moodBonus = 0.85 -- Sad = somewhat less effective
+	end
+	
+	-- Smarts affects learning activities (study, read)
+	local smartsBonus = 1.0
+	if activityId == "study" or activityId == "read" then
+		smartsBonus = 0.8 + (smarts / 100) * 0.5 -- 0.8x to 1.3x based on Smarts
+		print("[LifeRemoteHandlers] Learning activity - Smarts bonus:", smartsBonus)
+	end
+	
+	-- Health affects physical activities (gym, run, yoga)
+	local healthBonus = 1.0
+	if activityId == "gym" or activityId == "run" or activityId == "yoga" then
+		healthBonus = 0.8 + (health / 100) * 0.5 -- 0.8x to 1.3x based on Health
+		print("[LifeRemoteHandlers] Physical activity - Health bonus:", healthBonus)
+	end
+	
+	-- Athletic flag bonus (from childhood sports focus)
+	local athleticBonus = 1.0
+	if flags.athletic_child and (activityId == "gym" or activityId == "run" or activityId == "yoga") then
+		athleticBonus = 1.2
+		print("[LifeRemoteHandlers] Athletic background bonus applied!")
+	end
+	
+	-- Calculate combined effectiveness
+	local effectivenessMultiplier = moodBonus * smartsBonus * healthBonus * athleticBonus
+	print("[LifeRemoteHandlers] Activity effectiveness:", effectivenessMultiplier, "mood:", moodBonus, "smarts:", smartsBonus, "health:", healthBonus)
+	
+	-- Chance to fail if very unhappy or low health
+	local failChance = 0
+	if happiness <= 15 then
+		failChance = 30 -- 30% chance to fail if severely depressed
+	elseif health <= 15 then
+		failChance = 20 -- 20% chance to fail if very unhealthy
+	end
+	
+	if failChance > 0 and math.random(100) <= failChance then
+		local failMessages = {
+			"You couldn't focus and gave up halfway through.",
+			"You're feeling too down to finish this today.",
+			"Your body isn't cooperating. Maybe rest first?",
+			"You started but lost motivation quickly.",
+		}
+		return {
+			success = false,
+			message = failMessages[math.random(#failMessages)]
+		}
+	end
+	
+	-- Apply stat effects with modifiers
 	local statChanges = {}
+	local resultMessages = {}
+	
 	if activity.effects then
 		for stat, range in pairs(activity.effects) do
-			local change = math.random(range[1], range[2])
-			modifyStat(player, stat, change)
-			statChanges[stat] = change
+			-- Calculate base change
+			local baseChange = math.random(range[1], range[2])
+			
+			-- Apply multiplier for positive changes
+			local finalChange = baseChange
+			if baseChange > 0 then
+				finalChange = math.floor(baseChange * effectivenessMultiplier + 0.5)
+			end
+			
+			-- Exceptional performance bonus (10% chance if all stats high)
+			if happiness >= 70 and health >= 70 and math.random(100) <= 10 then
+				finalChange = math.floor(finalChange * 1.5)
+				table.insert(resultMessages, "Exceptional performance!")
+			end
+			
+			modifyStat(player, stat, finalChange)
+			statChanges[stat] = finalChange
 		end
 	end
 	
 	syncStateToClient(player)
 	
+	-- Build result message
+	local baseMessage = "You did " .. activity.name .. "!"
+	if effectivenessMultiplier >= 1.2 then
+		baseMessage = "You crushed " .. activity.name .. "! Great job!"
+	elseif effectivenessMultiplier <= 0.8 then
+		baseMessage = "You did " .. activity.name .. ", but it was tough today."
+	end
+	
+	if #resultMessages > 0 then
+		baseMessage = baseMessage .. " " .. table.concat(resultMessages, " ")
+	end
+	
 	return { 
 		success = true, 
-		message = "You did " .. activity.name .. "!",
-		statChanges = statChanges
+		message = baseMessage,
+		statChanges = statChanges,
+		effectivenessMultiplier = effectivenessMultiplier
 	}
 end
 
 CommitCrime.OnServerInvoke = function(player, crimeId)
 	local age = getAge(player)
 	local extState = getExtendedState(player)
+	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
 	
 	local crime = nil
 	for _, c in ipairs(Crimes) do
@@ -1393,8 +2651,51 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 		return { success = false, message = "You must be at least " .. crime.minAge .. " to attempt this crime." }
 	end
 	
+	-- ═══════════════════════════════════════════════════════════
+	-- ADVANCED CRIME SKILL MODIFIERS (Triple AAA Polish)
+	-- ═══════════════════════════════════════════════════════════
+	
+	local smarts = life and life.Stats and life.Stats.Smarts or 50
+	local looks = life and life.Stats and life.Stats.Looks or 50
+	local happiness = life and life.Stats and life.Stats.Happiness or 50
+	local flags = life and life.Flags or {}
+	
+	-- Calculate risk modifier based on stats and experience
+	local riskModifier = 0
+	
+	-- Smarts reduces catch risk (better planning)
+	-- High smarts = up to -15% catch risk
+	local smartsReduction = math.floor((smarts - 50) / 50 * 15)
+	riskModifier = riskModifier - smartsReduction
+	
+	-- Criminal experience reduces risk
+	if flags.criminal_tendencies then riskModifier = riskModifier - 5 end
+	if flags.petty_thief or flags.shoplifter then riskModifier = riskModifier - 5 end
+	if flags.car_thief or flags.burglar then riskModifier = riskModifier - 8 end
+	if flags.gang_member then riskModifier = riskModifier - 10 end
+	if flags.gang_captain then riskModifier = riskModifier - 12 end
+	if flags.underboss or flags.crime_boss then riskModifier = riskModifier - 15 end
+	
+	-- Low happiness increases carelessness (more risk)
+	if happiness <= 20 then
+		riskModifier = riskModifier + 10 -- Depressed = sloppy
+	elseif happiness <= 40 then
+		riskModifier = riskModifier + 5
+	end
+	
+	-- Looks can help with certain crimes (pickpocket, con games)
+	if crimeId == "pickpocket" and looks >= 70 then
+		riskModifier = riskModifier - 5 -- Charming appearance = less suspicious
+	end
+	
+	-- Calculate final catch chance
+	local baseCatchChance = crime.risk
+	local finalCatchChance = math.clamp(baseCatchChance + riskModifier, 5, 95)
+	
+	print("[LifeRemoteHandlers] Crime:", crimeId, "Base risk:", baseCatchChance, "Modifier:", riskModifier, "Final:", finalCatchChance)
+	
 	-- Roll for getting caught
-	local caught = math.random(100) <= crime.risk
+	local caught = math.random(100) <= finalCatchChance
 	
 	if caught then
 		-- GO TO JAIL
@@ -1428,14 +2729,52 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 			jailTime = jailTime
 		}
 	else
-		-- SUCCESS
-		local reward = math.random(crime.rewardMin, crime.rewardMax)
-		addMoney(player, reward)
+		-- SUCCESS - Apply skill-based reward modifiers
+		local baseReward = math.random(crime.rewardMin, crime.rewardMax)
+		
+		-- Smarts bonus for reward (better planning = bigger haul)
+		local rewardMultiplier = 1.0
+		if smarts >= 80 then
+			rewardMultiplier = 1.4  -- Very smart = much bigger haul
+		elseif smarts >= 60 then
+			rewardMultiplier = 1.2
+		end
+		
+		-- Criminal experience bonus
+		if flags.gang_member then rewardMultiplier = rewardMultiplier * 1.15 end
+		if flags.underboss or flags.crime_boss then rewardMultiplier = rewardMultiplier * 1.3 end
+		
+		local finalReward = math.floor(baseReward * rewardMultiplier)
+		addMoney(player, finalReward)
+		
+		-- Set criminal tendencies flag if not already
+		if life and not flags.criminal_tendencies then
+			life.Flags = life.Flags or {}
+			life.Flags.criminal_tendencies = true
+		end
+		
+		-- Track specific crimes for experience bonuses
+		if life and crimeId == "shoplift" and not flags.shoplifter then
+			life.Flags.shoplifter = true
+		elseif life and crimeId == "pickpocket" and not flags.petty_thief then
+			life.Flags.petty_thief = true
+		elseif life and crimeId == "gta" and not flags.car_thief then
+			life.Flags.car_thief = true
+		elseif life and crimeId == "burglary" and not flags.burglar then
+			life.Flags.burglar = true
+		end
+		
+		-- Build success message
+		local successMessage = "You got away with it! You earned $" .. finalReward
+		if rewardMultiplier > 1.2 then
+			successMessage = "Clean getaway! Your experience paid off - $" .. finalReward
+		end
 		
 		return { 
 			success = true, 
-			message = "You got away with it! You earned $" .. reward,
-			reward = reward
+			message = successMessage,
+			reward = finalReward,
+			rewardMultiplier = rewardMultiplier
 		}
 	end
 end
@@ -1753,6 +3092,16 @@ end
 -- Hook for yearly updates (called from LifeManager)
 _G.OnPlayerAgeUp = function(player)
 	updateAutoEducation(player)
+	
+	-- Update career tracking
+	local extState = getExtendedState(player)
+	local careerData = getCareerData(player)
+	
+	-- If player has a job, increment years at current job
+	if extState.CurrentJob then
+		careerData.YearsAtCurrentJob = (careerData.YearsAtCurrentJob or 0) + 1
+		print("[LifeRemoteHandlers] Player aged up - Years at job:", careerData.YearsAtCurrentJob)
+	end
 end
 
 -- Get extended state for external access
@@ -1864,6 +3213,54 @@ _G.SendToJail = function(player, years)
 	
 	syncStateToClient(player)
 	print("[LifeRemoteHandlers] Player sent to jail for", years, "years")
+end
+
+-- Set player job from event choice (callable from LifeManager when event includes setJob)
+_G.SetPlayerJob = function(player, jobData)
+	if not jobData then
+		print("[LifeRemoteHandlers] SetPlayerJob - No job data provided")
+		return false
+	end
+	
+	local extState = getExtendedState(player)
+	print("[LifeRemoteHandlers] SetPlayerJob - Setting job for:", player.Name)
+	print("[LifeRemoteHandlers] Job:", jobData.id or "unknown", jobData.title or "unknown")
+	
+	-- Create job entry in ExtendedState
+	extState.CurrentJob = {
+		id = jobData.id or "story_job",
+		title = jobData.title or "Employee",
+		company = jobData.company or "Company",
+		salary = jobData.salary or 30000,
+		requirement = jobData.requirement or nil,
+		-- Track that this job came from a story event
+		fromStory = true,
+		storyFlag = jobData.storyFlag or nil, -- e.g., "teacher", "hacker_career"
+	}
+	
+	print("[LifeRemoteHandlers] Job set:", extState.CurrentJob.title, "at", extState.CurrentJob.company, "- Salary:", extState.CurrentJob.salary)
+	
+	syncStateToClient(player)
+	return true
+end
+
+-- Quit player job (callable from scripts)
+_G.QuitPlayerJob = function(player)
+	local extState = getExtendedState(player)
+	if extState.CurrentJob then
+		local oldJob = extState.CurrentJob.title or "job"
+		extState.CurrentJob = nil
+		print("[LifeRemoteHandlers] Player quit job:", oldJob)
+		syncStateToClient(player)
+		return true
+	end
+	return false
+end
+
+-- Get player's current job (for other scripts to check)
+_G.GetPlayerJob = function(player)
+	local extState = getExtendedState(player)
+	return extState.CurrentJob
 end
 
 print("[LifeRemoteHandlers] ✅ All remote handlers initialized!")

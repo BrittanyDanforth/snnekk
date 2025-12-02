@@ -1,11 +1,23 @@
 -- LifeStageSystem.lua
--- Comprehensive BitLife-style life stage management
--- Controls what events, actions, and content are available at each stage
+-- Comprehensive BitLife-style life stage management.
+-- Controls what events, actions, and content are available at each stage.
 
 local LifeStageSystem = {}
 
 ----------------------------------------------------------------------
--- LIFE STAGES DEFINITION (BitLife-style)
+-- CONFIG / DEBUG
+----------------------------------------------------------------------
+
+local DEBUG_EVENT_VALIDATION = false
+
+local function dprint(...)
+	if DEBUG_EVENT_VALIDATION then
+		print("[LifeStageSystem]", ...)
+	end
+end
+
+----------------------------------------------------------------------
+-- LIFE STAGES DEFINITION
 ----------------------------------------------------------------------
 
 LifeStageSystem.Stages = {
@@ -24,10 +36,10 @@ LifeStageSystem.Stages = {
 		canGamble = false,
 		inSchool = false,
 		schoolType = nil,
-		activities = {"cry", "sleep", "eat", "crawl"},
-		eventCategories = {"family", "health", "milestone"},
+		activities = { "cry", "sleep", "eat", "crawl" },
+		eventCategories = { "family", "health", "milestone" },
 	},
-	
+
 	TODDLER = {
 		id = "toddler",
 		name = "Toddler",
@@ -43,10 +55,10 @@ LifeStageSystem.Stages = {
 		canGamble = false,
 		inSchool = false,
 		schoolType = "daycare",
-		activities = {"play", "learn", "tantrum"},
-		eventCategories = {"family", "health", "milestone", "social"},
+		activities = { "play", "learn", "tantrum" },
+		eventCategories = { "family", "health", "milestone", "social" },
 	},
-	
+
 	CHILD = {
 		id = "child",
 		name = "Child",
@@ -62,10 +74,10 @@ LifeStageSystem.Stages = {
 		canGamble = false,
 		inSchool = true,
 		schoolType = "elementary",
-		activities = {"study", "play", "sports", "clubs"},
-		eventCategories = {"family", "health", "school", "social", "milestone"},
+		activities = { "study", "play", "sports", "clubs" },
+		eventCategories = { "family", "health", "school", "social", "milestone" },
 	},
-	
+
 	TWEEN = {
 		id = "tween",
 		name = "Tween",
@@ -75,35 +87,35 @@ LifeStageSystem.Stages = {
 		canWork = false,
 		canDate = false,
 		canDrive = false,
-		canCrime = true, -- Minor stuff
+		canCrime = true, -- minor stuff
 		canDrink = false,
 		canVote = false,
 		canGamble = false,
 		inSchool = true,
 		schoolType = "middle",
-		activities = {"study", "sports", "clubs", "hangout", "social_media"},
-		eventCategories = {"family", "health", "school", "social", "romance", "milestone"},
+		activities = { "study", "sports", "clubs", "hangout", "social_media" },
+		eventCategories = { "family", "health", "school", "social", "romance", "milestone" },
 	},
-	
+
 	TEEN = {
 		id = "teen",
 		name = "Teenager",
 		emoji = "🧑‍🎤",
 		minAge = 14, maxAge = 17,
 		description = "High school - dating, driving, and planning your future.",
-		canWork = true, -- Part-time
+		canWork = true, -- part-time
 		canDate = true,
-		canDrive = true, -- At 16
+		canDrive = true, -- at 16
 		canCrime = true,
 		canDrink = false,
 		canVote = false,
 		canGamble = false,
 		inSchool = true,
 		schoolType = "highschool",
-		activities = {"study", "work_parttime", "sports", "clubs", "date", "party", "drive"},
-		eventCategories = {"family", "health", "school", "social", "romance", "work", "crime", "milestone"},
+		activities = { "study", "work_parttime", "sports", "clubs", "date", "party", "drive" },
+		eventCategories = { "family", "health", "school", "social", "romance", "work", "crime", "milestone" },
 	},
-	
+
 	YOUNG_ADULT = {
 		id = "young_adult",
 		name = "Young Adult",
@@ -114,15 +126,15 @@ LifeStageSystem.Stages = {
 		canDate = true,
 		canDrive = true,
 		canCrime = true,
-		canDrink = true, -- At 21
+		canDrink = true, -- at 21
 		canVote = true,
-		canGamble = true, -- At 21
-		inSchool = false, -- Optional
+		canGamble = true, -- at 21
+		inSchool = false, -- optional college
 		schoolType = "university",
-		activities = {"work", "study", "date", "party", "travel", "invest", "crime"},
-		eventCategories = {"all"},
+		activities = { "work", "study", "date", "party", "travel", "invest", "crime" },
+		eventCategories = { "all" },
 	},
-	
+
 	ADULT = {
 		id = "adult",
 		name = "Adult",
@@ -138,10 +150,10 @@ LifeStageSystem.Stages = {
 		canGamble = true,
 		inSchool = false,
 		schoolType = nil,
-		activities = {"work", "date", "marry", "kids", "invest", "travel", "hobby"},
-		eventCategories = {"all"},
+		activities = { "work", "date", "marry", "kids", "invest", "travel", "hobby" },
+		eventCategories = { "all" },
 	},
-	
+
 	MIDDLE_AGE = {
 		id = "middle_age",
 		name = "Middle-Aged",
@@ -157,17 +169,17 @@ LifeStageSystem.Stages = {
 		canGamble = true,
 		inSchool = false,
 		schoolType = nil,
-		activities = {"work", "retire_early", "invest", "travel", "grandkids"},
-		eventCategories = {"all"},
+		activities = { "work", "retire_early", "invest", "travel", "grandkids" },
+		eventCategories = { "all" },
 	},
-	
+
 	SENIOR = {
 		id = "senior",
 		name = "Senior",
 		emoji = "🧓",
 		minAge = 61, maxAge = 75,
 		description = "Retirement, grandchildren, and enjoying life's rewards.",
-		canWork = true, -- Optional
+		canWork = true, -- optional
 		canDate = true,
 		canDrive = true,
 		canCrime = true,
@@ -176,10 +188,10 @@ LifeStageSystem.Stages = {
 		canGamble = true,
 		inSchool = false,
 		schoolType = nil,
-		activities = {"retire", "travel", "grandkids", "hobby", "volunteer"},
-		eventCategories = {"family", "health", "social", "money", "milestone"},
+		activities = { "retire", "travel", "grandkids", "hobby", "volunteer" },
+		eventCategories = { "family", "health", "social", "money", "milestone" },
 	},
-	
+
 	ELDER = {
 		id = "elder",
 		name = "Elder",
@@ -188,22 +200,21 @@ LifeStageSystem.Stages = {
 		description = "The twilight years - legacy and reflection.",
 		canWork = false,
 		canDate = true,
-		canDrive = false, -- Too old
+		canDrive = false,
 		canCrime = false,
 		canDrink = true,
 		canVote = true,
 		canGamble = true,
 		inSchool = false,
 		schoolType = nil,
-		activities = {"rest", "family", "legacy", "reminisce"},
-		eventCategories = {"family", "health", "milestone", "death"},
+		activities = { "rest", "family", "legacy", "reminisce" },
+		eventCategories = { "family", "health", "milestone", "death" },
 	},
 }
 
--- Ordered list for iteration
 LifeStageSystem.StageOrder = {
-	"INFANT", "TODDLER", "CHILD", "TWEEN", "TEEN", 
-	"YOUNG_ADULT", "ADULT", "MIDDLE_AGE", "SENIOR", "ELDER"
+	"INFANT", "TODDLER", "CHILD", "TWEEN", "TEEN",
+	"YOUNG_ADULT", "ADULT", "MIDDLE_AGE", "SENIOR", "ELDER",
 }
 
 ----------------------------------------------------------------------
@@ -214,128 +225,150 @@ LifeStageSystem.EventCategories = {
 	family = {
 		name = "Family",
 		emoji = "👨‍👩‍👧",
-		description = "Events involving family members",
+		description = "Events involving family members.",
 		minAge = 0,
 		maxAge = 120,
 	},
+
 	health = {
 		name = "Health",
 		emoji = "🏥",
-		description = "Health-related events",
+		description = "Health-related events.",
 		minAge = 0,
 		maxAge = 120,
 	},
+
 	school = {
 		name = "School",
 		emoji = "🏫",
-		description = "Education events",
+		description = "Education events.",
 		minAge = 5,
 		maxAge = 30,
 	},
+
 	social = {
 		name = "Social",
 		emoji = "👥",
-		description = "Friendships and social situations",
+		description = "Friendships and social situations.",
 		minAge = 3,
 		maxAge = 120,
 	},
+
 	romance = {
 		name = "Romance",
 		emoji = "💕",
-		description = "Dating and relationships",
+		description = "Dating and relationships.",
 		minAge = 12,
 		maxAge = 120,
 	},
+
 	work = {
 		name = "Work",
 		emoji = "💼",
-		description = "Career and job events",
+		description = "Career and job events.",
 		minAge = 14,
 		maxAge = 75,
 	},
+
 	crime = {
 		name = "Crime",
 		emoji = "🔪",
-		description = "Criminal activities",
+		description = "Criminal activities.",
 		minAge = 10,
 		maxAge = 70,
 	},
+
 	money = {
 		name = "Money",
 		emoji = "💰",
-		description = "Financial events",
+		description = "Financial events.",
 		minAge = 10,
 		maxAge = 120,
 	},
+
 	milestone = {
 		name = "Milestone",
 		emoji = "🎉",
-		description = "Major life milestones",
+		description = "Major life milestones.",
 		minAge = 0,
 		maxAge = 120,
 	},
+
 	prison = {
 		name = "Prison",
 		emoji = "⛓️",
-		description = "Prison-related events",
+		description = "Prison-related events.",
 		minAge = 14,
 		maxAge = 80,
 		requiresFlag = "in_prison",
 	},
+
 	political = {
 		name = "Political",
 		emoji = "🏛️",
-		description = "Political career events",
+		description = "Political career events.",
 		minAge = 18,
 		maxAge = 80,
 		requiresFlag = "political_interest",
 	},
+
 	racing = {
 		name = "Racing",
 		emoji = "🏎️",
-		description = "Racing career events",
+		description = "Racing career events.",
 		minAge = 8,
 		maxAge = 50,
 		requiresFlag = "racing_interest",
 	},
+
 	art = {
 		name = "Art",
 		emoji = "🎨",
-		description = "Art career events",
+		description = "Art career events.",
 		minAge = 7,
 		maxAge = 100,
 		requiresFlag = "art_interest",
 	},
+
 	hacking = {
 		name = "Hacking",
 		emoji = "💻",
-		description = "Hacker career events",
+		description = "Hacker career events.",
 		minAge = 12,
 		maxAge = 60,
 		requiresFlag = "computer_interest",
 	},
+
 	teaching = {
 		name = "Teaching",
 		emoji = "📚",
-		description = "Teaching career events",
+		description = "Teaching career events.",
 		minAge = 22,
 		maxAge = 70,
 		requiresFlag = "teaching_interest",
 	},
+
 	death = {
 		name = "Death",
 		emoji = "💀",
-		description = "End of life events",
+		description = "End of life events.",
 		minAge = 60,
 		maxAge = 120,
 	},
 }
 
+-- Categories allowed to still fire while in prison
+local PRISON_ALLOWED_CATEGORIES = {
+	prison = true,
+	family = true,
+	health = true,
+	milestone = true,
+}
+
 ----------------------------------------------------------------------
--- CORE FUNCTIONS
+-- CORE STAGE HELPERS
 ----------------------------------------------------------------------
 
--- Get current life stage for an age
 function LifeStageSystem.getStage(age)
 	for _, stageKey in ipairs(LifeStageSystem.StageOrder) do
 		local stage = LifeStageSystem.Stages[stageKey]
@@ -343,10 +376,9 @@ function LifeStageSystem.getStage(age)
 			return stage
 		end
 	end
-	return LifeStageSystem.Stages.ELDER -- Fallback
+	return LifeStageSystem.Stages.ELDER
 end
 
--- Get stage by ID
 function LifeStageSystem.getStageById(stageId)
 	for _, stage in pairs(LifeStageSystem.Stages) do
 		if stage.id == stageId then
@@ -356,11 +388,10 @@ function LifeStageSystem.getStageById(stageId)
 	return nil
 end
 
--- Check if player just transitioned to a new stage
 function LifeStageSystem.checkStageTransition(oldAge, newAge)
 	local oldStage = LifeStageSystem.getStage(oldAge)
 	local newStage = LifeStageSystem.getStage(newAge)
-	
+
 	if oldStage.id ~= newStage.id then
 		return {
 			transitioned = true,
@@ -368,62 +399,60 @@ function LifeStageSystem.checkStageTransition(oldAge, newAge)
 			to = newStage,
 		}
 	end
-	
+
 	return { transitioned = false }
 end
 
--- Check if a category is valid for the current state
+----------------------------------------------------------------------
+-- CATEGORY / CAPABILITY HELPERS
+----------------------------------------------------------------------
+
 function LifeStageSystem.isCategoryValid(category, state)
 	local catDef = LifeStageSystem.EventCategories[category]
-	if not catDef then return true end -- Unknown category, allow
-	
+	if not catDef then
+		return true -- unknown category: treat as allowed
+	end
+
 	local age = state.Age or 0
-	
-	-- Check age range
 	if age < catDef.minAge or age > catDef.maxAge then
 		return false
 	end
-	
-	-- Check required flag
+
 	if catDef.requiresFlag then
 		local flags = state.Flags or {}
 		if not flags[catDef.requiresFlag] then
 			return false
 		end
 	end
-	
+
 	return true
 end
 
--- Check if an activity is available at current stage
 function LifeStageSystem.canDoActivity(activityId, state)
 	local stage = LifeStageSystem.getStage(state.Age or 0)
-	
-	-- Check if activity is in stage's allowed activities
 	for _, allowed in ipairs(stage.activities) do
 		if allowed == activityId then
 			return true
 		end
 	end
-	
 	return false
 end
 
--- Get all available activities for current stage
 function LifeStageSystem.getAvailableActivities(state)
 	local stage = LifeStageSystem.getStage(state.Age or 0)
 	return stage.activities
 end
 
--- Check capabilities at current stage
 function LifeStageSystem.getCapabilities(state)
 	local stage = LifeStageSystem.getStage(state.Age or 0)
 	local age = state.Age or 0
 	local flags = state.Flags or {}
-	
+
+	local inPrison = flags.in_prison or flags.incarcerated or state.InJail
+
 	return {
-		canWork = stage.canWork and age >= 14,
-		canWorkFullTime = stage.canWork and age >= 18,
+		canWork = stage.canWork and age >= 14 and not inPrison,
+		canWorkFullTime = stage.canWork and age >= 18 and not inPrison,
 		canDate = stage.canDate and age >= 12,
 		canMarry = stage.canDate and age >= 18,
 		canDrive = stage.canDrive and age >= 16 and flags.has_license,
@@ -433,19 +462,18 @@ function LifeStageSystem.getCapabilities(state)
 		canGamble = stage.canGamble and age >= 21,
 		canEnrollCollege = age >= 18 and age <= 50,
 		canRetire = age >= 50,
+
 		inSchool = stage.inSchool or flags.college_student,
 		schoolType = flags.college_student and "university" or stage.schoolType,
-		
-		-- Career paths
+
 		canStartPolitics = age >= 18 and flags.political_interest,
 		canStartRacing = age >= 16 and flags.racing_interest,
 		canStartArt = age >= 16 and flags.art_interest,
 		canStartHacking = age >= 16 and flags.computer_interest,
 		canStartTeaching = age >= 22 and flags.teaching_interest,
 		canStartCrime = age >= 16 and (flags.criminal_tendencies or flags.gang_member),
-		
-		-- Special states
-		inPrison = flags.in_prison or state.InJail,
+
+		inPrison = inPrison,
 		isFugitive = flags.fugitive,
 		isPregnant = flags.pregnant,
 		isMarried = flags.married,
@@ -454,65 +482,60 @@ function LifeStageSystem.getCapabilities(state)
 end
 
 ----------------------------------------------------------------------
--- EVENT VALIDATION (Server-side)
+-- EVENT VALIDATION (SERVER-SIDE)
 ----------------------------------------------------------------------
 
--- Master validation function - checks everything
 function LifeStageSystem.validateEvent(eventDef, state)
-	local validationResult = {
+	local result = {
 		valid = true,
 		reasons = {},
 	}
-	
+
 	local age = state.Age or 0
 	local flags = state.Flags or {}
 	local stage = LifeStageSystem.getStage(age)
 	local caps = LifeStageSystem.getCapabilities(state)
-	
-	-- Enhanced debug logging for all validation
-	local DEBUG_EVENT_VALIDATION = false -- Set to true for verbose logging
-	
+
 	if DEBUG_EVENT_VALIDATION or eventDef.category == "prison" then
-		print("[LifeStageSystem] === VALIDATING EVENT ===")
-		print("[LifeStageSystem] Event:", eventDef.id, "Category:", eventDef.category or "none")
-		print("[LifeStageSystem] - Age:", age, "Stage:", stage.id)
-		print("[LifeStageSystem] - InPrison (caps):", caps.inPrison, "Flag in_prison:", flags.in_prison or false)
+		dprint("=== VALIDATING EVENT ===")
+		dprint("Event:", eventDef.id, "Category:", eventDef.category or "none")
+		dprint("Age:", age, "Stage:", stage.id)
+		dprint("InPrison:", caps.inPrison, "flag in_prison:", flags.in_prison or false)
 		if eventDef.requiresFlag then
-			print("[LifeStageSystem] - requiresFlag:", eventDef.requiresFlag, "Has flag:", flags[eventDef.requiresFlag] or false)
+			dprint("requiresFlag:", eventDef.requiresFlag, "has:", flags[eventDef.requiresFlag] or false)
 		end
 		if eventDef.requiresFlag2 then
-			print("[LifeStageSystem] - requiresFlag2:", eventDef.requiresFlag2, "Has flag:", flags[eventDef.requiresFlag2] or false)
+			dprint("requiresFlag2:", eventDef.requiresFlag2, "has:", flags[eventDef.requiresFlag2] or false)
 		end
 		if eventDef.blockIfFlag then
-			print("[LifeStageSystem] - blockIfFlag:", eventDef.blockIfFlag, "Has flag:", flags[eventDef.blockIfFlag] or false)
+			dprint("blockIfFlag:", eventDef.blockIfFlag, "has:", flags[eventDef.blockIfFlag] or false)
 		end
 	end
-	
-	-- 1. Check age range
+
+	-- 1. Age range
 	if eventDef.minAge and age < eventDef.minAge then
-		validationResult.valid = false
-		table.insert(validationResult.reasons, "Too young (need " .. eventDef.minAge .. ")")
+		result.valid = false
+		table.insert(result.reasons, "Too young (need " .. eventDef.minAge .. ")")
 	end
-	
+
 	if eventDef.maxAge and age > eventDef.maxAge then
-		validationResult.valid = false
-		table.insert(validationResult.reasons, "Too old (max " .. eventDef.maxAge .. ")")
+		result.valid = false
+		table.insert(result.reasons, "Too old (max " .. eventDef.maxAge .. ")")
 	end
-	
-	-- 2. Check category validity
+
+	-- 2. Category base validity (age + required flag)
 	if eventDef.category then
 		if not LifeStageSystem.isCategoryValid(eventDef.category, state) then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Category not available at this life stage")
+			result.valid = false
+			table.insert(result.reasons, "Category not available at this life stage")
 		end
 	end
-	
-	-- 3. Check if category is allowed in current stage (but PRISON events bypass stage restrictions when in prison)
+
+	-- 3. Stage's eventCategories gating
 	if eventDef.category and stage.eventCategories then
-		-- Prison events always allowed when in prison, regardless of stage
 		local isPrisonEvent = eventDef.category == "prison"
-		local isInPrison = caps.inPrison or flags.in_prison or flags.incarcerated
-		
+		local isInPrison = caps.inPrison
+
 		if not (isPrisonEvent and isInPrison) then
 			local categoryAllowed = false
 			for _, cat in ipairs(stage.eventCategories) do
@@ -522,59 +545,54 @@ function LifeStageSystem.validateEvent(eventDef, state)
 				end
 			end
 			if not categoryAllowed then
-				validationResult.valid = false
-				table.insert(validationResult.reasons, "Event category not available in " .. stage.name .. " stage")
+				result.valid = false
+				table.insert(result.reasons, "Event category not available in " .. stage.name .. " stage")
 			end
 		end
 	end
-	
-	-- 4. Check one-time events
+
+	-- 4. One-time events
 	if eventDef.oneTime then
 		local history = state.EventHistory or {}
 		local seen = history.seenEvents or {}
 		if seen[eventDef.id] then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "One-time event already occurred")
+			result.valid = false
+			table.insert(result.reasons, "One-time event already occurred")
 		end
 	end
-	
-	-- 5. Check cooldown
+
+	-- 5. Cooldown
 	if eventDef.cooldown then
 		local history = state.EventHistory or {}
 		local lastOccurrence = history.lastOccurrence or {}
 		local lastAge = lastOccurrence[eventDef.id]
 		if lastAge and (age - lastAge) < eventDef.cooldown then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Event on cooldown")
+			result.valid = false
+			table.insert(result.reasons, "Event on cooldown")
 		end
 	end
-	
-	-- 6. Check custom requires function
+
+	-- 6. Custom requires callback
 	if eventDef.requires then
 		local ok, canFire = pcall(eventDef.requires, state)
 		if not ok or not canFire then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Requirements not met")
+			result.valid = false
+			table.insert(result.reasons, "Requirements not met")
 		end
 	end
-	
-	-- 7. Check requiresFlag (single required flag)
-	if eventDef.requiresFlag then
-		if not flags[eventDef.requiresFlag] then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Missing required flag: " .. eventDef.requiresFlag)
-		end
+
+	-- 7. Simple required flags
+	if eventDef.requiresFlag and not flags[eventDef.requiresFlag] then
+		result.valid = false
+		table.insert(result.reasons, "Missing required flag: " .. eventDef.requiresFlag)
 	end
-	
-	-- 8. Check requiresFlag2 (second required flag)
-	if eventDef.requiresFlag2 then
-		if not flags[eventDef.requiresFlag2] then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Missing required flag: " .. eventDef.requiresFlag2)
-		end
+
+	if eventDef.requiresFlag2 and not flags[eventDef.requiresFlag2] then
+		result.valid = false
+		table.insert(result.reasons, "Missing required flag: " .. eventDef.requiresFlag2)
 	end
-	
-	-- 9. Check requiresAnyFlag (any of these flags must be present)
+
+	-- 8. Any-of flags
 	if eventDef.requiresAnyFlag and type(eventDef.requiresAnyFlag) == "table" then
 		local hasAny = false
 		for _, flagName in ipairs(eventDef.requiresAnyFlag) do
@@ -584,118 +602,102 @@ function LifeStageSystem.validateEvent(eventDef, state)
 			end
 		end
 		if not hasAny then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Missing any required flag from: " .. table.concat(eventDef.requiresAnyFlag, ", "))
+			result.valid = false
+			table.insert(result.reasons, "Missing any required flag from: " .. table.concat(eventDef.requiresAnyFlag, ", "))
 		end
 	end
-	
-	-- 10. Check blockIfFlag (event blocked if this flag exists)
-	if eventDef.blockIfFlag then
-		if flags[eventDef.blockIfFlag] then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Blocked by flag: " .. eventDef.blockIfFlag)
-		end
+
+	-- 9. Block flags
+	if eventDef.blockIfFlag and flags[eventDef.blockIfFlag] then
+		result.valid = false
+		table.insert(result.reasons, "Blocked by flag: " .. eventDef.blockIfFlag)
 	end
-	
-	-- 11. Check blockIfFlag2 (second blocking flag)
-	if eventDef.blockIfFlag2 then
-		if flags[eventDef.blockIfFlag2] then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Blocked by flag: " .. eventDef.blockIfFlag2)
-		end
+
+	if eventDef.blockIfFlag2 and flags[eventDef.blockIfFlag2] then
+		result.valid = false
+		table.insert(result.reasons, "Blocked by flag: " .. eventDef.blockIfFlag2)
 	end
-	
-	-- 12. Check prison-specific (event requires being in prison)
+
+	-- 10. Prison events must be in prison
 	if eventDef.category == "prison" then
-		local isInPrison = caps.inPrison or flags.in_prison or flags.incarcerated
-		if not isInPrison then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Not in prison")
+		if not caps.inPrison then
+			result.valid = false
+			table.insert(result.reasons, "Not in prison")
 		end
 	end
-	
-	-- 13. Block NON-prison events when IN prison (except family, health, milestone)
-	local isInPrison = caps.inPrison or flags.in_prison or flags.incarcerated
-	if isInPrison and eventDef.category then
-		local allowedInPrison = {
-			prison = true,
-			family = true,    -- Can still have family events
-			health = true,    -- Health events still happen
-			milestone = true, -- Milestones still occur
-		}
-		if not allowedInPrison[eventDef.category] then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Event category '" .. eventDef.category .. "' blocked while in prison")
+
+	-- 11. When in prison, block most non-prison categories
+	if caps.inPrison and eventDef.category then
+		if not PRISON_ALLOWED_CATEGORIES[eventDef.category] then
+			result.valid = false
+			table.insert(result.reasons, "Event category '" .. eventDef.category .. "' blocked while in prison")
 		end
 	end
-	
-	-- 14. Check school events
-	if eventDef.category == "school" and not isInPrison then
+
+	-- 12. School events require being in school or college
+	if eventDef.category == "school" and not caps.inPrison then
 		local inSchool = caps.inSchool or (age >= 5 and age <= 18)
 		if not inSchool and not flags.college_student then
-			validationResult.valid = false
-			table.insert(validationResult.reasons, "Not in school")
+			result.valid = false
+			table.insert(result.reasons, "Not in school")
 		end
 	end
-	
-	-- Final debug log for prison events or when debugging
-	local DEBUG_EVENT_VALIDATION = false
+
 	if DEBUG_EVENT_VALIDATION or eventDef.category == "prison" then
-		if validationResult.valid then
-			print("[LifeStageSystem] ✅ Event", eventDef.id, "PASSED validation")
+		if result.valid then
+			dprint("✅ Event", eventDef.id, "PASSED validation")
 		else
-			print("[LifeStageSystem] ❌ Event", eventDef.id, "FAILED validation - Reasons:", table.concat(validationResult.reasons, ", "))
+			dprint("❌ Event", eventDef.id, "FAILED validation - Reasons:", table.concat(result.reasons, ", "))
 		end
 	end
-	
-	return validationResult
+
+	return result
 end
 
--- Filter a list of events to only valid ones
 function LifeStageSystem.filterValidEvents(events, state)
 	local valid = {}
-	
 	for _, event in ipairs(events) do
 		local validation = LifeStageSystem.validateEvent(event, state)
 		if validation.valid then
 			table.insert(valid, event)
 		end
 	end
-	
 	return valid
 end
 
--- Pick best event for current state
 function LifeStageSystem.pickBestEvent(events, state)
 	local validEvents = LifeStageSystem.filterValidEvents(events, state)
-	
 	if #validEvents == 0 then
 		return nil
 	end
-	
-	-- Prioritize milestones
+
+	-- Milestones first
 	for _, event in ipairs(validEvents) do
 		if event.milestone then
 			return event
 		end
 	end
-	
-	-- Weighted random selection
+
+	-- Weighted random
 	local totalWeight = 0
 	for _, event in ipairs(validEvents) do
-		totalWeight = totalWeight + (event.weight or 10)
+		totalWeight += (event.weight or 10)
 	end
-	
+
+	if totalWeight <= 0 then
+		return validEvents[#validEvents]
+	end
+
 	local roll = math.random() * totalWeight
 	local cumulative = 0
-	
+
 	for _, event in ipairs(validEvents) do
-		cumulative = cumulative + (event.weight or 10)
+		cumulative += (event.weight or 10)
 		if roll <= cumulative then
 			return event
 		end
 	end
-	
+
 	return validEvents[#validEvents]
 end
 
@@ -709,41 +711,49 @@ LifeStageSystem.StageTransitionEvents = {
 		title = "Growing Up!",
 		text = "You're not a baby anymore! You're learning to walk and talk.",
 	},
+
 	toddler_to_child = {
 		emoji = "🎒",
 		title = "Off to School!",
 		text = "It's time to start elementary school! A whole new world awaits.",
 	},
+
 	child_to_tween = {
 		emoji = "📱",
 		title = "Middle School!",
 		text = "You're entering middle school. Things are about to get interesting...",
 	},
+
 	tween_to_teen = {
 		emoji = "🎓",
 		title = "High School!",
 		text = "Welcome to high school! These years will shape who you become.",
 	},
+
 	teen_to_young_adult = {
 		emoji = "🎉",
 		title = "You're an Adult!",
 		text = "You've turned 18! The world is yours. What will you do with it?",
 	},
+
 	young_adult_to_adult = {
 		emoji = "💼",
 		title = "Full Adulthood",
 		text = "Your 20s are behind you. Time to get serious about life.",
 	},
+
 	adult_to_middle_age = {
 		emoji = "🔮",
 		title = "Middle Age",
 		text = "You've hit middle age. Time to reflect on what you've accomplished.",
 	},
+
 	middle_age_to_senior = {
 		emoji = "🏖️",
 		title = "Senior Years",
 		text = "Retirement age is here. You've earned some rest.",
 	},
+
 	senior_to_elder = {
 		emoji = "🕯️",
 		title = "Elder Status",
@@ -751,20 +761,17 @@ LifeStageSystem.StageTransitionEvents = {
 	},
 }
 
--- Get transition event if applicable
 function LifeStageSystem.getTransitionEvent(oldAge, newAge)
 	local transition = LifeStageSystem.checkStageTransition(oldAge, newAge)
-	
 	if transition.transitioned then
 		local key = transition.from.id .. "_to_" .. transition.to.id
-		local transitionEvent = LifeStageSystem.StageTransitionEvents[key]
-		
-		if transitionEvent then
+		local tEvent = LifeStageSystem.StageTransitionEvents[key]
+		if tEvent then
 			return {
 				id = "stage_transition_" .. key,
-				emoji = transitionEvent.emoji,
-				title = transitionEvent.title,
-				text = transitionEvent.text,
+				emoji = tEvent.emoji,
+				title = tEvent.title,
+				text = tEvent.text,
 				category = "milestone",
 				milestone = true,
 				fromStage = transition.from,
@@ -772,7 +779,6 @@ function LifeStageSystem.getTransitionEvent(oldAge, newAge)
 			}
 		end
 	end
-	
 	return nil
 end
 
@@ -780,16 +786,15 @@ end
 -- DEATH SYSTEM
 ----------------------------------------------------------------------
 
--- Calculate death chance based on age and health
 function LifeStageSystem.calculateDeathChance(state)
 	local age = state.Age or 0
-	local health = state.Stats and state.Stats.Health or state.Health or 50
+	local stats = state.Stats or {}
+	local health = stats.Health or state.Health or 50
 	local flags = state.Flags or {}
-	
-	-- Base death chance by age
+
 	local baseChance = 0
 	if age < 50 then
-		baseChance = 0.001 -- Very low
+		baseChance = 0.001
 	elseif age < 60 then
 		baseChance = 0.005
 	elseif age < 70 then
@@ -803,64 +808,65 @@ function LifeStageSystem.calculateDeathChance(state)
 	else
 		baseChance = 0.50
 	end
-	
-	-- Modify by health
+
 	local healthMod = (100 - health) / 100
-	baseChance = baseChance * (1 + healthMod)
-	
-	-- Modify by flags
+	baseChance *= (1 + healthMod)
+
 	if flags.terminal_illness then
-		baseChance = baseChance * 5
+		baseChance *= 5
 	end
 	if flags.drug_addict then
-		baseChance = baseChance * 2
+		baseChance *= 2
 	end
 	if flags.alcoholic then
-		baseChance = baseChance * 1.5
+		baseChance *= 1.5
 	end
 	if flags.healthy_lifestyle then
-		baseChance = baseChance * 0.5
+		baseChance *= 0.5
 	end
-	
-	return math.min(baseChance, 0.99) -- Cap at 99%
+	if flags.in_prison and flags.gang_member then
+		baseChance *= 1.25 -- prison + gang = more risk
+	end
+
+	return math.min(baseChance, 0.99)
 end
 
--- Check if player dies this year
 function LifeStageSystem.checkDeath(state)
 	local chance = LifeStageSystem.calculateDeathChance(state)
 	local roll = math.random()
-	
+
 	if roll < chance then
-		-- Determine cause of death
-		local causes = {"old age", "heart attack", "stroke", "cancer", "accident"}
 		local age = state.Age or 0
-		
+		local causes = { "old age", "heart attack", "stroke", "cancer", "accident" }
+
 		if age >= 80 then
 			table.insert(causes, "natural causes")
 			table.insert(causes, "peacefully in sleep")
 		end
-		
+		if state.Flags and state.Flags.in_prison then
+			table.insert(causes, "complications in prison")
+		end
+
 		local cause = causes[math.random(#causes)]
-		
+
 		return {
 			died = true,
 			cause = cause,
 			age = age,
 		}
 	end
-	
+
 	return { died = false }
 end
 
 ----------------------------------------------------------------------
--- UTILITY FUNCTIONS
+-- UI HELPERS
 ----------------------------------------------------------------------
 
--- Get a summary of current life stage for UI
 function LifeStageSystem.getStageSummary(state)
 	local stage = LifeStageSystem.getStage(state.Age or 0)
 	local caps = LifeStageSystem.getCapabilities(state)
-	
+
 	return {
 		stage = stage,
 		capabilities = caps,
@@ -871,11 +877,10 @@ function LifeStageSystem.getStageSummary(state)
 	}
 end
 
--- Serialize for client
 function LifeStageSystem.serializeForClient(state)
 	local stage = LifeStageSystem.getStage(state.Age or 0)
 	local caps = LifeStageSystem.getCapabilities(state)
-	
+
 	return {
 		stageId = stage.id,
 		stageName = stage.name,

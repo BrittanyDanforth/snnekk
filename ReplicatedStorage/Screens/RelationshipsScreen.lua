@@ -83,6 +83,22 @@ function RelationshipsScreen:updateState(newState)
 	if newState then 
 		self.playerState = newState 
 		log("State updated - Age:", self:getAge(), "Money:", self:getMoney())
+		
+		-- Debug: Log relationships
+		local rels = self:getRelationships()
+		local relCount = 0
+		for id, rel in pairs(rels) do
+			relCount = relCount + 1
+			log("  Relationship:", id, "Type:", rel.type, "Name:", rel.name)
+		end
+		log("Total relationships in state:", relCount)
+		
+		-- IMPORTANT: Refresh the screen if visible to show new relationships
+		if self.isVisible then
+			log("Screen is visible - refreshing current tab:", self.currentTab)
+			self:updateInfoBar()
+			self:switchTab(self.currentTab)
+		end
 	end
 end
 
@@ -260,10 +276,23 @@ function RelationshipsScreen:updateInfoBar()
 	
 	local rels = self:getRelationships()
 	local count = 0
-	for _ in pairs(rels) do count = count + 1 end
-	-- Add default family count if no relationships stored
-	if count == 0 then count = 2 end -- Mother + Father by default
-	self.relationChip.text.Text = count .. " People"
+	
+	-- Count actual relationship entries (those with a type property)
+	for id, rel in pairs(rels) do
+		if type(rel) == "table" and rel.type then
+			count = count + 1
+		end
+	end
+	
+	-- Get family count (family is either stored or generated with defaults)
+	local family = self:getFamily()
+	local familyCount = #family
+	
+	-- Total people = stored relationships + family members
+	local totalPeople = count + familyCount
+	if totalPeople == 0 then totalPeople = 2 end -- Minimum (parents)
+	
+	self.relationChip.text.Text = totalPeople .. " People"
 end
 
 function RelationshipsScreen:switchTab(tabId)

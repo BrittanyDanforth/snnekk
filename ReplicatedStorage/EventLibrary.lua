@@ -1096,7 +1096,8 @@ local events = {
 		getDynamicData = function() return { school = randomSchool() } end,
 		text = "%school% is offering you a teaching position!",
 		choices = {
-			{ text = "✅ Accept the job!", effects = { Happiness = 10, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher" },
+			{ text = "✅ Accept the job!", effects = { Happiness = 10, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher",
+			  setJob = { id = "teacher", title = "Teacher", company = "%school%", salary = 45000, storyFlag = "teacher" } },
 		},
 	},
 	
@@ -1200,7 +1201,8 @@ local events = {
 		end,
 		text = "The principal is retiring. You're next in line!",
 		choices = {
-			{ text = "👔 Become Principal", effects = { Happiness = 15, Money = 20000 }, resultText = "You're now the Principal!", setFlag = "principal" },
+			{ text = "👔 Become Principal", effects = { Happiness = 15, Money = 20000 }, resultText = "You're now the Principal!", setFlag = "principal",
+			  setJob = { id = "principal", title = "School Principal", company = "Local School District", salary = 95000, storyFlag = "principal" } },
 		},
 	},
 	
@@ -1216,7 +1218,8 @@ local events = {
 		end,
 		text = "The school district wants you as Superintendent!",
 		choices = {
-			{ text = "✅ Lead the district", effects = { Happiness = 20, Money = 50000 }, resultText = "You're now shaping education for thousands of students.", setFlag = "superintendent" },
+			{ text = "✅ Lead the district", effects = { Happiness = 20, Money = 50000 }, resultText = "You're now shaping education for thousands of students.", setFlag = "superintendent",
+			  setJob = { id = "superintendent", title = "School Superintendent", company = "School District", salary = 175000, storyFlag = "superintendent" } },
 		},
 	},
 
@@ -1321,7 +1324,8 @@ local events = {
 		getDynamicData = function() return { team = randomRacingTeam() } end,
 		text = "A race seat at %team% has opened up! This is your chance!",
 		choices = {
-			{ text = "🏎️ Sign the contract!", effects = { Happiness = 25, Money = 500000 }, resultText = "You're now an F1 driver!", setFlag = "f1_driver", clearFlag = "f1_test_driver" },
+			{ text = "🏎️ Sign the contract!", effects = { Happiness = 25, Money = 500000 }, resultText = "You're now an F1 driver!", setFlag = "f1_driver", clearFlag = "f1_test_driver",
+			  setJob = { id = "f1_driver", title = "Formula 1 Driver", company = "%team%", salary = 2000000, storyFlag = "f1_driver" } },
 		},
 	},
 	
@@ -1668,7 +1672,8 @@ local events = {
 		getDynamicData = function() return { company = "SecureTech Inc" } end,
 		text = "%company% wants to hire you as a security researcher!",
 		choices = {
-			{ text = "💼 Take the job", effects = { Happiness = 10, Money = 5000 }, resultText = "You're now a professional white-hat hacker.", setFlag = "hacker_career" },
+			{ text = "💼 Take the job", effects = { Happiness = 10, Money = 5000 }, resultText = "You're now a professional white-hat hacker.", setFlag = "hacker_career",
+			  setJob = { id = "hacker", title = "Security Researcher", company = "%company%", salary = 95000, storyFlag = "hacker_career" } },
 			{ text = "🐺 Stay independent", effects = { Happiness = 3 }, resultText = "You preferred freelance work." },
 		},
 	},
@@ -5118,7 +5123,8 @@ local events = {
 		getDynamicData = function() return { school = randomSchool() } end,
 		text = "You got hired at %school%! You have your own classroom!",
 		choices = {
-			{ text = "😍 Best day ever!", effects = { Happiness = 15, Smarts = 5, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher" },
+			{ text = "😍 Best day ever!", effects = { Happiness = 15, Smarts = 5, Money = 2000 }, resultText = "You're officially a teacher!", setFlag = "teacher",
+			  setJob = { id = "teacher", title = "Teacher", company = "%school%", salary = 45000, storyFlag = "teacher" } },
 		},
 	},
 	
@@ -5288,7 +5294,8 @@ local events = {
 		getDynamicData = function() return { school = randomSchool() } end,
 		text = "The principal position at %school% just opened up!",
 		choices = {
-			{ text = "🎓 This is my moment!", effects = { Money = 15000, Happiness = 15, Smarts = 5 }, resultText = "You're the principal! Your school, your vision.", setFlag = "principal" },
+			{ text = "🎓 This is my moment!", effects = { Money = 15000, Happiness = 15, Smarts = 5 }, resultText = "You're the principal! Your school, your vision.", setFlag = "principal",
+			  setJob = { id = "principal", title = "School Principal", company = "%school%", salary = 95000, storyFlag = "principal" } },
 		},
 	},
 	
@@ -5304,7 +5311,8 @@ local events = {
 		end,
 		text = "The district is looking for a new superintendent. Your name keeps coming up.",
 		choices = {
-			{ text = "🏛️ Lead the district!", effects = { Money = 30000, Happiness = 15, Smarts = 8 }, resultText = "You're now superintendent of the entire district!", setFlag = "superintendent" },
+			{ text = "🏛️ Lead the district!", effects = { Money = 30000, Happiness = 15, Smarts = 8 }, resultText = "You're now superintendent of the entire district!", setFlag = "superintendent",
+			  setJob = { id = "superintendent", title = "School Superintendent", company = "School District", salary = 175000, storyFlag = "superintendent" } },
 			{ text = "🏫 Stay at my school", effects = { Happiness = 5 }, resultText = "You love your school community too much to leave." },
 		},
 	},
@@ -6318,7 +6326,8 @@ local events = {
 		end,
 		text = "%team% wants you to race in Formula 1! Your dream is coming true!",
 		choices = {
-			{ text = "📝 SIGN EVERYTHING!", effects = { Happiness = 50, Money = 500000 }, resultText = "YOU'RE AN F1 DRIVER! CHILDHOOD DREAM ACHIEVED!", setFlag = "f1_driver" },
+			{ text = "📝 SIGN EVERYTHING!", effects = { Happiness = 50, Money = 500000 }, resultText = "YOU'RE AN F1 DRIVER! CHILDHOOD DREAM ACHIEVED!", setFlag = "f1_driver",
+			  setJob = { id = "f1_driver", title = "Formula 1 Driver", company = "%team%", salary = 2500000, storyFlag = "f1_driver" } },
 		},
 	},
 	
@@ -7770,6 +7779,104 @@ local events = {
 }
 
 ----------------------------------------------------------------------
+-- MODULAR EVENT SYSTEM INTEGRATION
+----------------------------------------------------------------------
+
+-- Try to load modular events from LifeEvents system
+local modularEventsLoaded = 0
+local function loadModularEvents()
+	-- Try multiple ways to find LifeEvents module
+	local LifeEventsModule = nil
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	
+	-- Method 1: Direct child of ReplicatedStorage
+	local lifeEventsFolder = ReplicatedStorage:FindFirstChild("LifeEvents")
+	if lifeEventsFolder then
+		local success, result = pcall(function()
+			return require(lifeEventsFolder)
+		end)
+		if success then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEvents via ReplicatedStorage:FindFirstChild")
+		else
+			print("[EventLibrary] ⚠️ Found LifeEvents folder but failed to require:", result)
+		end
+	end
+	
+	-- Method 2: WaitForChild with longer timeout
+	if not LifeEventsModule then
+		local success, result = pcall(function()
+			local folder = script.Parent:WaitForChild("LifeEvents", 5)
+			if folder then
+				return require(folder)
+			end
+			return nil
+		end)
+		if success and result then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEvents via WaitForChild")
+		end
+	end
+	
+	-- Method 3: Try requiring directly by path
+	if not LifeEventsModule then
+		local success, result = pcall(function()
+			return require(ReplicatedStorage.LifeEvents)
+		end)
+		if success then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEvents via direct path")
+		end
+	end
+	
+	-- Try backup module if main module failed
+	if not LifeEventsModule then
+		local success, result = pcall(function()
+			return require(ReplicatedStorage:FindFirstChild("LifeEventsBackup"))
+		end)
+		if success and result then
+			LifeEventsModule = result
+			print("[EventLibrary] ✅ Found LifeEventsBackup module!")
+		end
+	end
+	
+	if LifeEventsModule then
+		local modularEvents = LifeEventsModule.getEvents and LifeEventsModule.getEvents() or {}
+		if modularEvents and #modularEvents > 0 then
+			-- Track IDs to avoid duplicates
+			local existingIds = {}
+			for _, event in ipairs(events) do
+				if event.id then
+					existingIds[event.id] = true
+				end
+			end
+			
+			-- Add modular events that don't conflict with existing ones
+			for _, event in ipairs(modularEvents) do
+				if event.id and not existingIds[event.id] then
+					table.insert(events, event)
+					modularEventsLoaded = modularEventsLoaded + 1
+				end
+			end
+			
+			print("[EventLibrary] ✅ Loaded", modularEventsLoaded, "modular events from LifeEvents system")
+			print("[EventLibrary] 📊 Total events now:", #events)
+		else
+			print("[EventLibrary] ⚠️ LifeEvents module found but returned no events")
+		end
+	else
+		print("[EventLibrary] ℹ️ LifeEvents module not found - using legacy events only")
+		print("[EventLibrary] 📂 Available children in ReplicatedStorage:")
+		for _, child in ipairs(ReplicatedStorage:GetChildren()) do
+			print("  -", child.Name, "(" .. child.ClassName .. ")")
+		end
+	end
+end
+
+-- Load modular events
+loadModularEvents()
+
+----------------------------------------------------------------------
 -- EXPORTS
 ----------------------------------------------------------------------
 
@@ -7784,6 +7891,9 @@ EventLibrary.randomRacingTeam = randomRacingTeam
 EventLibrary.randomHackerGroup = randomHackerGroup
 EventLibrary.randomArtStyle = randomArtStyle
 EventLibrary.hasNoCareer = hasNoCareer
+
+-- Expose modular system stats
+EventLibrary.modularEventsLoaded = modularEventsLoaded
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- ███████████████████████████████████████████████████████████████████████████

@@ -673,6 +673,29 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		end
 	end
 	
+	-- Handle job assignments from events (e.g., becoming a teacher, hacker, etc.)
+	if choiceDef and choiceDef.setJob then
+		local jobData = choiceDef.setJob
+		print("[LifeManager] Setting job from event:", jobData.id, "title:", jobData.title)
+		
+		-- Process dynamic text in job fields (e.g., %school% -> actual school name)
+		local processedCompany = jobData.company or "Company"
+		if processedCompany and dynamicData then
+			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
+		end
+		
+		if _G.SetPlayerJob then
+			_G.SetPlayerJob(player, {
+				id = jobData.id,
+				title = jobData.title,
+				company = processedCompany,
+				salary = jobData.salary or 30000,
+				requirement = jobData.requirement,
+				storyFlag = choiceDef.setFlag or jobData.storyFlag,
+			})
+		end
+	end
+	
 	-- Sync prison state from flags (handles recapture, release, etc.)
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
