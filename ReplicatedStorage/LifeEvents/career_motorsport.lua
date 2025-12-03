@@ -4219,4 +4219,364 @@ table.insert(events, {
 	},
 })
 
+-- ═══════════════════════════════════════════════════════════════
+-- GENERAL CAREER EVENTS - No tier/branch requirements
+-- These fire once you have the career started
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "motorsport_training_day",
+	emoji = "🏃",
+	title = "Training Day",
+	category = "motorsport",
+	tags = {"motorsport", "training"},
+	weight = 15,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 10,
+		maxAge = 25,
+		requiredCareerId = "motorsport_icon",
+	},
+	text = "A full day of training. Physical conditioning, simulator work, studying race footage. You push yourself harder.",
+	choices = {
+		{
+			id = "intense_training",
+			text = "Train intensely. Push your limits.",
+			resultText = "You train harder than ever. Your skills improve dramatically.",
+			careerXP = 15,
+			effects = { Fitness = 3, Smarts = 1 },
+		},
+		{
+			id = "balanced_training",
+			text = "Train smart. Balance is key.",
+			resultText = "You train smart. Sustainable improvement over time.",
+			careerXP = 10,
+			effects = { Fitness = 2, Happiness = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_sponsor_meeting",
+	emoji = "💼",
+	title = "Sponsor Meeting",
+	category = "motorsport",
+	tags = {"motorsport", "sponsor", "business"},
+	weight = 12,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 12,
+		maxAge = 30,
+		requiredCareerId = "motorsport_icon",
+	},
+	text = "A potential sponsor wants to meet. They're interested in your career. This could change everything.",
+	choices = {
+		{
+			id = "impress_sponsor",
+			text = "Impress them. Show your potential.",
+			resultText = "They're impressed. A sponsorship deal is on the table.",
+			flags = flagSet("motorsport_sponsor_interest"),
+			careerXP = 20,
+			careerReputation = 10,
+			effects = { Money = 5000, Fame = 2 },
+		},
+		{
+			id = "stay_authentic",
+			text = "Stay authentic. Be yourself.",
+			resultText = "You stay true to yourself. Some sponsors appreciate that.",
+			careerXP = 15,
+			effects = { Happiness = 2, Fame = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_media_interview",
+	emoji = "📺",
+	title = "Media Interview",
+	category = "motorsport",
+	tags = {"motorsport", "media", "fame"},
+	weight = 11,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 13,
+		maxAge = 35,
+		requiredCareerId = "motorsport_icon",
+	},
+	getDynamicData = function()
+		local outlets = {"Racing Weekly", "Speed Channel", "Motorsport Magazine", "The Racing Post"}
+		return { outlet = outlets[math.random(#outlets)] }
+	end,
+	text = "%outlet% wants an interview. Your story is getting attention. This is your chance to build your brand.",
+	choices = {
+		{
+			id = "charming_interview",
+			text = "Be charming. Win over the media.",
+			resultText = "You nail the interview. Your fanbase grows.",
+			flags = flagSet("motorsport_media_darling"),
+			careerXP = 10,
+			careerReputation = 15,
+			effects = { Fame = 5, Happiness = 2 },
+		},
+		{
+			id = "focused_interview",
+			text = "Stay focused. Talk about racing.",
+			resultText = "You stay focused on racing. Respect from purists.",
+			careerXP = 8,
+			careerReputation = 8,
+			effects = { Fame = 2, Smarts = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_team_meeting",
+	emoji = "👥",
+	title = "Team Meeting",
+	category = "motorsport",
+	tags = {"motorsport", "team", "strategy"},
+	weight = 13,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 11,
+		maxAge = 28,
+		requiredCareerId = "motorsport_icon",
+	},
+	text = "Team strategy meeting. Everyone discusses race plans, setups, and tactics. You're part of something bigger.",
+	choices = {
+		{
+			id = "contribute_ideas",
+			text = "Contribute ideas. Show your knowledge.",
+			resultText = "Your ideas are valued. The team respects your input.",
+			careerXP = 12,
+			careerReputation = 8,
+			effects = { Smarts = 2, Fame = 1 },
+		},
+		{
+			id = "listen_learn",
+			text = "Listen and learn. Absorb everything.",
+			resultText = "You learn a lot. Knowledge is power.",
+			careerXP = 10,
+			effects = { Smarts = 3 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_equipment_upgrade",
+	emoji = "⚙️",
+	title = "Equipment Upgrade",
+	category = "motorsport",
+	tags = {"motorsport", "equipment", "upgrade"},
+	weight = 14,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 12,
+		maxAge = 22,
+		requiredCareerId = "motorsport_icon",
+		minMoney = 1000,
+	},
+	getDynamicData = function()
+		local upgrades = {
+			{type = "helmet", price = 800, benefit = "safety"},
+			{type = "suit", price = 1200, benefit = "protection"},
+			{type = "gloves", price = 200, benefit = "grip"},
+			{type = "shoes", price = 300, benefit = "pedal feel"},
+		}
+		local upgrade = upgrades[math.random(#upgrades)]
+		return { type = upgrade.type, price = upgrade.price, benefit = upgrade.benefit }
+	end,
+	text = "Time to upgrade your %type%. A better %type% means better %benefit%. $%price% for professional-grade equipment.",
+	choices = {
+		{
+			id = "buy_upgrade",
+			text = "Buy the upgrade. Invest in yourself.",
+			resultText = "You upgrade your equipment. Every advantage counts.",
+			careerXP = 8,
+			effects = { Money = -800, Fitness = 1 },
+		},
+		{
+			id = "save_money",
+			text = "Save the money. Current gear is fine.",
+			resultText = "You save money. Current gear works for now.",
+			effects = { Smarts = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_race_weekend",
+	emoji = "🏁",
+	title = "Race Weekend",
+	category = "motorsport",
+	tags = {"motorsport", "race", "competition"},
+	weight = 16,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 10,
+		maxAge = 30,
+		requiredCareerId = "motorsport_icon",
+	},
+	getDynamicData = function()
+		local tracks = {"local track", "regional circuit", "national venue", "championship course"}
+		return { track = tracks[math.random(#tracks)] }
+	end,
+	text = "Race weekend at the %track%. Practice, qualifying, race. The full experience. You're living the dream.",
+	choices = {
+		{
+			id = "push_hard",
+			text = "Push hard. Go for the win.",
+			resultText = "You push hard. Results vary, but you learn.",
+			careerXP = 20,
+			careerReputation = 5,
+			effects = { Fame = 2, Fitness = 1 },
+		},
+		{
+			id = "race_smart",
+			text = "Race smart. Consistency matters.",
+			resultText = "You race smart. Consistent results build your reputation.",
+			careerXP = 15,
+			careerReputation = 10,
+			effects = { Smarts = 2, Fame = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_mentor_advice",
+	emoji = "👨‍🏫",
+	title = "Mentor Advice",
+	category = "motorsport",
+	tags = {"motorsport", "mentor", "learning"},
+	weight = 12,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 11,
+		maxAge = 25,
+		requiredCareerId = "motorsport_icon",
+	},
+	getDynamicData = function()
+		local mentors = {"veteran driver", "racing coach", "former champion", "experienced mechanic"}
+		return { mentor = mentors[math.random(#mentors)] }
+	end,
+	text = "A %mentor% takes you under their wing. They share wisdom, techniques, and life lessons. Priceless knowledge.",
+	choices = {
+		{
+			id = "absorb_wisdom",
+			text = "Absorb everything. Learn from the best.",
+			resultText = "You learn invaluable lessons. Your skills improve dramatically.",
+			flags = flagSet("motorsport_mentored"),
+			careerXP = 25,
+			careerReputation = 12,
+			effects = { Smarts = 4, Fame = 2 },
+		},
+		{
+			id = "respectful_learning",
+			text = "Show respect. Build a relationship.",
+			resultText = "You build a strong relationship. They become a true mentor.",
+			careerXP = 20,
+			effects = { Happiness = 3, Smarts = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_physical_training",
+	emoji = "💪",
+	title = "Physical Training",
+	category = "motorsport",
+	tags = {"motorsport", "fitness", "training"},
+	weight = 14,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 13,
+		maxAge = 30,
+		requiredCareerId = "motorsport_icon",
+	},
+	text = "Intense physical training. Cardio, strength, endurance. Racing is physically demanding. You push your body.",
+	choices = {
+		{
+			id = "train_hard",
+			text = "Train hard. Build peak fitness.",
+			resultText = "You train hard. Your physical condition improves significantly.",
+			careerXP = 12,
+			effects = { Fitness = 5, Happiness = 1 },
+		},
+		{
+			id = "balanced_fitness",
+			text = "Train smart. Balance is key.",
+			resultText = "You train smart. Sustainable fitness improvement.",
+			careerXP = 10,
+			effects = { Fitness = 3, Happiness = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_race_analysis",
+	emoji = "📊",
+	title = "Race Analysis",
+	category = "motorsport",
+	tags = {"motorsport", "analysis", "strategy"},
+	weight = 13,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 12,
+		maxAge = 28,
+		requiredCareerId = "motorsport_icon",
+	},
+	text = "You analyze race footage, telemetry data, and performance metrics. Understanding your mistakes makes you better.",
+	choices = {
+		{
+			id = "deep_analysis",
+			text = "Analyze deeply. Find every mistake.",
+			resultText = "You find every mistake. Your understanding improves dramatically.",
+			flags = flagSet("motorsport_data_analyst"),
+			careerXP = 15,
+			effects = { Smarts = 4, Fame = 1 },
+		},
+		{
+			id = "focus_improvements",
+			text = "Focus on key improvements.",
+			resultText = "You focus on key areas. Efficient learning.",
+			careerXP = 12,
+			effects = { Smarts = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_fan_interaction",
+	emoji = "👋",
+	title = "Fan Interaction",
+	category = "motorsport",
+	tags = {"motorsport", "fans", "fame"},
+	weight = 11,
+	cooldownYears = 1,
+	conditions = {
+		minAge = 14,
+		maxAge = 35,
+		requiredCareerId = "motorsport_icon",
+	},
+	text = "Fans recognize you. They want autographs, photos, stories. Your fanbase is growing. This is what you dreamed of.",
+	choices = {
+		{
+			id = "embrace_fans",
+			text = "Embrace the fans. Be accessible.",
+			resultText = "You connect with fans. Your popularity soars.",
+			flags = flagSet("motorsport_fan_favorite"),
+			careerXP = 8,
+			careerReputation = 12,
+			effects = { Fame = 4, Happiness = 3 },
+		},
+		{
+			id = "stay_focused",
+			text = "Stay focused. Racing comes first.",
+			resultText = "You stay focused. Respect from purists.",
+			careerXP = 10,
+			effects = { Fame = 1, Smarts = 1 },
+		},
+	},
+})
+
 return { events = events }
