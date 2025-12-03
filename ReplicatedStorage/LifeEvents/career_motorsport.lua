@@ -126,7 +126,16 @@ table.insert(events, {
 	conditions = {
 		minAge = 5,
 		maxAge = 8,
-		requiredAnyFlags = {"motorsport_speed_imprint", "motorsport_escape_artist"},
+		-- Can fire without flags, but boosted if you have early interest
+		custom = function(state)
+			-- Prefer players with early motorsport interest, but allow anyone
+			local flags = state.Flags or {}
+			if flags.motorsport_speed_imprint or flags.motorsport_escape_artist or flags.motorsport_neighborhood_champ or flags.motorsport_bike_modder then
+				return true
+			end
+			-- Still allow it, just lower chance
+			return math.random() < 0.7
+		end,
 	},
 	getDynamicData = function()
 		local donors = {"leaf blower", "old pressure washer", "rusted lawn mower"}
@@ -163,7 +172,15 @@ table.insert(events, {
 	conditions = {
 		minAge = 8,
 		maxAge = 12,
-		requiredAnyFlags = {"motorsport_kart_builder", "motorsport_hustler"},
+		-- More flexible - allow if you have any motorsport interest
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_kart_builder or flags.motorsport_hustler or flags.motorsport_neighborhood_champ or flags.motorsport_bike_modder or flags.motorsport_first_kart then
+				return true
+			end
+			-- Still allow, just lower chance
+			return math.random() < 0.6
+		end,
 	},
 	getDynamicData = function()
 		local rivals = {"Maya", "Tyler", "Jax", "Neve", "Alonzo"}
@@ -280,7 +297,15 @@ table.insert(events, {
 	conditions = {
 		minAge = 15,
 		maxAge = 18,
-		requiredAnyFlags = {"motorsport_local_champion", "motorsport_sim_professor", "motorsport_stream_outlaw"},
+		-- More flexible - allow if you have any motorsport interest
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_local_champion or flags.motorsport_sim_professor or flags.motorsport_stream_outlaw or flags.motorsport_first_kart or flags.motorsport_regional_podium or flags.motorsport_neighborhood_champ then
+				return true
+			end
+			-- Still allow, just lower chance
+			return math.random() < 0.4
+		end,
 		blockedFlags = {"motorsport_academy_signed"},
 	},
 	getDynamicData = function()
@@ -797,7 +822,7 @@ table.insert(events, {
 	conditions = {
 		minAge = 4,
 		maxAge = 6,
-		requiredAnyFlags = {"motorsport_speed_imprint", "motorsport_escape_artist"},
+		-- No flag requirement - entry point for anyone
 	},
 	getDynamicData = function()
 		local bikes = {"red BMX", "blue mountain bike", "yellow racer", "green dirt bike"}
@@ -874,7 +899,15 @@ table.insert(events, {
 	conditions = {
 		minAge = 7,
 		maxAge = 10,
-		requiredAnyFlags = {"motorsport_neighborhood_champ", "motorsport_bike_modder", "motorsport_bully_beater"},
+		-- Major entry point - boosted if you have interest, but anyone can get it
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_neighborhood_champ or flags.motorsport_bike_modder or flags.motorsport_bully_beater or flags.motorsport_pedal_champ or flags.motorsport_derby_champion then
+				return true
+			end
+			-- Still allow, just lower chance
+			return math.random() < 0.5
+		end,
 	},
 	text = "Your parents take you to a go-kart track for your birthday. You're the fastest kid there.",
 	choices = {
@@ -1967,7 +2000,7 @@ table.insert(events, {
 	conditions = {
 		minAge = 3,
 		maxAge = 5,
-		requiredAnyFlags = {"motorsport_speed_imprint"},
+		-- Entry point - no flag requirement
 	},
 	text = "You race your pedal car against other toddlers. You're obsessed with being fastest.",
 	choices = {
@@ -2000,7 +2033,14 @@ table.insert(events, {
 	conditions = {
 		minAge = 5,
 		maxAge = 8,
-		requiredAnyFlags = {"motorsport_pedal_champ", "motorsport_early_modder"},
+		-- More flexible entry
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_pedal_champ or flags.motorsport_early_modder or flags.motorsport_speed_imprint or flags.motorsport_neighborhood_champ then
+				return true
+			end
+			return math.random() < 0.7
+		end,
 	},
 	text = "Your parents take you to a real race track. You watch from the stands, mesmerized by the speed.",
 	choices = {
@@ -2031,7 +2071,7 @@ table.insert(events, {
 	conditions = {
 		minAge = 6,
 		maxAge = 9,
-		requiredAnyFlags = {"motorsport_neighborhood_champ", "motorsport_bike_modder"},
+		-- Entry point for social racing
 	},
 	text = "You form a scooter gang with neighborhood kids. You race every day after school.",
 	choices = {
@@ -2064,7 +2104,7 @@ table.insert(events, {
 	conditions = {
 		minAge = 7,
 		maxAge = 10,
-		requiredAnyFlags = {"motorsport_parents_convinced", "motorsport_early_student"},
+		-- Entry point - anyone can enter soapbox derby
 	},
 	text = "Local soapbox derby. You build your car from scratch. This is your first real competition.",
 	choices = {
@@ -2101,7 +2141,15 @@ table.insert(events, {
 	conditions = {
 		minAge = 6,
 		maxAge = 10,
-		requiredAnyFlags = {"motorsport_first_kart", "motorsport_derby_champion"},
+		-- Entry point - can race even without owning a kart (rental)
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_first_kart or flags.motorsport_derby_champion or flags.motorsport_neighborhood_champ or flags.motorsport_pedal_champ then
+				return true
+			end
+			-- Still allow, just lower chance (rental kart)
+			return math.random() < 0.5
+		end,
 	},
 	text = "Your first official kart race. The grid is full. Your heart pounds. The green flag drops.",
 	choices = {
@@ -2731,7 +2779,7 @@ table.insert(events, {
 	conditions = {
 		minAge = 4,
 		maxAge = 7,
-		requiredAnyFlags = {"motorsport_speed_imprint", "motorsport_engine_lullaby"},
+		-- Entry point - anyone can collect toy cars
 	},
 	text = "You collect toy race cars. Every birthday, every holiday, you ask for more. Your room becomes a museum.",
 	choices = {
@@ -2763,7 +2811,15 @@ table.insert(events, {
 	conditions = {
 		minAge = 6,
 		maxAge = 10,
-		requiredAnyFlags = {"motorsport_car_expert", "motorsport_toy_racer"},
+		-- Entry point - kids play video games
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_car_expert or flags.motorsport_toy_racer or flags.motorsport_pedal_champ or flags.motorsport_neighborhood_champ then
+				return true
+			end
+			-- Still allow, just lower chance
+			return math.random() < 0.6
+		end,
 	},
 	text = "You discover racing video games. You play for hours. Every track, every car, you master them all.",
 	choices = {
@@ -2795,7 +2851,14 @@ table.insert(events, {
 	conditions = {
 		minAge = 7,
 		maxAge = 11,
-		requiredAnyFlags = {"motorsport_game_master", "motorsport_track_master"},
+		-- Entry point - kids watch movies
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_game_master or flags.motorsport_track_master or flags.motorsport_car_expert or flags.motorsport_toy_racer then
+				return true
+			end
+			return math.random() < 0.5
+		end,
 	},
 	text = "You watch every racing movie. Fast & Furious, Days of Thunder, Rush. You memorize every line.",
 	choices = {
@@ -2827,7 +2890,14 @@ table.insert(events, {
 	conditions = {
 		minAge = 8,
 		maxAge = 12,
-		requiredAnyFlags = {"motorsport_movie_inspired", "motorsport_technique_student"},
+		-- Entry point - kids read books
+		custom = function(state)
+			local flags = state.Flags or {}
+			if flags.motorsport_movie_inspired or flags.motorsport_technique_student or flags.motorsport_car_expert or flags.motorsport_toy_racer then
+				return true
+			end
+			return math.random() < 0.4
+		end,
 	},
 	text = "You read every racing book you can find. Biographies, technical manuals, history. You devour it all.",
 	choices = {
