@@ -165,8 +165,34 @@ end
 
 -- List of event modules to load
 local EVENT_MODULES = {
-	-- Phase 1 rebuild: focus on a single AAA career rail.
-	"career_motorsport",
+	-- Age-based events
+	"child_0_5",
+	"child_6_12",
+	"teen_13_17",
+	"young_adult_18_35",
+	"middle_aged_36_55",
+	"senior_55_plus",
+	
+	-- Category events
+	"health",
+	"relationships",
+	"wealth",
+	"fame",
+	"disasters",
+	"random_encounters",
+	"prison",
+	
+	-- Career events
+	"career_tech",
+	"career_medical",
+    	"career_legal",
+	"career_business",
+	"career_criminal",
+	"career_arts",
+	"career_sports",
+	"career_military",
+	"career_political",
+	"career_education",
 }
 
 -- Load all event modules
