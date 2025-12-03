@@ -163,18 +163,58 @@ end
 -- EVENT LOADING
 -- ═══════════════════════════════════════════════════════════════
 
--- List of event modules to load
-local EVENT_MODULES = {
-	"career_motorsport",
+-- If you want to explicitly control the loading order, list modules here.
+-- Otherwise the system will auto-discover every ModuleScript in the folder
+-- (excluding core systems) so adding new event packs is plug-and-play.
+local MANUAL_EVENT_MODULES = {}
+
+local CORE_EVENT_MODULES = {
+	init = true,
+	CareerLibrary = true,
+	CareerSystem = true,
+	EventEngine = true,
+	TraitSystem = true,
 }
+
+local function shouldSkipModule(name)
+	if CORE_EVENT_MODULES[name] then
+		return true
+	end
+	if string.sub(name, 1, 1) == "_" then
+		return true
+	end
+	return false
+end
+
+local function getEventModuleNames(container)
+	if MANUAL_EVENT_MODULES and #MANUAL_EVENT_MODULES > 0 then
+		return MANUAL_EVENT_MODULES
+	end
+
+	local modules = {}
+	for _, child in ipairs(container:GetChildren()) do
+		if child:IsA("ModuleScript") and not shouldSkipModule(child.Name) then
+			table.insert(modules, child.Name)
+		end
+	end
+
+	table.sort(modules)
+	return modules
+end
 
 -- Load all event modules
 local function loadEventModules()
 	local loaded = 0
 	local failed = 0
 	local container = script.Parent -- LifeEvents folder, NOT script itself
+	local moduleNames = getEventModuleNames(container)
 
-	for _, moduleName in ipairs(EVENT_MODULES) do
+	if #moduleNames == 0 then
+		warn("[LifeEvents] ⚠️ No event modules discovered. Add ModuleScripts to load events.")
+		return 0
+	end
+
+	for _, moduleName in ipairs(moduleNames) do
 		local success, result = pcall(function()
 			local moduleScript = container:FindFirstChild(moduleName)
 			if moduleScript and moduleScript:IsA("ModuleScript") then
@@ -221,7 +261,7 @@ local function loadEventModules()
 	end
 
 	print("[LifeEvents] ═══════════════════════════════════════")
-	print("[LifeEvents] ✅ Loaded", loaded, "events from", #EVENT_MODULES - failed, "modules")
+	print("[LifeEvents] ✅ Loaded", loaded, "events from", #moduleNames - failed, "modules")
 	print("[LifeEvents] ═══════════════════════════════════════")
 	return loaded
 end
@@ -353,6 +393,55 @@ end
 -- HELPER FUNCTIONS FOR EVENTS
 -- ═══════════════════════════════════════════════════════════════
 
+local function callStateMethod(state, methodName)
+	if type(state) ~= "table" then
+		return nil
+	end
+	local method = state[methodName]
+	if type(method) ~= "function" then
+		return nil
+	end
+	local ok, result = pcall(method, state)
+	if ok then
+		return result
+	end
+	return nil
+end
+
+local function getRelationshipList(state)
+	if not state then
+		return {}
+	end
+
+	local methodRelationships = callStateMethod(state, "GetAllRelationships")
+	if type(methodRelationships) == "table" and #methodRelationships > 0 then
+		local flattened = {}
+		for _, entry in pairs(methodRelationships) do
+			if type(entry) == "table" then
+				if entry.person then
+					table.insert(flattened, entry.person)
+				else
+					table.insert(flattened, entry)
+				end
+			end
+		end
+		if #flattened > 0 then
+			return flattened
+		end
+	end
+
+	local relationships = state.Relationships
+	if type(relationships) ~= "table" then
+		return {}
+	end
+
+	local flattened = {}
+	for _, rel in pairs(relationships) do
+		table.insert(flattened, rel)
+	end
+	return flattened
+end
+
 -- Random amount generator
 function LifeEvents.randomAmount(min, max)
 	return math.random(min, max)
@@ -365,63 +454,134 @@ end
 
 -- Check if player has a friend
 function LifeEvents.hasFriend(state)
-	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "friend" then return true end
+	local hasFriends = callStateMethod(state, "HasActualFriends")
+	if hasFriends ~= nil then
+		return hasFriends
+	end
+	for _, rel in ipairs(getRelationshipList(state)) do
+		if rel and rel.type == "friend" and rel.alive ~= false then
+			return true
+		end
 	end
 	return false
 end
 
 -- Check if player has a partner
 function LifeEvents.hasPartner(state)
-	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "partner" or rel.type == "spouse" then return true end
+	local hasPartner = callStateMethod(state, "HasRomanticPartner")
+	if hasPartner ~= nil then
+		return hasPartner
+	end
+	for _, rel in ipairs(getRelationshipList(state)) do
+		if rel and (rel.type == "partner" or rel.type == "spouse") and rel.alive ~= false then
+			return true
+		end
 	end
 	return false
 end
 
 -- Check if player is married
 function LifeEvents.isMarried(state)
-	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "spouse" then return true end
+	local married = callStateMethod(state, "IsMarried")
+	if married ~= nil then
+		return married
+	end
+	for _, rel in ipairs(getRelationshipList(state)) do
+		if rel and rel.type == "spouse" and rel.alive ~= false then
+			return true
+		end
 	end
 	return false
 end
 
 -- Check if player has children
 function LifeEvents.hasChildren(state)
-	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "child" then return true end
+	local hasChildren = callStateMethod(state, "HasChildren")
+	if hasChildren ~= nil then
+		return hasChildren
+	end
+	for _, rel in ipairs(getRelationshipList(state)) do
+		if rel and rel.type == "child" and rel.alive ~= false then
+			return true
+		end
 	end
 	return false
 end
 
 -- Check if player has a job
 function LifeEvents.hasJob(state)
+	local hasJobMethod = callStateMethod(state, "HasJob")
+	if hasJobMethod ~= nil then
+		return hasJobMethod
+	end
+	local employed = callStateMethod(state, "IsCurrentlyEmployed")
+	if employed then
+		return true
+	end
+	if state.Career and (state.Career.jobTitle or state.Career.employer) then
+		return true
+	end
+	if state.Job or state.JobTitle then
+		return true
+	end
 	return CareerSystem.getPrimaryCareer(state) ~= nil
 end
 
 -- Check if player is in jail
 function LifeEvents.isInJail(state)
+	if state.InJail or state.IsInJail == true then
+		return true
+	end
 	local flags = state.Flags or {}
 	return flags.in_prison == true or flags.in_jail == true
 end
 
 -- Check if player is enrolled in education
 function LifeEvents.isEnrolled(state)
-	local edu = state.Education or "none"
-	return edu ~= "none" and edu ~= "high_school"
+	local flags = state.Flags or {}
+	if flags.in_school or flags.enrolled or flags.college_student then
+		return true
+	end
+
+	local methodResult = callStateMethod(state, "IsInSchool")
+	if methodResult ~= nil then
+		return methodResult
+	end
+
+	local edu = state.Education
+	if type(edu) == "table" then
+		local status = edu.status or edu.Status
+		if status then
+			local normalized = string.lower(tostring(status))
+			if normalized == "enrolled" or normalized == "active" then
+				return true
+			end
+		end
+		if edu.level and edu.level ~= "none" then
+			if not edu.graduated then
+				return true
+			end
+		end
+	elseif type(edu) == "string" then
+		local normalized = string.lower(edu)
+		if normalized ~= "none" and normalized ~= "completed" then
+			return true
+		end
+	end
+
+	local age = state.Age or 0
+	if age >= 5 and age <= 18 and not flags.dropped_out and not flags.expelled then
+		return true
+	end
+
+	return false
 end
 
 -- Get a random friend name
 function LifeEvents.getFriendName(state)
-	local relationships = state.Relationships or {}
 	local friends = {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "friend" and rel.name then
+	for _, rel in ipairs(getRelationshipList(state)) do
+		if rel and rel.type == "friend" and rel.name then
 			table.insert(friends, rel.name)
 		end
 	end
@@ -435,9 +595,8 @@ end
 
 -- Get partner name
 function LifeEvents.getPartnerName(state)
-	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "partner" or rel.type == "spouse" then
+	for _, rel in ipairs(getRelationshipList(state)) do
+		if rel and (rel.type == "partner" or rel.type == "spouse") then
 			return rel.name
 		end
 	end
