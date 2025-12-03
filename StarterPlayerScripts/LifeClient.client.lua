@@ -1554,13 +1554,24 @@ end
 ------------------------------------------------------------------
 
 showEvent = function(payload)
-	awaitingEvent = true
-	currentEventId = payload.id
-	clearChoices()
+	print("[LifeClient] 📜 showEvent called - ID:", payload and payload.id or "NIL PAYLOAD")
 	
-	-- Get category-based colors
-	local colors = getEventColors(payload)
-	local isDisaster = isDisasterEvent(payload)
+	-- Validate payload first
+	if not payload then
+		warn("[LifeClient] ❌ showEvent called with nil payload!")
+		awaitingEvent = false
+		return
+	end
+	
+	-- Wrap in pcall to catch errors and ensure awaitingEvent gets reset
+	local success, errorMsg = pcall(function()
+		awaitingEvent = true
+		currentEventId = payload.id
+		clearChoices()
+		
+		-- Get category-based colors
+		local colors = getEventColors(payload)
+		local isDisaster = isDisasterEvent(payload)
 	
 	-- Apply themed shell color
 	eventShell.BackgroundColor3 = colors.shell
@@ -1665,9 +1676,21 @@ showEvent = function(payload)
 	})
 	tween(eventShell, TweenInfo.new(0.25), { BackgroundTransparency = 0 })
 	tween(eventCard, TweenInfo.new(0.25), { BackgroundTransparency = 0 })
+	
+	print("[LifeClient] ✅ Event displayed successfully - awaitingEvent:", awaitingEvent)
+	end) -- End of pcall
+	
+	-- Handle errors in showEvent
+	if not success then
+		warn("[LifeClient] ❌ ERROR in showEvent:", errorMsg)
+		awaitingEvent = false
+		currentEventId = nil
+		eventOverlay.Visible = false
+	end
 end
 
 hideEvent = function()
+	print("[LifeClient] 🔚 hideEvent called - resetting awaitingEvent")
 	awaitingEvent  = false
 	currentEventId = nil
 
@@ -1689,6 +1712,8 @@ hideEvent = function()
 		eventNameLbl.Text = ""
 		relationLbl.Text = ""
 		eventHeader.Visible = false
+		
+		print("[LifeClient] ✅ Event overlay hidden, awaitingEvent:", awaitingEvent)
 	end)
 end
 
@@ -2241,6 +2266,14 @@ if ShowResult then
 end
 
 PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
+	print("[LifeClient] 📨 PresentEvent received - ID:", eventData and eventData.id or "NIL", "Title:", eventData and eventData.title or "NIL")
+	
+	-- Validate event data
+	if not eventData then
+		warn("[LifeClient] ❌ PresentEvent received with nil eventData!")
+		return
+	end
+	
 	hideTutorial()
 	if ageFeedText then
 		addFeedEntry(ageFeedText)
@@ -2331,7 +2364,27 @@ local function pulseAge()
 end
 
 ageButton.MouseButton1Click:Connect(function()
-	if awaitingEvent or not currentState.Name then return end
+	print("[LifeClient] 🔘 Age button clicked - awaitingEvent:", awaitingEvent, "hasName:", currentState.Name ~= nil)
+	
+	-- Safety check: if awaitingEvent is true but the event overlay is NOT visible,
+	-- something went wrong - reset the flag
+	if awaitingEvent and not eventOverlay.Visible then
+		warn("[LifeClient] ⚠️ awaitingEvent was true but overlay hidden - resetting!")
+		awaitingEvent = false
+		currentEventId = nil
+	end
+	
+	if awaitingEvent then
+		print("[LifeClient] ⏳ Age blocked - waiting for event response")
+		return
+	end
+	
+	if not currentState.Name then
+		print("[LifeClient] ⏳ Age blocked - no name set yet")
+		return
+	end
+	
+	print("[LifeClient] ✅ Sending RequestAgeUp to server")
 	hideTutorial()
 	pulseAge()
 	RequestAgeUp:FireServer()
@@ -2400,6 +2453,39 @@ task.delay(0.5, function()
 	ageBtnContainer.Visible = true
 	if not currentState.Name then
 		showIntro()
+	end
+end)
+
+----------------------------------------------------------------
+-- STUCK STATE WATCHDOG
+-- Periodically check if awaitingEvent is stuck and auto-recover
+----------------------------------------------------------------
+
+local lastAwaitingEventTime = nil
+local STUCK_THRESHOLD = 30 -- seconds before considering it stuck
+
+task.spawn(function()
+	while true do
+		task.wait(5) -- Check every 5 seconds
+		
+		if awaitingEvent then
+			if not lastAwaitingEventTime then
+				lastAwaitingEventTime = tick()
+			elseif tick() - lastAwaitingEventTime > STUCK_THRESHOLD then
+				-- Check if the event overlay is actually visible
+				if not eventOverlay.Visible then
+					warn("[LifeClient] 🔧 WATCHDOG: awaitingEvent stuck for", math.floor(tick() - lastAwaitingEventTime), "seconds with hidden overlay - AUTO-RESETTING!")
+					awaitingEvent = false
+					currentEventId = nil
+					lastAwaitingEventTime = nil
+				else
+					-- Overlay is visible but no interaction - user might be AFK, don't reset
+					print("[LifeClient] ⏳ WATCHDOG: awaitingEvent active for", math.floor(tick() - lastAwaitingEventTime), "seconds (overlay visible)")
+				end
+			end
+		else
+			lastAwaitingEventTime = nil
+		end
 	end
 end)
 
