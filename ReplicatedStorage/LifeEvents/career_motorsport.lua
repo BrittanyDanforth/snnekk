@@ -4555,7 +4555,7 @@ table.insert(events, {
 	cooldownYears = 1,
 	conditions = {
 		minAge = 14,
-		maxAge = 35,
+		maxAge = 60,
 		requiredCareerId = "motorsport_icon",
 	},
 	text = "Fans recognize you. They want autographs, photos, stories. Your fanbase is growing. This is what you dreamed of.",
@@ -4575,6 +4575,425 @@ table.insert(events, {
 			resultText = "You stay focused. Respect from purists.",
 			careerXP = 10,
 			effects = { Fame = 1, Smarts = 1 },
+		},
+	},
+})
+
+-- ═══════════════════════════════════════════════════════════════
+-- MID-CAREER ERA (AGES 30-50) - ESTABLISHED PROFESSIONAL
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "motorsport_championship_contender",
+	emoji = "🏆",
+	title = "Championship Contender",
+	category = "motorsport",
+	tags = {"motorsport", "championship", "mid_career"},
+	weight = 18,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 30,
+		maxAge = 50,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 3,
+	},
+	text = "You're in championship contention. Every race matters. The pressure is immense, but this is what you've worked for.",
+	choices = {
+		{
+			id = "push_hard",
+			text = "Push harder. Take calculated risks.",
+			resultText = "You push the limits. Championship dreams fuel you.",
+			flags = flagSet("motorsport_championship_contender"),
+			careerXP = 20,
+			careerReputation = 15,
+			effects = { Fame = 5, Happiness = 4, Health = -2 },
+		},
+		{
+			id = "stay_consistent",
+			text = "Stay consistent. Points over podiums.",
+			resultText = "You play the long game. Steady points accumulation.",
+			careerXP = 15,
+			careerReputation = 10,
+			effects = { Fame = 2, Happiness = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_team_leadership",
+	emoji = "👔",
+	title = "Team Leadership Role",
+	category = "motorsport",
+	tags = {"motorsport", "leadership", "mid_career"},
+	weight = 16,
+	cooldownYears = 3,
+	conditions = {
+		minAge = 32,
+		maxAge = 55,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 4,
+	},
+	text = "The team looks to you for leadership. You're mentoring younger drivers, making strategy calls, and representing the team.",
+	choices = {
+		{
+			id = "embrace_leadership",
+			text = "Embrace the leadership role.",
+			resultText = "You become a team leader. Your influence grows.",
+			flags = flagSet("motorsport_team_leader"),
+			careerXP = 18,
+			careerReputation = 20,
+			effects = { Fame = 3, Happiness = 3 },
+		},
+		{
+			id = "focus_racing",
+			text = "Focus on your own racing.",
+			resultText = "You stay focused on driving. Personal performance matters most.",
+			careerXP = 12,
+			effects = { Fame = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_sponsor_negotiation",
+	emoji = "💼",
+	title = "Major Sponsor Negotiation",
+	category = "motorsport",
+	tags = {"motorsport", "sponsor", "business", "mid_career"},
+	weight = 14,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 30,
+		maxAge = 50,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 3,
+	},
+	text = "A major sponsor wants to sign you. The deal is lucrative but comes with obligations. How do you negotiate?",
+	choices = {
+		{
+			id = "maximize_deal",
+			text = "Negotiate for maximum value.",
+			resultText = "You secure a lucrative deal. Financial security achieved.",
+			flags = flagSet("motorsport_major_sponsor"),
+			careerXP = 10,
+			careerReputation = 8,
+			effects = { Money = 50000, Fame = 3 },
+		},
+		{
+			id = "maintain_freedom",
+			text = "Prioritize racing freedom over money.",
+			resultText = "You keep your independence. Racing on your terms.",
+			careerXP = 12,
+			careerReputation = 12,
+			effects = { Money = 20000, Happiness = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_legacy_building",
+	emoji = "📚",
+	title = "Building Your Legacy",
+	category = "motorsport",
+	tags = {"motorsport", "legacy", "mid_career"},
+	weight = 15,
+	cooldownYears = 3,
+	conditions = {
+		minAge = 35,
+		maxAge = 55,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 4,
+	},
+	text = "You're thinking about your legacy. How will you be remembered? What mark will you leave on motorsport?",
+	choices = {
+		{
+			id = "start_academy",
+			text = "Start a racing academy. Train the next generation.",
+			resultText = "You start a racing academy. Your knowledge lives on.",
+			flags = flagSet("motorsport_academy_founder"),
+			careerXP = 15,
+			careerReputation = 25,
+			effects = { Fame = 4, Happiness = 5 },
+		},
+		{
+			id = "write_memoir",
+			text = "Write a memoir. Share your story.",
+			resultText = "You write your memoir. Your story inspires others.",
+			flags = flagSet("motorsport_author"),
+			careerXP = 10,
+			careerReputation = 15,
+			effects = { Money = 30000, Fame = 3 },
+		},
+		{
+			id = "focus_racing",
+			text = "Focus on racing. Let results speak.",
+			resultText = "You let your results speak for themselves.",
+			careerXP = 12,
+			effects = { Fame = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_technical_innovation",
+	emoji = "🔧",
+	title = "Technical Innovation",
+	category = "motorsport",
+	tags = {"motorsport", "innovation", "technology", "mid_career"},
+	weight = 13,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 30,
+		maxAge = 50,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 3,
+	},
+	text = "You work with engineers on a technical innovation. Your racing experience helps develop new technology.",
+	choices = {
+		{
+			id = "deep_collaboration",
+			text = "Deeply collaborate. Share all insights.",
+			resultText = "Your collaboration leads to breakthrough innovation.",
+			flags = flagSet("motorsport_innovator"),
+			careerXP = 18,
+			careerReputation = 20,
+			effects = { Smarts = 4, Fame = 3 },
+		},
+		{
+			id = "provide_feedback",
+			text = "Provide feedback. Let engineers lead.",
+			resultText = "You provide valuable feedback. Innovation progresses.",
+			careerXP = 12,
+			careerReputation = 10,
+			effects = { Smarts = 2 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_international_expansion",
+	emoji = "🌍",
+	title = "International Expansion",
+	category = "motorsport",
+	tags = {"motorsport", "international", "travel", "mid_career"},
+	weight = 12,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 30,
+		maxAge = 50,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 3,
+	},
+	text = "You're racing internationally now. Different tracks, different cultures, different challenges. The world is your stage.",
+	choices = {
+		{
+			id = "embrace_global",
+			text = "Embrace the global stage.",
+			resultText = "You become a global racing icon.",
+			flags = flagSet("motorsport_global_icon"),
+			careerXP = 15,
+			careerReputation = 18,
+			effects = { Fame = 5, Happiness = 3 },
+		},
+		{
+			id = "stay_local",
+			text = "Focus on your home circuit.",
+			resultText = "You maintain strong local presence.",
+			careerXP = 10,
+			careerReputation = 12,
+			effects = { Fame = 2, Happiness = 2 },
+		},
+	},
+})
+
+-- ═══════════════════════════════════════════════════════════════
+-- LATE CAREER ERA (AGES 50+) - VETERAN & MENTOR
+-- ═══════════════════════════════════════════════════════════════
+
+table.insert(events, {
+	id = "motorsport_veteran_wisdom",
+	emoji = "🧙",
+	title = "Veteran Wisdom",
+	category = "motorsport",
+	tags = {"motorsport", "veteran", "late_career"},
+	weight = 16,
+	cooldownYears = 2,
+	conditions = {
+		minAge = 50,
+		maxAge = 70,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 5,
+	},
+	text = "You're a veteran now. Decades of experience. Young drivers seek your wisdom. You've seen it all.",
+	choices = {
+		{
+			id = "mentor_young",
+			text = "Mentor young drivers. Share wisdom.",
+			resultText = "You become a respected mentor. Your legacy grows.",
+			flags = flagSet("motorsport_mentor"),
+			careerXP = 12,
+			careerReputation = 25,
+			effects = { Fame = 3, Happiness = 4 },
+		},
+		{
+			id = "compete_still",
+			text = "Keep competing. Age is just a number.",
+			resultText = "You prove age doesn't slow you down.",
+			careerXP = 15,
+			careerReputation = 15,
+			effects = { Fame = 2, Health = -1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_hall_of_fame",
+	emoji = "🏛️",
+	title = "Hall of Fame Consideration",
+	category = "motorsport",
+	tags = {"motorsport", "hall_of_fame", "achievement", "late_career"},
+	weight = 20,
+	oneTime = true,
+	conditions = {
+		minAge = 45,
+		maxAge = 80,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 6,
+		requiredAnyFlags = {"motorsport_championship_contender", "motorsport_team_leader", "motorsport_global_icon"},
+	},
+	text = "You're being considered for the Motorsport Hall of Fame. This is the ultimate recognition of your career.",
+	choices = {
+		{
+			id = "humbled_honor",
+			text = "Feel humbled by the honor.",
+			resultText = "You're inducted into the Hall of Fame. Your legacy is secure.",
+			flags = flagSet("motorsport_hall_of_fame"),
+			careerXP = 25,
+			careerReputation = 50,
+			effects = { Fame = 10, Happiness = 8 },
+		},
+		{
+			id = "deserved_recognition",
+			text = "Feel you've earned this recognition.",
+			resultText = "You're inducted. You've earned every bit of this honor.",
+			flags = flagSet("motorsport_hall_of_fame"),
+			careerXP = 25,
+			careerReputation = 50,
+			effects = { Fame = 10, Happiness = 6 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_retirement_decision",
+	emoji = "🏁",
+	title = "Retirement Decision",
+	category = "motorsport",
+	tags = {"motorsport", "retirement", "late_career"},
+	weight = 18,
+	oneTime = true,
+	conditions = {
+		minAge = 55,
+		maxAge = 75,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 5,
+	},
+	text = "The question of retirement looms. Your body isn't what it used to be, but your passion still burns. What do you do?",
+	choices = {
+		{
+			id = "retire_gracefully",
+			text = "Retire gracefully. Go out on top.",
+			resultText = "You retire with dignity. Your career ends on a high note.",
+			quitCareer = true,
+			flags = flagSet("motorsport_retired_legend"),
+			effects = { Happiness = 5, Health = 2 },
+		},
+		{
+			id = "one_more_season",
+			text = "One more season. Give it everything.",
+			resultText = "You decide on one final season. Make it count.",
+			careerXP = 20,
+			careerReputation = 15,
+			effects = { Fame = 3, Health = -2 },
+		},
+		{
+			id = "never_retire",
+			text = "Never retire. Racing is life.",
+			resultText = "You keep racing. Age won't stop you.",
+			careerXP = 15,
+			careerReputation = 10,
+			effects = { Fame = 2, Health = -3 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_broadcasting_career",
+	emoji = "📺",
+	title = "Broadcasting Career",
+	category = "motorsport",
+	tags = {"motorsport", "broadcasting", "media", "late_career"},
+	weight = 14,
+	cooldownYears = 3,
+	conditions = {
+		minAge = 45,
+		maxAge = 70,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 4,
+	},
+	text = "A TV network wants you as a motorsport commentator. Your expertise would be perfect for broadcasting.",
+	choices = {
+		{
+			id = "accept_broadcasting",
+			text = "Accept the broadcasting role.",
+			resultText = "You become a motorsport commentator. Your voice reaches millions.",
+			flags = flagSet("motorsport_broadcaster"),
+			careerXP = 10,
+			careerReputation = 20,
+			effects = { Money = 40000, Fame = 4 },
+		},
+		{
+			id = "decline_focus_racing",
+			text = "Decline. Focus on racing.",
+			resultText = "You stay focused on racing. Commentary can wait.",
+			careerXP = 12,
+			effects = { Fame = 1 },
+		},
+	},
+})
+
+table.insert(events, {
+	id = "motorsport_team_ownership",
+	emoji = "🏢",
+	title = "Team Ownership Opportunity",
+	category = "motorsport",
+	tags = {"motorsport", "business", "ownership", "late_career"},
+	weight = 17,
+	oneTime = true,
+	conditions = {
+		minAge = 40,
+		maxAge = 65,
+		requiredCareerId = "motorsport_icon",
+		requiredCareerMinTier = 5,
+		minMoney = 100000,
+	},
+	text = "You have the opportunity to own your own racing team. This is a major investment but could be your legacy.",
+	choices = {
+		{
+			id = "buy_team",
+			text = "Invest in team ownership.",
+			resultText = "You become a team owner. A new chapter begins.",
+			flags = flagSet("motorsport_team_owner"),
+			careerXP = 20,
+			careerReputation = 30,
+			effects = { Money = -100000, Fame = 5, Happiness = 4 },
+		},
+		{
+			id = "stay_driver",
+			text = "Stay as a driver. Ownership can wait.",
+			resultText = "You focus on driving. Ownership is for later.",
+			careerXP = 10,
+			effects = { Fame = 1 },
 		},
 	},
 })

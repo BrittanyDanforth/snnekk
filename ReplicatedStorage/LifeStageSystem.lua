@@ -870,41 +870,82 @@ function LifeStageSystem.validateEvent(eventDef, state)
 	-- ═══════════════════════════════════════════════════════════════
 	-- 13. CAREER VALIDATION (requiredCareerId, requiredCareerMinTier)
 	-- This is CRITICAL for path-gated events
+	-- Uses CareerSystem for proper career checking
 	-- ═══════════════════════════════════════════════════════════════
 	
 	local requiredCareerId = eventDef.requiredCareerId or (conditions and conditions.requiredCareerId)
-	if requiredCareerId then
-		local career = state.Career or {}
-		local currentCareerId = career.path or career.id
-		
-		-- Check if player has the required career
-		if currentCareerId ~= requiredCareerId then
-			-- Also check flags for career (some systems use flags instead of Career table)
-			local hasCareerFlag = flags["career_" .. requiredCareerId] or flags["career_" .. requiredCareerId .. "_started"]
-			if not hasCareerFlag then
-				result.valid = false
-				table.insert(result.reasons, "Requires career: " .. requiredCareerId)
-			end
-		end
-	end
-	
 	local requiredCareerMinTier = eventDef.requiredCareerMinTier or (conditions and conditions.requiredCareerMinTier)
-	if requiredCareerMinTier and requiredCareerMinTier > 0 then
-		local career = state.Career or {}
-		local currentTier = career.tier or career.level or 0
-		
-		-- If tier not tracked in Career, estimate from experience or flags
-		if currentTier == 0 then
-			local experience = career.experience or 0
-			if experience >= 10 then currentTier = 3
-			elseif experience >= 5 then currentTier = 2
-			elseif experience >= 1 then currentTier = 1
+	local requiredCareerBranch = eventDef.requiredCareerBranch or (conditions and conditions.requiredCareerBranch)
+	
+	if requiredCareerId then
+		-- Try to use CareerSystem for proper validation
+		local CareerSystem = nil
+		pcall(function()
+			local LifeEvents = script.Parent:FindFirstChild("LifeEvents")
+			if LifeEvents then
+				local cs = LifeEvents:FindFirstChild("CareerSystem")
+				if cs then
+					CareerSystem = require(cs)
+				end
 			end
-		end
+		end)
 		
-		if currentTier < requiredCareerMinTier then
-			result.valid = false
-			table.insert(result.reasons, "Requires career tier " .. requiredCareerMinTier .. " (have tier " .. currentTier .. ")")
+		if CareerSystem and CareerSystem.meetsCareerRequirements then
+			-- Use CareerSystem for proper validation
+			local meetsReqs = CareerSystem.meetsCareerRequirements(
+				state,
+				requiredCareerId,
+				requiredCareerMinTier,
+				requiredCareerBranch
+			)
+			if not meetsReqs then
+				result.valid = false
+				local instance = CareerSystem.getPrimaryCareer(state)
+				if not instance then
+					table.insert(result.reasons, "Requires career: " .. requiredCareerId .. " (no active career)")
+				elseif instance.careerId ~= requiredCareerId then
+					table.insert(result.reasons, "Requires career: " .. requiredCareerId .. " (have: " .. (instance.careerId or "none") .. ")")
+				elseif requiredCareerMinTier and instance.tierIndex < requiredCareerMinTier then
+					table.insert(result.reasons, "Requires career tier " .. requiredCareerMinTier .. " (have tier " .. (instance.tierIndex or 0) .. ")")
+				elseif requiredCareerBranch and instance.branch ~= requiredCareerBranch then
+					table.insert(result.reasons, "Requires career branch: " .. requiredCareerBranch .. " (have: " .. (instance.branch or "none") .. ")")
+				else
+					table.insert(result.reasons, "Career requirements not met: " .. requiredCareerId)
+				end
+			end
+		else
+			-- Fallback: Check legacy Career table or flags
+			local career = state.Career or {}
+			local currentCareerId = career.path or career.id
+			
+			-- Check if player has the required career
+			if currentCareerId ~= requiredCareerId then
+				-- Also check flags for career (some systems use flags instead of Career table)
+				local hasCareerFlag = flags["career_" .. requiredCareerId] or flags["career_" .. requiredCareerId .. "_started"]
+				if not hasCareerFlag then
+					result.valid = false
+					table.insert(result.reasons, "Requires career: " .. requiredCareerId)
+				end
+			end
+			
+			-- Check tier if required
+			if requiredCareerMinTier and requiredCareerMinTier > 0 then
+				local currentTier = career.tier or career.level or 0
+				
+				-- If tier not tracked in Career, estimate from experience or flags
+				if currentTier == 0 then
+					local experience = career.experience or 0
+					if experience >= 10 then currentTier = 3
+					elseif experience >= 5 then currentTier = 2
+					elseif experience >= 1 then currentTier = 1
+					end
+				end
+				
+				if currentTier < requiredCareerMinTier then
+					result.valid = false
+					table.insert(result.reasons, "Requires career tier " .. requiredCareerMinTier .. " (have tier " .. currentTier .. ")")
+				end
+			end
 		end
 	end
 

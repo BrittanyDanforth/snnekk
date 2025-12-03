@@ -166,6 +166,7 @@ end
 -- List of event modules to load
 local EVENT_MODULES = {
 	"career_motorsport",
+	"first_job",
 }
 
 -- Load all event modules
