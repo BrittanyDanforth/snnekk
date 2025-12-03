@@ -64,7 +64,7 @@ LifeStageSystem.Stages = {
 		inSchool = false,
 		schoolType = nil,
 		activities = { "cry", "sleep", "eat", "crawl" },
-		eventCategories = { "family", "health", "milestone" },
+		eventCategories = { "family", "health", "milestone", "childhood", "origin" },
 	},
 
 	TODDLER = {
@@ -83,7 +83,7 @@ LifeStageSystem.Stages = {
 		inSchool = false,
 		schoolType = "daycare",
 		activities = { "play", "learn", "tantrum" },
-		eventCategories = { "family", "health", "milestone", "social" },
+		eventCategories = { "family", "health", "milestone", "social", "childhood", "origin" },
 	},
 
 	CHILD = {
@@ -102,7 +102,7 @@ LifeStageSystem.Stages = {
 		inSchool = true,
 		schoolType = "elementary",
 		activities = { "study", "play", "sports", "clubs" },
-		eventCategories = { "family", "health", "school", "social", "milestone" },
+		eventCategories = { "family", "health", "school", "social", "milestone", "childhood", "origin" },
 	},
 
 	TWEEN = {
@@ -121,7 +121,7 @@ LifeStageSystem.Stages = {
 		inSchool = true,
 		schoolType = "middle",
 		activities = { "study", "sports", "clubs", "hangout", "social_media" },
-		eventCategories = { "family", "health", "school", "social", "romance", "milestone" },
+		eventCategories = { "family", "health", "school", "social", "romance", "milestone", "teen", "origin" },
 	},
 
 	TEEN = {
@@ -140,7 +140,7 @@ LifeStageSystem.Stages = {
 		inSchool = true,
 		schoolType = "highschool",
 		activities = { "study", "work_parttime", "sports", "clubs", "date", "party", "drive" },
-		eventCategories = { "family", "health", "school", "social", "romance", "work", "crime", "milestone" },
+		eventCategories = { "family", "health", "school", "social", "romance", "work", "crime", "milestone", "teen", "origin" },
 	},
 
 	YOUNG_ADULT = {
@@ -267,6 +267,35 @@ LifeStageSystem.EventCategories = {
 		description = "Health-related events.",
 		minAge = 0,
 		maxAge = 120,
+	},
+	
+	-- ═══════════════════════════════════════════════════════════════
+	-- CHILDHOOD/TEEN ORIGIN CATEGORIES (for trait-forming early events)
+	-- These categories are CRITICAL for career path origin events
+	-- ═══════════════════════════════════════════════════════════════
+	
+	childhood = {
+		name = "Childhood",
+		emoji = "🧒",
+		description = "Early formative experiences that shape your interests.",
+		minAge = 0,
+		maxAge = 12,
+	},
+	
+	teen = {
+		name = "Teen",
+		emoji = "🎸",
+		description = "Teenage experiences that define your path.",
+		minAge = 13,
+		maxAge = 19,
+	},
+	
+	origin = {
+		name = "Origin",
+		emoji = "⭐",
+		description = "Formative experiences that spark lifelong passions.",
+		minAge = 0,
+		maxAge = 25,
 	},
 
 	school = {

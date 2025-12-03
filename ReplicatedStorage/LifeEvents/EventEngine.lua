@@ -360,24 +360,53 @@ local function inferRequirementsFromEvent(event, state)
 	local lowerId = string.lower(id)
 	local lowerTitle = string.lower(title)
 	local lowerText = string.lower(text)
+	local lowerCategory = string.lower(category)
 	
-	-- CAR/VEHICLE EVENT DETECTION
-	local carPatterns = {"car_", "driving_", "vehicle_", "speeding_", "traffic_", "road_trip", "commute", "parking_"}
-	for _, pattern in ipairs(carPatterns) do
-		if string.find(lowerId, pattern) or string.find(lowerTitle, pattern) then
-			-- Event involves driving - check for vehicle or license
-			if not ownsAsset(state, "car") and not hasDriversLicense(state) then
-				return false, "auto_infer: car event but no vehicle/license"
-			end
+	-- ═══════════════════════════════════════════════════════════════
+	-- SKIP AUTO-INFERENCE FOR ORIGIN/CHILDHOOD/TEEN EVENTS
+	-- These events are about DEVELOPING interest, not REQUIRING assets
+	-- ═══════════════════════════════════════════════════════════════
+	local isOriginEvent = false
+	
+	-- Check if this is a childhood/teen/origin event by category
+	if lowerCategory == "childhood" or lowerCategory == "teen" or lowerCategory == "origin" then
+		isOriginEvent = true
+	end
+	
+	-- Check by ID prefix (common naming pattern)
+	if string.find(lowerId, "^childhood_") or string.find(lowerId, "^teen_") or string.find(lowerId, "^origin_") then
+		isOriginEvent = true
+	end
+	
+	-- Check tags for "origin" or "formative" 
+	for _, tag in ipairs(tags) do
+		local lowerTag = string.lower(tag)
+		if lowerTag == "origin" or lowerTag == "formative" or lowerTag == "childhood" or lowerTag == "teen" or lowerTag == "trait_forming" then
+			isOriginEvent = true
+			break
 		end
 	end
 	
-	-- Car crash/accident specific (these need a car!)
-	local crashPatterns = {"car_accident", "car_crash", "fender_bender", "wreck", "collision"}
-	for _, pattern in ipairs(crashPatterns) do
-		if string.find(lowerId, pattern) or string.find(lowerText, pattern) then
-			if not ownsAsset(state, "car") then
-				return false, "auto_infer: car accident but no car"
+	-- CAR/VEHICLE EVENT DETECTION
+	-- Skip for origin events - these are about developing interest in cars, not requiring them
+	if not isOriginEvent then
+		local carPatterns = {"car_", "driving_", "vehicle_", "speeding_", "traffic_", "road_trip", "commute", "parking_"}
+		for _, pattern in ipairs(carPatterns) do
+			if string.find(lowerId, pattern) or string.find(lowerTitle, pattern) then
+				-- Event involves driving - check for vehicle or license
+				if not ownsAsset(state, "car") and not hasDriversLicense(state) then
+					return false, "auto_infer: car event but no vehicle/license"
+				end
+			end
+		end
+		
+		-- Car crash/accident specific (these need a car!)
+		local crashPatterns = {"car_accident", "car_crash", "fender_bender", "wreck", "collision"}
+		for _, pattern in ipairs(crashPatterns) do
+			if string.find(lowerId, pattern) or string.find(lowerText, pattern) then
+				if not ownsAsset(state, "car") then
+					return false, "auto_infer: car accident but no car"
+				end
 			end
 		end
 	end
@@ -403,9 +432,15 @@ local function inferRequirementsFromEvent(event, state)
 	end
 	
 	-- CHILD EVENT DETECTION
+	-- Note: "childhood_" prefix is about being A CHILD, not having children - skip those
 	local childPatterns = {"child_", "parenting_", "son_", "daughter_", "baby_", "kids_", "children_", "_child", "pregnant"}
 	for _, pattern in ipairs(childPatterns) do
 		if string.find(lowerId, pattern) then
+			-- Skip events that are about being a child (childhood events)
+			if string.find(lowerId, "^childhood") then
+				-- This is about the player AS a child, not having children
+				break
+			end
 			-- Skip "pregnancy" events - those don't require existing children
 			if not string.find(lowerId, "pregnan") and not string.find(lowerId, "trying_for") then
 				local hasChildren = hasRelationshipType(state, "child") or (state.Flags or {}).has_children
