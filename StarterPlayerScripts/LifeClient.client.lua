@@ -4,7 +4,6 @@
 -- Professional modals, smooth animations, premium feel
 
 local startTime = tick()
-print("[LifeClient] 🚀 Script starting...")
 
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -45,26 +44,15 @@ local function safeRequireRS(name)
 	-- Try immediate find first, then wait if not found
 	local child = ReplicatedStorage:FindFirstChild(name)
 	if not child then
-		print("[LifeClient] ⏳ Waiting for " .. name .. " module...")
-		child = ReplicatedStorage:WaitForChild(name, 5)  -- Wait up to 5 seconds
+		child = ReplicatedStorage:WaitForChild(name, 5)
 	end
 	if child then
 		local s, r = pcall(require, child)
-		if s then
-			print("[LifeClient] ✅ Loaded " .. name .. " module successfully!")
-			return r
-		else
-			warn("[LifeClient] ⚠️ Failed to require " .. name .. ": " .. tostring(r))
-			return nil
-		end
-	else
-		warn("[LifeClient] ⚠️ " .. name .. " module not found in ReplicatedStorage!")
+		if s then return r end
 	end
 	return nil
 end
 MinigamesModule = safeRequireRS("Minigames")
-
-print(string.format("[LifeClient] ⏱️ Modules loaded in %.2fs", tick() - startTime))
 
 ----------------------------------------------------------------
 -- REMOTES (optimized - fast lookup with short fallback)
@@ -87,8 +75,6 @@ local SyncState      = getRemote("SyncState")
 local SetLifeInfo    = getRemote("SetLifeInfo")
 local MinigameResult = getRemote("MinigameResult", 1)
 local MinigameStart  = getRemote("MinigameStart", 1)
-
-print(string.format("[LifeClient] ⏱️ Remotes ready in %.2fs", tick() - startTime))
 
 ----------------------------------------------------------------
 -- STATE
@@ -1048,20 +1034,14 @@ local function createNavButton(info, parent, order)
 	end)
 
 	btn.MouseButton1Click:Connect(function()
-		print("[LifeClient] Nav button clicked:", info.screen)
 		if info.screen == "occupation" and occupationScreenInstance then
 			occupationScreenInstance:show()
 		elseif info.screen == "assets" and assetsScreenInstance then
 			assetsScreenInstance:show()
 		elseif info.screen == "relationships" and relationshipsScreenInstance then
 			relationshipsScreenInstance:show()
-		elseif info.screen == "activities" then
-			if activitiesScreenInstance then
-				print("[LifeClient] Opening activities screen...")
-				activitiesScreenInstance:show()
-			else
-				warn("[LifeClient] ❌ activitiesScreenInstance is nil!")
-			end
+		elseif info.screen == "activities" and activitiesScreenInstance then
+			activitiesScreenInstance:show()
 		elseif info.screen == "storypaths" and storyPathsScreenInstance then
 			storyPathsScreenInstance:show()
 		end
@@ -2116,7 +2096,6 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 	-- STEP 2: HANDLE NEW LIFE RESET
 	-- ═══════════════════════════════════════════════════════════════
 	if isNewLife then
-		print("[LifeClient] 🔄 New life detected - resetting client...")
 		
 		-- Reset all intro/game flags
 		introComplete = false
@@ -2173,8 +2152,7 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 		end
 		hideTutorial()
 		
-		-- SHOW INTRO MODAL (gender + name selection)
-		print("[LifeClient] 🎭 Showing intro modal...")
+		-- SHOW INTRO MODAL
 		showIntro()
 		
 		-- Early return - don't process as normal sync
@@ -2339,21 +2317,15 @@ end)
 
 if MinigameStart then
 	MinigameStart.OnClientEvent:Connect(function(config)
-		print("[LifeClient] 🎮 Server triggered minigame:", config.id)
-		
-		-- Hide the event overlay during minigame
 		if eventOverlay.Visible then
 			hideEvent()
 		end
 		
-		-- Store pending info
 		pendingMinigameEventId = config.eventId
 		pendingMinigameChoiceIndex = config.choiceIndex
 		
-		-- Run the minigame
 		if minigamesInstance and minigamesInstance.play then
 			minigamesInstance:play(config.id, function(won, data)
-				print("[LifeClient] 🎮 Minigame completed:", won and "WON" or "LOST")
 				
 				-- Send result back to server
 				if MinigameResult then
@@ -2438,15 +2410,8 @@ end)
 local function safeNew(mod, name, ...)
 	if mod and mod.new then
 		local s, r = pcall(mod.new, ...)
-		if s and r then
-			print("[LifeClient] ✅ " .. name .. " initialized")
-			return r
-		else
-			warn("[LifeClient] ❌ Failed to initialize " .. name .. ": " .. tostring(r))
-			return nil
-		end
+		if s and r then return r end
 	end
-	warn("[LifeClient] ❌ Module not found: " .. name)
 	return nil
 end
 
@@ -2457,24 +2422,8 @@ activitiesScreenInstance    = safeNew(ActivitiesScreen,    "ActivitiesScreen",  
 storyPathsScreenInstance    = safeNew(StoryPathsScreen,    "StoryPathsScreen",    screenGui, currentState)
 
 if MinigamesModule then
-	print("[LifeClient] 🎮 Initializing Minigames module...")
-	local ok, mg = pcall(function()
-		return MinigamesModule.new(screenGui)
-	end)
-	if ok and mg then
-		minigamesInstance = mg
-		print("[LifeClient] ✅ Minigames initialized successfully! Available games:", table.concat({
-			"debate", "heist", "getaway", "qte", "prison_escape", "mash", "hacking"
-		}, ", "))
-	else
-		warn("[LifeClient] ⚠️ Failed to initialize minigames: " .. tostring(mg))
-		-- Try to print more debug info
-		if type(mg) == "string" then
-			warn("[LifeClient] Error details: " .. mg)
-		end
-	end
-else
-	warn("[LifeClient] ⚠️ MinigamesModule is nil - minigames will auto-fail!")
+	local ok, mg = pcall(function() return MinigamesModule.new(screenGui) end)
+	if ok and mg then minigamesInstance = mg end
 end
 
 ----------------------------------------------------------------
@@ -2508,13 +2457,9 @@ task.spawn(function()
 			elseif tick() - lastAwaitingEventTime > STUCK_THRESHOLD then
 				-- Check if the event overlay is actually visible
 				if not eventOverlay.Visible then
-					warn("[LifeClient] 🔧 WATCHDOG: awaitingEvent stuck for", math.floor(tick() - lastAwaitingEventTime), "seconds with hidden overlay - AUTO-RESETTING!")
 					awaitingEvent = false
 					currentEventId = nil
 					lastAwaitingEventTime = nil
-				else
-					-- Overlay is visible but no interaction - user might be AFK, don't reset
-					print("[LifeClient] ⏳ WATCHDOG: awaitingEvent active for", math.floor(tick() - lastAwaitingEventTime), "seconds (overlay visible)")
 				end
 			end
 		else
@@ -2523,4 +2468,4 @@ task.spawn(function()
 	end
 end)
 
-print(string.format("[LifeClient] ✅ Premium UI Loaded! Total init time: %.2fs", tick() - startTime))
+print("[LifeClient] ✅ Loaded in " .. string.format("%.1fs", tick() - startTime))

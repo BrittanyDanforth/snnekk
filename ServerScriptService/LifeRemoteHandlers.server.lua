@@ -21,7 +21,6 @@ if not remotesFolder then
 	remotesFolder = Instance.new("Folder")
 	remotesFolder.Name = REMOTES_FOLDER_NAME
 	remotesFolder.Parent = ReplicatedStorage
-	print("[LifeRemoteHandlers] Created LifeRemotes folder")
 end
 
 -- Reference to LifeManager's playerLives (set via _G for inter-script communication)
@@ -55,7 +54,6 @@ local function getRemote(name, isFunction)
 		end
 		remote.Name = name
 		remote.Parent = remotesFolder
-		print("[LifeRemoteHandlers] Created remote:", name, isFunction and "(Function)" or "(Event)")
 	end
 	return remote
 end
@@ -103,7 +101,6 @@ if not SyncState then
 	SyncState = Instance.new("RemoteEvent")
 	SyncState.Name = "SyncState"
 	SyncState.Parent = remotesFolder
-	print("[LifeRemoteHandlers] Created SyncState remote")
 end
 
 ----------------------------------------------------------------
@@ -310,7 +307,6 @@ local function hasEducation(player, required)
 	local playerLevel = eduLevels[playerEdu] or 0
 	local requiredLevel = eduLevels[required] or 0
 	
-	print("[LifeRemoteHandlers] hasEducation check:", playerEdu, "vs required:", required, "->", playerLevel >= requiredLevel)
 	return playerLevel >= requiredLevel
 end
 
@@ -877,7 +873,6 @@ local RelationshipActions = {
 ----------------------------------------------------------------
 
 ApplyForJob.OnServerInvoke = function(player, jobId)
-	print("[LifeRemoteHandlers] ApplyForJob called with jobId:", jobId)
 	
 	local age = getAge(player)
 	local extState = getExtendedState(player)
@@ -895,13 +890,11 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	
 	-- Fugitives can't apply for jobs (they're on the run!)
 	if flags.fugitive then
-		print("[LifeRemoteHandlers] Job application blocked - player is a fugitive")
 		return { success = false, message = "⚠️ You're a fugitive! You can't apply for jobs while on the run." }
 	end
 	
 	-- Wanted players can't apply
 	if flags.wanted then
-		print("[LifeRemoteHandlers] Job application blocked - player is wanted")
 		return { success = false, message = "⚠️ There's a warrant out for your arrest! You can't apply for jobs right now." }
 	end
 	
@@ -915,12 +908,9 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	end
 	
 	if not job then
-		print("[LifeRemoteHandlers] Job not found:", jobId)
 		return { success = false, message = "Job not found: " .. tostring(jobId) }
 	end
 	
-	print("[LifeRemoteHandlers] Found job:", job.title, "Category:", job.category or "none")
-	print("[LifeRemoteHandlers] Player age:", age, "Smarts:", stats.Smarts or 50, "Health:", stats.Health or 50, "Looks:", stats.Looks or 50)
 	
 	-- Already have a job?
 	if extState.CurrentJob then
@@ -1080,7 +1070,6 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 		end
 		
 		if isExConvict then
-			print("[LifeRemoteHandlers] Ex-convict applying for job. Background check required:", requiresBackgroundCheck)
 			
 			if requiresBackgroundCheck and not hasSecondChance then
 				return { 
@@ -1148,14 +1137,12 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	-- ════════════════════════════════════════════════════════════════
 	
 	local roll = math.random(100)
-	print("[LifeRemoteHandlers] Acceptance roll:", roll, "vs", acceptanceChance)
 	
 	-- CRITICAL: Always set job_seeking/applied_for_jobs flag when player applies
 	-- This enables follow-up events in the LifeEvents system
 	if lifeState then
 		lifeState:SetFlag("applied_for_jobs")
 		lifeState:SetFlag("job_seeking")
-		print("[LifeRemoteHandlers] Set 'applied_for_jobs' and 'job_seeking' flags")
 	end
 	
 	if roll > acceptanceChance then
@@ -1175,7 +1162,6 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	if lifeState then
 		lifeState:ClearFlag("job_seeking")
 		lifeState:ClearFlag("applied_for_jobs")
-		print("[LifeRemoteHandlers] Cleared job seeking flags - player is now employed")
 	end
 	
 	-- ════════════════════════════════════════════════════════════════
@@ -1216,7 +1202,6 @@ ApplyForJob.OnServerInvoke = function(player, jobId)
 	if lifeState then
 		-- CRITICAL: Set 'employed' flag for event system
 		lifeState:SetFlag("employed")
-		print("[LifeRemoteHandlers] Set 'employed' flag via ApplyForJob")
 		
 		if job.category == "military" then lifeState:SetFlag("military_service") end
 		if job.category == "government" and job.id == "police_officer" then lifeState:SetFlag("police_officer") end
@@ -1295,7 +1280,6 @@ QuitJob.OnServerInvoke = function(player)
 		-- CRITICAL: Clear 'employed' flag when quitting job
 		if lifeState then
 			lifeState:ClearFlag("employed")
-			print("[LifeRemoteHandlers] Cleared 'employed' flag via QuitJob")
 		end
 		
 		syncStateToClient(player)
@@ -1470,7 +1454,6 @@ DoWork.OnServerInvoke = function(player)
 				if effects.analytical then careerData.Skills.Analytical = math.min(100, (careerData.Skills.Analytical or 0) + effects.analytical) end
 			end
 			
-			print("[LifeRemoteHandlers] Job event triggered:", eventTriggered.id, "-", eventTriggered.message)
 		end
 	end
 	
@@ -1496,7 +1479,6 @@ DoWork.OnServerInvoke = function(player)
 		-- CRITICAL: Clear 'employed' flag when getting fired
 		if lifeState then
 			lifeState:ClearFlag("employed")
-			print("[LifeRemoteHandlers] Cleared 'employed' flag - got fired")
 		end
 		
 		syncStateToClient(player)
@@ -1675,8 +1657,6 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	local lifeState = getLifeManagerState(player)
 	local flags = lifeState and lifeState.Flags or {}
 	
-	print("[LifeRemoteHandlers] EnrollEducation called with eduId:", eduId)
-	print("[LifeRemoteHandlers] Player flags - ex_convict:", flags.ex_convict, "fugitive:", flags.fugitive)
 	
 	-- ========================================
 	-- CRIMINAL RECORD CHECKS (Ex-Convict System)
@@ -1684,13 +1664,11 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	
 	-- Fugitives can't enroll (they're on the run!)
 	if flags.fugitive then
-		print("[LifeRemoteHandlers] Education blocked - player is a fugitive")
 		return { success = false, message = "⚠️ You're a fugitive! You can't enroll in school while on the run." }
 	end
 	
 	-- Wanted players can't enroll
 	if flags.wanted then
-		print("[LifeRemoteHandlers] Education blocked - player is wanted")
 		return { success = false, message = "⚠️ There's a warrant out for your arrest! You can't enroll right now." }
 	end
 	
@@ -1713,7 +1691,6 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		return { success = false, message = "Education program not found." }
 	end
 	
-	print("[LifeRemoteHandlers] Found education:", edu.name, "for player age:", age)
 	
 	-- Check age
 	if age < edu.minAge then
@@ -1762,7 +1739,6 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 	end
 	
 	if isExConvict then
-		print("[LifeRemoteHandlers] Ex-convict enrolling in education. Restricted program:", isRestricted)
 		
 		-- Block restricted programs for ex-convicts (unless reformed)
 		if isRestricted and not isReformed then
@@ -1776,11 +1752,9 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		if not isReformed then
 			-- 50% cost increase due to no scholarships
 			actualCost = math.floor(edu.cost * 1.5)
-			print("[LifeRemoteHandlers] Ex-convict cost penalty applied. New cost:", actualCost)
 		else
 			-- Reformed ex-convicts get smaller penalty
 			actualCost = math.floor(edu.cost * 1.2)
-			print("[LifeRemoteHandlers] Reformed ex-convict cost penalty applied. New cost:", actualCost)
 		end
 	end
 	
@@ -1812,12 +1786,6 @@ EnrollEducation.OnServerInvoke = function(player, eduId)
 		loanAmount = actualCost
 		usedLoan = true
 	end
-	
-	print("[LifeRemoteHandlers] Education cost breakdown:")
-	print("  Total cost:", actualCost)
-	print("  Player money:", currentMoney)
-	print("  Upfront payment:", upfrontPayment)
-	print("  Student loan:", loanAmount)
 	
 	-- Deduct upfront payment
 	if upfrontPayment > 0 then
@@ -2334,8 +2302,6 @@ GetEducationInfo.OnServerInvoke = function(player)
 		end
 	end
 	
-	print("[GetEducationInfo] Returning - Level:", level, "GPA:", gpa, "Progress:", progress, "Status:", status, "Enrolled:", enrolled)
-	
 	return {
 		success = true,
 		level = level,
@@ -2359,7 +2325,6 @@ end
 ----------------------------------------------------------------
 
 BuyProperty.OnServerInvoke = function(player, propertyId)
-	print("[LifeRemoteHandlers] BuyProperty called for:", propertyId)
 	local state = getPlayerState(player)
 	local extState = getExtendedState(player)
 	local age = state.Age
@@ -2373,7 +2338,6 @@ BuyProperty.OnServerInvoke = function(player, propertyId)
 	end
 	
 	if not prop then
-		print("[LifeRemoteHandlers] Property not found:", propertyId)
 		return { success = false, message = "Property not found." }
 	end
 	
@@ -2388,7 +2352,6 @@ BuyProperty.OnServerInvoke = function(player, propertyId)
 	deductMoney(player, prop.price)
 	extState.OwnedProperties = extState.OwnedProperties or {}
 	table.insert(extState.OwnedProperties, { id = prop.id, name = prop.name, value = prop.price })
-	print("[LifeRemoteHandlers] Bought property:", prop.name, "Total owned:", #extState.OwnedProperties)
 	syncStateToClient(player)
 	
 	return { 
@@ -2398,7 +2361,6 @@ BuyProperty.OnServerInvoke = function(player, propertyId)
 end
 
 BuyVehicle.OnServerInvoke = function(player, vehicleId)
-	print("[LifeRemoteHandlers] BuyVehicle called for:", vehicleId)
 	local state = getPlayerState(player)
 	local extState = getExtendedState(player)
 	local age = state.Age
@@ -2412,7 +2374,6 @@ BuyVehicle.OnServerInvoke = function(player, vehicleId)
 	end
 	
 	if not vehicle then
-		print("[LifeRemoteHandlers] Vehicle not found:", vehicleId)
 		return { success = false, message = "Vehicle not found." }
 	end
 	
@@ -2427,7 +2388,6 @@ BuyVehicle.OnServerInvoke = function(player, vehicleId)
 	deductMoney(player, vehicle.price)
 	extState.OwnedVehicles = extState.OwnedVehicles or {}
 	table.insert(extState.OwnedVehicles, { id = vehicle.id, name = vehicle.name, value = vehicle.price })
-	print("[LifeRemoteHandlers] Bought vehicle:", vehicle.name, "Total owned:", #extState.OwnedVehicles)
 	syncStateToClient(player)
 	
 	return { 
@@ -2437,7 +2397,6 @@ BuyVehicle.OnServerInvoke = function(player, vehicleId)
 end
 
 BuyItem.OnServerInvoke = function(player, itemId)
-	print("[LifeRemoteHandlers] BuyItem called for:", itemId)
 	local state = getPlayerState(player)
 	local extState = getExtendedState(player)
 	local age = state.Age
@@ -2451,7 +2410,6 @@ BuyItem.OnServerInvoke = function(player, itemId)
 	end
 	
 	if not item then
-		print("[LifeRemoteHandlers] Item not found:", itemId)
 		return { success = false, message = "Item not found." }
 	end
 	
@@ -2466,7 +2424,6 @@ BuyItem.OnServerInvoke = function(player, itemId)
 	deductMoney(player, item.price)
 	extState.OwnedItems = extState.OwnedItems or {}
 	table.insert(extState.OwnedItems, { id = item.id, name = item.name, value = item.price })
-	print("[LifeRemoteHandlers] Bought item:", item.name, "Total owned:", #extState.OwnedItems)
 	syncStateToClient(player)
 	
 	return { 
@@ -2502,7 +2459,6 @@ end
 ----------------------------------------------------------------
 
 SellAsset.OnServerInvoke = function(player, assetId, assetType)
-	print("[LifeRemoteHandlers] SellAsset called - Asset:", assetId, "Type:", assetType)
 	
 	local extState = getExtendedState(player)
 	
@@ -2522,7 +2478,6 @@ SellAsset.OnServerInvoke = function(player, assetId, assetType)
 	end
 	
 	if not assetList then
-		print("[LifeRemoteHandlers] Invalid asset type:", assetType)
 		return { success = false, message = "Invalid asset type." }
 	end
 	
@@ -2538,7 +2493,6 @@ SellAsset.OnServerInvoke = function(player, assetId, assetType)
 	end
 	
 	if not foundIndex then
-		print("[LifeRemoteHandlers] Asset not found:", assetId)
 		return { success = false, message = "You don't own this asset." }
 	end
 	
@@ -2550,7 +2504,6 @@ SellAsset.OnServerInvoke = function(player, assetId, assetType)
 	table.remove(assetList, foundIndex)
 	addMoney(player, sellPrice)
 	
-	print("[LifeRemoteHandlers] Sold", assetName, "for $", sellPrice)
 	
 	return { 
 		success = true, 
@@ -2691,7 +2644,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 		personId = arg3
 	end
 	
-	print("[LifeRemoteHandlers] DoInteraction called:", actionId, relationType, personId)
 	
 	local age = getAge(player)
 	local extState = getExtendedState(player)
@@ -2699,7 +2651,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 	
 	local action = AllRelationshipActions[actionId]
 	if not action then
-		print("[LifeRemoteHandlers] Unknown action:", actionId)
 		return { success = false, message = "Unknown action: " .. tostring(actionId) }
 	end
 	
@@ -2731,7 +2682,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 				tags = { dating = true, met_via_ui = true },
 			})
 			
-			print("[LifeRemoteHandlers] ✅ Created new partner via RelationshipService:", partner.id, "Name:", partner.name)
 			
 			syncStateToClient(player)
 			return { 
@@ -2739,7 +2689,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 				message = "You met " .. partner.name .. " (" .. partnerAge .. ") and hit it off! You're now dating."
 			}
 		else
-			print("[LifeRemoteHandlers] ❌ ERROR: No lifeState to add partner to!")
 			return { success = false, message = "Error: Could not create relationship" }
 		end
 		
@@ -2754,7 +2703,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 				tags = { met_via_ui = true },
 			})
 			
-			print("[LifeRemoteHandlers] ✅ Created new friend via RelationshipService:", friend.id, "Name:", friend.name)
 			
 			syncStateToClient(player)
 			return { 
@@ -2762,7 +2710,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 				message = "You made a new friend! " .. friend.name .. " seems cool."
 			}
 		else
-			print("[LifeRemoteHandlers] ❌ ERROR: No lifeState to add friend to!")
 			return { success = false, message = "Error: Could not create relationship" }
 		end
 		
@@ -2843,7 +2790,6 @@ DoInteraction.OnServerInvoke = function(player, arg1, arg2, arg3)
 			-- Modify the relationship value
 			local currentRel = person.relationship or 50
 			person.relationship = math.clamp(currentRel + statChange, 0, 100)
-			print("[LifeRemoteHandlers] Updated relationship with", personName, "by", statChange, "to", person.relationship)
 		end
 	end
 	
@@ -2950,26 +2896,22 @@ DoActivity.OnServerInvoke = function(player, activityId)
 	local smartsBonus = 1.0
 	if activityId == "study" or activityId == "read" then
 		smartsBonus = 0.8 + (smarts / 100) * 0.5 -- 0.8x to 1.3x based on Smarts
-		print("[LifeRemoteHandlers] Learning activity - Smarts bonus:", smartsBonus)
 	end
 	
 	-- Health affects physical activities (gym, run, yoga)
 	local healthBonus = 1.0
 	if activityId == "gym" or activityId == "run" or activityId == "yoga" then
 		healthBonus = 0.8 + (health / 100) * 0.5 -- 0.8x to 1.3x based on Health
-		print("[LifeRemoteHandlers] Physical activity - Health bonus:", healthBonus)
 	end
 	
 	-- Athletic flag bonus (from childhood sports focus)
 	local athleticBonus = 1.0
 	if flags.athletic_child and (activityId == "gym" or activityId == "run" or activityId == "yoga") then
 		athleticBonus = 1.2
-		print("[LifeRemoteHandlers] Athletic background bonus applied!")
 	end
 	
 	-- Calculate combined effectiveness
 	local effectivenessMultiplier = moodBonus * smartsBonus * healthBonus * athleticBonus
-	print("[LifeRemoteHandlers] Activity effectiveness:", effectivenessMultiplier, "mood:", moodBonus, "smarts:", smartsBonus, "health:", healthBonus)
 	
 	-- Chance to fail if very unhappy or low health
 	local failChance = 0
@@ -3106,7 +3048,6 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 	local baseCatchChance = crime.risk
 	local finalCatchChance = math.clamp(baseCatchChance + riskModifier, 5, 95)
 	
-	print("[LifeRemoteHandlers] Crime:", crimeId, "Base risk:", baseCatchChance, "Modifier:", riskModifier, "Final:", finalCatchChance)
 	
 	-- Roll for getting caught
 	local caught = math.random(100) <= finalCatchChance
@@ -3131,13 +3072,11 @@ CommitCrime.OnServerInvoke = function(player, crimeId)
 			-- IMPORTANT: Clear sentence_complete when going to prison (prevents bugs from previous stints)
 			life.Flags.sentence_complete = nil
 			life.Flags.released_from_prison = nil
-			print("[LifeRemoteHandlers] Set prison flags, cleared 'employed' flag")
 		end
 		
 		syncStateToClient(player)
 		
 		local jailText = jailTime < 1 and string.format("%.0f months", jailTime * 12) or string.format("%.1f years", jailTime)
-		print("[LifeRemoteHandlers] Player caught! Jailed for", jailText)
 		return { 
 			success = false, 
 			caught = true,
@@ -3228,20 +3167,17 @@ end
 local DoPrisonAction = getRemote("DoPrisonAction", true)
 
 DoPrisonAction.OnServerInvoke = function(player, actionId)
-	print("[LifeRemoteHandlers] DoPrisonAction called:", actionId, "for", player.Name)
 	
 	local extState = getExtendedState(player)
 	local life = _G.GetPlayerLife and _G.GetPlayerLife(player) or nil
 	
 	-- Must be in jail (except for escape_failed which is just a penalty)
 	if not extState.InJail and actionId ~= "prison_escape_failed" then
-		print("[LifeRemoteHandlers] Player not in prison!")
 		return { success = false, message = "You're not in prison!" }
 	end
 	
 	-- Prison Escape Failed (minigame failure)
 	if actionId == "prison_escape_failed" then
-		print("[LifeRemoteHandlers] Escape minigame failed - adding time")
 		extState.JailYearsLeft = (extState.JailYearsLeft or 0) + math.random(2, 5)
 		if life then
 			life.Stats.Health = math.max(1, (life.Stats.Health or 50) - 10)
@@ -3252,13 +3188,11 @@ DoPrisonAction.OnServerInvoke = function(player, actionId)
 	
 	-- Prison Escape (player beat the minigame - high success rate!)
 	if actionId == "prison_escape" then
-		print("[LifeRemoteHandlers] Prison escape attempt (minigame success)")
 		-- Player beat the minigame, so much higher escape chance (70% base)
 		local smarts = life and life.Stats and life.Stats.Smarts or 50
 		local escapeChance = 70 + math.floor(smarts / 10) -- 70-80% chance
 		local success = math.random(100) <= escapeChance
 		
-		print("[LifeRemoteHandlers] Escape chance:", escapeChance, "Roll success:", success)
 		
 		if success then
 			extState.InJail = false
@@ -3281,7 +3215,6 @@ DoPrisonAction.OnServerInvoke = function(player, actionId)
 			end
 			
 			syncStateToClient(player)
-			print("[LifeRemoteHandlers] Escape successful! Cleared prison flags.")
 			return { 
 				success = true, 
 				message = "You escaped prison! 🎉 You're now a fugitive and must lay low..."
@@ -3290,7 +3223,6 @@ DoPrisonAction.OnServerInvoke = function(player, actionId)
 			-- Even with minigame success, there's a small chance of getting caught
 			extState.JailYearsLeft = (extState.JailYearsLeft or 0) + math.random(1, 3)
 			syncStateToClient(player)
-			print("[LifeRemoteHandlers] Escape failed despite minigame win")
 			return { 
 				success = false, 
 				message = "A guard spotted you at the last moment! More time added."
@@ -3437,7 +3369,6 @@ end
 -- Player joined - initialize extended state
 Players.PlayerAdded:Connect(function(player)
 	getExtendedState(player)
-	print("[LifeRemoteHandlers] Initialized extended state for", player.Name)
 end)
 
 -- Player left - cleanup
@@ -3456,7 +3387,6 @@ _G.ReduceJailTime = function(player, years)
 	
 	-- Handle jail time
 	if extState.InJail then
-		print("[LifeRemoteHandlers] Reducing jail time by", years, "years. Current:", extState.JailYearsLeft)
 		extState.JailYearsLeft = extState.JailYearsLeft - years
 		if extState.JailYearsLeft <= 0 then
 			-- IMPORTANT: Set sentence_complete FIRST, but KEEP in_prison TRUE
@@ -3468,15 +3398,12 @@ _G.ReduceJailTime = function(player, years)
 				life.Flags.ex_convict = true
 				-- Keep in_prison = true so the prison_release_day event can fire!
 				-- The event choice will clear it
-				print("[LifeRemoteHandlers] Set sentence_complete flag - prison_release_day event should fire")
 			end
 			
 			-- Mark jail time as complete but don't immediately release
 			-- The prison_release_day event handles the actual release
 			extState.JailYearsLeft = 0
-			print("[LifeRemoteHandlers] ✅", player.Name, "has served their time! Release day event will fire.")
 		else
-			print("[LifeRemoteHandlers]", player.Name, "has", string.format("%.2f", extState.JailYearsLeft), "years left in jail")
 		end
 		syncStateToClient(player)
 	end
@@ -3487,7 +3414,6 @@ _G.ForceReleaseFromPrison = function(player)
 	local extState = getExtendedState(player)
 	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	
-	print("[LifeRemoteHandlers] ForceReleaseFromPrison called for", player.Name)
 	
 	extState.InJail = false
 	extState.JailYearsLeft = 0
@@ -3499,7 +3425,6 @@ _G.ForceReleaseFromPrison = function(player)
 		life.Flags.sentence_complete = nil
 		life.Flags.ex_convict = true
 		life.Flags.released_from_prison = true
-		print("[LifeRemoteHandlers] Cleared all prison flags, player is now free")
 	end
 	
 	syncStateToClient(player)
@@ -3516,7 +3441,6 @@ _G.OnPlayerAgeUp = function(player)
 	-- If player has a job, increment years at current job
 	if extState.CurrentJob then
 		careerData.YearsAtCurrentJob = (careerData.YearsAtCurrentJob or 0) + 1
-		print("[LifeRemoteHandlers] Player aged up - Years at job:", careerData.YearsAtCurrentJob)
 	end
 end
 
@@ -3542,7 +3466,6 @@ _G.ResetExtendedState = function(player)
 		JailYearsLeft = 0,
 	}
 	
-	print("[LifeRemoteHandlers] Reset extended state for new life:", player.Name)
 end
 
 -- Sync prison state from flags (called after event choice processing)
@@ -3576,7 +3499,6 @@ _G.SyncPrisonStateFromFlags = function(player)
 			extState.JailYearsLeft = 0
 			-- Clear any remaining sentence flags
 			flags.sentence_complete = nil
-			print("[LifeRemoteHandlers] Synced prison state - Player released from prison (flags cleared by event)")
 			syncStateToClient(player)
 			return
 		end
@@ -3589,12 +3511,10 @@ end
 -- Add asset from event (callable from LifeManager when event choice includes addAsset)
 _G.AddAssetFromEvent = function(player, assetData)
 	if not assetData or not assetData.type or not assetData.id then
-		print("[LifeRemoteHandlers] AddAssetFromEvent - Invalid asset data")
 		return false
 	end
 	
 	local extState = getExtendedState(player)
-	print("[LifeRemoteHandlers] AddAssetFromEvent - Adding", assetData.id, "type:", assetData.type)
 	
 	local asset = {
 		id = assetData.id,
@@ -3605,17 +3525,13 @@ _G.AddAssetFromEvent = function(player, assetData)
 	if assetData.type == "vehicle" then
 		extState.OwnedVehicles = extState.OwnedVehicles or {}
 		table.insert(extState.OwnedVehicles, asset)
-		print("[LifeRemoteHandlers] Added vehicle:", asset.name)
 	elseif assetData.type == "property" then
 		extState.OwnedProperties = extState.OwnedProperties or {}
 		table.insert(extState.OwnedProperties, asset)
-		print("[LifeRemoteHandlers] Added property:", asset.name)
 	elseif assetData.type == "item" then
 		extState.OwnedItems = extState.OwnedItems or {}
 		table.insert(extState.OwnedItems, asset)
-		print("[LifeRemoteHandlers] Added item:", asset.name)
 	else
-		print("[LifeRemoteHandlers] Unknown asset type:", assetData.type)
 		return false
 	end
 	
@@ -3628,7 +3544,6 @@ _G.SendToJail = function(player, years)
 	local extState = getExtendedState(player)
 	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
 	
-	print("[LifeRemoteHandlers] SendToJail called - Player:", player.Name, "Years:", years)
 	
 	extState.InJail = true
 	extState.JailYearsLeft = (extState.JailYearsLeft or 0) + years
@@ -3647,20 +3562,16 @@ _G.SendToJail = function(player, years)
 	end
 	
 	syncStateToClient(player)
-	print("[LifeRemoteHandlers] Player sent to jail for", years, "years")
 end
 
 -- Set player job from event choice (callable from LifeManager when event includes setJob)
 _G.SetPlayerJob = function(player, jobData)
 	if not jobData then
-		print("[LifeRemoteHandlers] SetPlayerJob - No job data provided")
 		return false
 	end
 	
 	local extState = getExtendedState(player)
 	local life = _G.GetPlayerLife and _G.GetPlayerLife(player)
-	print("[LifeRemoteHandlers] SetPlayerJob - Setting job for:", player.Name)
-	print("[LifeRemoteHandlers] Job:", jobData.id or "unknown", jobData.title or "unknown")
 	
 	-- Create job entry in ExtendedState
 	extState.CurrentJob = {
@@ -3679,10 +3590,8 @@ _G.SetPlayerJob = function(player, jobData)
 	if life then
 		life.Flags = life.Flags or {}
 		life.Flags.employed = true
-		print("[LifeRemoteHandlers] Set 'employed' flag = true")
 	end
 	
-	print("[LifeRemoteHandlers] Job set:", extState.CurrentJob.title, "at", extState.CurrentJob.company, "- Salary:", extState.CurrentJob.salary)
 	
 	syncStateToClient(player)
 	return true
@@ -3700,10 +3609,8 @@ _G.QuitPlayerJob = function(player)
 		if life then
 			life.Flags = life.Flags or {}
 			life.Flags.employed = nil
-			print("[LifeRemoteHandlers] Cleared 'employed' flag")
 		end
 		
-		print("[LifeRemoteHandlers] Player quit job:", oldJob)
 		syncStateToClient(player)
 		return true
 	end
@@ -3716,4 +3623,4 @@ _G.GetPlayerJob = function(player)
 	return extState.CurrentJob
 end
 
-print("[LifeRemoteHandlers] ✅ All remote handlers initialized!")
+print("[LifeRemoteHandlers] ✅ Initialized")
