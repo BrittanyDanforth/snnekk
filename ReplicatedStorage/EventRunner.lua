@@ -570,6 +570,40 @@ function EventRunner.getMilestoneEvent(state: LifeState, events: { EventDef }): 
 end
 
 function EventRunner.pickRandomEvent(state: LifeState, events: { EventDef }): EventDef?
+	-- Try to use EventEngine for proper eligibility and weighting (LifeEvents format)
+	local EventEngine = nil
+	pcall(function()
+		local LifeEvents = script.Parent:FindFirstChild("LifeEvents")
+		if LifeEvents then
+			local ee = LifeEvents:FindFirstChild("EventEngine")
+			if ee then
+				EventEngine = require(ee)
+			end
+		end
+	end)
+	
+	-- If EventEngine is available, use it for proper event selection
+	if EventEngine and EventEngine.weightedSelect then
+		local eligible = {}
+		for _, event in ipairs(events) do
+			if not event.milestone then
+				-- Use EventEngine.isEligible for comprehensive checks (career, flags, etc.)
+				local isEligible, reason = EventEngine.isEligible(event, state)
+				if isEligible and EventRunner.isEventPlayable(state, event) then
+					table.insert(eligible, event)
+				end
+			end
+		end
+		
+		if #eligible > 0 then
+			local selected = EventEngine.weightedSelect(eligible, state)
+			if selected then
+				return selected
+			end
+		end
+	end
+	
+	-- Fallback: Original logic for backwards compatibility
 	local eligible: { EventDef } = {}
 	local totalWeight = 0
 
@@ -1202,7 +1236,185 @@ function EventRunner.applyChoice(
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 12: BUILD RESULT TEXT
+	-- STEP 12: LIFEEVENTS FORMAT SUPPORT (career, assets, death, etc.)
+	-- ═══════════════════════════════════════════════════════════════
+	-- Load EventEngine for LifeEvents format support
+	local EventEngine = nil
+	pcall(function()
+		local LifeEvents = script.Parent:FindFirstChild("LifeEvents")
+		if LifeEvents then
+			local ee = LifeEvents:FindFirstChild("EventEngine")
+			if ee then
+				EventEngine = require(ee)
+			end
+		end
+	end)
+	
+	-- If EventEngine is available, use it to handle LifeEvents format fields
+	-- This ensures all career, trait, and flag handling works correctly
+	if EventEngine and EventEngine.applyChoiceEffects then
+		local engineResults = EventEngine.applyChoiceEffects(choice, state)
+		if engineResults then
+			-- Merge flag changes
+			if engineResults.flagsSet then
+				for _, flag in ipairs(engineResults.flagsSet) do
+					if not table.find(results.flagsSet, flag) then
+						table.insert(results.flagsSet, flag)
+					end
+				end
+			end
+			if engineResults.flagsCleared then
+				for _, flag in ipairs(engineResults.flagsCleared) do
+					if not table.find(results.flagsCleared, flag) then
+						table.insert(results.flagsCleared, flag)
+					end
+				end
+			end
+			-- Merge stat changes
+			if engineResults.statChanges then
+				for stat, change in pairs(engineResults.statChanges) do
+					if change.change then
+						results.effects[stat] = (results.effects[stat] or 0) + change.change
+					end
+				end
+			end
+			-- Add messages
+			if engineResults.messages then
+				for _, msg in ipairs(engineResults.messages) do
+					-- Store for later use
+				end
+			end
+		end
+	else
+		-- Fallback: Handle LifeEvents format fields manually if EventEngine not available
+		-- Load CareerSystem directly
+		local CareerSystem = nil
+		pcall(function()
+			local LifeEvents = script.Parent:FindFirstChild("LifeEvents")
+			if LifeEvents then
+				local cs = LifeEvents:FindFirstChild("CareerSystem")
+				if cs then
+					CareerSystem = require(cs)
+				end
+			end
+		end)
+		
+		-- Handle LifeEvents format choice fields
+		if success or (not usedRNG and minigameResult == nil) then
+			-- Career management
+			if choice.startCareer and CareerSystem then
+				local success, msg = CareerSystem.startCareer(state, choice.startCareer)
+				if success then
+					print("[EventRunner] Started career:", choice.startCareer)
+				end
+			end
+			
+			if choice.careerBranch and CareerSystem then
+				local success, msg = CareerSystem.setBranch(state, choice.careerBranch)
+				if success then
+					print("[EventRunner] Set career branch:", choice.careerBranch)
+				end
+			end
+			
+			if choice.careerXP and CareerSystem then
+				CareerSystem.addXP(state, choice.careerXP)
+			end
+			
+			if choice.careerReputation and CareerSystem then
+				CareerSystem.addReputation(state, choice.careerReputation)
+			end
+			
+			if choice.promoteCareer and CareerSystem then
+				local success, msg = CareerSystem.promote(state)
+				if success then
+					print("[EventRunner] Promoted career:", msg)
+				end
+			end
+			
+			if choice.quitCareer and CareerSystem then
+				local success, msg = CareerSystem.quitCareer(state)
+				if success then
+					print("[EventRunner] Quit career:", msg)
+				end
+			end
+			
+			-- LifeEvents format flags (flags.set / flags.clear) - only if not already handled
+			if choice.flags and not (choice.setFlag or choice.setFlags) then
+				if choice.flags.set then
+					for _, flag in ipairs(choice.flags.set) do
+						state.Flags[flag] = true
+						if not table.find(results.flagsSet, flag) then
+							table.insert(results.flagsSet, flag)
+						end
+					end
+				end
+				if choice.flags.clear then
+					for _, flag in ipairs(choice.flags.clear) do
+						state.Flags[flag] = nil
+						if not table.find(results.flagsCleared, flag) then
+							table.insert(results.flagsCleared, flag)
+						end
+					end
+				end
+			end
+			
+			-- LifeEvents format traits (traits.add / traits.remove / traits.resolve)
+			if choice.traits then
+				local TraitSystem = nil
+				pcall(function()
+					local ts = script.Parent:FindFirstChild("TraitSystem")
+					if ts then
+						TraitSystem = require(ts)
+					end
+				end)
+				
+				if TraitSystem then
+					if choice.traits.add then
+						for _, traitId in ipairs(choice.traits.add) do
+							TraitSystem.AddTrait(state, traitId)
+						end
+					end
+					if choice.traits.remove then
+						for _, traitId in ipairs(choice.traits.remove) do
+							TraitSystem.RemoveTrait(state, traitId)
+						end
+					end
+					if choice.traits.resolve then
+						local resolveResult = TraitSystem.ResolveTraits(state, choice.traits.resolve)
+						if resolveResult and resolveResult.narrative then
+							-- Narrative will be added to result text
+						end
+					end
+				end
+			end
+		end
+		
+		-- Asset removal
+		if choice.removeAsset then
+			results.removeAsset = choice.removeAsset
+		end
+		
+		-- Death risk (via Health stat reduction)
+		if choice.deathRisk then
+			local healthReduction = choice.deathRisk
+			if type(healthReduction) == "number" then
+				local currentHealth = (state.Stats and state.Stats.Health) or 100
+				local newHealth = math.max(0, currentHealth - healthReduction)
+				if not state.Stats then state.Stats = {} end
+				state.Stats.Health = newHealth
+				results.effects.Health = (results.effects.Health or 0) - healthReduction
+				
+				-- Check for death
+				if newHealth <= 0 then
+					results.deathTriggered = true
+					results.deathCause = "event_health_loss"
+				end
+			end
+		end
+	end
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- STEP 13: BUILD RESULT TEXT
 	-- ═══════════════════════════════════════════════════════════════
 	local explicitResultText: string? = nil
 	

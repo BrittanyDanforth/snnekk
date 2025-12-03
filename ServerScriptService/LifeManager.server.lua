@@ -7,6 +7,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LifeState = require(ReplicatedStorage:WaitForChild("LifeState"))
 local EventLibrary = require(ReplicatedStorage:WaitForChild("EventLibrary"))
 local EventRunner = require(ReplicatedStorage:WaitForChild("EventRunner"))
+local TraitSystem = require(ReplicatedStorage:WaitForChild("TraitSystem"))
+
+-- Motorsport events are now handled through LifeEvents system
+-- No separate RacingCareer module needed
 
 -- Debug: verify EventRunner loaded correctly
 if EventRunner then
@@ -644,8 +648,9 @@ local function ageUp(player)
 		return
 	end
 	
-	-- Decide if a life event should fire (filtered by stage)
+	-- Pick event from EventLibrary (includes motorsport events from LifeEvents system)
 	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
+	
 	if eventDef then
 		-- Double-check event is valid for current stage
 		local validation = EventRunner.getEventValidation(state, eventDef)
@@ -840,6 +845,7 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	-- ═══════════════════════════════════════════════════════════════
 	-- STEP 4: APPLY CHOICE (with RNG if applicable)
 	-- ═══════════════════════════════════════════════════════════════
+	-- All events (including motorsport) are handled through EventRunner
 	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, nil)
 	
 	if err then
@@ -856,13 +862,24 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 6: HANDLE ASSET ADDITIONS
+	-- STEP 6: HANDLE ASSET ADDITIONS/REMOVALS
 	-- ═══════════════════════════════════════════════════════════════
 	local assetToAdd = results.addAsset or choiceDef.addAsset
 	if assetToAdd and results.wasSuccess ~= false then
-		print("[LifeManager] Adding asset from event:", assetToAdd.id, "type:", assetToAdd.type)
+		print("[LifeManager] Adding asset from event:", assetToAdd.type or assetToAdd.id, "type:", assetToAdd.type)
 		if _G.AddAssetFromEvent then
 			_G.AddAssetFromEvent(player, assetToAdd)
+		end
+	end
+	
+	-- Handle asset removal (LifeEvents format)
+	local assetToRemove = results.removeAsset or choiceDef.removeAsset
+	if assetToRemove and results.wasSuccess ~= false then
+		print("[LifeManager] Removing asset from event:", assetToRemove.id or assetToRemove.type)
+		if _G.RemoveAssetFromEvent then
+			_G.RemoveAssetFromEvent(player, assetToRemove)
+		elseif _G.RemoveAsset then
+			_G.RemoveAsset(player, assetToRemove.id or assetToRemove.type)
 		end
 	end
 

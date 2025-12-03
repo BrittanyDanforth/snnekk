@@ -1,25 +1,24 @@
 -- LifeEvents/init.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- GODLY LIFE EVENTS SYSTEM - Central Hub
+-- MASTER EVENT HUB - BitLife-Grade Backend
 -- ═══════════════════════════════════════════════════════════════════════════════
---
--- This is the main entry point for the event system. It:
--- - Loads all event modules
--- - Provides access to CareerSystem and EventEngine
--- - Normalizes legacy events to the new schema
--- - Exposes helper functions for common operations
---
+-- This is the central hub for all event-related functionality:
+-- - Safe module loading (CareerSystem, EventEngine, etc.)
+-- - Master event registry (AllEvents, EventsById)
+-- - Legacy event normalization (old → new unified schema)
+-- - Event loading from modules (plug-in system)
+-- - Public API (selection, processing, helpers)
+-- - Debug stats
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local LifeEvents = {}
 
 -- ═══════════════════════════════════════════════════════════════
--- SAFE MODULE LOADING
+-- 1. SAFE MODULE LOADING
 -- ═══════════════════════════════════════════════════════════════
 
 local function safeRequire(moduleName)
-	-- script.Parent is the LifeEvents folder - siblings of init, not children
-	local container = script.Parent
+	local container = script.Parent -- LifeEvents folder
 	local module = container:FindFirstChild(moduleName)
 	
 	if not module then
@@ -40,30 +39,34 @@ local function safeRequire(moduleName)
 	end
 end
 
--- Load core systems
-local CareerLibrary = safeRequire("CareerLibrary") or { getAllCareers = function() return {} end, getCareer = function() return nil end }
+-- Load core systems with fallbacks
+local CareerLibrary = safeRequire("CareerLibrary") or { 
+	getAllCareers = function() return {} end, 
+	getCareer = function() return nil end 
+}
 local CareerSystem = safeRequire("CareerSystem") or {}
 local EventEngine = safeRequire("EventEngine") or {}
 
--- Export systems
+-- Export systems for external use
 LifeEvents.CareerLibrary = CareerLibrary
 LifeEvents.CareerSystem = CareerSystem
 LifeEvents.EventEngine = EventEngine
 
 -- ═══════════════════════════════════════════════════════════════
--- MASTER EVENT REGISTRY
+-- 2. MASTER EVENT REGISTRY
 -- ═══════════════════════════════════════════════════════════════
 
-LifeEvents.AllEvents = {}
-LifeEvents.EventsById = {}
+LifeEvents.AllEvents = {}      -- Flat array of all events
+LifeEvents.EventsById = {}     -- O(1) lookup by event ID
 
 -- ═══════════════════════════════════════════════════════════════
--- LEGACY EVENT NORMALIZATION
+-- 3. LEGACY EVENT NORMALIZATION
 -- ═══════════════════════════════════════════════════════════════
 
 -- Convert old-style events to new unified schema
+-- This allows mixing old and new events seamlessly
 local function normalizeEvent(event)
-	-- If already has conditions table, minimal normalization
+	-- If already has conditions table, assume it's new-style
 	if event.conditions then
 		-- Ensure id exists
 		if not event.id then
@@ -81,10 +84,12 @@ local function normalizeEvent(event)
 		blockedFlags = nil,
 		requiredCareerId = event.requiredCareerId,
 		requiredCareerMinTier = event.requiredCareerMinTier,
+		requiredCareerBranch = event.requiredCareerBranch,
 		requiredEducation = event.requiresEducation,
-		minMoney = event.minMoney,  -- Money requirements
-		minStats = event.minStats,   -- Stat requirements
-		custom = event.requires,     -- Legacy custom function
+		minMoney = event.minMoney,
+		minStats = event.minStats,
+		maxStats = event.maxStats,
+		custom = event.requires, -- Legacy custom function
 	}
 	
 	-- Handle single flags (convert to arrays)
@@ -100,40 +105,50 @@ local function normalizeEvent(event)
 		conditions.blockedFlags = conditions.blockedFlags or {}
 		table.insert(conditions.blockedFlags, event.blockIfFlag)
 	end
+	if event.blockIfFlag2 then
+		conditions.blockedFlags = conditions.blockedFlags or {}
+		table.insert(conditions.blockedFlags, event.blockIfFlag2)
+	end
 	
-	-- Build normalized event
+	-- Build normalized event (keep legacy fields for compatibility)
 	local normalized = {
 		id = event.id or (event.title and string.gsub(string.lower(event.title), " ", "_")) or ("event_" .. math.random(10000, 99999)),
 		emoji = event.emoji,
 		title = event.title or "Life Event",
 		category = event.category or "life",
-		tags = event.tags,
+		tags = event.tags or {},
 		
-		weight = event.weight,
-		cooldownYears = event.cooldown,
-		cooldown = event.cooldown, -- Keep legacy field for LifeStageSystem
-		oneTime = event.oneTime,
-		milestone = event.milestone,
+		weight = event.weight or 10,
+		cooldownYears = event.cooldown or event.cooldownYears,
+		cooldown = event.cooldown, -- Keep legacy field
+		oneTime = event.oneTime or false,
+		milestone = event.milestone or false,
 		
 		chainId = event.chainId,
 		chainStep = event.chainStep,
 		
-		-- Keep these at top level for LifeStageSystem compatibility
+		-- Keep legacy fields at top level for LifeStageSystem compatibility
 		requires = event.requires,
+		minAge = event.minAge,
+		maxAge = event.maxAge,
 		minMoney = event.minMoney,
 		minStats = event.minStats,
+		maxStats = event.maxStats,
 		requiresFlag = event.requiresFlag,
 		requiresFlag2 = event.requiresFlag2,
 		requiresAnyFlag = event.requiresAnyFlag,
 		blockIfFlag = event.blockIfFlag,
 		blockIfFlag2 = event.blockIfFlag2,
+		requiredCareerId = event.requiredCareerId,
+		requiredCareerMinTier = event.requiredCareerMinTier,
+		requiredCareerBranch = event.requiredCareerBranch,
+		requiresEducation = event.requiresEducation,
 		
 		conditions = conditions,
 		
 		getDynamicData = event.getDynamicData,
 		getDynamicEmoji = event.getDynamicEmoji,
 		text = event.text or "",
-		
 		choices = event.choices or {},
 	}
 	
@@ -153,6 +168,11 @@ local function normalizeEvent(event)
 			if choice.clearFlag then
 				table.insert(choice.flags.clear, choice.clearFlag)
 			end
+			if choice.clearFlags then
+				for _, flag in ipairs(choice.clearFlags) do
+					table.insert(choice.flags.clear, flag)
+				end
+			end
 		end
 	end
 	
@@ -160,19 +180,21 @@ local function normalizeEvent(event)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- EVENT LOADING
+-- 4. EVENT LOADING FROM MODULES
 -- ═══════════════════════════════════════════════════════════════
 
--- List of event modules to load
+-- List of event modules to load (plug-in system)
 local EVENT_MODULES = {
 	"career_motorsport",
+	"first_job",
+	-- Add more modules here as you create them
 }
 
 -- Load all event modules
 local function loadEventModules()
 	local loaded = 0
 	local failed = 0
-	local container = script.Parent -- LifeEvents folder, NOT script itself
+	local container = script.Parent -- LifeEvents folder
 
 	for _, moduleName in ipairs(EVENT_MODULES) do
 		local success, result = pcall(function()
@@ -227,10 +249,10 @@ local function loadEventModules()
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- PUBLIC API
+-- 5. PUBLIC API
 -- ═══════════════════════════════════════════════════════════════
 
--- Initialize the event system
+-- Initialize the event system (clears registries and reloads)
 function LifeEvents.initialize()
 	LifeEvents.AllEvents = {}
 	LifeEvents.EventsById = {}
@@ -251,8 +273,8 @@ end
 function LifeEvents.getEventsForAge(age)
 	local events = {}
 	for _, event in ipairs(LifeEvents.AllEvents) do
-		local minAge = event.conditions and event.conditions.minAge or 0
-		local maxAge = event.conditions and event.conditions.maxAge or 999
+		local minAge = event.conditions and event.conditions.minAge or event.minAge or 0
+		local maxAge = event.conditions and event.conditions.maxAge or event.maxAge or 999
 		if age >= minAge and age <= maxAge then
 			table.insert(events, event)
 		end
@@ -288,69 +310,103 @@ function LifeEvents.getEventsByTag(tag)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- EVENT SELECTION (Delegates to EventEngine)
+-- 6. EVENT SELECTION (Delegates to EventEngine)
 -- ═══════════════════════════════════════════════════════════════
 
 -- Check if an event is eligible for a player
 function LifeEvents.checkConditions(event, state)
-	return EventEngine.isEligible(event, state)
+	if EventEngine and EventEngine.isEligible then
+		return EventEngine.isEligible(event, state)
+	end
+	return true, "no_engine" -- Fallback if EventEngine not available
 end
 
 -- Select events for a year
 function LifeEvents.selectEventsForYear(state, config)
-	return EventEngine.selectYearEvents(LifeEvents.AllEvents, state, config)
+	if EventEngine and EventEngine.selectYearEvents then
+		return EventEngine.selectYearEvents(LifeEvents.AllEvents, state, config)
+	end
+	return {} -- Fallback
 end
 
 -- Select a single random event
 function LifeEvents.selectRandomEvent(state)
 	local eligible = {}
 	for _, event in ipairs(LifeEvents.AllEvents) do
-		if EventEngine.isEligible(event, state) then
-			table.insert(eligible, event)
+		if EventEngine and EventEngine.isEligible then
+			local isEligible, reason = EventEngine.isEligible(event, state)
+			if isEligible then
+				table.insert(eligible, event)
+			end
+		else
+			table.insert(eligible, event) -- Fallback: include all if no engine
 		end
 	end
 	
 	if #eligible == 0 then return nil end
 	
-	return EventEngine.weightedSelect(eligible, state)
+	if EventEngine and EventEngine.weightedSelect then
+		return EventEngine.weightedSelect(eligible, state)
+	else
+		-- Fallback: simple random
+		return eligible[math.random(#eligible)]
+	end
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- EVENT PROCESSING (Delegates to EventEngine)
+-- 7. EVENT PROCESSING (Delegates to EventEngine)
 -- ═══════════════════════════════════════════════════════════════
 
 -- Process a choice and apply effects
 function LifeEvents.processChoice(event, choiceIndex, state)
-	return EventEngine.completeEvent(event, choiceIndex, state)
+	if EventEngine and EventEngine.completeEvent then
+		return EventEngine.completeEvent(event, choiceIndex, state)
+	end
+	return state -- Fallback
 end
 
 -- Get processed event text with placeholders filled
 function LifeEvents.getEventText(event, state)
-	return EventEngine.processEventText(event, state)
+	if EventEngine and EventEngine.processEventText then
+		return EventEngine.processEventText(event, state)
+	end
+	return event.text or "" -- Fallback
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- CAREER FUNCTIONS (Delegates to CareerSystem)
+-- 8. CAREER FUNCTIONS (Delegates to CareerSystem)
 -- ═══════════════════════════════════════════════════════════════
 
 function LifeEvents.startCareer(state, careerId)
-	return CareerSystem.startCareer(state, careerId)
+	if CareerSystem and CareerSystem.startCareer then
+		return CareerSystem.startCareer(state, careerId)
+	end
+	return false
 end
 
 function LifeEvents.getCareerInfo(state)
-	return CareerSystem.getDisplayInfo(state)
+	if CareerSystem and CareerSystem.getDisplayInfo then
+		return CareerSystem.getDisplayInfo(state)
+	end
+	return nil
 end
 
 function LifeEvents.getAvailableCareers(state)
-	return CareerSystem.getAvailableCareers(state)
+	if CareerSystem and CareerSystem.getAvailableCareers then
+		return CareerSystem.getAvailableCareers(state)
+	end
+	return {}
 end
 
 function LifeEvents.calculateCareerIncome(state)
-	return CareerSystem.calculateIncome(state)
+	if CareerSystem and CareerSystem.calculateIncome then
+		return CareerSystem.calculateIncome(state)
+	end
+	return 0
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- HELPER FUNCTIONS FOR EVENTS
+-- 9. HELPER FUNCTIONS FOR EVENTS
 -- ═══════════════════════════════════════════════════════════════
 
 -- Random amount generator
@@ -360,14 +416,16 @@ end
 
 -- Random percent (0.0 to 1.0)
 function LifeEvents.randomPercent()
-	return math.random() 
+	return math.random()
 end
 
 -- Check if player has a friend
 function LifeEvents.hasFriend(state)
 	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "friend" then return true end
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" and (rel.alive ~= false) then
+			return true
+		end
 	end
 	return false
 end
@@ -375,8 +433,10 @@ end
 -- Check if player has a partner
 function LifeEvents.hasPartner(state)
 	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "partner" or rel.type == "spouse" then return true end
+	for _, rel in pairs(relationships) do
+		if (rel.type == "romance" or rel.type == "partner" or rel.type == "spouse") and (rel.alive ~= false) then
+			return true
+		end
 	end
 	return false
 end
@@ -384,8 +444,10 @@ end
 -- Check if player is married
 function LifeEvents.isMarried(state)
 	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "spouse" then return true end
+	for _, rel in pairs(relationships) do
+		if rel.type == "romance" and rel.role == "Spouse" and (rel.alive ~= false) then
+			return true
+		end
 	end
 	return false
 end
@@ -393,35 +455,40 @@ end
 -- Check if player has children
 function LifeEvents.hasChildren(state)
 	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "child" then return true end
+	for _, rel in pairs(relationships) do
+		if rel.type == "family" and rel.role == "Child" and (rel.alive ~= false) then
+			return true
+		end
 	end
 	return false
 end
 
 -- Check if player has a job
 function LifeEvents.hasJob(state)
-	return CareerSystem.getPrimaryCareer(state) ~= nil
+	if CareerSystem and CareerSystem.getPrimaryCareer then
+		return CareerSystem.getPrimaryCareer(state) ~= nil
+	end
+	return state.Career and state.Career.jobTitle ~= nil
 end
 
 -- Check if player is in jail
 function LifeEvents.isInJail(state)
 	local flags = state.Flags or {}
-	return flags.in_prison == true or flags.in_jail == true
+	return flags.in_prison == true or flags.in_jail == true or (state.InJail == true)
 end
 
 -- Check if player is enrolled in education
 function LifeEvents.isEnrolled(state)
-	local edu = state.Education or "none"
-	return edu ~= "none" and edu ~= "high_school"
+	local edu = state.Education or {}
+	return edu.level ~= nil and edu.level ~= "none" and edu.graduated ~= true
 end
 
 -- Get a random friend name
 function LifeEvents.getFriendName(state)
 	local relationships = state.Relationships or {}
 	local friends = {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "friend" and rel.name then
+	for _, rel in pairs(relationships) do
+		if rel.type == "friend" and rel.name and (rel.alive ~= false) then
 			table.insert(friends, rel.name)
 		end
 	end
@@ -436,8 +503,8 @@ end
 -- Get partner name
 function LifeEvents.getPartnerName(state)
 	local relationships = state.Relationships or {}
-	for _, rel in ipairs(relationships) do
-		if rel.type == "partner" or rel.type == "spouse" then
+	for _, rel in pairs(relationships) do
+		if (rel.type == "romance" or rel.type == "partner" or rel.type == "spouse") and rel.name and (rel.alive ~= false) then
 			return rel.name
 		end
 	end
@@ -445,7 +512,7 @@ function LifeEvents.getPartnerName(state)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- EDUCATION HELPERS
+-- 10. EDUCATION HELPERS
 -- ═══════════════════════════════════════════════════════════════
 
 LifeEvents.EducationRanks = {
@@ -460,18 +527,18 @@ LifeEvents.EducationRanks = {
 }
 
 function LifeEvents.hasEducation(state, required)
-	local playerEdu = state.Education or "none"
+	local playerEdu = state.Education and state.Education.level or "none"
 	local reqRank = LifeEvents.EducationRanks[required] or 0
 	local playerRank = LifeEvents.EducationRanks[playerEdu] or 0
 	return playerRank >= reqRank
 end
 
 function LifeEvents.getEducationLevel(state)
-	return state.Education or "none"
+	return (state.Education and state.Education.level) or "none"
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- STAT HELPERS
+-- 11. STAT HELPERS
 -- ═══════════════════════════════════════════════════════════════
 
 function LifeEvents.getStat(state, statName)
@@ -495,7 +562,7 @@ function LifeEvents.modifyStat(state, statName, amount)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- FLAG HELPERS
+-- 12. FLAG HELPERS
 -- ═══════════════════════════════════════════════════════════════
 
 function LifeEvents.hasFlag(state, flag)
@@ -516,7 +583,7 @@ function LifeEvents.clearFlag(state, flag)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- DEBUG / STATS
+-- 13. DEBUG / STATS
 -- ═══════════════════════════════════════════════════════════════
 
 function LifeEvents.getStats()
@@ -547,7 +614,7 @@ function LifeEvents.getStats()
 		end
 		
 		-- Count by age range
-		local minAge = event.conditions and event.conditions.minAge or 0
+		local minAge = event.conditions and event.conditions.minAge or event.minAge or 0
 		if minAge < 13 then
 			stats.byAgeRange.child = stats.byAgeRange.child + 1
 		elseif minAge < 18 then

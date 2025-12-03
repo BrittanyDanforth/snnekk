@@ -139,7 +139,58 @@ end
 -- Get current career instance
 function CareerSystem.getPrimaryCareer(state)
 	local careers = ensureCareersTable(state)
-	return careers.primary
+	
+	-- If primary career exists, return it
+	if careers.primary then
+		return careers.primary
+	end
+	
+	-- FALLBACK: Check flags to see if a career was started but not properly stored
+	-- This handles cases where the career was started via flags but Careers table wasn't initialized
+	local flags = state.Flags or {}
+	for flag, _ in pairs(flags) do
+		if string.find(flag, "^career_") and string.find(flag, "_started$") then
+			-- Extract career ID from flag (e.g., "career_motorsport_icon_started" -> "motorsport_icon")
+			local careerId = string.gsub(flag, "^career_", "")
+			careerId = string.gsub(careerId, "_started$", "")
+			
+			-- Create a minimal career instance from flags
+			local instance = {
+				careerId = careerId,
+				tierIndex = 1, -- Default to tier 1 if unknown
+				branch = nil,
+				xp = 0,
+				reputation = 0,
+				yearsInCareer = 0,
+				yearStarted = state.Age or 18,
+				status = "active",
+				achievements = {},
+			}
+			
+			-- Try to determine tier from flags
+			for i = 1, 10 do
+				if flags["career_" .. careerId .. "_tier_" .. i] then
+					instance.tierIndex = i
+				end
+			end
+			
+			-- Try to determine branch from flags
+			if flags[careerId .. "_single_seater"] or flags["motorsport_single_seater"] then
+				instance.branch = "single_seater"
+			elseif flags[careerId .. "_endurance"] or flags["motorsport_endurance"] then
+				instance.branch = "endurance"
+			elseif flags[careerId .. "_street_icon"] or flags["motorsport_street_icon"] then
+				instance.branch = "street_icon"
+			end
+			
+			-- Store it in Careers table for future use
+			careers.primary = instance
+			print("[CareerSystem] Recovered career from flags:", careerId, "tier:", instance.tierIndex)
+			return instance
+		end
+	end
+	
+	return nil
 end
 
 -- Get career definition for current career

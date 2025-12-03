@@ -22,13 +22,19 @@ if csSuccess then
 	CareerSystem = csResult
 else
 	warn("[EventEngine] ⚠️ CareerSystem not loaded:", csResult)
-	-- Provide minimal fallback
+	-- Provide minimal fallback with all required functions
 	CareerSystem = {
 		getPrimaryCareer = function() return nil end,
 		getCurrentTier = function() return nil end,
 		meetsCareerRequirements = function() return true end,
 		getCareerEventBoost = function() return 0 end,
 		getDisplayInfo = function() return { hasCareer = false, title = "Unemployed" } end,
+		startCareer = function() return false, "CareerSystem not loaded" end,
+		setBranch = function() return false, "CareerSystem not loaded" end,
+		addXP = function() return false end,
+		addReputation = function() return false end,
+		promote = function() return false, "CareerSystem not loaded" end,
+		quitCareer = function() return false, "CareerSystem not loaded" end,
 	}
 end
 
@@ -391,22 +397,47 @@ local function inferRequirementsFromEvent(event, state)
 	local lowerText = string.lower(text)
 	
 	-- CAR/VEHICLE EVENT DETECTION
-	local carPatterns = {"car_", "driving_", "vehicle_", "speeding_", "traffic_", "road_trip", "commute", "parking_"}
+	local carPatterns = {"car_", "driving_", "vehicle_", "speeding_", "traffic_", "road_trip", "commute", "parking_", "supercar", "hypercar", "track_car", "dream_car", "tuned_vehicle", "premium_vehicle"}
 	for _, pattern in ipairs(carPatterns) do
-		if string.find(lowerId, pattern) or string.find(lowerTitle, pattern) then
+		if string.find(lowerId, pattern) or string.find(lowerTitle, pattern) or string.find(lowerText, pattern) then
 			-- Event involves driving - check for vehicle or license
-			if not ownsAsset(state, "car") and not hasDriversLicense(state) then
-				return false, "auto_infer: car event but no vehicle/license"
+			-- EXCEPTION: Events about GETTING a car (like "get_car", "buy_car", "first_car") don't require owning one
+			if not string.find(lowerId, "get_") and not string.find(lowerId, "buy_") and not string.find(lowerId, "first_") and not string.find(lowerId, "adopt") then
+				if not ownsAsset(state, "car") and not hasDriversLicense(state) then
+					return false, "auto_infer: car event but no vehicle/license"
+				end
 			end
 		end
 	end
 	
 	-- Car crash/accident specific (these need a car!)
-	local crashPatterns = {"car_accident", "car_crash", "fender_bender", "wreck", "collision"}
+	local crashPatterns = {"car_accident", "car_crash", "fender_bender", "wreck", "collision", "crash", "accident"}
 	for _, pattern in ipairs(crashPatterns) do
-		if string.find(lowerId, pattern) or string.find(lowerText, pattern) then
+		if string.find(lowerId, pattern) or string.find(lowerText, pattern) or string.find(lowerTitle, pattern) then
 			if not ownsAsset(state, "car") then
 				return false, "auto_infer: car accident but no car"
+			end
+		end
+	end
+	
+	-- MOTORSPORT VEHICLE EVENTS - These require owning a car unless it's about getting one
+	local motorsportVehiclePatterns = {
+		"vehicle", "car", "supercar", "hypercar", "track_car", "dream_car", "tuned", "premium",
+		"driving", "race.*car", "test.*car", "crash", "accident", "wreck", "collision"
+	}
+	-- Only check motorsport category events for vehicle requirements
+	if category == "motorsport" or string.find(lowerId, "motorsport") then
+		for _, pattern in ipairs(motorsportVehiclePatterns) do
+			if string.find(lowerId, pattern) or string.find(lowerTitle, pattern) or string.find(lowerText, pattern) then
+				-- Skip events about getting/buying vehicles or first-time events
+				if not string.find(lowerId, "get_") and not string.find(lowerId, "buy_") and not string.find(lowerId, "first_") 
+					and not string.find(lowerId, "upgrade") and not string.find(lowerId, "contract") 
+					and not string.find(lowerId, "kart") and not string.find(lowerId, "pedal") 
+					and not string.find(lowerId, "toy") and not string.find(lowerId, "prep") then
+					if not ownsAsset(state, "car") then
+						return false, "auto_infer: motorsport vehicle event but no car"
+					end
+				end
 			end
 		end
 	end
@@ -702,15 +733,29 @@ function EventEngine.isEligible(event, state)
 		return false, "stat_requirements_not_met"
 	end
 	
-	-- Career check
+	-- Career check (ENHANCED with debug logging)
 	if conditions.requiredCareerId then
-		if not CareerSystem.meetsCareerRequirements(
+		local meetsReqs = CareerSystem.meetsCareerRequirements(
 			state,
 			conditions.requiredCareerId,
 			conditions.requiredCareerMinTier,
 			conditions.requiredCareerBranch
-		) then
-			return false, "career_requirements_not_met"
+		)
+		if not meetsReqs then
+			-- Debug: Log why career requirement failed
+			local instance = CareerSystem.getPrimaryCareer(state)
+			if not instance then
+				return false, "career_requirements_not_met: no career"
+			elseif instance.status ~= "active" then
+				return false, "career_requirements_not_met: career not active (" .. (instance.status or "unknown") .. ")"
+			elseif instance.careerId ~= conditions.requiredCareerId then
+				return false, "career_requirements_not_met: wrong career (has " .. (instance.careerId or "nil") .. ", needs " .. conditions.requiredCareerId .. ")"
+			elseif conditions.requiredCareerMinTier and instance.tierIndex < conditions.requiredCareerMinTier then
+				return false, "career_requirements_not_met: tier too low (has " .. (instance.tierIndex or 0) .. ", needs " .. conditions.requiredCareerMinTier .. ")"
+			elseif conditions.requiredCareerBranch and instance.branch ~= conditions.requiredCareerBranch then
+				return false, "career_requirements_not_met: wrong branch (has " .. (instance.branch or "nil") .. ", needs " .. conditions.requiredCareerBranch .. ")"
+			end
+			return false, "career_requirements_not_met: unknown reason"
 		end
 	end
 	
@@ -1009,7 +1054,7 @@ function EventEngine.categorizeEvents(events, state)
 			end
 			
 			-- Main categorization
-			if category == "career" or category == "work" or category == "tech" then
+			if category == "career" or category == "work" or category == "tech" or category == "motorsport" then
 				table.insert(buckets.career, event)
 			elseif category == "health" then
 				table.insert(buckets.health, event)
