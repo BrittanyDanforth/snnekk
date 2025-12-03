@@ -166,6 +166,222 @@ local function registerBaseTraits()
 	})
 
 	-- ═══════════════════════════════════════════════════════════════
+	-- GENERAL TRAITS FOR FUTURE USE
+	-- ═══════════════════════════════════════════════════════════════
+
+	-- Health & Unhealthy Traits
+	registerTrait({
+		id = "OBESE",
+		name = "Obese",
+		desc = "Severe weight issues; health complications arise.",
+		tags = {"health", "unhealthy"},
+		tier = 2,
+		modifiers = { Fitness = -10, Health = -5, Charisma = -3, MentalHealth = -3 },
+		prerequisites = {"FATKID"},
+	})
+
+	registerTrait({
+		id = "DIABETES",
+		name = "Type 2 Diabetes",
+		desc = "Developed diabetes from poor lifestyle choices.",
+		tags = {"health", "unhealthy", "disease"},
+		tier = 2,
+		modifiers = { Health = -8, Fitness = -5, MentalHealth = -2 },
+		prerequisites = {"OBESE"},
+	})
+
+	registerTrait({
+		id = "HEART_DISEASE",
+		name = "Heart Disease",
+		desc = "Cardiovascular problems from unhealthy lifestyle.",
+		tags = {"health", "unhealthy", "disease"},
+		tier = 3,
+		modifiers = { Health = -10, Fitness = -8, MentalHealth = -3 },
+		prerequisites = {"OBESE", "DIABETES"},
+	})
+
+	registerTrait({
+		id = "SMOKER",
+		name = "Smoker",
+		desc = "Addicted to cigarettes; health slowly deteriorates.",
+		tags = {"health", "unhealthy", "addiction"},
+		tier = 1,
+		modifiers = { Health = -4, Fitness = -3, Charisma = -1 },
+	})
+
+	registerTrait({
+		id = "HEAVY_DRINKER",
+		name = "Heavy Drinker",
+		desc = "Alcohol dependency; affects judgment and health.",
+		tags = {"health", "unhealthy", "addiction"},
+		tier = 2,
+		modifiers = { Health = -5, MentalHealth = -3, Intelligence = -2 },
+	})
+
+	registerTrait({
+		id = "DRUG_ADDICT",
+		name = "Drug Addict",
+		desc = "Substance abuse; life spirals out of control.",
+		tags = {"health", "unhealthy", "addiction"},
+		tier = 3,
+		modifiers = { Health = -8, MentalHealth = -6, Intelligence = -3, Karma = -3 },
+	})
+
+	-- Gambling Traits
+	registerTrait({
+		id = "GAMBLER",
+		name = "Gambler",
+		desc = "Loves taking risks; betting becomes a problem.",
+		tags = {"gambling", "risk"},
+		tier = 1,
+		modifiers = { RiskAffinity = 4, MentalHealth = -2, Luck = 1 },
+	})
+
+	registerTrait({
+		id = "COMPULSIVE_GAMBLER",
+		name = "Compulsive Gambler",
+		desc = "Can't stop gambling; loses everything.",
+		tags = {"gambling", "addiction"},
+		tier = 2,
+		modifiers = { MentalHealth = -5, Karma = -2, RiskAffinity = 6 },
+		prerequisites = {"GAMBLER"},
+	})
+
+	registerTrait({
+		id = "CASINO_REGULAR",
+		name = "Casino Regular",
+		desc = "Spends all time at casinos; life revolves around gambling.",
+		tags = {"gambling", "addiction"},
+		tier = 3,
+		modifiers = { MentalHealth = -6, Karma = -3, Intelligence = -2 },
+		prerequisites = {"COMPULSIVE_GAMBLER"},
+	})
+
+	-- Social Traits
+	registerTrait({
+		id = "LONER",
+		name = "Loner",
+		desc = "Prefers solitude; struggles with social connections.",
+		tags = {"social", "personality"},
+		tier = 1,
+		modifiers = { Charisma = -3, MentalHealth = -2 },
+	})
+
+	registerTrait({
+		id = "SOCIAL_BUTTERFLY",
+		name = "Social Butterfly",
+		desc = "Loves being around people; thrives in social settings.",
+		tags = {"social", "personality"},
+		tier = 1,
+		modifiers = { Charisma = 4, MentalHealth = 2 },
+	})
+
+	registerTrait({
+		id = "INTROVERT",
+		name = "Introvert",
+		desc = "Gets energy from alone time; social situations drain.",
+		tags = {"social", "personality"},
+		tier = 1,
+		modifiers = { Charisma = -1, Intelligence = 2 },
+	})
+
+	registerTrait({
+		id = "EXTROVERT",
+		name = "Extrovert",
+		desc = "Gets energy from people; needs social interaction.",
+		tags = {"social", "personality"},
+		tier = 1,
+		modifiers = { Charisma = 3, MentalHealth = 1 },
+	})
+
+	-- Mental Health Traits
+	registerTrait({
+		id = "DEPRESSED",
+		name = "Depressed",
+		desc = "Struggles with depression; life feels meaningless.",
+		tags = {"mental", "health"},
+		tier = 2,
+		modifiers = { MentalHealth = -8, Happiness = -5, Charisma = -2 },
+	})
+
+	registerTrait({
+		id = "ANXIOUS_DISORDER",
+		name = "Anxiety Disorder",
+		desc = "Severe anxiety; panic attacks are common.",
+		tags = {"mental", "health"},
+		tier = 2,
+		modifiers = { MentalHealth = -6, RiskAffinity = -4 },
+		prerequisites = {"ANXIOUS"},
+	})
+
+	registerTrait({
+		id = "BIPOLAR",
+		name = "Bipolar Disorder",
+		desc = "Mood swings between extreme highs and lows.",
+		tags = {"mental", "health"},
+		tier = 3,
+		modifiers = { MentalHealth = -5, Creativity = 3, Intelligence = 1 },
+	})
+
+	-- Career & Success Traits
+	registerTrait({
+		id = "WORKAHOLIC",
+		name = "Workaholic",
+		desc = "Obsessed with work; personal life suffers.",
+		tags = {"career", "personality"},
+		tier = 2,
+		modifiers = { Intelligence = 2, MentalHealth = -3, Charisma = -1 },
+	})
+
+	registerTrait({
+		id = "LAZY",
+		name = "Lazy",
+		desc = "Avoids work; prefers easy path.",
+		tags = {"career", "personality"},
+		tier = 1,
+		modifiers = { Intelligence = -2, Fitness = -3, MentalHealth = -1 },
+	})
+
+	registerTrait({
+		id = "ENTREPRENEUR",
+		name = "Entrepreneur",
+		desc = "Natural business sense; sees opportunities everywhere.",
+		tags = {"career", "business"},
+		tier = 2,
+		modifiers = { Intelligence = 3, Charisma = 3, RiskAffinity = 2 },
+	})
+
+	-- Criminal Traits
+	registerTrait({
+		id = "CRIMINAL",
+		name = "Criminal",
+		desc = "Engages in illegal activities; law enforcement aware.",
+		tags = {"criminal", "illegal"},
+		tier = 2,
+		modifiers = { Karma = -5, RiskAffinity = 4, MentalHealth = -2 },
+	})
+
+	registerTrait({
+		id = "GANG_MEMBER",
+		name = "Gang Member",
+		desc = "Part of criminal organization; violence is normal.",
+		tags = {"criminal", "illegal"},
+		tier = 3,
+		modifiers = { Karma = -8, RiskAffinity = 6, MentalHealth = -4 },
+		prerequisites = {"CRIMINAL"},
+	})
+
+	registerTrait({
+		id = "EX_CON",
+		name = "Ex-Convict",
+		desc = "Served time in prison; trying to rebuild life.",
+		tags = {"criminal", "past"},
+		tier = 2,
+		modifiers = { Karma = -3, Charisma = -2, MentalHealth = -3 },
+		prerequisites = {"CRIMINAL"},
+	})
+
+	-- ═══════════════════════════════════════════════════════════════
 	-- TIER 2: DEVELOPED SKILLS & BEHAVIORS
 	-- ═══════════════════════════════════════════════════════════════
 
@@ -287,6 +503,10 @@ local function registerBaseTraits()
 		modifiers = { TechSkill = 5, Intelligence = 2 },
 		prerequisites = {"MECHANICAPPT"},
 	})
+
+	-- ═══════════════════════════════════════════════════════════════
+	-- MINIMAL MOTORSPORT TRAITS (Just what's needed)
+	-- ═══════════════════════════════════════════════════════════════
 
 	registerTrait({
 		id = "SETUP_GENIUS",
@@ -603,338 +823,198 @@ local function registerBaseTraits()
 	})
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- ADDITIONAL SPECIALIZED TRAITS (100+ total)
+	-- MORE GENERAL TRAITS FOR FUTURE USE
 	-- ═══════════════════════════════════════════════════════════════
 
-	-- Karting Traits
+	-- Education Traits
 	registerTrait({
-		id = "KARTING_CHAMPION",
-		name = "Karting Champion",
-		desc = "Won national karting championship; foundation for greatness.",
-		tags = {"motorsport", "karting"},
+		id = "GENIUS",
+		name = "Genius",
+		desc = "Exceptional intelligence; learns everything quickly.",
+		tags = {"education", "intelligence"},
 		tier = 2,
-		modifiers = { DrivingSkill = 4, Fame = 3 },
-		prerequisites = {"KARTING_PRODIGY"},
+		modifiers = { Intelligence = 8, Creativity = 3 },
 	})
 
 	registerTrait({
-		id = "INTERNATIONAL_KART_CHAMP",
-		name = "International Kart Champ",
-		desc = "Won international karting championship; world noticed.",
-		tags = {"motorsport", "karting"},
+		id = "DROPOUT",
+		name = "High School Dropout",
+		desc = "Left school early; limited opportunities ahead.",
+		tags = {"education", "negative"},
+		tier = 1,
+		modifiers = { Intelligence = -3, Charisma = -2 },
+	})
+
+	registerTrait({
+		id = "COLLEGE_GRAD",
+		name = "College Graduate",
+		desc = "Completed higher education; doors open wider.",
+		tags = {"education", "positive"},
+		tier = 2,
+		modifiers = { Intelligence = 3, Charisma = 2 },
+	})
+
+	-- Relationship Traits
+	registerTrait({
+		id = "PLAYER",
+		name = "Player",
+		desc = "Can't commit; always looking for the next one.",
+		tags = {"relationship", "personality"},
+		tier = 1,
+		modifiers = { Charisma = 2, Karma = -2 },
+	})
+
+	registerTrait({
+		id = "LOYAL",
+		name = "Loyal",
+		desc = "Faithful and committed; relationships last.",
+		tags = {"relationship", "positive"},
+		tier = 1,
+		modifiers = { Charisma = 2, Karma = 2, MentalHealth = 2 },
+	})
+
+	registerTrait({
+		id = "CHEATER",
+		name = "Cheater",
+		desc = "Can't stay faithful; relationships suffer.",
+		tags = {"relationship", "negative"},
+		tier = 2,
+		modifiers = { Charisma = -1, Karma = -4, MentalHealth = -2 },
+	})
+
+	-- Financial Traits
+	registerTrait({
+		id = "SPENDTHRIFT",
+		name = "Spendthrift",
+		desc = "Spends money recklessly; savings never last.",
+		tags = {"financial", "negative"},
+		tier = 1,
+		modifiers = { Intelligence = -2, Luck = -1 },
+	})
+
+	registerTrait({
+		id = "FRUGAL",
+		name = "Frugal",
+		desc = "Saves every penny; financial security matters.",
+		tags = {"financial", "positive"},
+		tier = 1,
+		modifiers = { Intelligence = 2, Luck = 1 },
+	})
+
+	registerTrait({
+		id = "MILLIONAIRE",
+		name = "Millionaire",
+		desc = "Accumulated significant wealth; financial freedom achieved.",
+		tags = {"financial", "positive"},
 		tier = 3,
-		modifiers = { DrivingSkill = 5, Fame = 5 },
-		prerequisites = {"KARTING_CHAMPION"},
+		modifiers = { Charisma = 3, MentalHealth = 2, Luck = 3 },
 	})
 
-	-- Formula Traits
+	-- Lifestyle Traits
 	registerTrait({
-		id = "F4_CHAMPION",
-		name = "F4 Champion",
-		desc = "Won Formula 4 championship; junior formula success.",
-		tags = {"motorsport", "formula"},
-		tier = 2,
-		modifiers = { DrivingSkill = 4, Fame = 3 },
-		prerequisites = {"KARTING_PRODIGY"},
+		id = "PARTY_ANIMAL",
+		name = "Party Animal",
+		desc = "Lives for the nightlife; partying is life.",
+		tags = {"lifestyle", "social"},
+		tier = 1,
+		modifiers = { Charisma = 2, Health = -2, MentalHealth = 1 },
 	})
 
 	registerTrait({
-		id = "F3_CHAMPION",
-		name = "F3 Champion",
-		desc = "Won Formula 3 championship; F1 path secured.",
-		tags = {"motorsport", "formula"},
+		id = "HOME_BODY",
+		name = "Home Body",
+		desc = "Prefers staying home; comfort over adventure.",
+		tags = {"lifestyle", "personality"},
+		tier = 1,
+		modifiers = { MentalHealth = 2, Charisma = -1 },
+	})
+
+	registerTrait({
+		id = "ADVENTUROUS",
+		name = "Adventurous",
+		desc = "Loves trying new things; life is an adventure.",
+		tags = {"lifestyle", "personality"},
+		tier = 1,
+		modifiers = { RiskAffinity = 3, MentalHealth = 2, Creativity = 2 },
+	})
+
+	-- More Health Traits
+	registerTrait({
+		id = "FIT",
+		name = "Fit",
+		desc = "Maintains good physical condition; health is priority.",
+		tags = {"health", "positive"},
+		tier = 1,
+		modifiers = { Fitness = 5, Health = 3, MentalHealth = 2 },
+	})
+
+	registerTrait({
+		id = "UNHEALTHY",
+		name = "Unhealthy",
+		desc = "Poor lifestyle choices; health declining.",
+		tags = {"health", "negative"},
+		tier = 1,
+		modifiers = { Health = -5, Fitness = -4, MentalHealth = -2 },
+	})
+
+	registerTrait({
+		id = "CANCER",
+		name = "Cancer",
+		desc = "Battling cancer; life becomes a fight.",
+		tags = {"health", "disease", "negative"},
 		tier = 3,
-		modifiers = { DrivingSkill = 5, Fame = 5 },
-		prerequisites = {"F4_CHAMPION"},
+		modifiers = { Health = -15, MentalHealth = -8, Fitness = -10 },
 	})
 
+	-- More Addiction Traits
 	registerTrait({
-		id = "F2_CHAMPION",
-		name = "F2 Champion",
-		desc = "Won Formula 2 championship; F1 is next.",
-		tags = {"motorsport", "formula"},
+		id = "ALCOHOLIC",
+		name = "Alcoholic",
+		desc = "Severe alcohol dependency; life spiraling.",
+		tags = {"health", "addiction", "negative"},
 		tier = 3,
-		modifiers = { DrivingSkill = 6, Fame = 7 },
-		prerequisites = {"F3_CHAMPION"},
+		modifiers = { Health = -10, MentalHealth = -6, Intelligence = -3, Karma = -2 },
+		prerequisites = {"HEAVY_DRINKER"},
 	})
 
 	registerTrait({
-		id = "F1_ROOKIE",
-		name = "F1 Rookie",
-		desc = "Formula 1 debut; living the dream.",
-		tags = {"motorsport", "f1"},
+		id = "CLEAN_SOBER",
+		name = "Clean and Sober",
+		desc = "Overcame addiction; rebuilding life.",
+		tags = {"health", "recovery", "positive"},
 		tier = 3,
-		modifiers = { Fame = 8, MentalHealth = 2 },
-		prerequisites = {"F2_CHAMPION"},
+		modifiers = { MentalHealth = 4, Health = 3, Karma = 3 },
+		prerequisites = {"DRUG_ADDICT", "ALCOHOLIC"},
+	})
+
+	-- More Criminal Traits
+	registerTrait({
+		id = "THIEF",
+		name = "Thief",
+		desc = "Steals regularly; criminal lifestyle.",
+		tags = {"criminal", "illegal"},
+		tier = 1,
+		modifiers = { Karma = -3, RiskAffinity = 2 },
 	})
 
 	registerTrait({
-		id = "F1_WINNER",
-		name = "F1 Winner",
-		desc = "Won Formula 1 Grand Prix; elite achievement.",
-		tags = {"motorsport", "f1"},
+		id = "MURDERER",
+		name = "Murderer",
+		desc = "Taken a life; marked forever.",
+		tags = {"criminal", "illegal", "extreme"},
 		tier = 3,
-		modifiers = { DrivingSkill = 6, Fame = 10, MentalHealth = 3 },
-		prerequisites = {"F1_ROOKIE"},
+		modifiers = { Karma = -20, MentalHealth = -10, Charisma = -5 },
+		prerequisites = {"CRIMINAL"},
 	})
 
 	registerTrait({
-		id = "F1_CHAMPION",
-		name = "F1 World Champion",
-		desc = "Won Formula 1 World Championship; pinnacle achieved.",
-		tags = {"motorsport", "f1", "legend"},
+		id = "REFORMED",
+		name = "Reformed",
+		desc = "Left criminal life behind; trying to do better.",
+		tags = {"criminal", "recovery", "positive"},
 		tier = 3,
-		modifiers = { DrivingSkill = 8, Fame = 15, MentalHealth = 5 },
-		prerequisites = {"F1_WINNER", "CHAMPIONSHIP_CONTENDER"},
-	})
-
-	-- Endurance Traits
-	registerTrait({
-		id = "LE_MANS_WINNER",
-		name = "Le Mans Winner",
-		desc = "Won 24 Hours of Le Mans; endurance racing legend.",
-		tags = {"motorsport", "endurance", "lemans"},
-		tier = 3,
-		modifiers = { DrivingSkill = 6, Fame = 8, Stamina = 5 },
-		prerequisites = {"ENDURANCE_SPECIALIST"},
-	})
-
-	registerTrait({
-		id = "DAYTONA_WINNER",
-		name = "Daytona Winner",
-		desc = "Won 24 Hours of Daytona; American endurance legend.",
-		tags = {"motorsport", "endurance", "daytona"},
-		tier = 3,
-		modifiers = { DrivingSkill = 5, Fame = 7, Stamina = 4 },
-		prerequisites = {"ENDURANCE_SPECIALIST"},
-	})
-
-	-- Street Racing Traits
-	registerTrait({
-		id = "STREET_TAKEOVER_KING",
-		name = "Street Takeover King",
-		desc = "Dominates street takeovers; underground legend.",
-		tags = {"motorsport", "street", "illegal"},
-		tier = 2,
-		modifiers = { Fame = 4, RiskAffinity = 5, Karma = -2 },
-		prerequisites = {"STREET_RACER"},
-	})
-
-	registerTrait({
-		id = "COP_CHASE_SURVIVOR",
-		name = "Cop Chase Survivor",
-		desc = "Escaped high-speed police chases; legend grows.",
-		tags = {"motorsport", "street", "illegal"},
-		tier = 2,
-		modifiers = { Fame = 3, RiskAffinity = 3, Karma = -3 },
-		prerequisites = {"STREET_RACER"},
-	})
-
-	-- Vehicle Traits
-	registerTrait({
-		id = "CAR_COLLECTOR",
-		name = "Car Collector",
-		desc = "Owns impressive car collection; garage is a museum.",
-		tags = {"motorsport", "vehicle"},
-		tier = 2,
-		modifiers = { Fame = 3, Happiness = 4 },
-		prerequisites = {"RACER"},
-	})
-
-	registerTrait({
-		id = "SUPERCAR_OWNER",
-		name = "Supercar Owner",
-		desc = "Owns multiple supercars; living the dream.",
-		tags = {"motorsport", "vehicle"},
-		tier = 2,
-		modifiers = { Fame = 4, Happiness = 5 },
-		prerequisites = {"CAR_COLLECTOR"},
-	})
-
-	registerTrait({
-		id = "TRACK_CAR_OWNER",
-		name = "Track Car Owner",
-		desc = "Dedicated track car; pure performance focus.",
-		tags = {"motorsport", "vehicle"},
-		tier = 2,
-		modifiers = { DrivingSkill = 2, Happiness = 3 },
-		prerequisites = {"RACER"},
-	})
-
-	-- Media & Fame Traits
-	registerTrait({
-		id = "VIRAL_SENSATION",
-		name = "Viral Sensation",
-		desc = "Racing videos go viral; millions of views.",
-		tags = {"motorsport", "media", "fame"},
-		tier = 2,
-		modifiers = { Fame = 6, Charisma = 2 },
-		prerequisites = {"MEDIA_DARLING"},
-	})
-
-	registerTrait({
-		id = "BRAND_AMBASSADOR",
-		name = "Brand Ambassador",
-		desc = "Major brand sponsorship; face of motorsport.",
-		tags = {"motorsport", "media", "fame"},
-		tier = 3,
-		modifiers = { Fame = 8, Charisma = 4, Luck = 3 },
-		prerequisites = {"MEDIA_DARLING", "F1_READY"},
-	})
-
-	registerTrait({
-		id = "DOCUMENTARY_STAR",
-		name = "Documentary Star",
-		desc = "Featured in racing documentaries; story told worldwide.",
-		tags = {"motorsport", "media", "fame"},
-		tier = 3,
-		modifiers = { Fame = 7, Charisma = 3 },
-		prerequisites = {"WORLD_CHAMPION", "MEDIA_DARLING"},
-	})
-
-	-- Mental & Physical Traits
-	registerTrait({
-		id = "BURNOUT",
-		name = "Burnout",
-		desc = "Racing exhaustion; needs break from competition.",
-		tags = {"motorsport", "mental"},
-		tier = 2,
-		modifiers = { MentalHealth = -6, DrivingSkill = -2 },
-		prerequisites = {"COMPETITIVE"},
-	})
-
-	registerTrait({
-		id = "RACING_OBSESSED",
-		name = "Racing Obsessed",
-		desc = "Can't stop thinking about racing; all-consuming passion.",
-		tags = {"motorsport", "mental"},
-		tier = 2,
-		modifiers = { DrivingSkill = 3, MentalHealth = -2 },
-		prerequisites = {"RACER", "FOCUSED"},
-	})
-
-	registerTrait({
-		id = "INJURY_RECOVERY",
-		name = "Injury Recovery",
-		desc = "Recovering from racing injury; building back strength.",
-		tags = {"motorsport", "health"},
-		tier = 2,
-		modifiers = { Health = -5, Fitness = -3, MentalHealth = -2 },
-		prerequisites = {"CRASH_PRONE"},
-	})
-
-	registerTrait({
-		id = "FULLY_RECOVERED",
-		name = "Fully Recovered",
-		desc = "Recovered from injury; stronger than before.",
-		tags = {"motorsport", "health"},
-		tier = 3,
-		modifiers = { Health = 5, Fitness = 4, MentalHealth = 3 },
-		prerequisites = {"INJURY_RECOVERY", "PHYSICAL_BEAST"},
-	})
-
-	-- Social Traits
-	registerTrait({
-		id = "RIVALRY_INTENSE",
-		name = "Intense Rivalry",
-		desc = "Fierce rivalry with another driver; pushes both to limits.",
-		tags = {"motorsport", "social"},
-		tier = 2,
-		modifiers = { DrivingSkill = 2, MentalHealth = -1 },
-		prerequisites = {"COMPETITIVE"},
-	})
-
-	registerTrait({
-		id = "FAN_FAVORITE",
-		name = "Fan Favorite",
-		desc = "Beloved by fans; massive following worldwide.",
-		tags = {"motorsport", "social", "fame"},
-		tier = 2,
-		modifiers = { Fame = 5, Charisma = 3, MentalHealth = 2 },
-		prerequisites = {"MEDIA_DARLING"},
-	})
-
-	registerTrait({
-		id = "CONTROVERSIAL",
-		name = "Controversial",
-		desc = "Polarizing figure; loved by some, hated by others.",
-		tags = {"motorsport", "social"},
-		tier = 2,
-		modifiers = { Fame = 4, Charisma = -1, MentalHealth = -2 },
-		prerequisites = {"PRIMA_DONNA"},
-	})
-
-	-- Business Traits
-	registerTrait({
-		id = "SPONSOR_MAGNET",
-		name = "Sponsor Magnet",
-		desc = "Attracts major sponsors; financial security guaranteed.",
-		tags = {"motorsport", "business"},
-		tier = 2,
-		modifiers = { Charisma = 4, Luck = 3 },
-		prerequisites = {"MEDIA_DARLING"},
-	})
-
-	registerTrait({
-		id = "BUSINESS_MOGUL",
-		name = "Business Mogul",
-		desc = "Built racing empire; multiple revenue streams.",
-		tags = {"motorsport", "business"},
-		tier = 3,
-		modifiers = { Intelligence = 4, Charisma = 5, Fame = 6 },
-		prerequisites = {"TEAM_OWNER", "SPONSOR_MAGNET"},
-	})
-
-	-- Legacy Traits
-	registerTrait({
-		id = "RACING_LEGEND",
-		name = "Racing Legend",
-		desc = "Immortalized in racing history; name lives forever.",
-		tags = {"motorsport", "legend"},
-		tier = 3,
-		modifiers = { Fame = 12, MentalHealth = 4, Karma = 3 },
-		prerequisites = {"WORLD_CHAMPION", "HALL_OF_FAME"},
-	})
-
-	registerTrait({
-		id = "GENERATION_INFLUENCER",
-		name = "Generation Influencer",
-		desc = "Inspired entire generation; changed the sport forever.",
-		tags = {"motorsport", "legend"},
-		tier = 3,
-		modifiers = { Fame = 10, Charisma = 5, Karma = 5 },
-		prerequisites = {"ACADEMY_FOUNDER", "MENTOR_DRIVER"},
-	})
-
-	-- Negative Traits
-	registerTrait({
-		id = "ADDICTED_RACING",
-		name = "Racing Addict",
-		desc = "Can't stop racing; life revolves around competition.",
-		tags = {"motorsport", "negative"},
-		tier = 2,
-		modifiers = { DrivingSkill = 2, MentalHealth = -4, RiskAffinity = 3 },
-		prerequisites = {"RACING_OBSESSED", "THRILLSEEKER"},
-	})
-
-	registerTrait({
-		id = "WASHED_UP",
-		name = "Washed Up",
-		desc = "Past prime; skills declining but can't let go.",
-		tags = {"motorsport", "negative"},
-		tier = 3,
-		modifiers = { DrivingSkill = -3, MentalHealth = -5, Fame = -2 },
-		prerequisites = {"RETIRED_CHAMPION"},
-	})
-
-	registerTrait({
-		id = "BANNED_RACER",
-		name = "Banned Racer",
-		desc = "Banned from racing; illegal activities caught up.",
-		tags = {"motorsport", "negative", "illegal"},
-		tier = 2,
-		modifiers = { Fame = -5, Karma = -5, MentalHealth = -4 },
-		prerequisites = {"UNDERGROUND_LEGEND", "STREET_TAKEOVER_KING"},
+		modifiers = { Karma = 3, MentalHealth = 2 },
+		prerequisites = {"EX_CON"},
 	})
 end
 
