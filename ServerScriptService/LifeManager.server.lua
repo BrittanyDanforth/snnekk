@@ -5,28 +5,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LifeState = require(ReplicatedStorage:WaitForChild("LifeState"))
-local EventLibrary = require(ReplicatedStorage:WaitForChild("EventLibrary"))
-local EventRunner = require(ReplicatedStorage:WaitForChild("EventRunner"))
-
--- Debug: verify EventRunner loaded correctly
-if EventRunner then
-	print("[LifeManager] EventRunner loaded, functions:", 
-		EventRunner.getStoryPaths and "getStoryPaths✓" or "getStoryPaths✗",
-		EventRunner.pickEvent and "pickEvent✓" or "pickEvent✗",
-		EventRunner.initHistory and "initHistory✓" or "initHistory✗",
-		EventRunner.applyChoice and "applyChoice✓" or "applyChoice✗"
-	)
-	-- List all functions in EventRunner
-	local funcs = {}
-	for k, v in pairs(EventRunner) do
-		if type(v) == "function" then
-			table.insert(funcs, k)
-		end
-	end
-	print("[LifeManager] EventRunner has functions:", table.concat(funcs, ", "))
-else
-	warn("[LifeManager] EventRunner failed to load!")
-end
+local LifeEvents = require(ReplicatedStorage:WaitForChild("LifeEvents"))
+local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
 
 ----------------------------------------------------------------
 -- REMOTES
@@ -73,27 +53,47 @@ local ShowResult = getRemote("ShowResult")  -- New: for result popups
 local GetStoryPaths = getRemoteFunction("GetStoryPaths")
 local GetSpecialActions = getRemoteFunction("GetSpecialActions")
 
+local STORY_PATHS = {"political", "criminal", "teacher", "racer", "artist", "hacker"}
+
+local function buildStoryPaths(state)
+	local paths = {}
+	for _, path in ipairs(STORY_PATHS) do
+		local progress = 0
+		local title = "None"
+		if state.GetStoryProgress then
+			progress = state:GetStoryProgress(path) or 0
+		end
+		if state.GetStoryTitle then
+			title = state:GetStoryTitle(path) or "None"
+		end
+		paths[path] = {
+			active = progress > 0,
+			level = title,
+			progress = progress,
+		}
+	end
+	return paths
+end
+
 ----------------------------------------------------------------
 -- STATE
 ----------------------------------------------------------------
 
 local playerLives = {}  -- [Player] = LifeStateType
 local pendingEvents = {} -- [Player] = { eventDef, dynamicData, choiceIndex } -- MUST be declared before resetPlayerLife!
+local eventQueues = {} -- [Player] = { events = {...}, current = 1 }
+local DEFAULT_EVENT_CONFIG = {
+	maxEvents = 2,
+	guaranteeCareer = true,
+	guaranteeMilestone = true,
+}
 
 -- Forward declare serializeState
 local function serializeState(state, player)
 	state:ClampStats()
 
-	-- Get story path info (with safety check)
-	local paths = {}
-	if EventRunner and EventRunner.getStoryPaths then
-		paths = EventRunner.getStoryPaths(state)
-	else
-		paths = {
-			political = { active = false, level = "None", progress = 0 },
-			criminal = { active = false, level = "None", progress = 0 },
-		}
-	end
+	-- Get story path info via LifeState helpers
+	local paths = buildStoryPaths(state)
 	
 	-- Get extended state from LifeRemoteHandlers (includes InJail, CurrentJob, Education, etc.)
 	local extState = _G.GetExtendedState and player and _G.GetExtendedState(player) or {}
@@ -170,6 +170,183 @@ local function pushState(player, state, lastFeedText, resultData)
 	SyncState:FireClient(player, serializeState(state, player), lastFeedText, resultData)
 end
 
+local function buildYearRecap(state)
+	local stageSummary = LifeStageSystem.getStageSummary(state)
+	local stageName = stageSummary and stageSummary.stage and stageSummary.stage.name or "life"
+	return string.format("Life continues through %s.", stageName)
+end
+
+local function recordEventHistory(state, event)
+	state.EventHistory = state.EventHistory or {
+		seenEvents = {},
+		lastOccurrence = {},
+		milestonesFired = {},
+		choicesMade = {},
+	}
+	local history = state.EventHistory
+	history.seenEvents = history.seenEvents or {}
+	history.lastOccurrence = history.lastOccurrence or {}
+	history.milestonesFired = history.milestonesFired or {}
+
+	if event and event.id then
+		history.seenEvents[event.id] = true
+		history.lastOccurrence[event.id] = state.Age or 0
+		if event.milestone then
+			history.milestonesFired[event.id] = true
+		end
+	end
+end
+
+local function buildEventPayload(state, event)
+	if not event then
+		return nil, nil
+	end
+
+	if event.isStageTransition then
+		return {
+			id = event.id,
+			emoji = event.emoji or "🎉",
+			title = event.title or "Milestone",
+			text = event.text or "A new life stage begins.",
+			category = "milestone",
+			milestone = true,
+			isStageTransition = true,
+			choices = {
+				{
+					index = 1,
+					id = "continue",
+					text = "Continue",
+					resultText = event.resultText or "Life goes on.",
+				},
+			},
+		}, {}
+	end
+
+	local text, dynamicData = LifeEvents.getEventText(event, state)
+	if not text or text == "" then
+		text = event.text or "Something happens..."
+	end
+	local emoji = event.emoji or "📜"
+	if event.getDynamicEmoji then
+		local ok, dynamicEmoji = pcall(event.getDynamicEmoji, dynamicData or {})
+		if ok and dynamicEmoji then
+			emoji = dynamicEmoji
+		end
+	end
+
+	local formattedChoices = {}
+	if event.choices and #event.choices > 0 then
+		for index, choice in ipairs(event.choices) do
+			table.insert(formattedChoices, {
+				index = index,
+				id = choice.id or ("choice_" .. index),
+				text = choice.text or ("Choice " .. index),
+				resultText = choice.resultText,
+				effects = choice.effects,
+			})
+		}
+	else
+		table.insert(formattedChoices, {
+			index = 1,
+			id = "continue",
+			text = "Continue",
+			resultText = "Life goes on.",
+		})
+	end
+
+	local payload = {
+		id = event.id,
+		emoji = emoji,
+		title = event.title or "Life Event",
+		text = text,
+		category = event.category or "life",
+		milestone = event.milestone,
+		isStageTransition = event.isStageTransition,
+		choices = formattedChoices,
+	}
+
+	return payload, dynamicData
+end
+
+local function presentQueuedEvent(player)
+	local queue = eventQueues[player]
+	if not queue then
+		return false
+	end
+
+	local entry = queue.events[queue.current]
+	if not entry then
+		eventQueues[player] = nil
+		return false
+	end
+
+	pendingEvents[player] = entry
+	PresentEvent:FireClient(player, entry.payload, nil)
+	return true
+end
+
+local function advanceEventQueue(player)
+	local queue = eventQueues[player]
+	if not queue then
+		return false
+	end
+
+	queue.current += 1
+	if queue.current > #queue.events then
+		eventQueues[player] = nil
+		return false
+	end
+
+	return presentQueuedEvent(player)
+end
+
+local function enqueueEvents(player, entries)
+	if not entries or #entries == 0 then
+		eventQueues[player] = nil
+		return false
+	end
+
+	eventQueues[player] = {
+		events = entries,
+		current = 1,
+	}
+
+	return presentQueuedEvent(player)
+end
+
+local function finalizeYear(player, state)
+	if handleRandomDeath(player, state) then
+		return
+	end
+	local recap = buildYearRecap(state) or "Life continues..."
+	state:AddFeed(recap)
+	pushState(player, state, recap)
+end
+
+local function buildStageTransitionEvent(oldAge, newAge)
+	local transition = LifeStageSystem.getTransitionEvent(oldAge, newAge)
+	if not transition then
+		return nil
+	end
+
+	return {
+		id = transition.id,
+		emoji = transition.emoji,
+		title = transition.title,
+		text = transition.text,
+		category = transition.category or "milestone",
+		milestone = true,
+		isStageTransition = true,
+		choices = {
+			{
+				id = "continue",
+				text = "Continue",
+				resultText = "Life goes on.",
+			},
+		},
+	}
+end
+
 -- Show a result popup to the player
 local function showResultPopup(player, data)
 	ShowResult:FireClient(player, data)
@@ -207,15 +384,6 @@ local function resetPlayerLife(player)
 	end
 	print("[LifeManager] New state created for:", newState.Name or "Unknown")
 	
-	-- Initialize event history and flags
-	print("[LifeManager] Initializing event history...")
-	if EventRunner and EventRunner.initHistory then
-		EventRunner.initHistory(newState)
-		print("[LifeManager] Event history initialized")
-	else
-		warn("[LifeManager] EventRunner.initHistory not available!")
-	end
-	
 	-- Store in playerLives
 	playerLives[player] = newState
 	print("[LifeManager] Stored new state in playerLives")
@@ -250,8 +418,6 @@ end
 
 local function createNewLife(player)
 	local state = LifeState.new(player)
-	-- Initialize event history and flags
-	EventRunner.initHistory(state)
 	playerLives[player] = state
 	return state
 end
@@ -432,8 +598,6 @@ end
 -- Returns true if player died, false otherwise
 ----------------------------------------------------------------
 
-local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
-
 local function checkAndHandleImmediateDeath(player, state, lastActionText)
 	-- Check if health has dropped to 0% or below
 	local stats = state.Stats or {}
@@ -490,6 +654,43 @@ local function checkAndHandleImmediateDeath(player, state, lastActionText)
 	return true -- Player died
 end
 
+local function handleRandomDeath(player, state)
+	local deathCheck = LifeStageSystem.checkDeath(state)
+	if not deathCheck.died then
+		return false
+	end
+
+	state.IsDead = true
+	state:SetFlag("deceased")
+
+	local lifeSummary = generateLifeSummary(state, deathCheck.cause)
+	local deathPayload = {
+		id = "death",
+		emoji = "💀",
+		title = "Rest In Peace",
+		text = lifeSummary.summaryText,
+		category = "death",
+		isDeath = true,
+		lifeSummary = lifeSummary,
+		choices = {
+			{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
+		}
+	}
+
+	pendingEvents[player] = {
+		eventDef = { id = "death", category = "death" },
+		dynamicData = {},
+		choiceIndex = nil,
+		isDeath = true,
+		deathCause = deathCheck.cause,
+		lifeSummary = lifeSummary,
+	}
+
+	state:AddFeed("💀 " .. state.Name .. " has passed away from " .. deathCheck.cause .. " at age " .. state.Age)
+	PresentEvent:FireClient(player, deathPayload, nil)
+	return true
+end
+
 -- Expose for other scripts that modify stats
 _G.CheckImmediateDeath = function(player, lastActionText)
 	local state = playerLives[player]
@@ -505,60 +706,36 @@ end
 
 local function ageUp(player)
 	local state = getLife(player)
-
-	if not state.Name then
+	if not state.Name or state.IsDead then
 		return
-	end
-	
-	-- Check if already dead
-	if state.IsDead then
-		return -- Can't age up when dead
 	end
 
 	local oldAge = state.Age
-	state.Age = state.Age + 1
-	state.Year = state.Year + 1
+	state.Age += 1
+	state.Year += 1
 	local newAge = state.Age
 
 	print("[LifeManager] === AGE UP ===")
 	print("[LifeManager] Player:", player.Name, "Old Age:", oldAge, "New Age:", newAge)
-	print("[LifeManager] Flags in_prison:", state.Flags and state.Flags.in_prison or false)
 
-	local ageText
-	if state.Age == 1 then
-		ageText = "You are now 1 year old."
-	else
-		ageText = string.format("You are now %d years old.", state.Age)
-	end
-
+	local ageText = state.Age == 1 and "You are now 1 year old." or string.format("You are now %d years old.", state.Age)
 	state:AddFeed(ageText)
-	
-	-- Reduce jail time if in jail (integration with LifeRemoteHandlers)
+
 	if _G.ReduceJailTime then
-		print("[LifeManager] Calling ReduceJailTime...")
 		_G.ReduceJailTime(player, 1)
 	end
-	
-	-- Update extended state (auto-education, etc.)
+
 	if _G.OnPlayerAgeUp then
 		_G.OnPlayerAgeUp(player)
 	end
-	
-	-- Progress education if enrolled (GPA updates, transcript, graduation)
+
 	if _G.ProgressPlayerEducation then
 		local eduResult = _G.ProgressPlayerEducation(player)
-		if eduResult then
-			print("[LifeManager] Education progress:", eduResult.type, eduResult.message)
-			if eduResult.type == "graduation" then
-				-- Graduation is a major event - add to feed
-				state:AddFeed(eduResult.message)
-			elseif eduResult.type == "probation" then
-				state:AddFeed(eduResult.message)
-			end
+		if eduResult and eduResult.message then
+			state:AddFeed(eduResult.message)
 		end
 	end
 
-	-- Add job income if has job (check both old and new job system)
 	local extState = _G.GetExtendedState and _G.GetExtendedState(player)
 	if extState and extState.CurrentJob then
 		state.Money = (state.Money or 0) + math.floor(extState.CurrentJob.salary / 12)
@@ -566,120 +743,58 @@ local function ageUp(player)
 		state.Money = (state.Money or 0) + math.floor(state.JobSalary / 12)
 	end
 
-	-- Initialize event history if needed
-	EventRunner.initHistory(state)
-	
-	-- Get current stage info for client
-	local stageInfo = EventRunner.getStageSummary(state)
+	state:ClampStats()
 
-	-- ALWAYS sync state first so client has updated Age
 	pushState(player, state, ageText)
-	
-	-- Check for life stage transition FIRST (these take priority)
-	local transitionEvent = EventRunner.checkStageTransition(oldAge, newAge)
+
+	local queueEntries = {}
+	local transitionEvent = buildStageTransitionEvent(oldAge, newAge)
 	if transitionEvent then
-		-- Stage transition is a special milestone - show it
-		local payload = {
-			id = transitionEvent.id,
-			emoji = transitionEvent.emoji,
-			title = transitionEvent.title,
-			text = transitionEvent.text,
-			category = "milestone",
-			isStageTransition = true,
-			fromStage = transitionEvent.fromStage and transitionEvent.fromStage.name or nil,
-			toStage = transitionEvent.toStage and transitionEvent.toStage.name or nil,
-			choices = {
-				{ index = 1, text = "🎉 Continue", effects = {}, result = "Life goes on!" }
-			}
-		}
-		
-		-- Store for choice resolution
-		pendingEvents[player] = {
-			eventDef = transitionEvent,
-			dynamicData = {},
-			choiceIndex = nil,
-			isStageTransition = true,
-		}
-		
 		state:AddFeed(transitionEvent.title .. " - " .. transitionEvent.text)
-		PresentEvent:FireClient(player, payload, nil)
-		return -- Don't pick another event this year
-	end
-	
-	-- Check for death (elder years)
-	local deathCheck = EventRunner.checkDeath(state)
-	if deathCheck.died then
-		-- Mark as dead - prevent further aging
-		state.IsDead = true
-		state:SetFlag("deceased")
-		
-		-- Generate life summary
-		local lifeSummary = generateLifeSummary(state, deathCheck.cause)
-		
-		-- Handle death
-		local deathPayload = {
-			id = "death",
-			emoji = "💀",
-			title = "Rest In Peace",
-			text = lifeSummary.summaryText,
-			category = "death",
-			isDeath = true,
-			lifeSummary = lifeSummary,
-			choices = {
-				{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
-			}
-		}
-		
-		pendingEvents[player] = {
-			eventDef = { id = "death", category = "death" },
+		local payload = buildEventPayload(state, transitionEvent)
+		table.insert(queueEntries, {
+			eventDef = transitionEvent,
+			event = transitionEvent,
+			payload = payload,
 			dynamicData = {},
-			choiceIndex = nil,
-			isDeath = true,
-			deathCause = deathCheck.cause,
-			lifeSummary = lifeSummary,
-		}
-		
-		state:AddFeed("💀 " .. state.Name .. " has passed away from " .. deathCheck.cause .. " at age " .. state.Age)
-		PresentEvent:FireClient(player, deathPayload, nil)
+			isStageTransition = true,
+		})
+	end
+
+	local selectedEvents = LifeEvents.selectEventsForYear(state, DEFAULT_EVENT_CONFIG) or {}
+	for _, eventDef in ipairs(selectedEvents) do
+		local validation = LifeStageSystem.validateEvent(eventDef, state)
+		if validation.valid then
+			local payload, dynamicData = buildEventPayload(state, eventDef)
+			if payload then
+				recordEventHistory(state, eventDef)
+				table.insert(queueEntries, {
+					eventDef = eventDef,
+					event = eventDef,
+					payload = payload,
+					dynamicData = dynamicData or {},
+				})
+			end
+		else
+			print(string.format("[LifeManager] Event %s failed validation: %s", eventDef.id or "unknown", table.concat(validation.reasons or {}, ", ")))
+		end
+	end
+
+	if #queueEntries > 0 then
+		if not enqueueEvents(player, queueEntries) then
+			eventQueues[player] = nil
+		end
 		return
 	end
-	
-	-- Decide if a life event should fire (filtered by stage)
-	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
-	if eventDef then
-		-- Double-check event is valid for current stage
-		local validation = EventRunner.getEventValidation(state, eventDef)
-		if not validation.valid then
-			-- Event somehow passed initial filter but failed validation
-			-- Show quiet year message instead
-			local quietText = EventRunner.buildYearRecap(state) or "Life continues..."
-			state:AddFeed(quietText)
-			pushState(player, state, quietText)
-			return
-		end
-		
-		-- Build client payload with dynamic data
-		local payload, dynamicData = EventRunner.buildClientPayload(eventDef, state)
-		
-		-- Store for choice resolution
-		pendingEvents[player] = {
-			eventDef = eventDef,
-			dynamicData = dynamicData or {},
-			choiceIndex = nil,
-		}
-		
-		-- Mark event as occurred (for one-time/cooldown tracking)
-		EventRunner.markEventOccurred(state, eventDef)
-		
-		-- Present event (state already synced above)
-		PresentEvent:FireClient(player, payload, nil)
-	else
-		-- No event this year - show a "life continues" message
-		-- This makes quiet years feel intentional, not broken
-		local quietYearText = EventRunner.buildYearRecap(state) or "Life continues..."
-		state:AddFeed(quietYearText)
-		pushState(player, state, quietYearText)
+
+	local quietYearText = buildYearRecap(state) or "Life continues..."
+	state:AddFeed(quietYearText)
+
+	if handleRandomDeath(player, state) then
+		return
 	end
+
+	pushState(player, state, quietYearText)
 end
 
 RequestAgeUp.OnServerEvent:Connect(function(player)
@@ -751,58 +866,31 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 		return
 	end
 
-	-- Handle special events (stage transitions, death)
 	if pending.isStageTransition then
 		pendingEvents[player] = nil
-		pushState(player, state, "Life continues...")
+		if not advanceEventQueue(player) then
+			finalizeYear(player, state)
+		end
 		return
 	end
 	
 	if pending.isDeath then
 		pendingEvents[player] = nil
-		-- Reset the player's life for a new game
 		resetPlayerLife(player)
 		return
 	end
-
-	-- Validate choice index - ensure choices exists
-	local choices = eventDef.choices
-	if not choices or type(choices) ~= "table" then
-		pendingEvents[player] = nil
-		pushState(player, state, "Event processed.")
-		return
-	end
 	
-	if type(choiceIndex) ~= "number" or choiceIndex < 1 or choiceIndex > #choices then
+	local choices = eventDef.choices or {}
+	if type(choiceIndex) ~= "number" or not choices[choiceIndex] then
 		pushState(player, state, "Invalid choice.")
 		return
 	end
-
-	local choiceDef = choices[choiceIndex]
-	if not choiceDef then
-		pushState(player, state, "Choice not found.")
-		return
-	end
 	
+	local choiceDef = choices[choiceIndex]
 	local dynamicData = pending.dynamicData or {}
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 1: CHECK REQUIREMENTS BEFORE PROCESSING
-	-- ═══════════════════════════════════════════════════════════════
-	local meetsReqs, reqError = EventRunner.checkChoiceRequirements(state, choiceDef)
-	if not meetsReqs then
-		pushState(player, state, "❌ " .. (reqError or "Requirements not met"))
-		return
-	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 2: CHECK IF MINIGAME NEEDS TO BE TRIGGERED FIRST
-	-- ═══════════════════════════════════════════════════════════════
+	
 	if choiceDef.minigame and not pending.minigameCompleted then
-		-- Store choice for after minigame completes
 		pending.choiceIndex = choiceIndex
-		
-		-- Build minigame config
 		local minigameConfig
 		if type(choiceDef.minigame) == "table" then
 			minigameConfig = {
@@ -821,155 +909,82 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 				choiceIndex = choiceIndex,
 			}
 		end
-		
-		-- Fire minigame to client
-		print("[LifeManager] Triggering minigame:", minigameConfig.id)
 		MinigameStart:FireClient(player, minigameConfig)
-		return -- Wait for MinigameResult
+		return
 	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 3: STORE STATE BEFORE APPLYING CHOICE
-	-- ═══════════════════════════════════════════════════════════════
-	local beforeHappiness = state.Stats.Happiness or 50
-	local beforeHealth = state.Stats.Health or 100
-	local beforeSmarts = state.Stats.Smarts or 50
-	local beforeLooks = state.Stats.Looks or 50
-	local beforeMoney = state.Money or 0
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 4: APPLY CHOICE (with RNG if applicable)
-	-- ═══════════════════════════════════════════════════════════════
-	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, nil)
 	
+	local beforeStats = {
+		Happiness = state.Stats.Happiness or 50,
+		Health = state.Stats.Health or 100,
+		Smarts = state.Stats.Smarts or 50,
+		Looks = state.Stats.Looks or 50,
+	}
+	local beforeMoney = state.Money or 0
+	
+	local results, err = LifeEvents.processChoice(eventDef, choiceIndex, state)
 	if err then
 		pushState(player, state, "❌ " .. tostring(err))
 		pendingEvents[player] = nil
 		return
 	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 5: PROCESS WORLD ACTIONS
-	-- ═══════════════════════════════════════════════════════════════
-	if results.worldActions then
-		processWorldActions(player, results.worldActions, dynamicData)
+	
+	state.EventHistory = state.EventHistory or {}
+	state.EventHistory.choicesMade = state.EventHistory.choicesMade or {}
+	if eventDef.id then
+		state.EventHistory.choicesMade[eventDef.id] = choiceIndex
 	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 6: HANDLE ASSET ADDITIONS
-	-- ═══════════════════════════════════════════════════════════════
-	local assetToAdd = results.addAsset or choiceDef.addAsset
-	if assetToAdd and results.wasSuccess ~= false then
-		print("[LifeManager] Adding asset from event:", assetToAdd.id, "type:", assetToAdd.type)
-		if _G.AddAssetFromEvent then
-			_G.AddAssetFromEvent(player, assetToAdd)
-		end
-	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 7: HANDLE JOB ASSIGNMENTS
-	-- ═══════════════════════════════════════════════════════════════
-	local jobToSet = results.setJob or choiceDef.setJob
-	if jobToSet and results.wasSuccess ~= false then
-		print("[LifeManager] Setting job from event:", jobToSet.id, "title:", jobToSet.title)
-		
-		-- Process dynamic text in job fields
-		local processedTitle = jobToSet.title or "Employee"
-		local processedCompany = jobToSet.company or "Company"
-		local processedSalary = jobToSet.salary or 30000
-		
-		if dynamicData then
-			processedTitle = EventRunner.processDynamicText(processedTitle, dynamicData)
-			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
-			-- Handle dynamic salary if it's from dynamicData
-			if type(dynamicData.salary) == "number" then
-				processedSalary = dynamicData.salary
-			end
-		end
-		
-		if _G.SetPlayerJob then
-			_G.SetPlayerJob(player, {
-				id = jobToSet.id,
-				title = processedTitle,
-				company = processedCompany,
-				salary = processedSalary,
-				requirement = jobToSet.requirement,
-				storyFlag = choiceDef.setFlag or jobToSet.storyFlag,
-			})
-		end
-	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 8: SYNC PRISON STATE
-	-- ═══════════════════════════════════════════════════════════════
+	
 	if _G.SyncPrisonStateFromFlags then
 		_G.SyncPrisonStateFromFlags(player)
 	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 9: CHECK FOR IMMEDIATE DEATH (Health hit 0%)
-	-- ═══════════════════════════════════════════════════════════════
-	local feedText = results and results.resultText or "Something happened..."
-	if checkAndHandleImmediateDeath(player, state, feedText) then
-		-- Player died from the choice effects - don't continue
-		return
+	
+	local feedText = choiceDef.resultText or string.format("You chose %s.", choiceDef.text or "an option.")
+	if results and results.messages then
+		for _, message in ipairs(results.messages) do
+			if message and message ~= "" then
+				state:AddFeed(message)
+			end
+		end
 	end
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 10: CLEAR PENDING EVENT
-	-- ═══════════════════════════════════════════════════════════════
-	pendingEvents[player] = nil
-
-	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 11: BUILD RESULT FEEDBACK
-	-- ═══════════════════════════════════════════════════════════════
 	state:AddFeed(feedText)
 	
-	-- Calculate actual deltas
-	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
-	local healthDelta = (state.Stats.Health or 100) - beforeHealth
-	local smartsDelta = (state.Stats.Smarts or 50) - beforeSmarts
-	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
+	if checkAndHandleImmediateDeath(player, state, feedText) then
+		return
+	end
+	
+	pendingEvents[player] = nil
+	
+	local happinessDelta = (state.Stats.Happiness or 50) - beforeStats.Happiness
+	local healthDelta = (state.Stats.Health or 100) - beforeStats.Health
+	local smartsDelta = (state.Stats.Smarts or 50) - beforeStats.Smarts
+	local looksDelta = (state.Stats.Looks or 50) - beforeStats.Looks
 	local moneyDelta = (state.Money or 0) - beforeMoney
 	
-	-- Determine if result is significant enough for popup
-	local isSignificant = eventDef.milestone 
-		or eventDef.showResultPopup
-		or math.abs(happinessDelta) >= 10  -- Lowered threshold
+	local significantChange = eventDef.milestone
+		or math.abs(happinessDelta) >= 10
 		or math.abs(healthDelta) >= 10
-		or math.abs(moneyDelta) >= 1000    -- Lowered threshold
-		or (#(results.flagsSet or {}) > 0)
-		or results.wasSuccess == false     -- Always show failures
+		or math.abs(moneyDelta) >= 1000
 	
 	local resultData = nil
-	if isSignificant then
-		-- Add success/fail indicator to title
-		local resultEmoji = eventDef.emoji or "📋"
-		local resultTitle = eventDef.title or "Result"
-		
-		if results.wasSuccess == false then
-			resultEmoji = "❌"
-			resultTitle = resultTitle .. " - Failed"
-		elseif results.wasSuccess == true and (choiceDef.chanceSuccess or choiceDef.minigame) then
-			resultEmoji = "✅"
-			resultTitle = resultTitle .. " - Success!"
-		end
-		
+	if significantChange then
 		resultData = {
 			showPopup = true,
-			emoji = resultEmoji,
-			title = resultTitle,
+			emoji = eventDef.emoji or "📋",
+			title = eventDef.title or "Life Event",
 			body = feedText,
 			happiness = happinessDelta ~= 0 and happinessDelta or nil,
 			health = healthDelta ~= 0 and healthDelta or nil,
 			smarts = smartsDelta ~= 0 and smartsDelta or nil,
 			looks = looksDelta ~= 0 and looksDelta or nil,
 			money = moneyDelta ~= 0 and moneyDelta or nil,
-			wasSuccess = results.wasSuccess,
 		}
 	end
 	
 	pushState(player, state, feedText, resultData)
+	
+	if not advanceEventQueue(player) then
+		finalizeYear(player, state)
+	end
 end)
 
 ----------------------------------------------------------------
@@ -993,15 +1008,16 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 	local dynamicData = pending.dynamicData or {}
 	local choiceDef = eventDef.choices and eventDef.choices[choiceIndex]
 	
-	-- Store state before
-	local beforeHappiness = state.Stats.Happiness or 50
-	local beforeHealth = state.Stats.Health or 100
-	local beforeSmarts = state.Stats.Smarts or 50
-	local beforeLooks = state.Stats.Looks or 50
+	-- Apply choice WITH the minigame result (true = won, false = lost)
+	local beforeStats = {
+		Happiness = state.Stats.Happiness or 50,
+		Health = state.Stats.Health or 100,
+		Smarts = state.Stats.Smarts or 50,
+		Looks = state.Stats.Looks or 50,
+	}
 	local beforeMoney = state.Money or 0
 
-	-- Apply choice WITH the minigame result (true = won, false = lost)
-	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, minigameSuccess)
+	local results, err = LifeEvents.processChoice(eventDef, choiceIndex, state)
 	
 	if err then
 		pushState(player, state, "Error: " .. tostring(err))
@@ -1009,93 +1025,44 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 		return
 	end
 
-	-- Apply minigame-specific rewards if defined
-	if choiceDef and choiceDef.minigame and type(choiceDef.minigame) == "table" then
-		local mgConfig = choiceDef.minigame
-		if minigameSuccess and mgConfig.rewardOnSuccess then
-			for stat, delta in pairs(mgConfig.rewardOnSuccess) do
-				if stat == "Money" then
-					state.Money = (state.Money or 0) + delta
-				elseif state.Stats[stat] then
-					state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + delta, 0, 100)
-				end
-			end
-		elseif not minigameSuccess and mgConfig.rewardOnFail then
-			for stat, delta in pairs(mgConfig.rewardOnFail) do
-				if stat == "Money" then
-					state.Money = (state.Money or 0) + delta
-				elseif state.Stats[stat] then
-					state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + delta, 0, 100)
-				end
-			end
-		end
+	state.EventHistory = state.EventHistory or {}
+	state.EventHistory.choicesMade = state.EventHistory.choicesMade or {}
+	if eventDef.id then
+		state.EventHistory.choicesMade[eventDef.id] = choiceIndex
 	end
 
-	-- Build result text
-	local feedText = results.resultText or "Something happened..."
+	if _G.SyncPrisonStateFromFlags then
+		_G.SyncPrisonStateFromFlags(player)
+	end
+
+	local feedText = (choiceDef and choiceDef.resultText) or "Something happened..."
 	if minigameSuccess then
 		feedText = feedText .. " 🎮 Minigame mastered!"
 	else
 		feedText = feedText .. " 🎮 Minigame failed..."
 	end
 
-	-- Process world actions if minigame won
-	if minigameSuccess and results.worldActions then
-		processWorldActions(player, results.worldActions, dynamicData)
-	end
-
-	-- Handle asset additions if minigame won
-	local assetToAdd = results.addAsset or (choiceDef and choiceDef.addAsset)
-	if assetToAdd and minigameSuccess then
-		print("[LifeManager] Adding asset from minigame win:", assetToAdd.id)
-		if _G.AddAssetFromEvent then
-			_G.AddAssetFromEvent(player, assetToAdd)
+	if results and results.messages then
+		for _, message in ipairs(results.messages) do
+			if message and message ~= "" then
+				state:AddFeed(message)
+			end
 		end
 	end
+	state:AddFeed(feedText)
 
-	-- Handle job assignments if minigame won
-	local jobToSet = results.setJob or (choiceDef and choiceDef.setJob)
-	if jobToSet and minigameSuccess then
-		print("[LifeManager] Setting job from minigame win:", jobToSet.id)
-		local processedCompany = jobToSet.company or "Company"
-		if processedCompany and dynamicData then
-			processedCompany = EventRunner.processDynamicText(processedCompany, dynamicData)
-		end
-		if _G.SetPlayerJob then
-			_G.SetPlayerJob(player, {
-				id = jobToSet.id,
-				title = jobToSet.title,
-				company = processedCompany,
-				salary = jobToSet.salary or 30000,
-				requirement = jobToSet.requirement,
-			})
-		end
-	end
-
-	-- Sync prison state
-	if _G.SyncPrisonStateFromFlags then
-		_G.SyncPrisonStateFromFlags(player)
-	end
-	
-	-- Check for immediate death from minigame effects
 	if checkAndHandleImmediateDeath(player, state, feedText) then
-		-- Player died - don't continue with normal result flow
 		return
 	end
 
-	-- Clear pending event
 	pendingEvents[player] = nil
 
-	state:AddFeed(feedText)
-	
-	-- Calculate total deltas
-	local happinessDelta = (state.Stats.Happiness or 50) - beforeHappiness
-	local healthDelta = (state.Stats.Health or 100) - beforeHealth
-	local smartsDelta = (state.Stats.Smarts or 50) - beforeSmarts
-	local looksDelta = (state.Stats.Looks or 50) - beforeLooks
+	local happinessDelta = (state.Stats.Happiness or 50) - beforeStats.Happiness
+	local healthDelta = (state.Stats.Health or 100) - beforeStats.Health
+	local smartsDelta = (state.Stats.Smarts or 50) - beforeStats.Smarts
+	local looksDelta = (state.Stats.Looks or 50) - beforeStats.Looks
 	local moneyDelta = (state.Money or 0) - beforeMoney
-	
-	-- Minigames always show result popup
+
 	local resultData = {
 		showPopup = true,
 		emoji = minigameSuccess and "🏆" or "😞",
@@ -1108,8 +1075,11 @@ MinigameResult.OnServerEvent:Connect(function(player, minigameSuccess, minigameD
 		money = moneyDelta ~= 0 and moneyDelta or nil,
 		wasSuccess = minigameSuccess,
 	}
-	
+
 	pushState(player, state, feedText, resultData)
+	if not advanceEventQueue(player) then
+		finalizeYear(player, state)
+	end
 end)
 
 ----------------------------------------------------------------
@@ -1119,15 +1089,15 @@ end)
 GetStoryPaths.OnServerInvoke = function(player)
 	local state = getLife(player)
 	if not state then return {} end
-	
-	return EventRunner.getStoryPaths(state)
+	return buildStoryPaths(state)
 end
 
 GetSpecialActions.OnServerInvoke = function(player)
 	local state = getLife(player)
-	if not state then return {} end
-	
-	return EventRunner.getSpecialActions(state)
+	if not state then
+		return {}
+	end
+	return {}
 end
 
 ----------------------------------------------------------------
