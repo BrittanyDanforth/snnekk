@@ -5,7 +5,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LifeState = require(ReplicatedStorage:WaitForChild("LifeState"))
-local LifeEvents = require(ReplicatedStorage:WaitForChild("LifeEvents"))
+local LifeEventsFolder = ReplicatedStorage:WaitForChild("LifeEvents")
+local LifeEvents = require(LifeEventsFolder:WaitForChild("init"))
 local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
 
 ----------------------------------------------------------------
