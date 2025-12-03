@@ -1159,7 +1159,6 @@ function EventEngine.applyChoiceEffects(choice, state)
 				local newVal = oldVal + amount
 				state.Money = newVal
 				results.statChanges[stat] = {old = oldVal, new = newVal, change = amount}
-				print("[EventEngine] 💰 Applied money effect:", amount, "| Old:", oldVal, "| New:", newVal)
 			else
 				-- Regular stat in state.Stats
 				local oldVal = stats[stat] or 0
@@ -1172,7 +1171,6 @@ function EventEngine.applyChoiceEffects(choice, state)
 				
 				stats[stat] = newVal
 				results.statChanges[stat] = {old = oldVal, new = newVal, change = amount}
-				print("[EventEngine] 📊 Applied stat effect:", stat, amount, "| Old:", oldVal, "| New:", newVal)
 			end
 		end
 		state.Stats = stats

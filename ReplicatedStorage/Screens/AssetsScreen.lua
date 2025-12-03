@@ -12,8 +12,8 @@ local F = UI.Fonts
 local AssetsScreen = {}
 AssetsScreen.__index = AssetsScreen
 
--- Debug logging
-local DEBUG = true
+-- Debug logging (set to false to reduce log spam)
+local DEBUG = false
 local function log(...)
 	if DEBUG then print("[AssetsScreen]", ...) end
 end

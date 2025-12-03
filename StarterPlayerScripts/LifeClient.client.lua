@@ -1584,8 +1584,6 @@ end
 ------------------------------------------------------------------
 
 showEvent = function(payload)
-	print("[LifeClient] 📜 showEvent called - ID:", payload and payload.id or "NIL PAYLOAD")
-	
 	-- Validate payload first
 	if not payload then
 		warn("[LifeClient] ❌ showEvent called with nil payload!")
@@ -1597,7 +1595,6 @@ showEvent = function(payload)
 	if currentHideTween then
 		currentHideTween:Cancel()
 		currentHideTween = nil
-		print("[LifeClient] 🔄 Cancelled previous hide animation")
 	end
 	
 	-- Wrap in pcall to catch errors and ensure awaitingEvent gets reset
@@ -1712,8 +1709,6 @@ showEvent = function(payload)
 	})
 	tween(eventShell, TweenInfo.new(0.25), { BackgroundTransparency = 0 })
 	tween(eventCard, TweenInfo.new(0.25), { BackgroundTransparency = 0 })
-	
-	print("[LifeClient] ✅ Event displayed successfully - awaitingEvent:", awaitingEvent)
 	end) -- End of pcall
 	
 	-- Handle errors in showEvent
@@ -1726,7 +1721,6 @@ showEvent = function(payload)
 end
 
 hideEvent = function()
-	print("[LifeClient] 🔚 hideEvent called - resetting awaitingEvent")
 	awaitingEvent  = false
 	currentEventId = nil
 
@@ -1755,7 +1749,6 @@ hideEvent = function()
 		end
 		
 		currentHideTween = nil
-		print("[LifeClient] ✅ Event overlay hidden, awaitingEvent:", awaitingEvent)
 	end)
 end
 
@@ -2087,7 +2080,9 @@ local firstSync = true
 SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 	if not state then return end
 	
-	print("[LifeClient] SyncState received - Name:", state.Name or "NIL", "Age:", state.Age, "FeedText:", lastFeedText or "nil")
+	-- Only log significant state changes, not every sync (reduces spam)
+	local ageChanged = currentState and currentState.Age ~= state.Age
+	local moneyChanged = currentState and currentState.Money ~= state.Money
 	
 	-- ═══════════════════════════════════════════════════════════════
 	-- STEP 1: DETECT IF THIS IS A NEW LIFE (BEFORE updating currentState)
@@ -2097,13 +2092,11 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 	-- Method 1: Explicit "new life" message from server (resetPlayerLife sends this)
 	if lastFeedText == "A new life begins..." then
 		isNewLife = true
-		print("[LifeClient] ✅ New life detected via message")
 	end
 	
 	-- Method 2: Old state had a name, new state doesn't -> this is a restart
 	if not isNewLife and currentState and currentState.Name and (not state.Name or state.Name == "") then
 		isNewLife = true
-		print("[LifeClient] ✅ New life detected: old name existed, new name is nil")
 	end
 	
 	-- Method 3: First sync with no name = new life
@@ -2111,21 +2104,19 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 		firstSync = false
 		if not state.Name or state.Name == "" then
 			isNewLife = true
-			print("[LifeClient] ✅ New life detected: first sync with no name")
 		end
 	end
 	
 	-- Method 4: Age is 0 and no name = definitely new life
 	if (state.Age == 0 or state.Age == nil) and (not state.Name or state.Name == "") then
 		isNewLife = true
-		print("[LifeClient] ✅ New life detected: Age 0 with no name")
 	end
 	
 	-- ═══════════════════════════════════════════════════════════════
 	-- STEP 2: HANDLE NEW LIFE RESET
 	-- ═══════════════════════════════════════════════════════════════
 	if isNewLife then
-		print("[LifeClient] 🔄 RESETTING CLIENT FOR NEW LIFE...")
+		print("[LifeClient] 🔄 New life detected - resetting client...")
 		
 		-- Reset all intro/game flags
 		introComplete = false
@@ -2315,8 +2306,6 @@ if ShowResult then
 end
 
 PresentEvent.OnClientEvent:Connect(function(eventData, ageFeedText)
-	print("[LifeClient] 📨 PresentEvent received - ID:", eventData and eventData.id or "NIL", "Title:", eventData and eventData.title or "NIL")
-	
 	-- Validate event data
 	if not eventData then
 		warn("[LifeClient] ❌ PresentEvent received with nil eventData!")
@@ -2413,27 +2402,23 @@ local function pulseAge()
 end
 
 ageButton.MouseButton1Click:Connect(function()
-	print("[LifeClient] 🔘 Age button clicked - awaitingEvent:", awaitingEvent, "hasName:", currentState.Name ~= nil)
-	
 	-- Safety check: if awaitingEvent is true but the event overlay is NOT visible,
 	-- something went wrong - reset the flag
 	if awaitingEvent and not eventOverlay.Visible then
-		warn("[LifeClient] ⚠️ awaitingEvent was true but overlay hidden - resetting!")
 		awaitingEvent = false
 		currentEventId = nil
 	end
 	
+	-- Block age up if waiting for event choice
 	if awaitingEvent then
-		print("[LifeClient] ⏳ Age blocked - waiting for event response")
 		return
 	end
 	
+	-- Block if no name set yet (intro not complete)
 	if not currentState.Name then
-		print("[LifeClient] ⏳ Age blocked - no name set yet")
 		return
 	end
 	
-	print("[LifeClient] ✅ Sending RequestAgeUp to server")
 	hideTutorial()
 	pulseAge()
 	RequestAgeUp:FireServer()

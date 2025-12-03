@@ -280,12 +280,10 @@ local function presentQueuedEvent(player)
 
 	local entry = queue.events[queue.current]
 	if not entry then
-		print("[LifeManager] presentQueuedEvent - no entry at index", queue.current, "for", player.Name)
 		eventQueues[player] = nil
 		return false
 	end
 
-	print("[LifeManager] 📨 Presenting event", queue.current, "/", #queue.events, "-", entry.eventDef and entry.eventDef.id or "unknown", "to", player.Name)
 	pendingEvents[player] = entry
 	PresentEvent:FireClient(player, entry.payload, nil)
 	return true
@@ -294,15 +292,12 @@ end
 local function advanceEventQueue(player)
 	local queue = eventQueues[player]
 	if not queue then
-		print("[LifeManager] advanceEventQueue - no queue for", player.Name)
 		return false
 	end
 
 	queue.current += 1
-	print("[LifeManager] 📋 Advancing event queue:", queue.current, "/", #queue.events, "for", player.Name)
 	
 	if queue.current > #queue.events then
-		print("[LifeManager] ✅ Event queue completed for", player.Name)
 		eventQueues[player] = nil
 		return false
 	end
@@ -312,14 +307,8 @@ end
 
 local function enqueueEvents(player, entries)
 	if not entries or #entries == 0 then
-		print("[LifeManager] enqueueEvents - no entries for", player.Name)
 		eventQueues[player] = nil
 		return false
-	end
-
-	print("[LifeManager] 📦 Enqueuing", #entries, "events for", player.Name)
-	for i, entry in ipairs(entries) do
-		print("[LifeManager]   Event", i, ":", entry.eventDef and entry.eventDef.id or "unknown")
 	end
 	
 	eventQueues[player] = {
@@ -731,9 +720,6 @@ local function ageUp(player)
 	state.Year += 1
 	local newAge = state.Age
 
-	print("[LifeManager] === AGE UP ===")
-	print("[LifeManager] Player:", player.Name, "Old Age:", oldAge, "New Age:", newAge)
-
 	local ageText = state.Age == 1 and "You are now 1 year old." or string.format("You are now %d years old.", state.Age)
 	state:AddFeed(ageText)
 
@@ -820,15 +806,10 @@ RequestAgeUp.OnServerEvent:Connect(function(player)
 
 	-- Check if player has pending events - prevent age up while events are in queue
 	if eventQueues[player] and eventQueues[player].events and #eventQueues[player].events > 0 then
-		local currentIdx = eventQueues[player].current or 1
-		local totalEvents = #eventQueues[player].events
-		print("[LifeManager] ⚠️ RequestAgeUp blocked - pending events:", currentIdx, "/", totalEvents, "for", player.Name)
-		
 		-- Try to re-present the current event in case client missed it
 		local queue = eventQueues[player]
 		local entry = queue.events[queue.current]
 		if entry and entry.payload then
-			print("[LifeManager] 🔄 Re-presenting event:", entry.eventDef and entry.eventDef.id or "unknown")
 			pendingEvents[player] = entry
 			PresentEvent:FireClient(player, entry.payload, nil)
 		end
@@ -837,11 +818,9 @@ RequestAgeUp.OnServerEvent:Connect(function(player)
 	
 	-- Check if there's a pending death event
 	if pendingEvents[player] and pendingEvents[player].isDeath then
-		print("[LifeManager] ⚠️ RequestAgeUp blocked - death event pending for", player.Name)
 		return
 	end
 
-	print("[LifeManager] ✅ RequestAgeUp accepted for", player.Name)
 	ageUp(player)
 end)
 

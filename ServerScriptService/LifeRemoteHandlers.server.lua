@@ -3555,8 +3555,6 @@ _G.SyncPrisonStateFromFlags = function(player)
 	
 	local flags = life.Flags or {}
 	
-	print("[LifeRemoteHandlers] SyncPrisonStateFromFlags - in_prison:", flags.in_prison, "InJail:", extState.InJail, "ex_convict:", flags.ex_convict)
-	
 	-- CASE 1: in_prison flag is set but ExtendedStates says not in jail - PUT THEM IN JAIL
 	if flags.in_prison and not extState.InJail then
 		-- This can happen from event choices like recapture
@@ -3565,7 +3563,6 @@ _G.SyncPrisonStateFromFlags = function(player)
 		extState.JailYearsLeft = (extState.JailYearsLeft or 0) + addedTime
 		-- Clear sentence_complete since they're back in
 		flags.sentence_complete = nil
-		print("[LifeRemoteHandlers] Synced prison state - Player jailed for", addedTime, "years from event")
 		syncStateToClient(player)
 		return
 	end
