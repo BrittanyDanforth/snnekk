@@ -1,15 +1,15 @@
 -- CareerSystem.lua
 -- ═══════════════════════════════════════════════════════════════════════════════
--- GODLY CAREER MANAGEMENT SYSTEM
+-- AAA-TIER CAREER MANAGEMENT SYSTEM
 -- ═══════════════════════════════════════════════════════════════════════════════
 --
--- Handles:
--- - Starting careers
--- - Tier progression and promotions
--- - Branch selection (ethical vs unethical, specialty choices)
--- - Career income calculations
--- - Career requirements checking
--- - Multiple simultaneous careers support
+-- This system manages the deep career progression:
+-- - Starting careers with trait requirements
+-- - Multi-branch progression (12+ branches in automotive alone)
+-- - Tier-based advancement with skill requirements
+-- - Risk calculations for dangerous careers
+-- - Income calculations based on tier, reputation, and experience
+-- - Full integration with TraitSystem
 --
 -- ═══════════════════════════════════════════════════════════════════════════════
 

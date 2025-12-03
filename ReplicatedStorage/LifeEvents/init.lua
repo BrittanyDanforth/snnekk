@@ -164,35 +164,11 @@ end
 -- ═══════════════════════════════════════════════════════════════
 
 -- List of event modules to load
+-- NOTE: Currently only loading the AUTOMOTIVE career - done GODLY
+-- Add more career modules here as they are completed to the same standard
 local EVENT_MODULES = {
-	-- Age-based events
-	"child_0_5",
-	"child_6_12",
-	"teen_13_17",
-	"young_adult_18_35",
-	"middle_aged_36_55",
-	"senior_55_plus",
-	
-	-- Category events
-	"health",
-	"relationships",
-	"wealth",
-	"fame",
-	"disasters",
-	"random_encounters",
-	"prison",
-	
-	-- Career events
-	"career_tech",
-	"career_medical",
-	"career_legal",
-	"career_business",
-	"career_criminal",
-	"career_arts",
-	"career_sports",
-	"career_military",
-	"career_political",
-	"career_education",
+	-- AAA-TIER Career Events (ONE career done PERFECTLY)
+	"career_automotive",  -- 70+ deep interconnected events covering full life arc
 }
 
 -- Load all event modules
