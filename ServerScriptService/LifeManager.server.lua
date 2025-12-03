@@ -88,6 +88,7 @@ local DEFAULT_EVENT_CONFIG = {
 	guaranteeCareer = true,
 	guaranteeMilestone = true,
 }
+local handleRandomDeath
 
 -- Forward declare serializeState
 local function serializeState(state, player)
@@ -656,7 +657,7 @@ local function checkAndHandleImmediateDeath(player, state, lastActionText)
 	return true -- Player died
 end
 
-local function handleRandomDeath(player, state)
+handleRandomDeath = function(player, state)
 	local deathCheck = LifeStageSystem.checkDeath(state)
 	if not deathCheck.died then
 		return false
