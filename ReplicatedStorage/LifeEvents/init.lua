@@ -164,10 +164,12 @@ end
 -- ═══════════════════════════════════════════════════════════════
 
 -- List of event modules to load
--- NOTE: Currently only loading the AUTOMOTIVE career - done GODLY
--- Add more career modules here as they are completed to the same standard
+-- NOTE: Load ALL event modules for maximum content
 local EVENT_MODULES = {
-	-- AAA-TIER Career Events (ONE career done PERFECTLY)
+	-- GENERAL LIFE EVENTS - Events that fire for EVERYONE (50+ events)
+	"general_life_events",  -- Universal life experiences for all ages
+	
+	-- AAA-TIER Career Events
 	"career_automotive",  -- 70+ deep interconnected events covering full life arc
 }
 

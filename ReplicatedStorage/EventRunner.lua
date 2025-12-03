@@ -466,7 +466,8 @@ end
 ----------------------------------------------------------------------
 
 -- Configuration for event frequency
-local DEFAULT_EVENT_CHANCE = 0.70  -- 70% chance a year has an event (30% chance of "quiet year")
+-- MASSIVELY INCREASED: Every year should have something happening!
+local DEFAULT_EVENT_CHANCE = 1.0  -- 100% chance a year has an event (no more "quiet years")
 
 function EventRunner.initHistory(state: LifeState): EventHistory
 	if not state.EventHistory then
@@ -569,6 +570,66 @@ function EventRunner.getMilestoneEvent(state: LifeState, events: { EventDef }): 
 	return nil
 end
 
+-- FALLBACK EVENTS: These fire when nothing else is available
+-- Ensures every year has SOMETHING happening
+local FALLBACK_EVENTS: { EventDef } = {
+	{
+		id = "fallback_peaceful_year",
+		emoji = "☀️",
+		title = "A Peaceful Year",
+		category = "life",
+		text = "This year passes without major drama. Sometimes, quiet is good.",
+		choices = {
+			{ text = "Appreciate the calm", result = "You enjoyed the peace.", effects = { Happiness = 3, Health = 2 } },
+			{ text = "Wish for more excitement", result = "Maybe next year will be more eventful.", effects = { Happiness = 1 } },
+		},
+	},
+	{
+		id = "fallback_reflection",
+		emoji = "🤔",
+		title = "Time for Reflection",
+		category = "life",
+		text = "You find yourself thinking about life and where it's heading.",
+		choices = {
+			{ text = "Set new goals", result = "You write down what you want to achieve.", effects = { Smarts = 3, Happiness = 2 } },
+			{ text = "Be present in the moment", result = "The future will come. For now, just be.", effects = { Happiness = 4 } },
+		},
+	},
+	{
+		id = "fallback_nice_day",
+		emoji = "🌤️",
+		title = "A Nice Day",
+		category = "life",
+		text = "Nothing special happens, but that's okay. It's a nice day.",
+		choices = {
+			{ text = "Enjoy simple pleasures", result = "Good food, good weather, good company.", effects = { Happiness = 5 } },
+			{ text = "Do something productive", result = "You accomplish some things you'd been putting off.", effects = { Smarts = 2, Money = 100 } },
+		},
+	},
+	{
+		id = "fallback_routine",
+		emoji = "📅",
+		title = "The Daily Routine",
+		category = "life",
+		text = "Life settles into a comfortable routine. Wake up, do your thing, sleep, repeat.",
+		choices = {
+			{ text = "Find comfort in routine", result = "There's peace in predictability.", effects = { Happiness = 3, Health = 2 } },
+			{ text = "Shake things up a little", result = "You try something slightly different today.", effects = { Happiness = 4, Smarts = 1 } },
+		},
+	},
+	{
+		id = "fallback_small_joy",
+		emoji = "😊",
+		title = "A Small Joy",
+		category = "life",
+		text = "Something small made you smile today. A song, a sunset, a kind word.",
+		choices = {
+			{ text = "Savor the moment", result = "Little things add up to a good life.", effects = { Happiness = 6 } },
+			{ text = "Share it with someone", result = "Happiness grows when shared.", effects = { Happiness = 4, Karma = 2 } },
+		},
+	},
+}
+
 function EventRunner.pickRandomEvent(state: LifeState, events: { EventDef }): EventDef?
 	local eligible: { EventDef } = {}
 	local totalWeight = 0
@@ -582,8 +643,11 @@ function EventRunner.pickRandomEvent(state: LifeState, events: { EventDef }): Ev
 		end
 	end
 
+	-- If no eligible events, use fallback events!
 	if #eligible == 0 then
-		return nil
+		print("[EventRunner] No standard events eligible, using fallback event")
+		local fallback = FALLBACK_EVENTS[math.random(#FALLBACK_EVENTS)]
+		return fallback
 	end
 
 	local roll = math.random() * totalWeight
@@ -611,8 +675,7 @@ function EventRunner.pickEvent(state: LifeState, events: { EventDef }): EventDef
 		return milestone
 	end
 
-	-- Event chance roll - some years should have "nothing special"
-	-- This prevents the "random stuff popping every year" feeling
+	-- Event chance roll - with 100% chance, every year has something
 	local eventChance = state.EventChance or DEFAULT_EVENT_CHANCE
 	local chanceRoll = math.random()
 	
@@ -628,6 +691,45 @@ function EventRunner.pickEvent(state: LifeState, events: { EventDef }): EventDef
 		print("[EventRunner] No valid playable event found!")
 	end
 	return selected
+end
+
+-- ENHANCED: Pick multiple events for a year (for eventful lives!)
+-- Returns array of events to show one after another
+function EventRunner.pickMultipleEvents(state: LifeState, events: { EventDef }, maxEvents: number?): { EventDef }
+	maxEvents = maxEvents or 3
+	local pickedEvents: { EventDef } = {}
+	local usedIds: { [string]: boolean } = {}
+	
+	print("[EventRunner] === PICKING MULTIPLE EVENTS ===")
+	print("[EventRunner] Age:", state.Age, "Max events:", maxEvents)
+	
+	-- Priority 1: Milestone events (always include)
+	local milestone = EventRunner.getMilestoneEvent(state, events)
+	if milestone then
+		table.insert(pickedEvents, milestone)
+		usedIds[milestone.id] = true
+		print("[EventRunner] Added milestone event:", milestone.id)
+	end
+	
+	-- Priority 2: Fill remaining slots with random events
+	local attempts = 0
+	local maxAttempts = maxEvents * 3  -- Prevent infinite loops
+	
+	while #pickedEvents < maxEvents and attempts < maxAttempts do
+		attempts = attempts + 1
+		
+		-- Pick a random eligible event
+		local candidate = EventRunner.pickRandomEvent(state, events)
+		
+		if candidate and not usedIds[candidate.id] then
+			table.insert(pickedEvents, candidate)
+			usedIds[candidate.id] = true
+			print("[EventRunner] Added random event:", candidate.id)
+		end
+	end
+	
+	print("[EventRunner] Total events picked:", #pickedEvents)
+	return pickedEvents
 end
 
 -- Set custom event chance for a player (for special circumstances)
