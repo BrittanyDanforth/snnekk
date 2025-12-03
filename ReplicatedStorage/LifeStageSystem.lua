@@ -64,7 +64,7 @@ LifeStageSystem.Stages = {
 		inSchool = false,
 		schoolType = nil,
 		activities = { "cry", "sleep", "eat", "crawl" },
-		eventCategories = { "family", "health", "milestone" },
+		eventCategories = { "family", "health", "milestone", "motorsport" },
 	},
 
 	TODDLER = {
@@ -83,7 +83,7 @@ LifeStageSystem.Stages = {
 		inSchool = false,
 		schoolType = "daycare",
 		activities = { "play", "learn", "tantrum" },
-		eventCategories = { "family", "health", "milestone", "social" },
+		eventCategories = { "family", "health", "milestone", "social", "motorsport" },
 	},
 
 	CHILD = {
@@ -102,7 +102,7 @@ LifeStageSystem.Stages = {
 		inSchool = true,
 		schoolType = "elementary",
 		activities = { "study", "play", "sports", "clubs" },
-		eventCategories = { "family", "health", "school", "social", "milestone" },
+		eventCategories = { "family", "health", "school", "social", "milestone", "motorsport" },
 	},
 
 	TWEEN = {
@@ -121,7 +121,7 @@ LifeStageSystem.Stages = {
 		inSchool = true,
 		schoolType = "middle",
 		activities = { "study", "sports", "clubs", "hangout", "social_media" },
-		eventCategories = { "family", "health", "school", "social", "romance", "milestone" },
+		eventCategories = { "family", "health", "school", "social", "romance", "milestone", "motorsport" },
 	},
 
 	TEEN = {
@@ -140,7 +140,7 @@ LifeStageSystem.Stages = {
 		inSchool = true,
 		schoolType = "highschool",
 		activities = { "study", "work_parttime", "sports", "clubs", "date", "party", "drive" },
-		eventCategories = { "family", "health", "school", "social", "romance", "work", "crime", "milestone" },
+		eventCategories = { "family", "health", "school", "social", "romance", "work", "crime", "milestone", "motorsport" },
 	},
 
 	YOUNG_ADULT = {
@@ -216,7 +216,7 @@ LifeStageSystem.Stages = {
 		inSchool = false,
 		schoolType = nil,
 		activities = { "retire", "travel", "grandkids", "hobby", "volunteer" },
-		eventCategories = { "family", "health", "social", "money", "milestone" },
+		eventCategories = { "family", "health", "social", "money", "milestone", "motorsport" },
 	},
 
 	ELDER = {
@@ -235,7 +235,7 @@ LifeStageSystem.Stages = {
 		inSchool = false,
 		schoolType = nil,
 		activities = { "rest", "family", "legacy", "reminisce" },
-		eventCategories = { "family", "health", "milestone", "death" },
+		eventCategories = { "family", "health", "milestone", "death", "motorsport" },
 	},
 }
 
@@ -463,6 +463,14 @@ LifeStageSystem.EventCategories = {
 		minAge = 8,
 		maxAge = 45,
 		requiresFlag = "sports_interest",
+	},
+
+	motorsport = {
+		name = "Motorsport",
+		emoji = "🏎️",
+		description = "Motorsport identity and career events.",
+		minAge = 0,
+		maxAge = 90,
 	},
 	
 	entertainment = {
