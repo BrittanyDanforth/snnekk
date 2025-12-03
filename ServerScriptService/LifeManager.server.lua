@@ -9,11 +9,8 @@ local EventLibrary = require(ReplicatedStorage:WaitForChild("EventLibrary"))
 local EventRunner = require(ReplicatedStorage:WaitForChild("EventRunner"))
 local TraitSystem = require(ReplicatedStorage:WaitForChild("TraitSystem"))
 
--- Load RacingCareer module (optional - won't break if missing)
-local RacingCareer = nil
-pcall(function()
-	RacingCareer = require(ReplicatedStorage:WaitForChild("RacingCareer", 5))
-end)
+-- Motorsport events are now handled through LifeEvents system
+-- No separate RacingCareer module needed
 
 -- Debug: verify EventRunner loaded correctly
 if EventRunner then
@@ -651,99 +648,8 @@ local function ageUp(player)
 		return
 	end
 	
-	-- Check for Racing Career events first (if RacingCareer is loaded and player has racing career)
-	local racingEvent = nil
-	if RacingCareer then
-		-- Get player's racing career state (stored in state.Flags or separate career data)
-		-- For now, check if player has RACER trait or racing flags
-		local hasRacingTrait = false
-		if state.Traits then
-			for _, trait in ipairs(state.Traits) do
-				if trait == "RACER" then
-					hasRacingTrait = true
-					break
-				end
-			end
-		end
-		
-		-- Check for racing career flags
-		local hasRacingCareer = state.Flags and (state.Flags.racing_career or state.Flags.motorsport_career or 
-			state.Flags.KARTING or state.Flags.JUNIOR_FORMULA or state.Flags.PRO_CIRCUIT or 
-			state.Flags.STREET_RACER or state.Flags.MECHANIC)
-		
-		if hasRacingTrait or hasRacingCareer then
-			-- Initialize racing career state if needed
-			if not state.RacingCareerState then
-				state.RacingCareerState = RacingCareer.newState()
-				-- Try to infer stage from flags
-				if state.Flags then
-					if state.Flags.PRO_CIRCUIT then state.RacingCareerState.stage = "PRO_CIRCUIT"
-					elseif state.Flags.JUNIOR_FORMULA then state.RacingCareerState.stage = "JUNIOR_FORMULA"
-					elseif state.Flags.KARTING then state.RacingCareerState.stage = "KARTING"
-					elseif state.Flags.STREET_RACER then state.RacingCareerState.stage = "STREET_RACER"
-					elseif state.Flags.MECHANIC then state.RacingCareerState.stage = "MECHANIC"
-					elseif state.Flags.PREP then state.RacingCareerState.stage = "PREP"
-					end
-				end
-			end
-			
-			-- Sync money from state
-			state.RacingCareerState.money = state.Money or 0
-			
-			-- Get player traits
-			local traitsList = state.Traits or {}
-			if hasRacingTrait and not traitsList["RACER"] then
-				table.insert(traitsList, "RACER")
-			end
-			
-			-- Get eligible racing events
-			local eligibleRacingEvents = RacingCareer.GetEligibleEvents(
-				state.Age or 0,
-				traitsList,
-				state.RacingCareerState
-			)
-			
-			-- Choose a racing event
-			local selectedRacingEvent = RacingCareer.ChooseEvent(eligibleRacingEvents)
-			
-			if selectedRacingEvent then
-				-- Convert RacingCareer event to EventRunner format
-				racingEvent = {
-					id = selectedRacingEvent.id,
-					emoji = "🏎️",
-					title = selectedRacingEvent.title,
-					text = selectedRacingEvent.description,
-					category = "racing",
-					weight = selectedRacingEvent.weight,
-					tags = selectedRacingEvent.tags,
-					choices = {},
-					racingCareerEvent = selectedRacingEvent, -- Store original for processing
-					racingCareerState = state.RacingCareerState, -- Store state reference
-				}
-				
-				-- Convert choices
-				for i, choice in ipairs(selectedRacingEvent.choices) do
-					table.insert(racingEvent.choices, {
-						index = i,
-						text = choice.text,
-						result = choice.outcome.narrative,
-						effects = choice.outcome.statDelta or {},
-						setFlag = nil, -- Will be handled in outcome processing
-						racingChoice = choice, -- Store original choice
-					})
-				end
-			end
-		end
-	end
-	
-	-- Decide if a life event should fire (filtered by stage)
-	-- Prioritize racing events if available (30% chance), otherwise use regular events
-	local eventDef = nil
-	if racingEvent and math.random() < 0.30 then
-		eventDef = racingEvent
-	else
-		eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
-	end
+	-- Pick event from EventLibrary (includes motorsport events from LifeEvents system)
+	local eventDef = EventRunner.pickEvent(state, EventLibrary.Events)
 	
 	if eventDef then
 		-- Double-check event is valid for current stage
@@ -939,130 +845,8 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	-- ═══════════════════════════════════════════════════════════════
 	-- STEP 4: APPLY CHOICE (with RNG if applicable)
 	-- ═══════════════════════════════════════════════════════════════
-	local results, err = nil, nil
-	
-	-- Check if this is a RacingCareer event
-	if eventDef.racingCareerEvent and eventDef.racingCareerState then
-		-- Handle RacingCareer event
-		local racingChoice = nil
-		for i, choice in ipairs(eventDef.choices) do
-			if choice.index == choiceIndex then
-				racingChoice = choice.racingChoice
-				break
-			end
-		end
-		
-		if racingChoice then
-			-- Apply RacingCareer outcome
-			local outcome = RacingCareer.ApplyOutcome(eventDef.racingCareerState, racingChoice.outcome)
-			
-			-- Check for death
-			if outcome.died then
-				-- Player died from racing event
-				state.IsDead = true
-				state:SetFlag("deceased")
-				local deathCause = "racing accident"
-				local lifeSummary = generateLifeSummary(state, deathCause)
-				
-				local deathPayload = {
-					id = "death",
-					emoji = "💀",
-					title = "Rest In Peace",
-					text = lifeSummary.summaryText,
-					category = "death",
-					isDeath = true,
-					isImmediateDeath = true,
-					lifeSummary = lifeSummary,
-					lastAction = outcome.narrative,
-					choices = {
-						{ index = 1, text = "🔄 Start New Life", effects = {}, result = "Begin again..." }
-					}
-				}
-				
-				pendingEvents[player] = {
-					eventDef = { id = "death", category = "death" },
-					dynamicData = {},
-					choiceIndex = nil,
-					isDeath = true,
-					deathCause = deathCause,
-					lifeSummary = lifeSummary,
-				}
-				
-				state:AddFeed("💀 " .. (state.Name or "You") .. " has passed away from " .. deathCause .. " at age " .. (state.Age or 0))
-				PresentEvent:FireClient(player, deathPayload, nil)
-				return
-			end
-			
-			-- Apply stat changes
-			if outcome.statDelta then
-				for stat, delta in pairs(outcome.statDelta) do
-					if stat == "Money" then
-						state.Money = (state.Money or 0) + delta
-					elseif state.Stats and state.Stats[stat] then
-						state.Stats[stat] = math.clamp((state.Stats[stat] or 50) + delta, 0, 100)
-					end
-				end
-			end
-			
-			-- Apply traits via TraitSystem
-			-- Ensure state has Traits field
-			if not state.Traits then
-				state.Traits = {}
-			end
-			if outcome.addTraits then
-				for _, traitId in ipairs(outcome.addTraits) do
-					TraitSystem.AddTrait(state, traitId)
-				end
-			end
-			if outcome.removeTraits then
-				for _, traitId in ipairs(outcome.removeTraits) do
-					TraitSystem.RemoveTrait(state, traitId)
-				end
-			end
-			
-			-- Handle TraitSystem evolution rules
-			if outcome.tags and outcome.severity then
-				TraitSystem.HandleEventOutcome(state, {
-					eventId = eventDef.id,
-					tags = outcome.tags,
-					severity = outcome.severity,
-				})
-			end
-			
-			-- Sync money back to state
-			state.Money = eventDef.racingCareerState.money or state.Money
-			
-			-- Build results
-			results = {
-				effects = outcome.statDelta or {},
-				flagsSet = {},
-				flagsCleared = {},
-				resultText = outcome.narrative or "Something happened...",
-				wasSuccess = true,
-			}
-			
-			-- Set flags from outcome
-			if outcome.flagsAdd then
-				for k, v in pairs(outcome.flagsAdd) do
-					if v then
-						state:SetFlag(k)
-						table.insert(results.flagsSet, k)
-					end
-				end
-			end
-			if outcome.flagsRemove then
-				for _, flag in ipairs(outcome.flagsRemove) do
-					state:ClearFlag(flag)
-					table.insert(results.flagsCleared, flag)
-				end
-			end
-		else
-			err = "Racing choice not found"
-		end
-	else
-		-- Regular EventRunner event
-		results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, nil)
-	end
+	-- All events (including motorsport) are handled through EventRunner
+	local results, err = EventRunner.applyChoice(state, eventDef, choiceIndex, dynamicData, nil)
 	
 	if err then
 		pushState(player, state, "❌ " .. tostring(err))
@@ -1078,13 +862,24 @@ SubmitChoice.OnServerEvent:Connect(function(player, eventId, choiceIndex)
 	end
 
 	-- ═══════════════════════════════════════════════════════════════
-	-- STEP 6: HANDLE ASSET ADDITIONS
+	-- STEP 6: HANDLE ASSET ADDITIONS/REMOVALS
 	-- ═══════════════════════════════════════════════════════════════
 	local assetToAdd = results.addAsset or choiceDef.addAsset
 	if assetToAdd and results.wasSuccess ~= false then
-		print("[LifeManager] Adding asset from event:", assetToAdd.id, "type:", assetToAdd.type)
+		print("[LifeManager] Adding asset from event:", assetToAdd.type or assetToAdd.id, "type:", assetToAdd.type)
 		if _G.AddAssetFromEvent then
 			_G.AddAssetFromEvent(player, assetToAdd)
+		end
+	end
+	
+	-- Handle asset removal (LifeEvents format)
+	local assetToRemove = results.removeAsset or choiceDef.removeAsset
+	if assetToRemove and results.wasSuccess ~= false then
+		print("[LifeManager] Removing asset from event:", assetToRemove.id or assetToRemove.type)
+		if _G.RemoveAssetFromEvent then
+			_G.RemoveAssetFromEvent(player, assetToRemove)
+		elseif _G.RemoveAsset then
+			_G.RemoveAsset(player, assetToRemove.id or assetToRemove.type)
 		end
 	end
 

@@ -22,13 +22,19 @@ if csSuccess then
 	CareerSystem = csResult
 else
 	warn("[EventEngine] ⚠️ CareerSystem not loaded:", csResult)
-	-- Provide minimal fallback
+	-- Provide minimal fallback with all required functions
 	CareerSystem = {
 		getPrimaryCareer = function() return nil end,
 		getCurrentTier = function() return nil end,
 		meetsCareerRequirements = function() return true end,
 		getCareerEventBoost = function() return 0 end,
 		getDisplayInfo = function() return { hasCareer = false, title = "Unemployed" } end,
+		startCareer = function() return false, "CareerSystem not loaded" end,
+		setBranch = function() return false, "CareerSystem not loaded" end,
+		addXP = function() return false end,
+		addReputation = function() return false end,
+		promote = function() return false, "CareerSystem not loaded" end,
+		quitCareer = function() return false, "CareerSystem not loaded" end,
 	}
 end
 
@@ -1009,7 +1015,7 @@ function EventEngine.categorizeEvents(events, state)
 			end
 			
 			-- Main categorization
-			if category == "career" or category == "work" or category == "tech" then
+			if category == "career" or category == "work" or category == "tech" or category == "motorsport" then
 				table.insert(buckets.career, event)
 			elseif category == "health" then
 				table.insert(buckets.health, event)
