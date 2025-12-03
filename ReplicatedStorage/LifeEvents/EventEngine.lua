@@ -57,6 +57,35 @@ else
 	}
 end
 
+-- Safe require TraitSystem (lives in ReplicatedStorage root)
+local TraitSystem = nil
+local tsSuccess, tsResult = pcall(function()
+	local lifeEventsFolder = script.Parent
+	if lifeEventsFolder and lifeEventsFolder:FindFirstChild("TraitSystem") then
+		return require(lifeEventsFolder:FindFirstChild("TraitSystem"))
+	end
+	local replicated = lifeEventsFolder and lifeEventsFolder.Parent
+	if replicated and replicated:FindFirstChild("TraitSystem") then
+		return require(replicated:FindFirstChild("TraitSystem"))
+	end
+	return nil
+end)
+if tsSuccess and tsResult then
+	TraitSystem = tsResult
+else
+	if tsResult then
+		warn("[EventEngine] ⚠️ TraitSystem not loaded:", tsResult)
+	else
+		warn("[EventEngine] ⚠️ TraitSystem module missing")
+	end
+	TraitSystem = {
+		AddTrait = function() end,
+		RemoveTrait = function() end,
+		ApplyChoiceTraits = function() return nil end,
+		ResolveTraits = function() return { applied = {}, statDelta = {}, narrative = {} } end,
+	}
+end
+
 local EventEngine = {}
 
 -- ═══════════════════════════════════════════════════════════════
@@ -1157,6 +1186,20 @@ function EventEngine.applyChoiceEffects(choice, state)
 	end
 	
 	state.Flags = flags
+
+	-- Trait hooks
+	if TraitSystem and choice.traits then
+		local traitResult = TraitSystem.ApplyChoiceTraits(state, choice.traits)
+		if traitResult then
+			results.traitsApplied = traitResult.applied
+			results.traitResolution = traitResult.resolve
+			if traitResult.resolve and traitResult.resolve.narrative then
+				for _, note in ipairs(traitResult.resolve.narrative) do
+					table.insert(results.messages, note)
+				end
+			end
+		end
+	end
 	
 	-- Career effects
 	if choice.startCareer then
