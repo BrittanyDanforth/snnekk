@@ -237,13 +237,14 @@ local function buildEventPayload(state, event)
 	local formattedChoices = {}
 	if event.choices and #event.choices > 0 then
 		for index, choice in ipairs(event.choices) do
-			table.insert(formattedChoices, {
+			local choiceEntry = {
 				index = index,
 				id = choice.id or ("choice_" .. index),
 				text = choice.text or ("Choice " .. index),
 				resultText = choice.resultText,
 				effects = choice.effects,
-			})
+			}
+			table.insert(formattedChoices, choiceEntry)
 		end
 	else
 		table.insert(formattedChoices, {
