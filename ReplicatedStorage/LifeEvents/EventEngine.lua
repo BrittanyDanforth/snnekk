@@ -1153,16 +1153,27 @@ function EventEngine.applyChoiceEffects(choice, state)
 	if choice.effects then
 		local stats = state.Stats or {}
 		for stat, amount in pairs(choice.effects) do
-			local oldVal = stats[stat] or 0
-			local newVal = oldVal + amount
-			
-			-- Clamp stats (except Money which can be negative for debt)
-			if stat ~= "Money" and stat ~= "Karma" then
-				newVal = math.clamp(newVal, 0, 100)
+			-- CRITICAL: Money is stored in state.Money, NOT state.Stats.Money!
+			if stat == "Money" or stat == "Cash" then
+				local oldVal = state.Money or 0
+				local newVal = oldVal + amount
+				state.Money = newVal
+				results.statChanges[stat] = {old = oldVal, new = newVal, change = amount}
+				print("[EventEngine] 💰 Applied money effect:", amount, "| Old:", oldVal, "| New:", newVal)
+			else
+				-- Regular stat in state.Stats
+				local oldVal = stats[stat] or 0
+				local newVal = oldVal + amount
+				
+				-- Clamp stats to 0-100 (except special ones)
+				if stat ~= "Karma" and stat ~= "Fame" then
+					newVal = math.clamp(newVal, 0, 100)
+				end
+				
+				stats[stat] = newVal
+				results.statChanges[stat] = {old = oldVal, new = newVal, change = amount}
+				print("[EventEngine] 📊 Applied stat effect:", stat, amount, "| Old:", oldVal, "| New:", newVal)
 			end
-			
-			stats[stat] = newVal
-			results.statChanges[stat] = {old = oldVal, new = newVal, change = amount}
 		end
 		state.Stats = stats
 	end

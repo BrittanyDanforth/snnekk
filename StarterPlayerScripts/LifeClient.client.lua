@@ -630,9 +630,28 @@ local function showResultPopup(data, callback)
 	tween(resultShell, TweenInfo.new(0.25), { BackgroundTransparency = 0 })
 	tween(resultCard, TweenInfo.new(0.25), { BackgroundTransparency = 0 })
 
-	-- Visual feedback
-	if not isPositive then
+	-- Visual feedback - BitLife style: shake ONLY for significant negative outcomes
+	-- Specifically: health loss, major money loss, or explicit failure
+	local shouldShake = false
+	local shouldFlash = false
+	
+	if data.health and data.health < -5 then
+		-- Health dropped significantly - shake and red flash
+		shouldShake = true
+		shouldFlash = true
+	elseif data.money and data.money < -5000 then
+		-- Major money loss - subtle shake
+		shouldShake = true
+	elseif data.wasSuccess == false then
+		-- Explicit failure (minigame failed, etc) - light shake
+		shouldShake = true
+		shouldFlash = true
+	end
+	
+	if shouldShake then
 		shakeScreen(8, 0.25)
+	end
+	if shouldFlash then
 		flashScreen(C.Red, 0.6, 0.3)
 	end
 
@@ -1438,6 +1457,7 @@ choicesLayout.Parent = choicesSection
 local activeChoiceButtons = {}
 local currentEventId       = nil
 local surpriseConnection   = nil
+local currentHideTween     = nil  -- Track hide animation to cancel on new event
 
 local function clearChoices()
 	for _, b in ipairs(activeChoiceButtons) do
@@ -1497,33 +1517,43 @@ local CategoryColors = {
 	-- Social - GREEN
 	social = { shell = C.Green, stroke = C.GreenDark, flash = C.Green },
 	
+	-- Motorsport/Racing - ORANGE/GOLD (racing vibes!)
+	motorsport = { shell = Color3.fromRGB(245, 158, 11), stroke = Color3.fromRGB(217, 119, 6), flash = Color3.fromRGB(251, 191, 36) },
+	racing = { shell = Color3.fromRGB(245, 158, 11), stroke = Color3.fromRGB(217, 119, 6), flash = Color3.fromRGB(251, 191, 36) },
+	
+	-- Milestone events - GOLD
+	milestone = { shell = Color3.fromRGB(251, 191, 36), stroke = Color3.fromRGB(202, 138, 4), flash = Color3.fromRGB(253, 224, 71) },
+	
 	-- Default - RED (BitLife style)
 	default = { shell = C.Red, stroke = C.RedDark, flash = C.Blue },
 }
 
--- Detect if event is dangerous/disaster based on ID, emoji, or content
+-- Detect if event is a TRUE disaster/emergency (for visual effects)
+-- NOTE: This should be VERY conservative - only actual life-threatening emergencies
+-- Regular events (motorsport, career, social) should NOT trigger shake on appearance
 local function isDisasterEvent(payload)
 	local id = payload.id or ""
 	local emoji = payload.emoji or ""
 	local category = payload.category or ""
 	local title = payload.title or ""
 	
-	-- Check ID prefix
-	if id:match("^d_") then return true end
+	-- Check ID prefix for explicit disaster events
+	if id:match("^d_") or id:match("^disaster_") or id:match("^emergency_") then return true end
 	
-	-- Check dangerous emojis
-	local dangerEmojis = {"🌪️", "🔥", "⛈️", "🌀", "🌊", "❄️", "🏚️", "🌡️", "🚗", "🔫", "😨", "🚑", "💀", "☠️", "⚠️", "🆘"}
+	-- Check dangerous emojis - ONLY actual disaster/death emojis
+	-- Removed: 🚗 (cars), 🔫 (crime), 😨 (general fear) - these are too broad
+	local dangerEmojis = {"🌪️", "🔥", "⛈️", "🌀", "🌊", "❄️", "🌡️", "💀", "☠️", "🆘", "🏥", "🚨"}
 	for _, de in ipairs(dangerEmojis) do
 		if emoji == de then return true end
 	end
 	
-	-- Check category
-	if category == "disaster" or category == "danger" or category == "emergency" then
+	-- Check category - only explicit disaster categories
+	if category == "disaster" or category == "emergency" then
 		return true
 	end
 	
-	-- Check title keywords
-	local dangerWords = {"tornado", "hurricane", "fire", "earthquake", "flood", "storm", "crash", "accident", "robbery", "intruder", "heat wave", "blizzard", "choking", "collapse"}
+	-- Check title keywords - only actual natural disasters and life-threatening emergencies
+	local dangerWords = {"tornado", "hurricane", "earthquake", "flood", "blizzard", "tsunami", "wildfire", "heart attack", "stroke", "collapsed", "dying"}
 	local lowerTitle = title:lower()
 	for _, word in ipairs(dangerWords) do
 		if lowerTitle:find(word) then return true end
@@ -1563,6 +1593,13 @@ showEvent = function(payload)
 		return
 	end
 	
+	-- Cancel any in-progress hide animation to prevent race conditions
+	if currentHideTween then
+		currentHideTween:Cancel()
+		currentHideTween = nil
+		print("[LifeClient] 🔄 Cancelled previous hide animation")
+	end
+	
 	-- Wrap in pcall to catch errors and ensure awaitingEvent gets reset
 	local success, errorMsg = pcall(function()
 		awaitingEvent = true
@@ -1592,11 +1629,10 @@ showEvent = function(payload)
 	eventBody.Text      = payload.text or ""
 	eventQuestion.Text  = payload.question or "What will you do?"
 	
-	-- SCREEN SHAKE for disaster/dangerous events (like BitLife!)
-	if isDisaster then
-		shakeScreen(12, 0.4)  -- Stronger shake for disasters
-		flashScreen(colors.flash, 0.5, 0.35)  -- Flash effect
-	end
+	-- NOTE: Screen shake removed from event APPEARANCE
+	-- BitLife style: shake only happens on NEGATIVE OUTCOMES (after choice is made)
+	-- The shake effect is now triggered in SyncState when health drops or bad things happen
+	-- This prevents random shaking when events first appear
 
 	local choiceHandlers = {}
 
@@ -1694,25 +1730,31 @@ hideEvent = function()
 	awaitingEvent  = false
 	currentEventId = nil
 
-	local t = tween(eventShadowFrame, TweenInfo.new(0.2), {
+	-- Create the hide tween and track it
+	currentHideTween = tween(eventShadowFrame, TweenInfo.new(0.2), {
 		Position = UDim2.new(0.5, 0, 0.5, 40),
 		BackgroundTransparency = 1,
 	})
 	tween(eventShell, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
 	tween(eventCard, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
 
-	t.Completed:Connect(function()
-		eventOverlay.Visible = false
+	currentHideTween.Completed:Connect(function()
+		-- Only hide overlay if we're not currently showing a new event
+		-- This prevents race condition where hide completes after new show started
+		if not awaitingEvent then
+			eventOverlay.Visible = false
+			
+			-- Reset event UI elements for next event
+			eventEmoji.Text = "🙂"
+			eventTitle.Text = ""
+			eventBody.Text = ""
+			eventAvatarEmoji.Text = "👤"
+			eventNameLbl.Text = ""
+			relationLbl.Text = ""
+			eventHeader.Visible = false
+		end
 		
-		-- Reset event UI elements for next event
-		eventEmoji.Text = "🙂"
-		eventTitle.Text = ""
-		eventBody.Text = ""
-		eventAvatarEmoji.Text = "👤"
-		eventNameLbl.Text = ""
-		relationLbl.Text = ""
-		eventHeader.Visible = false
-		
+		currentHideTween = nil
 		print("[LifeClient] ✅ Event overlay hidden, awaitingEvent:", awaitingEvent)
 	end)
 end
@@ -2218,13 +2260,20 @@ SyncState.OnClientEvent:Connect(function(state, lastFeedText, resultData)
 			money = resultData.money or deltas.money,
 			wasSuccess = resultData.wasSuccess, -- IMPORTANT: Pass through success flag for minigames
 		})
-	elseif deltas.health and deltas.health < -10 then
-		-- Auto-show popup for significant negative health
-		shakeScreen(8, 0.3)
-		flashScreen(C.Red, 0.6, 0.3)
+	elseif deltas.health and deltas.health < -15 then
+		-- Auto-shake for MAJOR negative health (15+ drop)
+		-- This is the BitLife-style "something bad happened" feedback
+		shakeScreen(10, 0.35)
+		flashScreen(C.Red, 0.5, 0.35)
+	elseif deltas.health and deltas.health < -5 then
+		-- Smaller health drop - just flash, no shake
+		flashScreen(C.Red, 0.7, 0.25)
 	elseif deltas.money and deltas.money > 10000 then
 		-- Flash green for big money gains
 		flashScreen(C.Green, 0.7, 0.3)
+	elseif deltas.money and deltas.money < -10000 then
+		-- Flash red for big money losses
+		flashScreen(C.Red, 0.7, 0.25)
 	end
 
 	-- Update UI from state
