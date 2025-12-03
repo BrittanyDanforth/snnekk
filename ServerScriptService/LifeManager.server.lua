@@ -244,7 +244,7 @@ local function buildEventPayload(state, event)
 				resultText = choice.resultText,
 				effects = choice.effects,
 			})
-		}
+		end
 	else
 		table.insert(formattedChoices, {
 			index = 1,
