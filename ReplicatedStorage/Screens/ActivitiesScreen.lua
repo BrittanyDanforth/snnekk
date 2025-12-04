@@ -69,8 +69,8 @@ local PrisonActivities = {
 	{ id = "prison_goodbehavior", name = "Good Behavior", emoji = "😇", effect = "-Sentence Time", minAge = 0 },
 }
 
--- Debug logging
-local DEBUG = true
+-- Debug logging (set to false to reduce log spam)
+local DEBUG = false
 local function log(...)
 	if DEBUG then print("[ActivitiesScreen]", ...) end
 end

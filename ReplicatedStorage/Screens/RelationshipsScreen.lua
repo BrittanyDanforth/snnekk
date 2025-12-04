@@ -12,8 +12,8 @@ local F = UI.Fonts
 local RelationshipsScreen = {}
 RelationshipsScreen.__index = RelationshipsScreen
 
--- Debug logging
-local DEBUG = true
+-- Debug logging (set to false to reduce log spam)
+local DEBUG = false
 local function log(...)
 	if DEBUG then print("[RelationshipsScreen]", ...) end
 end

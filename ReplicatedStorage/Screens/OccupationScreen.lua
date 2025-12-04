@@ -291,8 +291,8 @@ local EducationRanks = {
 	phd         = 6,
 }
 
--- Debug logging
-local DEBUG = true
+-- Debug logging (set to false to reduce log spam)
+local DEBUG = false
 local function log(...)
 	if DEBUG then print("[OccupationScreen]", ...) end
 end
