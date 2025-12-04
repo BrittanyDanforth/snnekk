@@ -25,8 +25,16 @@ if not remotesFolder then
 	return
 end
 
-local function getRemote(name)
-	return remotesFolder:FindFirstChild(name)
+-- Wait a moment for all remotes to be created
+task.wait(0.1)
+
+local function getRemote(name, isFunction)
+	local remote = remotesFolder:WaitForChild(name, 5)
+	if not remote then
+		warn("[LifeRemoteHandlers] Remote not found: " .. name)
+		return nil
+	end
+	return remote
 end
 
 local function getState(player)

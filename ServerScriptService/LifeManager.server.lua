@@ -19,11 +19,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LifeState = require(ReplicatedStorage:WaitForChild("LifeState"))
 local LifeStageSystem = require(ReplicatedStorage:WaitForChild("LifeStageSystem"))
-local LifeEvents = require(ReplicatedStorage:WaitForChild("LifeEvents"))
+
+-- LifeEvents is a folder - require the init.lua inside it
+local LifeEventsFolder = ReplicatedStorage:WaitForChild("LifeEvents")
+local LifeEvents = require(LifeEventsFolder:WaitForChild("init"))
 
 --------------------------------------------------------------------------------
 -- REMOTES
 --------------------------------------------------------------------------------
+
+-- Clean up any existing remotes folder first
+local existingFolder = ReplicatedStorage:FindFirstChild("LifeRemotes")
+if existingFolder then
+	existingFolder:Destroy()
+end
 
 local remotesFolder = Instance.new("Folder")
 remotesFolder.Name = "LifeRemotes"

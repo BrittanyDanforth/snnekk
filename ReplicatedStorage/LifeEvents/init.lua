@@ -115,7 +115,7 @@ local EVENT_MODULES = {
 }
 
 local function loadEventModule(moduleName)
-	local container = script
+	local container = script.Parent  -- Parent folder containing this init.lua
 	local moduleScript = container:FindFirstChild(moduleName)
 	
 	if not moduleScript then
